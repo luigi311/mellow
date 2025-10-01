@@ -48,7 +48,7 @@ fn init(app: &Application) {
         .name("player".to_string())
         .spawn(move || {
             player
-                .event_listener(player_tx)
+                .event_handler(player_tx)
                 .expect("Player thread crashed")
         })
         .unwrap();

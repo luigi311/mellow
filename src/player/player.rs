@@ -1,6 +1,6 @@
 use core::error::Error;
 use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
-use gst::{ClockTime, SeekFlags, State, StateChangeError};
+use gst::{ClockTime, SeekFlags, State};
 use rand::random_range;
 use std::mem::swap;
 use std::sync::mpsc;
@@ -27,19 +27,17 @@ pub enum PlayerResponse {
 }
 
 pub struct Player {
-    // TODO: Consider using VecDeque for the queues
-    // TODO: Does history really need to be separate?
     pub history: Vec<Song>,
-    pub queue: Vec<Song>,
+    pub queue: Vec<Song>, // TODO: Use `queue` by index instead of moving to `history`
     pub repeat: bool,
-    pub shuffle: bool, // IDEA: Button to randomize the queue instead?
+    pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
 
+    state: State,
+    pending_track: bool,
     backend: gst::Element,
+    bus: gst::Bus,
     ui_tx: mpsc::SyncSender<PlayerResponse>,
     rx: mpsc::Receiver<PlayerRequest>,
-    state: State,
-
-    pending_track: bool,
 }
 
 // NOTE: Set `GST_DEBUG=3` to debug GStreamer
@@ -57,6 +55,7 @@ impl Player {
         gst::init().unwrap();
 
         let playbin = gst::ElementFactory::make("playbin3").build()?;
+        let bus = playbin.bus().unwrap();
 
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(2);
         let (ui_tx, ui_rx) = mpsc::sync_channel::<PlayerResponse>(0);
@@ -65,32 +64,33 @@ impl Player {
             Player {
                 history: vec![],
                 queue: vec![],
-                repeat: false,
+                repeat: true,
                 shuffle: false,
 
-                backend: playbin,
-                ui_tx,
-                rx,
                 state: State::Null,
                 pending_track: true,
+                backend: playbin,
+                bus,
+                ui_tx,
+                rx,
             },
             player_tx,
             ui_rx,
         ))
     }
 
-    pub fn event_listener(
+    /// Handles playback controls and responds to requests
+    pub fn event_handler(
         &mut self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
     ) -> Result<(), Box<dyn Error>> {
-        let bus = self.backend.bus().unwrap();
-
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
             None
         });
 
         loop {
+            self.clear_gst_msg_queue();
             match self.rx.recv()? {
                 PlayerRequest::SongEnd => self.move_next(),
                 PlayerRequest::PlayOrPause => self.play_or_pause(),
@@ -107,34 +107,50 @@ impl Player {
                     continue;
                 }
             };
-
-            // Handle and empty the GStreamer message queue
-            while let Some(message) = bus.pop() {
-                match message.type_() {
-                    gst::MessageType::Error => eprintln!("gstreamer error: {message:?}"),
-                    gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}"),
-                    gst::MessageType::Eos => println!("gstreamer: End-Of-Stream"),
-                    _ => (),
-                }
-            }
+            self.clear_gst_msg_queue();
 
             self.update()?;
         }
     }
 
+    /// Clears the GStreamer message queue and prints out errors/warnings/EOS
+    fn clear_gst_msg_queue(&self) {
+        while let Some(message) = self.bus.pop() {
+            match message.type_() {
+                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}"),
+                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}"),
+                gst::MessageType::Eos => println!("gstreamer: End-Of-Stream"),
+                _ => (),
+            }
+        }
+    }
+
+    /// Blocks until EOS is signaled by GStreamer
+    /// Does nothing if not currently playing
+    // fn wait_for_eos(&self) {
+    //     if self.backend.current_state() != State::Playing {
+    //         return;
+    //     }
+    //     loop {
+    //         if self.bus.pop_filtered(&[gst::MessageType::Eos]).is_some() {
+    //             break;
+    //         }
+    //     }
+    // }
+
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
         if self.queue.is_empty() {
             if self.repeat {
-                self.restart_queue()?;
+                self.restart_queue();
+            } else {
+                self.state = State::Null;
+                self.backend.set_state(self.state)?;
+                return Ok(());
             }
-
-            self.state = State::Null;
-            self.backend.set_state(self.state)?;
-            return Ok(());
         }
 
-        dbg!(&self.history.len());
-        dbg!(&self.queue.len());
+        // dbg!(&self.history.len());
+        // dbg!(&self.queue.len());
 
         let song = &mut self.queue[0];
 
@@ -153,12 +169,17 @@ impl Player {
             //       the track change is complete. If it waits for an
             //       answer, it will block the UI as well. Time position
             //       queries would need to be substituted with own logic.
+            //       It also blocks the skip/pause buttons until the song
+            //       starts, which is not good user experience.
+            //       However, not waiting would mean that the UI would
+            //       change to the next song before the current one is
+            //       finished playing.
             println!("Waiting for previous song to end");
             while self
                 .backend
                 .query_position()
                 .unwrap_or_else(|| ClockTime::from_seconds(0))
-                > ClockTime::from_seconds(1)
+                > ClockTime::from_seconds(2)
             {
                 thread::sleep(Duration::from_millis(20));
             }
@@ -205,8 +226,9 @@ impl Player {
         // self.backend.query_duration::<ClockTime>()
     }
 
-    pub fn new_queue(&mut self, queue: Vec<Song>) -> Result<(), StateChangeError> {
-        self.backend.set_state(State::Null)?;
+    /// Replaces the current queue with the provided one
+    pub fn new_queue(&mut self, queue: Vec<Song>) {
+        self.backend.set_property("instant-uri", true);
         self.queue = queue;
 
         // TODO: Improve shuffle implementation
@@ -217,24 +239,38 @@ impl Player {
         }
 
         self.pending_track = true;
-        Ok(())
     }
 
-    pub fn restart_queue(&mut self) -> Result<(), StateChangeError> {
-        self.backend.set_state(State::Null)?;
+    /// Restarts the queue from the beginning
+    pub fn restart_queue(&mut self) {
+        self.backend.set_property("instant-uri", true);
         while !self.queue.is_empty() {
             self.history.push(self.queue.remove(0));
         }
         swap(&mut self.queue, &mut self.history);
         self.pending_track = true;
-        Ok(())
     }
 
+    /// Randomizez the order of songs in the queue
+    /// Playback state has to be manually updated
+    pub fn randomize_queue(&mut self) {
+        self.backend.set_property("instant-uri", true);
+        let mut new_queue = Vec::new();
+        while self.queue.len() > 0 {
+            let rand_index = random_range(0..self.queue.len());
+            new_queue.push(self.queue.remove(rand_index));
+        }
+        self.queue = new_queue;
+        self.pending_track = true;
+    }
+
+    /// Removes all upcomming songs from the queue
     pub fn clear_queue(&mut self) {
         let current_song = self.queue.remove(0);
         self.queue = vec![current_song];
     }
 
+    /// Removes all queued songs after the provided index
     pub fn clear_queue_after_index(&mut self, index: usize) {
         while self.queue.len() > index + 1 {
             self.queue.remove(index + 1);
@@ -242,11 +278,11 @@ impl Player {
     }
 
     fn play_or_pause(&mut self) {
-        match self.backend.current_state() {
-            State::Playing => self.state = State::Paused,
-            State::Paused => self.state = State::Playing,
-            State::Ready => self.state = State::Playing,
-            _ => self.state = State::Playing,
+        self.state = match self.backend.current_state() {
+            State::Playing => State::Paused,
+            State::Paused => State::Playing,
+            State::Ready => State::Playing,
+            _ => State::Playing,
         }
     }
 
@@ -293,7 +329,13 @@ impl Player {
 
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-        self.move_next();
+
+        if self.repeat && self.queue.len() == 1 {
+            self.restart_queue();
+            return;
+        }
+
+        self.move_next()
     }
 
     fn move_next(&mut self) {
