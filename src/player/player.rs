@@ -2,7 +2,6 @@ use core::error::Error;
 use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
 use gst::{ClockTime, SeekFlags, State};
 use rand::random_range;
-use std::mem::swap;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -27,8 +26,8 @@ pub enum PlayerResponse {
 }
 
 pub struct Player {
-    pub history: Vec<Song>,
-    pub queue: Vec<Song>, // TODO: Use `queue` by index instead of moving to `history`
+    pub song_index: usize,
+    pub queue: Vec<Song>,
     pub repeat: bool,
     pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
 
@@ -62,7 +61,7 @@ impl Player {
 
         Ok((
             Player {
-                history: vec![],
+                song_index: 0,
                 queue: vec![],
                 repeat: true,
                 shuffle: false,
@@ -152,7 +151,7 @@ impl Player {
         // dbg!(&self.history.len());
         // dbg!(&self.queue.len());
 
-        let song = &mut self.queue[0];
+        let song = &mut self.queue[self.song_index];
 
         if self.pending_track {
             self.backend.state(None).0?;
@@ -184,11 +183,8 @@ impl Player {
                 thread::sleep(Duration::from_millis(20));
             }
 
-            // Clear previous song info from memory
-            if !self.history.is_empty() {
-                let last = self.history.len() - 1;
-                self.history[last].info = None;
-            }
+            // TODO: Find a way to efficiently communicate memory-heavy fields to the UI
+            song.info.take();
 
             let properties = song.get_info_or_assign();
 
@@ -229,29 +225,27 @@ impl Player {
     /// Replaces the current queue with the provided one
     pub fn new_queue(&mut self, queue: Vec<Song>) {
         self.backend.set_property("instant-uri", true);
-        self.queue = queue;
         self.pending_track = true;
+        self.queue = queue;
     }
 
     /// Restarts the queue from the beginning
     pub fn restart_queue(&mut self) {
         self.backend.set_property("instant-uri", true);
-        while !self.queue.is_empty() {
-            self.history.push(self.queue.remove(0));
-        }
-        swap(&mut self.queue, &mut self.history);
         self.pending_track = true;
+        self.song_index = 0;
     }
 
     /// Randomizez the order of songs in the queue
     /// Playback state has to be manually updated
     pub fn randomize_queue(&mut self) {
         self.backend.set_property("instant-uri", true);
+        self.pending_track = true;
         for i in 0..self.queue.len() {
             let rand_index = random_range(0..self.queue.len());
             self.queue.swap(i, rand_index);
         }
-        self.pending_track = true;
+        self.song_index = 0;
     }
 
     /// Removes all upcomming songs from the queue
@@ -281,7 +275,7 @@ impl Player {
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         let current_time = self.backend.current_clock_time();
         if let Some(time) = current_time
-            && (time > ClockTime::from_seconds(10) || self.history.is_empty())
+            && (time > ClockTime::from_seconds(10) || (self.song_index == 0 && !self.repeat))
         {
             return self.repeat_song();
         }
@@ -308,13 +302,15 @@ impl Player {
     }
 
     fn skip_prev(&mut self) {
-        if self.history.is_empty() {
+        self.backend.set_property("instant-uri", true);
+        self.pending_track = true;
+        if self.song_index == 0 {
+            if self.repeat {
+                self.song_index = self.queue.len() - 1;
+            }
             return;
         }
-        self.backend.set_property("instant-uri", true);
-        self.queue
-            .insert(0, self.history.remove(self.history.len() - 1));
-        self.pending_track = true;
+        self.song_index -= 1;
     }
 
     fn skip_next(&mut self) {
@@ -329,10 +325,13 @@ impl Player {
     }
 
     fn move_next(&mut self) {
-        if self.queue.is_empty() {
+        self.pending_track = true;
+        if self.song_index == self.queue.len() - 1 {
+            if self.repeat {
+                self.song_index = 0;
+            }
             return;
         }
-        self.history.push(self.queue.remove(0));
-        self.pending_track = true;
+        self.song_index += 1;
     }
 }
