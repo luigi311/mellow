@@ -230,14 +230,6 @@ impl Player {
     pub fn new_queue(&mut self, queue: Vec<Song>) {
         self.backend.set_property("instant-uri", true);
         self.queue = queue;
-
-        // TODO: Improve shuffle implementation
-        if self.shuffle {
-            let new_start = random_range(0..self.queue.len());
-            let song = self.queue.remove(new_start);
-            self.queue.insert(0, song);
-        }
-
         self.pending_track = true;
     }
 
@@ -255,12 +247,10 @@ impl Player {
     /// Playback state has to be manually updated
     pub fn randomize_queue(&mut self) {
         self.backend.set_property("instant-uri", true);
-        let mut new_queue = Vec::new();
-        while self.queue.len() > 0 {
+        for i in 0..self.queue.len() {
             let rand_index = random_range(0..self.queue.len());
-            new_queue.push(self.queue.remove(rand_index));
+            self.queue.swap(i, rand_index);
         }
-        self.queue = new_queue;
         self.pending_track = true;
     }
 
@@ -343,12 +333,6 @@ impl Player {
             return;
         }
         self.history.push(self.queue.remove(0));
-        // TODO: Improve shuffle implementation?
-        if self.shuffle && !self.queue.is_empty() {
-            let queue_len = self.queue.len();
-            let song = self.queue.remove(rand::random_range(0..queue_len));
-            self.queue.insert(0, song);
-        }
         self.pending_track = true;
     }
 }

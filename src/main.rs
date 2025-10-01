@@ -29,19 +29,16 @@ fn init(app: &Application) {
     let mut args = std::env::args();
     args.next();
     if args.len() > 0 {
-        player
-            .new_queue(
-                args.filter_map(|file| Song::new(&file, None).ok())
-                    .collect(),
-            )
-            .expect("Failed to create player queue");
+        player.new_queue(
+            args.filter_map(|file| Song::new(&file, None).ok())
+                .collect(),
+        );
     } else {
         // TODO: Don't block `app.connect_activate()` with long operations
         let library = Library::rebuild().unwrap();
         player.shuffle = true;
-        player
-            .new_queue(library.songs)
-            .expect("Failed to create player queue");
+        player.new_queue(library.songs);
+        player.randomize_queue();
     }
 
     thread::Builder::new()
