@@ -19,8 +19,7 @@ dnf install \
   gstreamer1-plugins-base-devel \
   gstreamer1-plugins-base-tools \
   gstreamer1-plugins-good \
-  gstreamer1-plugins-good-extras \
-  gstreamer1-plugins-ugly
+  gstreamer1-plugins-good-extras
 ```
 
 [GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html)
@@ -28,4 +27,3 @@ dnf install \
 ```bash
 dnf install gtk4-devel libadwaita-devel
 ```
-TODO: May need more, I don't remember

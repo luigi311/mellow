@@ -3,7 +3,7 @@ use core::error::Error;
 use gtk::prelude::*;
 use std::thread;
 
-const APP_ID: &str = "org.test.MusicPlayer";
+const APP_ID: &str = "com.github.userwithaname.Mellow";
 
 use mellow::library::{Library, Song};
 use mellow::player::Player;
@@ -26,6 +26,18 @@ fn init(app: &Application) {
 
     mellow::ui_gtk::build(app, &player_tx, ui_rx);
 
+    thread::Builder::new()
+        .name("player".to_string())
+        .spawn(move || {
+            init_player_queue(&mut player);
+            player
+                .event_handler(player_tx)
+                .expect("Player thread crashed")
+        })
+        .unwrap();
+}
+
+fn init_player_queue(player: &mut Player) {
     let mut args = std::env::args();
     args.next();
     if args.len() > 0 {
@@ -34,19 +46,9 @@ fn init(app: &Application) {
                 .collect(),
         );
     } else {
-        // TODO: Don't block `app.connect_activate()` with long operations
         let library = Library::rebuild().unwrap();
         player.shuffle = true;
         player.new_queue(library.songs);
         player.randomize_queue();
     }
-
-    thread::Builder::new()
-        .name("player".to_string())
-        .spawn(move || {
-            player
-                .event_handler(player_tx)
-                .expect("Player thread crashed")
-        })
-        .unwrap();
 }

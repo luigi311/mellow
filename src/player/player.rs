@@ -63,7 +63,7 @@ impl Player {
             Player {
                 song_index: 0,
                 queue: vec![],
-                repeat: true,
+                repeat: false,
                 shuffle: false,
 
                 state: State::Null,
@@ -106,7 +106,6 @@ impl Player {
                     continue;
                 }
             };
-            self.clear_gst_msg_queue();
 
             self.update()?;
         }
@@ -116,16 +115,16 @@ impl Player {
     fn clear_gst_msg_queue(&self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
-                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}"),
-                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}"),
-                gst::MessageType::Eos => println!("gstreamer: End-Of-Stream"),
+                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
+                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
+                gst::MessageType::Eos => println!("gstreamer: End-Of-Stream\n"),
                 _ => (),
             }
         }
     }
 
-    /// Blocks until EOS is signaled by GStreamer
-    /// Does nothing if not currently playing
+    // /// Blocks until EOS is signaled by GStreamer
+    // /// Does nothing if not currently playing
     // fn wait_for_eos(&self) {
     //     if self.backend.current_state() != State::Playing {
     //         return;
@@ -138,6 +137,8 @@ impl Player {
     // }
 
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
+        self.clear_gst_msg_queue();
+
         if self.queue.is_empty() {
             if self.repeat {
                 self.restart_queue();
@@ -154,12 +155,22 @@ impl Player {
         let song = &mut self.queue[self.song_index];
 
         if self.pending_track {
-            self.backend.state(None).0?;
             println!("{}", song.file_uri());
             self.backend.set_property("uri", song.file_uri());
         }
 
         self.backend.set_state(self.state)?;
+
+        // TODO: Gracefully handle state switch errors (for example: missing plugins)
+        // self.backend.state(None).0?;
+        // if self.backend.state(None).0.is_err() {
+        //     eprintln!("Failed to set GStreamer state\nSkipping song");
+        //     let repeat = self.repeat;
+        //     self.repeat = false;
+        //     self.skip_next();
+        //     self.repeat = repeat;
+        //     return self.update();
+        // }
 
         if self.pending_track {
             // Wait for last track to finish playing
@@ -173,6 +184,7 @@ impl Player {
             //       However, not waiting would mean that the UI would
             //       change to the next song before the current one is
             //       finished playing.
+            // FIX: Stuck waiting for song to end
             println!("Waiting for previous song to end");
             while self
                 .backend
@@ -325,13 +337,15 @@ impl Player {
     }
 
     fn move_next(&mut self) {
-        self.pending_track = true;
         if self.song_index == self.queue.len() - 1 {
             if self.repeat {
+                self.pending_track = true;
                 self.song_index = 0;
             }
+            self.state = State::Null;
             return;
         }
+        self.pending_track = true;
         self.song_index += 1;
     }
 }

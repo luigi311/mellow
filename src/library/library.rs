@@ -55,8 +55,8 @@ impl Library {
         let songs = Arc::new(Mutex::new(Some(Vec::new())));
         let albums = Arc::new(Mutex::new(Some(Vec::new())));
         let artists = Arc::new(Mutex::new(Some(Vec::new())));
-        visit_dirs(&Path::new(&library_path), &|f| {
-            let file = gio::File::for_path(f.path().to_str().unwrap().to_owned());
+        visit_dirs(Path::new(&library_path), &|f| {
+            let file = gio::File::for_path(f.path().to_str().unwrap());
 
             let file_lcase = file.parse_name().to_lowercase();
             if !FILE_SUPPORT.iter().any(|ext| file_lcase.ends_with(ext)) {

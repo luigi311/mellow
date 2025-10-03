@@ -25,7 +25,7 @@ pub struct SongInfo {
 impl Song {
     pub fn new(file: &str, album: Option<usize>) -> Result<Song, Box<dyn Error>> {
         Ok(Song {
-            file: gio::File::for_path(file.to_string()),
+            file: gio::File::for_path(file),
             album,
             info: None,
         })
