@@ -32,6 +32,7 @@ pub fn build(
         .build();
 
     // TODO: Symbolic icons
+    // TODO: Disable buttons based on state (loading library, no queue, etc)
     let prev_button = Button::builder().label("⏮").build();
     prev_button.connect_clicked({
         let player_tx = player_tx.clone();

@@ -1,5 +1,4 @@
 use adw::Application;
-use core::error::Error;
 use gtk::prelude::*;
 use std::thread;
 
@@ -8,14 +7,12 @@ const APP_ID: &str = "com.github.userwithaname.Mellow";
 use mellow::library::{Library, Song};
 use mellow::player::Player;
 
-pub fn main() -> Result<(), Box<dyn Error>> {
+pub fn main() {
     let app = Application::builder().application_id(APP_ID).build();
 
     app.connect_activate(init);
 
     app.run_with_args(&[] as &[&str; 0]);
-
-    Ok(())
 }
 
 // NOTE: It might be a good idea to rewrite all of the UI

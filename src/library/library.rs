@@ -47,7 +47,7 @@ impl Library {
     // TODO: Serialize to / deserialize from disk
     pub fn load_or_init() {}
 
-    // TODO: Load in chunks, modify self, allow showing progress
+    // TODO: Don't block thread while rebuilding (async?)
     pub fn rebuild() -> Result<Library, Box<dyn Error>> {
         // TODO: Don't hardcode music library path
         let library_path = [std::env::home_dir().unwrap().to_str().unwrap(), "/Music/"].concat();

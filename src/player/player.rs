@@ -8,6 +8,8 @@ use std::time::Duration;
 
 use crate::library::Song;
 
+// TODO: MPRIS support for Gnome Shell media controls
+
 pub enum PlayerRequest {
     PlayOrPause,
     SkipNext,
@@ -327,25 +329,20 @@ impl Player {
 
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-
-        if self.repeat && self.queue.len() == 1 {
-            self.restart_queue();
-            return;
-        }
-
         self.move_next()
     }
 
     fn move_next(&mut self) {
+        self.pending_track = true;
         if self.song_index == self.queue.len() - 1 {
             if self.repeat {
-                self.pending_track = true;
                 self.song_index = 0;
+            } else {
+                self.pending_track = false;
+                self.state = State::Null;
             }
-            self.state = State::Null;
             return;
         }
-        self.pending_track = true;
         self.song_index += 1;
     }
 }
