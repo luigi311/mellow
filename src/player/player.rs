@@ -11,13 +11,20 @@ use crate::library::Song;
 // TODO: MPRIS support for Gnome Shell media controls
 
 pub enum PlayerRequest {
+    /// Play or pause depending on the current state
     PlayOrPause,
+    /// Skip to the next song in the queue
     SkipNext,
+    /// Skip to beginning or previous song
     SkipPrevious,
-    Seek(ClockTime),
+    /// Seek to a particular point in the song using a 0 to 1 value
+    Seek(f64),
+    /// Used internally to signal when song is about to end
     SongEnd,
 
+    /// Send the current state to `ui_rx`
     GetCurrentState,
+    /// Send the current time to `ui_rx`
     GetCurrentTime,
 }
 
@@ -96,7 +103,7 @@ impl Player {
                 PlayerRequest::SongEnd => self.move_next(),
                 PlayerRequest::PlayOrPause => self.play_or_pause(),
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
-                PlayerRequest::Seek(time) => self.seek(time)?,
+                PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                 PlayerRequest::SkipNext => self.skip_next(),
 
                 PlayerRequest::GetCurrentTime => {
@@ -187,7 +194,7 @@ impl Player {
             //       change to the next song before the current one is
             //       finished playing.
             // FIX: Stuck waiting for song to end
-            println!("Waiting for previous song to end");
+            println!("Next song is ready");
             while self
                 .backend
                 .query_position()
@@ -197,7 +204,7 @@ impl Player {
                 thread::sleep(Duration::from_millis(20));
             }
 
-            // TODO: Find a way to efficiently communicate memory-heavy fields to the UI
+            // TODO: Find a way to efficiently communicate song info to the UI
             song.info.take();
 
             let properties = song.get_info_or_assign();
@@ -299,19 +306,31 @@ impl Player {
     }
 
     fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
-        self.backend.set_state(State::Playing)?; // Can't seek while paused
+        self.backend.set_state(State::Playing)?; // Can't seek while paused..?
         self.backend.seek_simple(
-            SeekFlags::FLUSH | SeekFlags::TRICKMODE_NO_AUDIO,
+            SeekFlags::FLUSH | SeekFlags::ACCURATE | SeekFlags::TRICKMODE_NO_AUDIO,
             ClockTime::from_seconds(0),
         )?;
         self.backend.set_state(State::Ready)?;
         Ok(())
     }
 
-    fn seek(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        self.backend.set_state(State::Playing)?; // Can't seek while paused
-        self.backend.seek_simple(SeekFlags::empty(), time)?;
-        self.backend.set_state(State::Ready)?;
+    /// Seek to a position in the song using a 0 to 1 value
+    fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
+        let target_ms = (self
+            .backend
+            .query_duration::<ClockTime>()
+            .unwrap_or_else(|| ClockTime::from_seconds(0))
+            .mseconds() as f64
+            * position) as u64;
+        // println!("Target seek position (ms): {target_ms}");
+        self.seek_to_time(ClockTime::from_mseconds(target_ms))
+    }
+
+    /// Seek to a particular time in the song
+    fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+        self.backend
+            .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)?;
         Ok(())
     }
 

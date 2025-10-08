@@ -47,11 +47,11 @@ pub fn build(
         .build();
     let album_label = gtk::Label::builder()
         .label("Album Title")
-        // .css_classes(["caption-heading"])
+        .css_classes(["caption-heading"])
         .build();
     let artist_label = gtk::Label::builder()
         .label("Band Name")
-        // .css_classes(["caption-heading"])
+        .css_classes(["caption-heading"])
         .margin_bottom(6)
         .build();
     main_view.append(&title_label);
@@ -81,9 +81,7 @@ pub fn build(
         .build();
     prev_button.connect_clicked({
         let player_tx = player_tx.clone();
-        move |_| {
-            player_tx.send(PlayerRequest::SkipPrevious).unwrap();
-        }
+        move |_| player_tx.send(PlayerRequest::SkipPrevious).unwrap()
     });
     player_controls.append(&prev_button);
 
@@ -113,23 +111,21 @@ pub fn build(
         .build();
     next_button.connect_clicked({
         let player_tx = player_tx.clone();
-        move |_| {
-            player_tx.send(PlayerRequest::SkipNext).unwrap();
-        }
+        move |_| player_tx.send(PlayerRequest::SkipNext).unwrap()
     });
     player_controls.append(&next_button);
 
     let seek_controls = gtk::Box::builder().hexpand(true).build();
 
-    // TODO: Responsive seek bar/slider
-    // TODO: Seek bar time labels
+    // TODO: Disable when not playing
+    // TODO: Update the seek bar/slider and labels to show the correct time
     let seek_bar = gtk::Scale::with_range(Orientation::Horizontal, 0.0, 1.0, 0.01);
     seek_bar.set_hexpand(true);
     seek_bar.set_margin_start(6);
     seek_bar.set_margin_end(6);
-    seek_bar.connect_value_changed(move |_scale| {
-        // TODO: Seek usink the seek bar
-        // println!("{}", scale.value());
+    seek_bar.connect_value_changed({
+        let player_tx = player_tx.clone();
+        move |scale| player_tx.send(PlayerRequest::Seek(scale.value())).unwrap()
     });
 
     let time_cur_label = gtk::Label::builder()

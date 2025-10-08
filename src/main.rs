@@ -7,12 +7,12 @@ const APP_ID: &str = "com.github.userwithaname.Mellow";
 use mellow::library::{Library, Song};
 use mellow::player::Player;
 
-pub fn main() {
+pub fn main() -> gtk::glib::ExitCode {
     let app = Application::builder().application_id(APP_ID).build();
 
     app.connect_activate(init);
 
-    app.run_with_args(&[] as &[&str; 0]);
+    app.run_with_args(&[] as &[&str; 0])
 }
 
 // NOTE: It might be a good idea to rewrite all of the UI
