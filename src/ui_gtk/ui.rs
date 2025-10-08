@@ -22,7 +22,6 @@ pub fn build(
         .margin_start(26)
         .hexpand(true)
         .vexpand(true)
-        .halign(Align::Center)
         .valign(Align::Center)
         .orientation(Orientation::Vertical)
         .spacing(6)
@@ -42,13 +41,17 @@ pub fn build(
     // TODO: Display currently playing song/album/atrist
     // TODO: Marquee long titles
     let title_label = gtk::Label::builder()
-        .label("<b>Song Title</b>")
+        .label("Song Title")
+        .css_classes(["heading"])
         .margin_top(6)
-        .use_markup(true)
         .build();
-    let album_label = gtk::Label::builder().label("Album Title").build();
+    let album_label = gtk::Label::builder()
+        .label("Album Title")
+        // .css_classes(["caption-heading"])
+        .build();
     let artist_label = gtk::Label::builder()
         .label("Band Name")
+        // .css_classes(["caption-heading"])
         .margin_bottom(6)
         .build();
     main_view.append(&title_label);
