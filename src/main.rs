@@ -1,17 +1,20 @@
 use adw::Application;
-use gtk::prelude::*;
+use gtk::{glib, prelude::*};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
-const APP_ID: &str = "com.github.userwithaname.Mellow";
-
+use mellow::library::library::visit_dirs;
 use mellow::library::{Library, Song};
 use mellow::player::Player;
+use mellow::{APP_ID, APP_NAME};
 
 pub fn main() -> gtk::glib::ExitCode {
+    glib::set_application_name(APP_NAME);
+    glib::set_program_name(Some(APP_NAME.to_lowercase()));
+
     let app = Application::builder().application_id(APP_ID).build();
-
     app.connect_activate(init);
-
     app.run_with_args(&[] as &[&str; 0])
 }
 
@@ -39,12 +42,27 @@ fn init_player_queue(player: &mut Player) {
     let mut args = std::env::args();
     args.next();
     if args.len() > 0 {
-        player.new_queue(
-            args.filter_map(|file| Song::new(&file, None).ok())
-                .collect(),
-        );
+        let queue = Arc::new(Mutex::new(Some(Vec::new())));
+        args.for_each(|file| {
+            let path = Path::new(&file);
+            if path.is_file() {
+                // Add files from arguments to queue
+                if let Ok(song) = Song::new(&file, None) {
+                    queue.lock().unwrap().as_mut().unwrap().push(song);
+                };
+            } else if Path::exists(path) {
+                // Add all files within directory arguments to queue
+                let _ = visit_dirs(path, &|file| {
+                    if let Ok(song) = Song::new(file.path().to_str().unwrap(), None) {
+                        queue.lock().unwrap().as_mut().unwrap().push(song);
+                    };
+                });
+            }
+        });
+        player.new_queue(queue.lock().unwrap().take().unwrap());
     } else {
-        let library = Library::rebuild().unwrap();
+        let mut library = Library::load_or_init().expect("Library could not be initialized");
+        library.rebuild().unwrap();
         player.shuffle = true;
         player.new_queue(library.songs);
         player.randomize_queue();

@@ -11,6 +11,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::format_duration;
 use crate::player::{PlayerRequest, PlayerResponse};
+use crate::{APP_ID, APP_NAME};
 
 // TODO: Use `.ui` files for building the interface
 // TODO: Implement UI changes from the `relm4` branch
@@ -46,18 +47,15 @@ pub fn build(
 
     // TODO: Marquee long titles
     let title_label = gtk::Label::builder()
-        .label("Song Title")
         .css_classes(["heading"])
         .ellipsize(EllipsizeMode::End)
         .margin_top(6)
         .build();
     let album_label = gtk::Label::builder()
-        .label("Album Title")
         .css_classes(["caption-heading"])
         .ellipsize(EllipsizeMode::End)
         .build();
     let artist_label = gtk::Label::builder()
-        .label("Band Name")
         .css_classes(["caption-heading"])
         .ellipsize(EllipsizeMode::End)
         .margin_bottom(6)
@@ -145,13 +143,15 @@ pub fn build(
         .css_classes(["flat"])
         .build();
 
-    let window = ApplicationWindow::builder()
+    ApplicationWindow::builder()
         .application(app)
-        .title("Mellow")
+        .icon_name(APP_ID)
+        .name(APP_NAME)
+        .title(APP_NAME)
         .titlebar(&titlebar)
         .child(&main_view)
-        .build();
-    window.present();
+        .build()
+        .present();
 
     glib::spawn_future_local(clone!(
         #[weak]

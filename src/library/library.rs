@@ -4,6 +4,7 @@
 
 use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
+use gtk::glib;
 use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
@@ -37,61 +38,82 @@ const FILE_SUPPORT: &[&str] = &[
     ".flac", ".m4a", ".mp3", ".mpc", ".ogg", ".aac", ".aiff", ".ape", ".wav",
 ];
 
+pub struct LibraryConfig {
+    pub directories: Box<[String]>,
+}
+
 pub struct Library {
     pub songs: Vec<Song>,
     pub albums: Vec<Album>,
     pub artists: Vec<Artist>,
+    config: LibraryConfig,
 }
 
 impl Library {
-    // TODO: Serialize to / deserialize from disk
-    pub fn load_or_init() {}
+    pub fn load_or_init() -> Result<Library, Box<dyn Error>> {
+        // TODO: Load library to avoid rebuilding each time
+
+        // TODO: Load config from disk
+        let config = LibraryConfig {
+            directories: [
+                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
+                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
+                    |dir| dir.to_str().unwrap().to_string(),
+                ),
+            ]
+            .into(),
+        };
+
+        Ok(Library {
+            songs: vec![],
+            albums: vec![],
+            artists: vec![],
+            config,
+        })
+    }
 
     // TODO: Don't block thread while rebuilding (async?)
-    pub fn rebuild() -> Result<Library, Box<dyn Error>> {
-        // TODO: Don't hardcode music library path
-        let library_path = [std::env::home_dir().unwrap().to_str().unwrap(), "/Music/"].concat();
-
+    pub fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
         let songs = Arc::new(Mutex::new(Some(Vec::new())));
         let albums = Arc::new(Mutex::new(Some(Vec::new())));
         let artists = Arc::new(Mutex::new(Some(Vec::new())));
-        visit_dirs(Path::new(&library_path), &|f| {
-            let file = gio::File::for_path(f.path().to_str().unwrap());
+        self.config.directories.iter().for_each(|library_path| {
+            visit_dirs(Path::new(&library_path), &|f| {
+                let file = gio::File::for_path(f.path().to_str().unwrap());
 
-            let file_lcase = file.parse_name().to_lowercase();
-            if !FILE_SUPPORT.iter().any(|ext| file_lcase.ends_with(ext)) {
-                return;
-            }
+                let file_lcase = file.parse_name().to_lowercase();
+                if !FILE_SUPPORT.iter().any(|ext| file_lcase.ends_with(ext)) {
+                    return;
+                }
 
-            let song = Song {
-                file,
-                album: None,
-                info: None,
-            };
-            // TODO: Read song info - note that this will take a while,
-            // so it's best to implement disk serialization first
-            // song.get_info_or_assign();
+                let song = Song {
+                    file,
+                    album: None,
+                    info: None,
+                };
+                // TODO: Read song info - note that this will take a while,
+                // so it's best to implement disk serialization first
+                // song.get_info_or_assign();
 
-            // TODO: Assign song/album/artist index relations
+                // TODO: Assign song/album/artist index relations
 
-            // TODO: Initialize album/artist
-            // let album = Album {
-            //     // TODO
-            // };
-            // let artist = Artist {
-            //     // TODO
-            // };
-            songs.lock().unwrap().as_mut().unwrap().push(song);
-        })?;
+                // TODO: Initialize album/artist
+                // let album = Album {
+                //     // TODO
+                // };
+                // let artist = Artist {
+                //     // TODO
+                // };
+                songs.lock().unwrap().as_mut().unwrap().push(song);
+            })
+            .expect("")
+        });
 
-        let songs = songs.lock().unwrap().take().unwrap();
-        let albums = albums.lock().unwrap().take().unwrap();
-        let artists = artists.lock().unwrap().take().unwrap();
-        Ok(Library {
-            songs,
-            albums,
-            artists,
-        })
+        self.songs = songs.lock().unwrap().take().unwrap();
+        self.albums = albums.lock().unwrap().take().unwrap();
+        self.artists = artists.lock().unwrap().take().unwrap();
+
+        Ok(())
     }
     pub fn song_by_index(&self, index: usize) -> &Song {
         &self.songs[index]
@@ -104,8 +126,10 @@ impl Library {
     }
 }
 
+// Taken from Rust documentation:
+// https://doc.rust-lang.org/beta/std/fs/fn.read_dir.html#examples
 // one possible implementation of walking a directory only visiting files
-fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
+pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
