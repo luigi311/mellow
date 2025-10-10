@@ -27,6 +27,7 @@ fn init(app: &Application) {
         .name("player".to_string())
         .spawn(move || {
             init_player_queue(&mut player);
+            player_tx.send(mellow::PlayerRequest::Update).unwrap();
             player
                 .event_handler(player_tx)
                 .expect("Player thread crashed")

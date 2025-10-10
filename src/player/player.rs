@@ -1,5 +1,4 @@
 use core::error::Error;
-// use futures::channel::mpsc as future_mpsc;
 use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
 use gst::{ClockTime, SeekFlags, State};
 use rand::random_range;
@@ -25,6 +24,8 @@ pub enum PlayerRequest {
     Seek(f64),
     /// Used internally to signal when song is about to end
     SongEnd,
+    /// Update local state without changing it
+    Update,
 
     /// Send the current time to `ui_rx`
     GetCurrentTime,
@@ -112,6 +113,7 @@ impl Player {
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                 PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                 PlayerRequest::SkipNext => self.skip_next(),
+                PlayerRequest::Update => (),
 
                 PlayerRequest::GetCurrentTime => {
                     self.transmit_time()?;
@@ -260,6 +262,7 @@ impl Player {
     }
 
     /// Replaces the current queue with the provided one
+    /// Playback state has to be manually updated
     pub fn new_queue(&mut self, queue: Vec<Song>) {
         self.backend.set_property("instant-uri", true);
         self.pending_track = true;
@@ -267,6 +270,7 @@ impl Player {
     }
 
     /// Restarts the queue from the beginning
+    /// Playback state has to be manually updated
     pub fn restart_queue(&mut self) {
         self.backend.set_property("instant-uri", true);
         self.pending_track = true;
