@@ -141,10 +141,20 @@ impl Player {
             .block_on(async move { tx.send(PlayerResponse::SongInfo(song_info)).await })
     }
 
+    // TODO: Continuously and concurrently inform the UI of the current time
+    fn timer(&self) {
+        const REFRESH_RATE: f64 = 60.0;
+        let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
+        loop {
+            thread::sleep(iter_delay);
+            let _ = self.transmit_time();
+        }
+    }
+
     fn transmit_time(&self) -> Result<(), SendError<PlayerResponse>> {
         let tx = self.ui_tx.clone();
         let time = self.current_time();
-        println!("transmit_time()");
+        // println!("transmit_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(PlayerResponse::Time(time)).await })
     }
@@ -160,16 +170,6 @@ impl Player {
                 _ => (),
             }
         }
-        // Only inform UI of the state at the end of the switch
-        // if state_changed {
-        //     let _ = self
-        //         .backend
-        //         .state(None)
-        //         .0
-        //         .inspect_err(|e| eprintln!("GST error: {e}"));
-        //     self.transmit_state().unwrap();
-        //     println!("State updated");
-        // }
     }
 
     // /// Blocks until EOS is signaled by GStreamer

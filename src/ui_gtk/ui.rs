@@ -82,7 +82,6 @@ pub fn build(
         .spacing(12)
         .build();
 
-    // TODO: Disable buttons based on state (loading library, no queue, etc)
     let prev_button = Button::builder()
         .css_classes(["circular"])
         .icon_name("media-skip-backward-symbolic")
@@ -115,8 +114,6 @@ pub fn build(
 
     let seek_controls = gtk::Box::builder().hexpand(true).build();
 
-    // TODO: Disable when not playing
-    // TODO: Update the seek bar/slider and labels to show the correct time
     let seek_bar = gtk::Scale::with_range(Orientation::Horizontal, 0.0, 1.0, 0.01);
     seek_bar.set_hexpand(true);
     seek_bar.set_margin_start(6);
@@ -170,33 +167,45 @@ pub fn build(
         #[weak]
         time_cur_label,
         #[weak]
+        seek_bar,
+        #[weak]
         time_end_label,
         async move {
             loop {
-                while let Some(response) = ui_rx.recv().await {
-                    match response {
-                        PlayerResponse::State(state) => {
-                            pause_button.set_icon_name(match state {
-                                State::Playing => "media-playback-pause-symbolic",
-                                _ => "media-playback-start-symbolic",
-                            });
-                        }
-                        PlayerResponse::SongInfo(song_info) => {
-                            let Some(song_info) = song_info else { return };
+                let Some(response) = ui_rx.recv().await else {
+                    continue;
+                };
 
-                            album_cover.set_paintable(song_info.artwork.as_ref());
-                            title_label.set_label(&song_info.title);
-                            album_label.set_label(&song_info.album);
-                            artist_label.set_label(&song_info.artist);
+                match response {
+                    // TODO: Disable buttons based on state (loading library, no queue, etc)
+                    PlayerResponse::State(state) => {
+                        pause_button.set_icon_name(match state {
+                            State::Playing => "media-playback-pause-symbolic",
+                            _ => "media-playback-start-symbolic",
+                        });
+                    }
+                    PlayerResponse::SongInfo(song_info) => {
+                        let Some(song_info) = song_info else { return };
 
-                            time_cur_label.set_label("0:00");
-                            time_end_label.set_label(&format_duration(&Duration::from_millis(
-                                song_info.duration.mseconds(),
-                            )));
-                        }
-                        PlayerResponse::Time(_time) => {
-                            todo!()
-                        }
+                        album_cover.set_paintable(song_info.artwork.as_ref());
+                        title_label.set_label(&song_info.title);
+                        album_label.set_label(&song_info.album);
+                        artist_label.set_label(&song_info.artist);
+
+                        time_end_label.set_label(&format_duration(&Duration::from_millis(
+                            song_info.duration.mseconds(),
+                        )));
+                    }
+                    PlayerResponse::Time(time) => {
+                        time_cur_label.set_label(&format_duration(&Duration::from_millis(
+                            time.map_or_else(|| 5000, |time| time.mseconds()),
+                        )));
+                        // TODO: Grey-out the slider when no song is active
+                        // TODO: Update the seek bar/slider and labels to show the correct time
+                        // It might be better to either use the range as (milli)seconds
+                        // or the `time` to become a ratio value, so it's easier to set
+                        // the fill level
+                        // seek_bar.set_fill_level();
                     }
                 }
             }
