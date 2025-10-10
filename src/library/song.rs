@@ -1,7 +1,10 @@
 use core::error::Error;
 use gst::ClockTime;
-use gtk::gio::{self, prelude::FileExt};
-use lofty::picture::Picture;
+use gtk::{
+    gdk::Texture,
+    gio::{self, prelude::FileExt},
+    glib,
+};
 
 pub struct Song {
     pub file: gio::File,
@@ -19,7 +22,7 @@ pub struct SongInfo {
     pub lyrics: String,
     pub duration: ClockTime,
     // TODO: Move memory-heavy fields elsewhere?
-    pub artwork: Option<Picture>,
+    pub artwork: Option<Texture>,
 }
 
 impl Song {
@@ -91,7 +94,9 @@ impl Song {
                 .to_string(),
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
             artwork: if tag.picture_count() > 0 {
-                Some(tag.pictures()[0].clone())
+                Some(Texture::from_bytes(&glib::Bytes::from(
+                    tag.pictures()[0].data(),
+                ))?)
             } else {
                 None
             },

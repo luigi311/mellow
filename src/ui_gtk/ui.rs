@@ -1,19 +1,25 @@
 use adw::{self, Application};
 use gst::State;
 use gtk::gdk::Paintable;
+use gtk::glib::{self, clone};
+use gtk::pango::EllipsizeMode;
 use gtk::prelude::*;
 use gtk::{Align, ApplicationWindow, Button, Orientation};
 use std::sync::mpsc;
+use std::time::Duration;
+use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::format_duration;
 use crate::player::{PlayerRequest, PlayerResponse};
 
-// TODO: Read the `gtk_rs` ebook and rewrite the UI in a more proper way
+// TODO: Use `.ui` files for building the interface
+// TODO: Implement UI changes from the `relm4` branch
 
 // TODO: When queue is empty, display a landing page
 pub fn build(
     app: &Application,
     player_tx: &mpsc::SyncSender<PlayerRequest>,
-    ui_rx: mpsc::Receiver<PlayerResponse>,
+    mut ui_rx: tokio_mpsc::Receiver<PlayerResponse>,
 ) {
     let main_view = gtk::Box::builder()
         .margin_top(4)
@@ -28,7 +34,7 @@ pub fn build(
         .build();
 
     // TODO: Display the currently playing song album cover
-    let cover = gtk::Picture::builder()
+    let album_cover = gtk::Picture::builder()
         .paintable(&Paintable::new_empty(1, 1))
         .content_fit(gtk::ContentFit::Contain)
         .halign(Align::Center)
@@ -36,22 +42,24 @@ pub fn build(
         .width_request(185)
         .css_classes(["card"])
         .build();
-    main_view.append(&cover);
+    main_view.append(&album_cover);
 
-    // TODO: Display currently playing song/album/atrist
     // TODO: Marquee long titles
     let title_label = gtk::Label::builder()
         .label("Song Title")
         .css_classes(["heading"])
+        .ellipsize(EllipsizeMode::End)
         .margin_top(6)
         .build();
     let album_label = gtk::Label::builder()
         .label("Album Title")
         .css_classes(["caption-heading"])
+        .ellipsize(EllipsizeMode::End)
         .build();
     let artist_label = gtk::Label::builder()
         .label("Band Name")
         .css_classes(["caption-heading"])
+        .ellipsize(EllipsizeMode::End)
         .margin_bottom(6)
         .build();
     main_view.append(&title_label);
@@ -85,23 +93,13 @@ pub fn build(
     });
     player_controls.append(&prev_button);
 
-    // TODO: Change symbol if stopped (like when the queue ends)
     let pause_button = Button::builder()
         .icon_name("media-playback-start-symbolic")
         .css_classes(["circular"])
         .build();
     pause_button.connect_clicked({
         let player_tx = player_tx.clone();
-        move |button| {
-            player_tx.send(PlayerRequest::PlayOrPause).unwrap();
-            player_tx.send(PlayerRequest::GetCurrentState).unwrap();
-            if let PlayerResponse::State(state) = ui_rx.recv().unwrap() {
-                button.set_icon_name(match state {
-                    State::Playing => "media-playback-pause-symbolic",
-                    _ => "media-playback-start-symbolic",
-                });
-            }
-        }
+        move |_| player_tx.send(PlayerRequest::PlayOrPause).unwrap()
     });
     player_controls.append(&pause_button);
 
@@ -157,4 +155,51 @@ pub fn build(
         .child(&main_view)
         .build();
     window.present();
+
+    glib::spawn_future_local(clone!(
+        #[weak]
+        album_cover,
+        #[weak]
+        title_label,
+        #[weak]
+        album_label,
+        #[weak]
+        artist_label,
+        #[weak]
+        pause_button,
+        #[weak]
+        time_cur_label,
+        #[weak]
+        time_end_label,
+        async move {
+            loop {
+                while let Some(response) = ui_rx.recv().await {
+                    match response {
+                        PlayerResponse::State(state) => {
+                            pause_button.set_icon_name(match state {
+                                State::Playing => "media-playback-pause-symbolic",
+                                _ => "media-playback-start-symbolic",
+                            });
+                        }
+                        PlayerResponse::SongInfo(song_info) => {
+                            let Some(song_info) = song_info else { return };
+
+                            album_cover.set_paintable(song_info.artwork.as_ref());
+                            title_label.set_label(&song_info.title);
+                            album_label.set_label(&song_info.album);
+                            artist_label.set_label(&song_info.artist);
+
+                            time_cur_label.set_label("0:00");
+                            time_end_label.set_label(&format_duration(&Duration::from_millis(
+                                song_info.duration.mseconds(),
+                            )));
+                        }
+                        PlayerResponse::Time(_time) => {
+                            todo!()
+                        }
+                    }
+                }
+            }
+        },
+    ));
 }

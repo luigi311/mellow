@@ -1,11 +1,15 @@
 use core::error::Error;
+// use futures::channel::mpsc as future_mpsc;
 use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
 use gst::{ClockTime, SeekFlags, State};
 use rand::random_range;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
+use tokio::sync::mpsc as tokio_mpsc;
+use tokio::sync::mpsc::error::SendError;
 
+use crate::SongInfo;
 use crate::library::Song;
 
 // TODO: MPRIS support for Gnome Shell media controls
@@ -22,8 +26,6 @@ pub enum PlayerRequest {
     /// Used internally to signal when song is about to end
     SongEnd,
 
-    /// Send the current state to `ui_rx`
-    GetCurrentState,
     /// Send the current time to `ui_rx`
     GetCurrentTime,
 }
@@ -31,7 +33,8 @@ pub enum PlayerRequest {
 pub enum PlayerResponse {
     State(State),
     Time(Option<ClockTime>),
-    TrackChanged,
+    SongInfo(Option<SongInfo>),
+    // TrackChanged,
 }
 
 pub struct Player {
@@ -42,9 +45,10 @@ pub struct Player {
 
     state: State,
     pending_track: bool,
+    tokio_rt: tokio::runtime::Runtime,
     backend: gst::Element,
     bus: gst::Bus,
-    ui_tx: mpsc::SyncSender<PlayerResponse>,
+    ui_tx: tokio_mpsc::Sender<PlayerResponse>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
 
@@ -56,7 +60,7 @@ impl Player {
         (
             Player,
             mpsc::SyncSender<PlayerRequest>,
-            mpsc::Receiver<PlayerResponse>,
+            tokio_mpsc::Receiver<PlayerResponse>,
         ),
         Box<dyn Error>,
     > {
@@ -66,7 +70,7 @@ impl Player {
         let bus = playbin.bus().unwrap();
 
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(2);
-        let (ui_tx, ui_rx) = mpsc::sync_channel::<PlayerResponse>(0);
+        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(8);
 
         Ok((
             Player {
@@ -77,6 +81,7 @@ impl Player {
 
                 state: State::Null,
                 pending_track: true,
+                tokio_rt: tokio::runtime::Runtime::new().map_err(|e| e.to_string())?,
                 backend: playbin,
                 bus,
                 ui_tx,
@@ -97,6 +102,8 @@ impl Player {
             None
         });
 
+        // TODO: Gracefully handle errors whenever possible
+
         loop {
             self.clear_gst_msg_queue();
             match self.rx.recv()? {
@@ -107,29 +114,62 @@ impl Player {
                 PlayerRequest::SkipNext => self.skip_next(),
 
                 PlayerRequest::GetCurrentTime => {
-                    self.ui_tx.send(PlayerResponse::Time(self.current_time()))?;
-                    continue;
-                }
-                PlayerRequest::GetCurrentState => {
-                    self.ui_tx.send(PlayerResponse::State(self.state))?;
+                    self.transmit_time()?;
                     continue;
                 }
             };
 
             self.update()?;
+            self.transmit_state()?;
         }
     }
 
+    fn transmit_state(&self) -> Result<(), SendError<PlayerResponse>> {
+        let tx = self.ui_tx.clone();
+        let state = self.backend.state(None);
+        println!("transmit_state()\n");
+        let state = state.0.map_or_else(|_| State::Null, |_| state.1);
+        self.tokio_rt
+            .block_on(async move { tx.send(PlayerResponse::State(state)).await })
+    }
+
+    fn transmit_song_info(&mut self) -> Result<(), SendError<PlayerResponse>> {
+        let tx = self.ui_tx.clone();
+        let song_info = self.queue[self.song_index].info.take();
+        println!("transmit_song_info()");
+        self.tokio_rt
+            .block_on(async move { tx.send(PlayerResponse::SongInfo(song_info)).await })
+    }
+
+    fn transmit_time(&self) -> Result<(), SendError<PlayerResponse>> {
+        let tx = self.ui_tx.clone();
+        let time = self.current_time();
+        println!("transmit_time()");
+        self.tokio_rt
+            .block_on(async move { tx.send(PlayerResponse::Time(time)).await })
+    }
+
+    // fn transmit_current_state(&self, tx: tokio_mpsc::Sender<PlayerResponse>) {}
     /// Clears the GStreamer message queue and prints out errors/warnings/EOS
     fn clear_gst_msg_queue(&self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
                 gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
-                gst::MessageType::Eos => println!("gstreamer: End-Of-Stream\n"),
+                gst::MessageType::Eos => (),
                 _ => (),
             }
         }
+        // Only inform UI of the state at the end of the switch
+        // if state_changed {
+        //     let _ = self
+        //         .backend
+        //         .state(None)
+        //         .0
+        //         .inspect_err(|e| eprintln!("GST error: {e}"));
+        //     self.transmit_state().unwrap();
+        //     println!("State updated");
+        // }
     }
 
     // /// Blocks until EOS is signaled by GStreamer
@@ -170,17 +210,6 @@ impl Player {
 
         self.backend.set_state(self.state)?;
 
-        // TODO: Gracefully handle state switch errors (for example: missing plugins)
-        // self.backend.state(None).0?;
-        // if self.backend.state(None).0.is_err() {
-        //     eprintln!("Failed to set GStreamer state\nSkipping song");
-        //     let repeat = self.repeat;
-        //     self.repeat = false;
-        //     self.skip_next();
-        //     self.repeat = repeat;
-        //     return self.update();
-        // }
-
         if self.pending_track {
             // Wait for last track to finish playing
             // WARN: This will block the entire thread, which means that
@@ -204,21 +233,8 @@ impl Player {
                 thread::sleep(Duration::from_millis(20));
             }
 
-            // TODO: Find a way to efficiently communicate song info to the UI
-            song.info.take();
-
-            let properties = song.get_info_or_assign();
-
-            println!();
-            println!("Title: {}", properties.title);
-            println!("Album: {}", properties.album);
-            println!("Artist: {}", properties.artist);
-            println!("Album Artist: {}", properties.album_artist);
-            println!("Track: {}", properties.track);
-            println!("Year: {}", properties.year);
-            // println!("\nLyrics:\n{}\n", properties.lyrics);
-
-            println!("Duration: {}\n", properties.duration);
+            song.assign_info_with_fallback();
+            self.transmit_song_info()?;
         }
 
         // Re-enable gapless playback (for example after track skip)
