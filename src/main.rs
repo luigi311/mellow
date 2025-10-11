@@ -4,9 +4,9 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use mellow::library::visit_dirs;
 use mellow::library::{Library, Song};
 use mellow::player::Player;
+use mellow::visit_dirs;
 use mellow::{APP_ID, APP_NAME};
 
 pub fn main() -> gtk::glib::ExitCode {

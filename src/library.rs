@@ -5,10 +5,10 @@
 use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
-use std::fs::{self, DirEntry};
-use std::io;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+
+use crate::visit_dirs;
 
 pub mod album;
 pub mod artist;
@@ -130,22 +130,4 @@ impl Library {
     pub fn artist_by_index(&self, index: usize) -> &Artist {
         &self.artists[index]
     }
-}
-
-// Taken from Rust documentation:
-// https://doc.rust-lang.org/beta/std/fs/fn.read_dir.html#examples
-// one possible implementation of walking a directory only visiting files
-pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path, cb)?;
-            } else {
-                cb(&entry);
-            }
-        }
-    }
-    Ok(())
 }
