@@ -3,7 +3,6 @@ use gtk::{glib, prelude::*};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
 use mellow::library::{Library, Song};
 use mellow::player::Player;
@@ -32,9 +31,7 @@ fn init(app: &Application) {
         .spawn(move || {
             init_player_queue(&mut player);
             player_tx.send(mellow::PlayerRequest::Update).unwrap();
-            player
-                .event_handler(player_tx)
-                .expect("Player thread crashed")
+            player.controller(player_tx).expect("Player thread crashed");
         })
         .unwrap();
 }
@@ -53,18 +50,18 @@ fn init_player_queue(player: &mut Player) {
                         return;
                     }
                     queue.lock().unwrap().as_mut().unwrap().push(song);
-                };
+                }
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
                 let _ = visit_dirs(path, &|file| {
                     let file = file.path();
                     let file = file.to_str().unwrap();
                     if let Ok(song) = Song::new(file, None) {
-                        if !Library::file_supported(&file) {
+                        if !Library::file_supported(file) {
                             return;
                         }
                         queue.lock().unwrap().as_mut().unwrap().push(song);
-                    };
+                    }
                 });
             }
         });

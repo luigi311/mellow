@@ -84,7 +84,7 @@ impl Library {
         let albums = Arc::new(Mutex::new(Some(Vec::new())));
         let artists = Arc::new(Mutex::new(Some(Vec::new())));
         self.config.directories.iter().for_each(|library_path| {
-            visit_dirs(Path::new(&library_path), &|f| {
+            let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
 
                 if !Library::file_supported(&file.parse_name()) {
@@ -111,7 +111,7 @@ impl Library {
                 // };
                 songs.lock().unwrap().as_mut().unwrap().push(song);
             })
-            .expect("")
+            .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
 
         self.songs = songs.lock().unwrap().take().unwrap();
@@ -121,16 +121,20 @@ impl Library {
         Ok(())
     }
     #[inline]
+    #[must_use]
     pub fn file_supported(file: &str) -> bool {
         let extension = file.rsplit_once('.').unwrap_or_default().1.to_lowercase();
         FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
+    #[must_use]
     pub fn song_by_index(&self, index: usize) -> &Song {
         &self.songs[index]
     }
+    #[must_use]
     pub fn album_by_index(&self, index: usize) -> &Album {
         &self.albums[index]
     }
+    #[must_use]
     pub fn artist_by_index(&self, index: usize) -> &Artist {
         &self.artists[index]
     }

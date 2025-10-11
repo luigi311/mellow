@@ -12,6 +12,7 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
+#[must_use]
 pub fn format_duration(duration: &Duration) -> String {
     let duration = duration.as_secs();
     let seconds = duration % 60;

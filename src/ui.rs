@@ -234,7 +234,7 @@ pub fn build(
                     }
                     PlayerResponse::Time(time) => {
                         time_cur_label.set_label(&format_duration(&Duration::from_millis(
-                            time.map_or_else(|| 5000, |time| time.mseconds()),
+                            time.map_or_else(|| 5000, gst::ClockTime::mseconds),
                         )));
                         // TODO: Grey-out the slider when no song is active
                         // TODO: Update the seek bar/slider and labels to show the correct time

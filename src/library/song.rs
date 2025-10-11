@@ -9,7 +9,7 @@ use gtk::{
 pub struct Song {
     pub file: gio::File,
     pub album: Option<usize>,
-    pub info: Option<SongInfo>,
+    pub info: Option<Box<SongInfo>>,
 }
 
 pub struct SongInfo {
@@ -34,6 +34,7 @@ impl Song {
         })
     }
 
+    #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
     }
@@ -49,7 +50,7 @@ impl Song {
         self.assign_info()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
-                self.info = Some(SongInfo {
+                self.info = Some(Box::new(SongInfo {
                     title: self.file.parse_name().to_string(),
                     album: String::new(),
                     artist: String::new(),
@@ -59,8 +60,8 @@ impl Song {
                     lyrics: String::new(),
                     duration: ClockTime::from_seconds(0),
                     artwork: None,
-                })
-            })
+                }));
+            });
     }
 
     pub fn assign_info(&mut self) -> Result<(), Box<dyn Error>> {
@@ -73,12 +74,12 @@ impl Song {
 
         let tag = tagged_file
             .primary_tag()
-            .or(tagged_file.first_tag())
+            .or_else(|| tagged_file.first_tag())
             .ok_or("No tags found")?;
 
         let properties = tagged_file.properties();
 
-        self.info = Some(SongInfo {
+        self.info = Some(Box::new(SongInfo {
             title: tag.title().unwrap_or_default().to_string(),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
@@ -92,6 +93,7 @@ impl Song {
                 .get_string(&ItemKey::Lyrics)
                 .unwrap_or_default()
                 .to_string(),
+            #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
             artwork: if tag.picture_count() > 0 {
                 Some(Texture::from_bytes(&glib::Bytes::from(
@@ -100,7 +102,7 @@ impl Song {
             } else {
                 None
             },
-        });
+        }));
 
         Ok(())
     }

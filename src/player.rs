@@ -23,9 +23,13 @@ pub enum PlayerRequest {
     Seek(f64),
     /// Used internally to signal when song is about to end
     SongEnd,
-    /// Update local state without changing it
+    /// Refresh local player state
     Update,
 
+    // TODO: Transmit time automatically instead
+    // Either:
+    // - on a fixed interval while playing, or
+    // - only on seek or state change, and count time manually in the UI
     /// Send the current time to `ui_rx`
     GetCurrentTime,
 }
@@ -33,8 +37,7 @@ pub enum PlayerRequest {
 pub enum PlayerResponse {
     State(State),
     Time(Option<ClockTime>),
-    SongInfo(Option<SongInfo>),
-    // TrackChanged,
+    SongInfo(Option<Box<SongInfo>>),
 }
 
 pub struct Player {
@@ -70,7 +73,7 @@ impl Player {
         let bus = playbin.bus().unwrap();
 
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(2);
-        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(8);
+        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(2);
 
         Ok((
             Player {
@@ -92,8 +95,8 @@ impl Player {
         ))
     }
 
-    /// Handles playback controls and responds to requests
-    pub fn event_handler(
+    /// Main controller loop which handles player requests
+    pub fn controller(
         &mut self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
     ) -> Result<(), Box<dyn Error>> {
@@ -118,7 +121,7 @@ impl Player {
                     self.transmit_time()?;
                     continue;
                 }
-            };
+            }
 
             self.update()?;
             self.transmit_state()?;
@@ -145,6 +148,8 @@ impl Player {
     // TODO: Continuously and concurrently inform the UI of the current time
     fn timer(&self) {
         const REFRESH_RATE: f64 = 60.0;
+        #[allow(clippy::cast_sign_loss)]
+        #[allow(clippy::cast_possible_truncation)]
         let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
         loop {
             thread::sleep(iter_delay);
@@ -167,7 +172,7 @@ impl Player {
             match message.type_() {
                 gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
-                gst::MessageType::Eos => (),
+                gst::MessageType::Eos => println!("gstreamer: Reached end of stream"),
                 _ => (),
             }
         }
@@ -198,9 +203,6 @@ impl Player {
                 return Ok(());
             }
         }
-
-        // dbg!(&self.history.len());
-        // dbg!(&self.queue.len());
 
         let song = &mut self.queue[self.song_index];
 
@@ -336,6 +338,9 @@ impl Player {
 
     /// Seek to a position in the song using a 0 to 1 value
     fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
+        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_sign_loss)]
         let target_ms = (self
             .backend
             .query_duration::<ClockTime>()
@@ -367,10 +372,10 @@ impl Player {
 
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-        self.move_next()
+        self.move_next();
     }
 
-    fn move_next(&mut self) {
+    const fn move_next(&mut self) {
         self.pending_track = true;
         if self.song_index == self.queue.len() - 1 {
             if self.repeat {
