@@ -3,6 +3,7 @@ use gtk::{glib, prelude::*};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 use mellow::library::{Library, Song};
 use mellow::player::Player;
@@ -48,12 +49,20 @@ fn init_player_queue(player: &mut Player) {
             if path.is_file() {
                 // Add files from arguments to queue
                 if let Ok(song) = Song::new(&file, None) {
+                    if !Library::file_supported(&file) {
+                        return;
+                    }
                     queue.lock().unwrap().as_mut().unwrap().push(song);
                 };
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
                 let _ = visit_dirs(path, &|file| {
-                    if let Ok(song) = Song::new(file.path().to_str().unwrap(), None) {
+                    let file = file.path();
+                    let file = file.to_str().unwrap();
+                    if let Ok(song) = Song::new(file, None) {
+                        if !Library::file_supported(&file) {
+                            return;
+                        }
                         queue.lock().unwrap().as_mut().unwrap().push(song);
                     };
                 });

@@ -41,7 +41,7 @@ pub use song::{Song, SongInfo};
 // TODO: Efficient search/filter by tag, rating, etc. Use SQL?
 
 const FILE_SUPPORT: &[&str] = &[
-    ".flac", ".m4a", ".mp3", ".mpc", ".ogg", ".aac", ".aiff", ".ape", ".wav",
+    "flac", "m4a", "mp3", "mpc", "ogg", "aac", "aiff", "ape", "wav",
 ];
 
 pub struct LibraryConfig {
@@ -87,8 +87,7 @@ impl Library {
             visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
 
-                let file_lcase = file.parse_name().to_lowercase();
-                if !FILE_SUPPORT.iter().any(|ext| file_lcase.ends_with(ext)) {
+                if !Library::file_supported(&file.parse_name()) {
                     return;
                 }
 
@@ -120,6 +119,11 @@ impl Library {
         self.artists = artists.lock().unwrap().take().unwrap();
 
         Ok(())
+    }
+    #[inline]
+    pub fn file_supported(file: &str) -> bool {
+        let extension = file.rsplit_once('.').unwrap_or_default().1.to_lowercase();
+        FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
     pub fn song_by_index(&self, index: usize) -> &Song {
         &self.songs[index]
