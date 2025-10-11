@@ -1,10 +1,8 @@
-use adw::{self, Application};
+use adw::{self, Application, ApplicationWindow};
+use glib::clone;
 use gst::State;
-use gtk::gdk::Paintable;
-use gtk::glib::{self, clone};
 use gtk::pango::EllipsizeMode;
-use gtk::prelude::*;
-use gtk::{Align, ApplicationWindow, Button, Orientation};
+use gtk::{self, Align, Orientation, gdk, glib, prelude::*};
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
@@ -22,8 +20,8 @@ pub fn build(
     player_tx: &mpsc::SyncSender<PlayerRequest>,
     mut ui_rx: tokio_mpsc::Receiver<PlayerResponse>,
 ) {
-    let main_view = gtk::Box::builder()
-        .margin_top(4)
+    let player_view = gtk::Box::builder()
+        .margin_top(0)
         .margin_bottom(12)
         .margin_end(26)
         .margin_start(26)
@@ -33,17 +31,25 @@ pub fn build(
         .orientation(Orientation::Vertical)
         .spacing(6)
         .build();
+    let window_handle = gtk::WindowHandle::builder().child(&player_view).build();
+    let player_ui = adw::ToolbarView::builder().content(&window_handle).build();
+    player_ui.add_top_bar(
+        &adw::HeaderBar::builder()
+            .show_title(false)
+            .css_classes(["flat"])
+            .build(),
+    );
 
     // TODO: Display the currently playing song album cover
     let album_cover = gtk::Picture::builder()
-        .paintable(&Paintable::new_empty(1, 1))
+        .paintable(&gdk::Paintable::new_empty(1, 1))
         .content_fit(gtk::ContentFit::Contain)
         .halign(Align::Center)
-        .height_request(185)
-        .width_request(185)
+        .height_request(0)
+        .width_request(0)
         .css_classes(["card"])
         .build();
-    main_view.append(&album_cover);
+    player_view.append(&album_cover);
 
     // TODO: Marquee long titles
     let title_label = gtk::Label::builder()
@@ -60,9 +66,9 @@ pub fn build(
         .ellipsize(EllipsizeMode::End)
         .margin_bottom(6)
         .build();
-    main_view.append(&title_label);
-    main_view.append(&album_label);
-    main_view.append(&artist_label);
+    player_view.append(&title_label);
+    player_view.append(&album_label);
+    player_view.append(&artist_label);
 
     // TODO: Overlay media controls & auto-hide
     let media_toolbar = gtk::Box::builder()
@@ -80,7 +86,7 @@ pub fn build(
         .spacing(12)
         .build();
 
-    let prev_button = Button::builder()
+    let prev_button = gtk::Button::builder()
         .css_classes(["circular"])
         .icon_name("media-skip-backward-symbolic")
         .build();
@@ -88,9 +94,7 @@ pub fn build(
         let player_tx = player_tx.clone();
         move |_| player_tx.send(PlayerRequest::SkipPrevious).unwrap()
     });
-    player_controls.append(&prev_button);
-
-    let pause_button = Button::builder()
+    let pause_button = gtk::Button::builder()
         .icon_name("media-playback-start-symbolic")
         .css_classes(["circular"])
         .build();
@@ -98,9 +102,7 @@ pub fn build(
         let player_tx = player_tx.clone();
         move |_| player_tx.send(PlayerRequest::PlayOrPause).unwrap()
     });
-    player_controls.append(&pause_button);
-
-    let next_button = Button::builder()
+    let next_button = gtk::Button::builder()
         .css_classes(["circular"])
         .icon_name("media-skip-forward-symbolic")
         .build();
@@ -108,6 +110,9 @@ pub fn build(
         let player_tx = player_tx.clone();
         move |_| player_tx.send(PlayerRequest::SkipNext).unwrap()
     });
+
+    player_controls.append(&prev_button);
+    player_controls.append(&pause_button);
     player_controls.append(&next_button);
 
     let seek_controls = gtk::Box::builder().hexpand(true).build();
@@ -136,20 +141,44 @@ pub fn build(
     media_toolbar.append(&player_controls);
     media_toolbar.append(&seek_controls);
 
-    main_view.append(&media_toolbar);
+    player_view.append(&media_toolbar);
 
-    let titlebar = adw::HeaderBar::builder()
-        .show_title(false)
-        .css_classes(["flat"])
+    // TODO: Library interface
+    let bottom_bar = gtk::Box::builder().height_request(30).build();
+    bottom_bar.append(
+        &gtk::Image::builder()
+            .icon_name("view-continuous-symbolic")
+            .css_classes(["dimmed"])
+            .halign(Align::Center)
+            .hexpand(true)
+            .build(),
+    );
+    player_view.append(&gtk::Box::builder().height_request(15).build());
+    let bottom_sheet = adw::ToolbarView::builder().build();
+    let library_ui = adw::ToolbarView::builder().vexpand(true).build();
+    let library_view = adw::StatusPage::builder().build();
+    let library_content = gtk::Box::builder().height_request(9999).build();
+    bottom_sheet.add_top_bar(&adw::HeaderBar::new());
+    library_view.set_child(Some(&library_content));
+    library_ui.set_content(Some(&library_view));
+    bottom_sheet.set_content(Some(&library_ui));
+    let player_and_library_ui = adw::BottomSheet::builder()
+        .content(&player_ui)
+        .bottom_bar(&bottom_bar)
+        .sheet(&bottom_sheet)
         .build();
 
     ApplicationWindow::builder()
-        .application(app)
-        .icon_name(APP_ID)
-        .name(APP_NAME)
+        .content(&player_and_library_ui)
+        // .content(&player_ui)
+        .default_width(270)
+        .default_height(450)
+        .width_request(0)
+        .height_request(0)
         .title(APP_NAME)
-        .titlebar(&titlebar)
-        .child(&main_view)
+        .name(APP_NAME)
+        .icon_name(APP_ID)
+        .application(app)
         .build()
         .present();
 
@@ -187,7 +216,14 @@ pub fn build(
                     PlayerResponse::SongInfo(song_info) => {
                         let Some(song_info) = song_info else { return };
 
-                        album_cover.set_paintable(song_info.artwork.as_ref());
+                        if let Some(artwork) = song_info.artwork.as_ref() {
+                            album_cover.set_paintable(Some(artwork));
+                        } else {
+                            // TODO: Look for a `cover` file in the song directroy
+                            album_cover.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+                        }
+                        album_cover.set_height_request(0);
+                        album_cover.set_width_request(0);
                         title_label.set_label(&song_info.title);
                         album_label.set_label(&song_info.album);
                         artist_label.set_label(&song_info.artist);
