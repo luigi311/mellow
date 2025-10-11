@@ -8,8 +8,7 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 use tokio::sync::mpsc::error::SendError;
 
-use crate::SongInfo;
-use crate::library::Song;
+use crate::library::{Song, SongInfo};
 
 // TODO: MPRIS support for Gnome Shell media controls
 

@@ -2,11 +2,9 @@ use std::time::Duration;
 
 pub mod library;
 pub mod player;
-pub mod ui_gtk;
+pub mod ui;
 
-pub use library::*;
-pub use player::*;
-pub use ui_gtk::*;
+pub use player::{PlayerRequest, PlayerResponse};
 
 pub const APP_NAME: &str = "Mellow";
 pub const APP_ID: &str = "com.github.userwithaname.Mellow";

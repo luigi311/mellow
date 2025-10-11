@@ -10,7 +10,13 @@ use std::io;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use crate::library::{Album, Artist, Song};
+pub mod album;
+pub mod artist;
+pub mod song;
+
+pub use album::Album;
+pub use artist::Artist;
+pub use song::{Song, SongInfo};
 
 // I don't know if this is the right approach, but I will try...
 //

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use mellow::library::library::visit_dirs;
+use mellow::library::visit_dirs;
 use mellow::library::{Library, Song};
 use mellow::player::Player;
 use mellow::{APP_ID, APP_NAME};
@@ -24,7 +24,7 @@ pub fn main() -> gtk::glib::ExitCode {
 fn init(app: &Application) {
     let (mut player, player_tx, ui_rx) = Player::init().expect("Failed to initialize player");
 
-    mellow::ui_gtk::build(app, &player_tx, ui_rx);
+    mellow::ui::build(app, &player_tx, ui_rx);
 
     thread::Builder::new()
         .name("player".to_string())
