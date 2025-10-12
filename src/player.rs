@@ -31,7 +31,7 @@ pub enum PlayerRequest {
     // - on a fixed interval while playing, or
     // - only on seek or state change, and count time manually in the UI
     /// Send the current time to `ui_rx`
-    GetCurrentTime,
+    Tick,
 }
 
 pub enum PlayerResponse {
@@ -72,8 +72,8 @@ impl Player {
         let playbin = gst::ElementFactory::make("playbin3").build()?;
         let bus = playbin.bus().unwrap();
 
-        let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(2);
-        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(2);
+        let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
+        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(4);
 
         Ok((
             Player {
@@ -100,6 +100,20 @@ impl Player {
         &mut self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
     ) -> Result<(), Box<dyn Error>> {
+        thread::spawn({
+            const REFRESH_RATE: f64 = 10.0;
+            let player_tx = player_tx.clone();
+            move || {
+                loop {
+                    #[allow(clippy::cast_sign_loss)]
+                    #[allow(clippy::cast_possible_truncation)]
+                    let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
+                    thread::sleep(iter_delay);
+                    let _ = player_tx.send(PlayerRequest::Tick);
+                }
+            }
+        });
+
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
             None
@@ -116,8 +130,7 @@ impl Player {
                 PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                 PlayerRequest::SkipNext => self.skip_next(),
                 PlayerRequest::Update => (),
-
-                PlayerRequest::GetCurrentTime => {
+                PlayerRequest::Tick => {
                     self.transmit_time()?;
                     continue;
                 }
@@ -143,18 +156,6 @@ impl Player {
         println!("transmit_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(PlayerResponse::SongInfo(song_info)).await })
-    }
-
-    // TODO: Continuously and concurrently inform the UI of the current time
-    fn timer(&self) {
-        const REFRESH_RATE: f64 = 60.0;
-        #[allow(clippy::cast_sign_loss)]
-        #[allow(clippy::cast_possible_truncation)]
-        let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
-        loop {
-            thread::sleep(iter_delay);
-            let _ = self.transmit_time();
-        }
     }
 
     fn transmit_time(&self) -> Result<(), SendError<PlayerResponse>> {

@@ -121,18 +121,23 @@ pub fn build(
     seek_bar.set_hexpand(true);
     seek_bar.set_margin_start(6);
     seek_bar.set_margin_end(6);
-    seek_bar.connect_value_changed({
+    seek_bar.connect_change_value({
         let player_tx = player_tx.clone();
-        move |scale| player_tx.send(PlayerRequest::Seek(scale.value())).unwrap()
+        move |_, _, value| {
+            player_tx.send(PlayerRequest::Seek(value)).unwrap();
+            glib::Propagation::Proceed
+        }
     });
 
     let time_cur_label = gtk::Label::builder()
-        .label("-:--")
+        .css_classes(["numeric"])
         .halign(Align::Start)
+        .label("-:--")
         .build();
     let time_end_label = gtk::Label::builder()
-        .label("-:--")
+        .css_classes(["numeric"])
         .halign(Align::End)
+        .label("-:--")
         .build();
     seek_controls.append(&time_cur_label);
     seek_controls.append(&seek_bar);
@@ -223,6 +228,7 @@ pub fn build(
         #[weak]
         lyrics_label,
         async move {
+            let mut song_duration = Duration::from_secs(0);
             loop {
                 let Some(response) = ui_rx.recv().await else {
                     continue;
@@ -261,15 +267,10 @@ pub fn build(
                         }
                     }
                     PlayerResponse::Time(time) => {
-                        time_cur_label.set_label(&format_duration(&Duration::from_millis(
-                            time.map_or_else(|| 0, gst::ClockTime::mseconds),
-                        )));
+                        let time_ms = time.map_or_else(|| 0, gst::ClockTime::mseconds);
+                        time_cur_label.set_label(&format_duration(&Duration::from_millis(time_ms)));
                         // TODO: Grey-out the slider when no song is active
-                        // TODO: Update the seek bar/slider and labels to show the correct time
-                        // It might be better to either use the range as (milli)seconds
-                        // or the `time` to become a ratio value, so it's easier to set
-                        // the fill level
-                        // seek_bar.set_fill_level();
+                        seek_bar.set_value(time_ms as f64 / song_duration.as_millis() as f64);
                     }
                 }
             }
