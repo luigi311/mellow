@@ -1,12 +1,23 @@
-# Build Dependencies:
+<h1>
+<p align="center">
+  <img height=128 src="data/com.github.userwithaname.Mellow.png">
+  <br>Mellow
+</h1>
+  <p align="center">
+    Listen to music without distraction
+  </p>
+</p>
+
+# About
+
+Mellow is a simple music player with a minimal interface, which aims to immerse
+rather than distract. Non-crucial elements are abstracted away, bringing music
+into the center of focus. Albums play seamlessly with no gaps in playback.
+
+# Build Dependencies
 
 > [!NOTE]
-> These instructions are meant for Fedora
-
-[Rust & Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+> Listed commands are meant for Fedora
 
 [GStreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html):
 ```bash
@@ -22,8 +33,12 @@ dnf install \
   gstreamer1-plugins-good-extras
 ```
 
-[GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html)
-/[Libadwaita](https://gtk-rs.org/gtk4-rs/stable/latest/book/libadwaita.html):
+[GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html)/[Libadwaita](https://gtk-rs.org/gtk4-rs/stable/latest/book/libadwaita.html):
 ```bash
 dnf install gtk4-devel libadwaita-devel
+```
+
+[Rust & Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
