@@ -162,17 +162,15 @@ impl Player {
                     self.pending_track = true;
                     self.end_of_queue = false;
                     self.update()?;
-                } else {
-                    continue;
                 }
             }
 
             // Wait the current track to end, then update the UI
             if self.pending_track || self.pending_track_info {
-                self.pending_track_info = true;
                 if self.pending_track {
-                    self.clear_gst_msg_queue();
+                    self.pending_track_info = true;
                     self.pending_track = false;
+                    self.clear_gst_msg_queue();
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
@@ -211,6 +209,114 @@ impl Player {
         Ok(())
     }
 
+    fn play_or_pause(&mut self) {
+        self.request_state(match self.backend.current_state() {
+            State::Playing => State::Paused,
+            State::Paused => State::Playing,
+            State::Ready => State::Playing,
+            _ => State::Playing,
+        });
+    }
+
+    fn move_next(&mut self) {
+        self.pending_track = true;
+        self.song_index += 1;
+    }
+
+    fn skip_next(&mut self) {
+        self.backend.set_property("instant-uri", true);
+        if self.song_index + 1 == self.queue.len() {
+            self.request_state(State::Ready);
+        }
+        self.move_next();
+    }
+
+    fn skip_prev(&mut self) {
+        self.backend.set_property("instant-uri", true);
+        self.pending_track = true;
+        if self.song_index == 0 {
+            if self.repeat {
+                self.song_index = self.queue.len() - 1;
+            }
+            return;
+        }
+        self.song_index -= 1;
+    }
+
+    fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
+        match self.backend.current_state() {
+            State::Ready | State::Paused => {
+                // Can't seek while paused..?
+                self.backend.set_state(State::Playing)?;
+            }
+            State::Playing => (),
+            _ => return Ok(()),
+        };
+        self.backend.seek_simple(
+            SeekFlags::FLUSH | SeekFlags::ACCURATE | SeekFlags::TRICKMODE_NO_AUDIO,
+            ClockTime::from_seconds(0),
+        )?;
+        self.backend.set_state(State::Ready)?;
+        Ok(())
+    }
+
+    // FIX: Need to press 3 times to skip back a paused song when over 10 seconds
+    // It looks like `current_clock_time()` remains outdated while paused
+    fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
+        let current_time = self.backend.current_clock_time();
+        if let Some(time) = current_time
+            && (time > ClockTime::from_seconds(10) || (self.song_index == 0 && !self.repeat))
+        {
+            return self.repeat_song();
+        }
+
+        self.skip_prev();
+        Ok(())
+    }
+
+    /// Seek to a position in the song using a 0 to 1 value
+    fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
+        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_sign_loss)]
+        let target_ms = (self
+            .backend
+            .query_duration::<ClockTime>()
+            .unwrap_or_else(|| ClockTime::from_seconds(0))
+            .mseconds() as f64
+            * position) as u64;
+        // println!("Target seek position (ms): {target_ms}");
+        self.seek_to_time(ClockTime::from_mseconds(target_ms))
+    }
+
+    /// Seek to a particular time in the song
+    fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+        // FIX: Hangs when seeking towards the end of song and back again
+        match self.backend.current_state() {
+            State::Playing | State::Paused | State::Ready => (),
+            _ => return Ok(()),
+        }
+        self.backend
+            .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)?;
+        Ok(())
+    }
+
+    /// Sets player state the next time `update()` is called
+    const fn request_state(&mut self, state: State) {
+        self.pending_state = Some(state);
+    }
+
+    fn current_time(&self) -> Option<ClockTime> {
+        self.backend.query_position::<ClockTime>()
+    }
+
+    fn song_duration(&self) -> Option<ClockTime> {
+        if self.queue.is_empty() {
+            return None;
+        }
+        self.queue[0].info.as_ref().map(|info| info.duration)
+    }
+
     fn transmit_state(&self) -> Result<(), SendError<PlayerResponse>> {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
@@ -247,22 +353,6 @@ impl Player {
                 _ => (),
             }
         }
-    }
-
-    /// Sets player state the next time `update()` is called
-    const fn request_state(&mut self, state: State) {
-        self.pending_state = Some(state);
-    }
-
-    fn current_time(&self) -> Option<ClockTime> {
-        self.backend.query_position::<ClockTime>()
-    }
-
-    fn song_duration(&self) -> Option<ClockTime> {
-        if self.queue.is_empty() {
-            return None;
-        }
-        self.queue[0].info.as_ref().map(|info| info.duration)
     }
 
     /// Replaces the current queue with the provided one
@@ -304,97 +394,5 @@ impl Player {
         while self.queue.len() > index + 1 {
             self.queue.remove(index + 1);
         }
-    }
-
-    fn play_or_pause(&mut self) {
-        self.request_state(match self.backend.current_state() {
-            State::Playing => State::Paused,
-            State::Paused => State::Playing,
-            State::Ready => State::Playing,
-            _ => State::Playing,
-        });
-    }
-
-    // FIX: Need to press 3 times to skip back a paused song when over 10 seconds
-    // It looks like `current_clock_time()` remains outdated while paused
-    fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
-        let current_time = self.backend.current_clock_time();
-        if let Some(time) = current_time
-            && (time > ClockTime::from_seconds(10) || (self.song_index == 0 && !self.repeat))
-        {
-            return self.repeat_song();
-        }
-
-        self.skip_prev();
-        Ok(())
-    }
-
-    fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
-        match self.backend.current_state() {
-            State::Ready | State::Paused => {
-                // Can't seek while paused..?
-                self.backend.set_state(State::Playing)?;
-            }
-            State::Playing => (),
-            _ => return Ok(()),
-        };
-        self.backend.seek_simple(
-            SeekFlags::FLUSH | SeekFlags::ACCURATE | SeekFlags::TRICKMODE_NO_AUDIO,
-            ClockTime::from_seconds(0),
-        )?;
-        self.backend.set_state(State::Ready)?;
-        Ok(())
-    }
-
-    /// Seek to a position in the song using a 0 to 1 value
-    fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_precision_loss)]
-        #[allow(clippy::cast_sign_loss)]
-        let target_ms = (self
-            .backend
-            .query_duration::<ClockTime>()
-            .unwrap_or_else(|| ClockTime::from_seconds(0))
-            .mseconds() as f64
-            * position) as u64;
-        // println!("Target seek position (ms): {target_ms}");
-        self.seek_to_time(ClockTime::from_mseconds(target_ms))
-    }
-
-    /// Seek to a particular time in the song
-    fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        // FIX: Hangs when seeking towards the end of song and back again
-        match self.backend.current_state() {
-            State::Playing | State::Paused | State::Ready => (),
-            _ => return Ok(()),
-        }
-        self.backend
-            .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)?;
-        Ok(())
-    }
-
-    fn skip_prev(&mut self) {
-        self.backend.set_property("instant-uri", true);
-        self.pending_track = true;
-        if self.song_index == 0 {
-            if self.repeat {
-                self.song_index = self.queue.len() - 1;
-            }
-            return;
-        }
-        self.song_index -= 1;
-    }
-
-    fn skip_next(&mut self) {
-        self.backend.set_property("instant-uri", true);
-        if self.song_index + 1 == self.queue.len() {
-            self.request_state(State::Ready);
-        }
-        self.move_next();
-    }
-
-    fn move_next(&mut self) {
-        self.pending_track = true;
-        self.song_index += 1;
     }
 }
