@@ -41,14 +41,15 @@ pub enum PlayerResponse {
 }
 
 pub struct Player {
-    pub song_index: usize,
-    pub queue: Vec<Song>,
     pub repeat: bool,
     pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
+    song_index: usize,
+    queue: Vec<Song>,
 
     pending_state: Option<State>,
     pending_track: bool,
     pending_track_info: bool,
+    end_of_queue: bool,
     tokio_rt: tokio::runtime::Runtime,
     backend: gst::Element,
     bus: gst::Bus,
@@ -86,6 +87,7 @@ impl Player {
                 pending_track_info: false,
                 pending_track: true,
                 pending_state: None,
+                end_of_queue: false,
                 tokio_rt: tokio::runtime::Runtime::new().map_err(|e| e.to_string())?,
                 backend: playbin,
                 bus,
@@ -107,7 +109,7 @@ impl Player {
         thread::Builder::new()
             .name("player_timer".to_string())
             .spawn({
-                const REFRESH_RATE: f64 = 60.0;
+                const REFRESH_RATE: f64 = 24.0;
                 let player_tx = player_tx.clone();
                 move || {
                     loop {
@@ -144,25 +146,36 @@ impl Player {
 
                 self.update()?;
                 self.transmit_state()?;
-                self.clear_gst_msg_queue();
             }
 
-            // Wait the track to finish, then update the UI
-            if self.pending_track || self.pending_track_info {
-                self.pending_track = false;
-                self.pending_track_info = true;
-                // self.clear_gst_msg_queue();
-
+            // Reset state after the queue ends
+            if self.end_of_queue {
                 if self
-                    .backend
-                    .query_position()
-                    .unwrap_or_else(|| ClockTime::from_seconds(0))
-                    < ClockTime::from_seconds(2)
-                    && self
-                        .bus
-                        .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateDirty])
-                        .is_none()
+                    .bus
+                    .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateChanged])
+                    .is_some()
                 {
+                    self.clear_gst_msg_queue();
+                    self.backend.set_state(State::Ready)?;
+                    let _ = self.backend.state(None);
+                    self.transmit_state()?;
+                    self.pending_track = true;
+                    self.end_of_queue = false;
+                    self.update()?;
+                } else {
+                    continue;
+                }
+            }
+
+            // Wait the current track to end, then update the UI
+            if self.pending_track || self.pending_track_info {
+                self.pending_track_info = true;
+                if self.pending_track {
+                    self.clear_gst_msg_queue();
+                    self.pending_track = false;
+                }
+
+                if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
                     self.queue[self.song_index].assign_info_with_fallback();
                     self.transmit_song_info()?;
 
@@ -170,10 +183,18 @@ impl Player {
                     self.clear_gst_msg_queue();
                 }
             }
+
+            thread::yield_now();
         }
     }
 
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
+        if self.song_index == self.queue.len() {
+            self.song_index = 0;
+            self.end_of_queue = !self.repeat;
+            self.pending_track &= !self.end_of_queue;
+        }
+
         if self.pending_track {
             let file_uri = self.queue[self.song_index].file_uri();
             println!("{file_uri}");
@@ -233,11 +254,11 @@ impl Player {
         self.pending_state = Some(state);
     }
 
-    pub fn current_time(&self) -> Option<ClockTime> {
+    fn current_time(&self) -> Option<ClockTime> {
         self.backend.query_position::<ClockTime>()
     }
 
-    pub fn song_duration(&self) -> Option<ClockTime> {
+    fn song_duration(&self) -> Option<ClockTime> {
         if self.queue.is_empty() {
             return None;
         }
@@ -366,19 +387,14 @@ impl Player {
 
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
+        if self.song_index + 1 == self.queue.len() {
+            self.request_state(State::Ready);
+        }
         self.move_next();
     }
 
-    const fn move_next(&mut self) {
+    fn move_next(&mut self) {
         self.pending_track = true;
-        if self.song_index == self.queue.len() - 1 {
-            if self.repeat {
-                self.song_index = 0;
-            } else {
-                self.pending_track = false;
-            }
-            return;
-        }
         self.song_index += 1;
     }
 }
