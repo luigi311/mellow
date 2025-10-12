@@ -39,6 +39,14 @@ impl Song {
         self.file.uri().to_string()
     }
 
+    #[must_use]
+    pub fn filename(&self) -> String {
+        self.file.basename().map_or_else(
+            || "Unknown".to_string(),
+            |f| f.to_str().unwrap().to_string(),
+        )
+    }
+
     pub fn get_info_or_assign(&mut self) -> &SongInfo {
         if self.info.is_none() {
             self.assign_info_with_fallback();
@@ -51,7 +59,7 @@ impl Song {
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
                 self.info = Some(Box::new(SongInfo {
-                    title: self.file.parse_name().to_string(),
+                    title: self.filename(),
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
@@ -80,7 +88,9 @@ impl Song {
         let properties = tagged_file.properties();
 
         self.info = Some(Box::new(SongInfo {
-            title: tag.title().unwrap_or_default().to_string(),
+            title: tag
+                .title()
+                .map_or_else(|| self.filename(), |title| title.to_string()),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
             album_artist: tag
@@ -95,6 +105,7 @@ impl Song {
                 .to_string(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
+            // TODO: Look for a `cover` file in the song directroy
             artwork: if tag.picture_count() > 0 {
                 Some(Texture::from_bytes(&glib::Bytes::from(
                     tag.pictures()[0].data(),

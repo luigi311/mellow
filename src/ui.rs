@@ -219,7 +219,6 @@ pub fn build(
                         if let Some(artwork) = song_info.artwork.as_ref() {
                             album_cover.set_paintable(Some(artwork));
                         } else {
-                            // TODO: Look for a `cover` file in the song directroy
                             album_cover.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
                         }
                         album_cover.set_height_request(0);
