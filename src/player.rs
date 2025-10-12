@@ -46,8 +46,9 @@ pub struct Player {
     pub repeat: bool,
     pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
 
-    state: State,
+    pending_state: Option<State>,
     pending_track: bool,
+    pending_track_info: bool,
     tokio_rt: tokio::runtime::Runtime,
     backend: gst::Element,
     bus: gst::Bus,
@@ -82,8 +83,9 @@ impl Player {
                 repeat: false,
                 shuffle: false,
 
-                state: State::Null,
+                pending_track_info: false,
                 pending_track: true,
+                pending_state: None,
                 tokio_rt: tokio::runtime::Runtime::new().map_err(|e| e.to_string())?,
                 backend: playbin,
                 bus,
@@ -100,19 +102,23 @@ impl Player {
         &mut self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
     ) -> Result<(), Box<dyn Error>> {
-        thread::spawn({
-            const REFRESH_RATE: f64 = 10.0;
-            let player_tx = player_tx.clone();
-            move || {
-                loop {
-                    #[allow(clippy::cast_sign_loss)]
-                    #[allow(clippy::cast_possible_truncation)]
-                    let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
-                    thread::sleep(iter_delay);
-                    let _ = player_tx.send(PlayerRequest::Tick);
+        // NOTE: This could be moved into the loop below, but then the
+        // refresh times would need to be counted manually
+        thread::Builder::new()
+            .name("player_timer".to_string())
+            .spawn({
+                const REFRESH_RATE: f64 = 60.0;
+                let player_tx = player_tx.clone();
+                move || {
+                    loop {
+                        #[allow(clippy::cast_sign_loss)]
+                        #[allow(clippy::cast_possible_truncation)]
+                        let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
+                        thread::sleep(iter_delay);
+                        let _ = player_tx.send(PlayerRequest::Tick);
+                    }
                 }
-            }
-        });
+            })?;
 
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
@@ -122,23 +128,66 @@ impl Player {
         // TODO: Gracefully handle errors whenever possible
 
         loop {
-            self.clear_gst_msg_queue();
-            match self.rx.recv()? {
-                PlayerRequest::SongEnd => self.move_next(),
-                PlayerRequest::PlayOrPause => self.play_or_pause(),
-                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
-                PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
-                PlayerRequest::SkipNext => self.skip_next(),
-                PlayerRequest::Update => (),
-                PlayerRequest::Tick => {
-                    self.transmit_time()?;
-                    continue;
+            if let Ok(player_request) = self.rx.try_recv() {
+                match player_request {
+                    PlayerRequest::SongEnd => self.move_next(),
+                    PlayerRequest::PlayOrPause => self.play_or_pause(),
+                    PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
+                    PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
+                    PlayerRequest::SkipNext => self.skip_next(),
+                    PlayerRequest::Update => (),
+                    PlayerRequest::Tick => {
+                        self.transmit_time()?;
+                        continue;
+                    }
                 }
+
+                self.update()?;
+                self.transmit_state()?;
+                self.clear_gst_msg_queue();
             }
 
-            self.update()?;
-            self.transmit_state()?;
+            // Wait the track to finish, then update the UI
+            if self.pending_track || self.pending_track_info {
+                self.pending_track = false;
+                self.pending_track_info = true;
+                // self.clear_gst_msg_queue();
+
+                if self
+                    .backend
+                    .query_position()
+                    .unwrap_or_else(|| ClockTime::from_seconds(0))
+                    < ClockTime::from_seconds(2)
+                    && self
+                        .bus
+                        .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateDirty])
+                        .is_none()
+                {
+                    self.queue[self.song_index].assign_info_with_fallback();
+                    self.transmit_song_info()?;
+
+                    self.pending_track_info = false;
+                    self.clear_gst_msg_queue();
+                }
+            }
         }
+    }
+
+    fn update(&mut self) -> Result<(), Box<dyn Error>> {
+        if self.pending_track {
+            let file_uri = self.queue[self.song_index].file_uri();
+            println!("{file_uri}");
+            self.backend.set_property("uri", file_uri);
+        }
+
+        if let Some(state) = self.pending_state.take() {
+            self.backend.set_state(state)?;
+        }
+
+        // Re-enable gapless playback (for example after track skip)
+        self.backend.set_property("instant-uri", false);
+
+        Ok(())
     }
 
     fn transmit_state(&self) -> Result<(), SendError<PlayerResponse>> {
@@ -179,81 +228,9 @@ impl Player {
         }
     }
 
-    // /// Blocks until EOS is signaled by GStreamer
-    // /// Does nothing if not currently playing
-    // fn wait_for_eos(&self) {
-    //     if self.backend.current_state() != State::Playing {
-    //         return;
-    //     }
-    //     loop {
-    //         if self.bus.pop_filtered(&[gst::MessageType::Eos]).is_some() {
-    //             break;
-    //         }
-    //     }
-    // }
-
-    fn update(&mut self) -> Result<(), Box<dyn Error>> {
-        self.clear_gst_msg_queue();
-
-        if self.queue.is_empty() {
-            if self.repeat {
-                self.restart_queue();
-            } else {
-                self.state = State::Null;
-                self.backend.set_state(self.state)?;
-                return Ok(());
-            }
-        }
-
-        if self.pending_track {
-            let file_uri = self.queue[self.song_index].file_uri();
-            println!("{file_uri}");
-            self.backend.set_property("uri", file_uri);
-        }
-
-        self.backend.set_state(self.state)?;
-
-        if self.pending_track {
-            self.clear_gst_msg_queue();
-            println!("Next song is ready");
-
-            // Wait for last track to finish playing
-            // WARN: This will block the entire thread, which means that
-            //       the UI will not be able to communicate with it until
-            //       the track change is complete. If it waits for an
-            //       answer, it will block the UI as well. Time position
-            //       queries would need to be substituted with own logic.
-            //       It also blocks the skip/pause buttons until the song
-            //       starts, which is not good user experience.
-            //       However, not waiting would mean that the UI would
-            //       change to the next song before the current one is
-            //       finished playing.
-            while self
-                .backend
-                .query_position()
-                .unwrap_or_else(|| ClockTime::from_seconds(0))
-                > ClockTime::from_seconds(2)
-            {
-                if self
-                    .bus
-                    .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateDirty])
-                    .is_some()
-                {
-                    break;
-                }
-                thread::sleep(Duration::from_millis(20));
-            }
-
-            self.queue[self.song_index].assign_info_with_fallback();
-            self.transmit_song_info()?;
-        }
-
-        // Re-enable gapless playback (for example after track skip)
-        self.backend.set_property("instant-uri", false);
-
-        self.pending_track = false;
-
-        Ok(())
+    /// Sets player state the next time `update()` is called
+    const fn request_state(&mut self, state: State) {
+        self.pending_state = Some(state);
     }
 
     pub fn current_time(&self) -> Option<ClockTime> {
@@ -265,9 +242,6 @@ impl Player {
             return None;
         }
         self.queue[0].info.as_ref().map(|info| info.duration)
-
-        // Duration from gstreamer seems unreliable
-        // self.backend.query_duration::<ClockTime>()
     }
 
     /// Replaces the current queue with the provided one
@@ -312,12 +286,12 @@ impl Player {
     }
 
     fn play_or_pause(&mut self) {
-        self.state = match self.backend.current_state() {
+        self.request_state(match self.backend.current_state() {
             State::Playing => State::Paused,
             State::Paused => State::Playing,
             State::Ready => State::Playing,
             _ => State::Playing,
-        }
+        });
     }
 
     // FIX: Need to press 3 times to skip back a paused song when over 10 seconds
@@ -368,6 +342,7 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+        // FIX: Hangs when seeking towards the end of song and back again
         match self.backend.current_state() {
             State::Playing | State::Paused | State::Ready => (),
             _ => return Ok(()),
@@ -401,7 +376,6 @@ impl Player {
                 self.song_index = 0;
             } else {
                 self.pending_track = false;
-                self.state = State::Null;
             }
             return;
         }
