@@ -144,6 +144,7 @@ pub fn build(
     player_view.append(&media_toolbar);
 
     // TODO: Library interface
+    player_view.append(&gtk::Box::builder().height_request(15).build());
     let bottom_bar = gtk::Box::builder().height_request(30).build();
     bottom_bar.append(
         &gtk::Image::builder()
@@ -153,11 +154,31 @@ pub fn build(
             .hexpand(true)
             .build(),
     );
-    player_view.append(&gtk::Box::builder().height_request(15).build());
+
+    // IDEA: Show a bottom bar when the sheet is open, to quickly close it
+    // without having to reach to the top. The bar would be located below
+    // the tabs (if it's not too much clutter), and display the currently
+    // playing track info.
     let bottom_sheet = adw::ToolbarView::builder().build();
-    let library_ui = adw::ToolbarView::builder().vexpand(true).build();
+    let library_ui = adw::ToolbarView::builder()
+        .vexpand(true)
+        .hexpand(true)
+        .build();
     let library_view = adw::StatusPage::builder().build();
-    let library_content = gtk::Box::builder().height_request(9999).build();
+    let library_content = gtk::Box::builder().vexpand(true).build();
+
+    let lyrics_label = gtk::Label::builder()
+        .hexpand(true)
+        .halign(Align::Center)
+        .justify(gtk::Justification::Center)
+        .wrap_mode(gtk::pango::WrapMode::Word)
+        .wrap(true)
+        .margin_start(12)
+        .margin_end(12)
+        .css_classes(["document"])
+        .build();
+    // IDEA: Lyrics could be a tab in the bottom sheet
+    library_content.append(&lyrics_label);
     bottom_sheet.add_top_bar(&adw::HeaderBar::new());
     library_view.set_child(Some(&library_content));
     library_ui.set_content(Some(&library_view));
@@ -172,7 +193,7 @@ pub fn build(
         .content(&player_and_library_ui)
         // .content(&player_ui)
         .default_width(270)
-        .default_height(450)
+        .default_height(470)
         .width_request(0)
         .height_request(0)
         .title(APP_NAME)
@@ -199,6 +220,8 @@ pub fn build(
         seek_bar,
         #[weak]
         time_end_label,
+        #[weak]
+        lyrics_label,
         async move {
             loop {
                 let Some(response) = ui_rx.recv().await else {
@@ -230,6 +253,12 @@ pub fn build(
                         time_end_label.set_label(&format_duration(&Duration::from_millis(
                             song_info.duration.mseconds(),
                         )));
+
+                        if song_info.lyrics.is_empty() {
+                            lyrics_label.set_label("Lyrics not available");
+                        } else {
+                            lyrics_label.set_label(&song_info.lyrics);
+                        }
                     }
                     PlayerResponse::Time(time) => {
                         time_cur_label.set_label(&format_duration(&Duration::from_millis(
