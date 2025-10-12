@@ -319,7 +319,7 @@ impl Player {
         }
     }
 
-    // FIX: Need to press 3 times to skip back a paused song when over 5 seconds
+    // FIX: Need to press 3 times to skip back a paused song when over 10 seconds
     // It looks like `current_clock_time()` remains outdated while paused
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         let current_time = self.backend.current_clock_time();
@@ -334,7 +334,14 @@ impl Player {
     }
 
     fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
-        self.backend.set_state(State::Playing)?; // Can't seek while paused..?
+        match self.backend.current_state() {
+            State::Ready | State::Paused => {
+                // Can't seek while paused..?
+                self.backend.set_state(State::Playing)?;
+            }
+            State::Playing => (),
+            _ => return Ok(()),
+        };
         self.backend.seek_simple(
             SeekFlags::FLUSH | SeekFlags::ACCURATE | SeekFlags::TRICKMODE_NO_AUDIO,
             ClockTime::from_seconds(0),
@@ -360,6 +367,10 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+        match self.backend.current_state() {
+            State::Playing | State::Paused | State::Ready => (),
+            _ => return Ok(()),
+        }
         self.backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)?;
         Ok(())
