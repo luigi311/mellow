@@ -204,16 +204,18 @@ impl Player {
             }
         }
 
-        let song = &mut self.queue[self.song_index];
-
         if self.pending_track {
-            println!("{}", song.file_uri());
-            self.backend.set_property("uri", song.file_uri());
+            let file_uri = self.queue[self.song_index].file_uri();
+            println!("{file_uri}");
+            self.backend.set_property("uri", file_uri);
         }
 
         self.backend.set_state(self.state)?;
 
         if self.pending_track {
+            self.clear_gst_msg_queue();
+            println!("Next song is ready");
+
             // Wait for last track to finish playing
             // WARN: This will block the entire thread, which means that
             //       the UI will not be able to communicate with it until
@@ -225,18 +227,23 @@ impl Player {
             //       However, not waiting would mean that the UI would
             //       change to the next song before the current one is
             //       finished playing.
-            // FIX: Stuck waiting for song to end
-            println!("Next song is ready");
             while self
                 .backend
                 .query_position()
                 .unwrap_or_else(|| ClockTime::from_seconds(0))
                 > ClockTime::from_seconds(2)
             {
+                if self
+                    .bus
+                    .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateDirty])
+                    .is_some()
+                {
+                    break;
+                }
                 thread::sleep(Duration::from_millis(20));
             }
 
-            song.assign_info_with_fallback();
+            self.queue[self.song_index].assign_info_with_fallback();
             self.transmit_song_info()?;
         }
 
