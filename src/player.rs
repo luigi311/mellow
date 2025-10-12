@@ -104,24 +104,6 @@ impl Player {
         &mut self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
     ) -> Result<(), Box<dyn Error>> {
-        // NOTE: This could be moved into the loop below, but then the
-        // refresh times would need to be counted manually
-        thread::Builder::new()
-            .name("player_timer".to_string())
-            .spawn({
-                const REFRESH_RATE: f64 = 24.0;
-                let player_tx = player_tx.clone();
-                move || {
-                    loop {
-                        #[allow(clippy::cast_sign_loss)]
-                        #[allow(clippy::cast_possible_truncation)]
-                        let iter_delay = Duration::from_millis((1000.0 / REFRESH_RATE) as u64);
-                        thread::sleep(iter_delay);
-                        let _ = player_tx.send(PlayerRequest::Tick);
-                    }
-                }
-            })?;
-
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
             None
@@ -129,6 +111,11 @@ impl Player {
 
         // TODO: Gracefully handle errors whenever possible
 
+        // const SEND_RATE: f64 = 16.0;
+        // const SEND_DELAY: Duration = Duration::from_millis((1000.0 / SEND_RATE) as u64);
+        // let time_update_timer =
+        const IDLE_CHECK_RATE: f64 = 32.0;
+        const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
             if let Ok(player_request) = self.rx.try_recv() {
                 match player_request {
@@ -146,7 +133,11 @@ impl Player {
 
                 self.update()?;
                 self.transmit_state()?;
+            } else {
+                thread::sleep(IDLE_DELAY);
             }
+
+            self.transmit_time()?;
 
             // Reset state after the queue ends
             if self.end_of_queue {
@@ -181,8 +172,6 @@ impl Player {
                     self.clear_gst_msg_queue();
                 }
             }
-
-            thread::yield_now();
         }
     }
 
