@@ -236,7 +236,6 @@ impl Player {
         self.seek_to_time(ClockTime::from_seconds(0))
     }
 
-    // It looks like `current_clock_time()` remains outdated while paused
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
