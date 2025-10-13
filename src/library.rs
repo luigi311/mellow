@@ -41,7 +41,10 @@ pub use song::{Song, SongInfo};
 // TODO: Efficient search/filter by tag, rating, etc. Use SQL?
 
 const FILE_SUPPORT: &[&str] = &[
-    "flac", "m4a", "mp3", "mpc", "ogg", "aac", "aiff", "ape", "wav",
+    "flac", "m4a", "mp3", "aac", "ac3", "wav",
+    // TODO: Ensure all listed formats work
+    // Untested:
+    "ape", "mpc", "ogg",
 ];
 
 pub struct LibraryConfig {
@@ -123,7 +126,9 @@ impl Library {
     #[inline]
     #[must_use]
     pub fn file_supported(file: &str) -> bool {
-        let extension = file.rsplit_once('.').unwrap_or_default().1.to_lowercase();
+        let Some(extension) = file.rsplit_once('.').map(|s| s.1.to_lowercase()) else {
+            return false;
+        };
         FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
     #[must_use]

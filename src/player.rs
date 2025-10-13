@@ -146,7 +146,7 @@ impl Player {
                     .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateChanged])
                     .is_some()
                 {
-                    self.clear_gst_msg_queue();
+                    self.flush_gst_messages();
                     self.backend.set_state(State::Ready)?;
                     let _ = self.backend.state(None);
                     self.transmit_state()?;
@@ -161,7 +161,7 @@ impl Player {
                 if self.pending_track {
                     self.pending_track_info = true;
                     self.pending_track = false;
-                    self.clear_gst_msg_queue();
+                    self.flush_gst_messages();
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
@@ -169,7 +169,7 @@ impl Player {
                     self.transmit_song_info()?;
 
                     self.pending_track_info = false;
-                    self.clear_gst_msg_queue();
+                    self.flush_gst_messages();
                 }
             }
         }
@@ -316,19 +316,6 @@ impl Player {
             .block_on(async move { tx.send(PlayerResponse::Time(time)).await })
     }
 
-    // fn transmit_current_state(&self, tx: tokio_mpsc::Sender<PlayerResponse>) {}
-    /// Clears the GStreamer message queue and prints out errors/warnings/EOS
-    fn clear_gst_msg_queue(&self) {
-        while let Some(message) = self.bus.pop() {
-            match message.type_() {
-                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
-                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
-                gst::MessageType::Eos => println!("gstreamer: Reached end of stream"),
-                _ => (),
-            }
-        }
-    }
-
     /// Replaces the current queue with the provided one
     /// Playback state has to be manually updated
     pub fn new_queue(&mut self, queue: Vec<Song>) {
@@ -367,6 +354,18 @@ impl Player {
     pub fn clear_queue_after_index(&mut self, index: usize) {
         while self.queue.len() > index + 1 {
             self.queue.remove(index + 1);
+        }
+    }
+
+    /// Clears the GStreamer message queue and prints out errors/warnings/EOS
+    fn flush_gst_messages(&self) {
+        while let Some(message) = self.bus.pop() {
+            match message.type_() {
+                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
+                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
+                gst::MessageType::Eos => println!("gstreamer: Reached end of stream"),
+                _ => (),
+            }
         }
     }
 }

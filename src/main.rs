@@ -26,17 +26,14 @@ fn init(app: &Application) {
 
     mellow::ui::build(app, &player_tx, ui_rx);
 
+    #[allow(unused_must_use)]
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || {
             init_player_queue(&mut player);
             player_tx.send(mellow::PlayerRequest::Update).unwrap();
-            player
-                .controller(player_tx)
-                .inspect_err(|e| eprintln!("Error from 'player' thread: {e}"))
-                .unwrap();
-        })
-        .unwrap();
+            player.controller(player_tx).inspect_err(|e| panic!("{e}"));
+        });
 }
 
 fn init_player_queue(player: &mut Player) {

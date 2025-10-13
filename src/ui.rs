@@ -180,7 +180,7 @@ pub fn build(
         .wrap(true)
         .margin_start(12)
         .margin_end(12)
-        .css_classes(["document"])
+        .css_classes(["body"])
         .build();
     // IDEA: Lyrics could be a tab in the bottom sheet
     library_content.append(&lyrics_label);
@@ -250,15 +250,19 @@ pub fn build(
                         } else {
                             album_cover.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
                         }
+                        // IDEA: Once the controls toolbar auto-hide is implemented,
+                        // instead of letting the artwork shrink to 0, disable it when
+                        // the window height is too small to fit the artwork at the
+                        // minimum size. This is because the library might not be easy
+                        // to navigate when the window height is too small
                         album_cover.set_height_request(0);
                         album_cover.set_width_request(0);
                         title_label.set_label(&song_info.title);
                         album_label.set_label(&song_info.album);
                         artist_label.set_label(&song_info.artist);
 
-                        time_end_label.set_label(&format_duration(&Duration::from_millis(
-                            song_info.duration.mseconds(),
-                        )));
+                        song_duration = Duration::from_millis(song_info.duration.mseconds());
+                        time_end_label.set_label(&format_duration(&song_duration));
 
                         if song_info.lyrics.is_empty() {
                             lyrics_label.set_label("Lyrics not available");
