@@ -96,9 +96,13 @@ impl Song {
         let properties = tagged_file.properties();
 
         self.info = Some(Box::new(SongInfo {
-            title: tag
-                .title()
-                .map_or_else(|| self.filename(), |title| title.to_string()),
+            title: tag.title().map_or_else(
+                || self.filename(),
+                |title| match title.trim().is_empty() {
+                    true => self.filename(),
+                    false => title.to_string(),
+                },
+            ),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
             album_artist: tag
