@@ -119,11 +119,11 @@ impl Player {
                 }
                 self.update()?;
                 self.transmit_state()?;
-            } else {
-                thread::sleep(IDLE_DELAY);
+                continue;
             }
 
             self.transmit_time()?;
+            thread::sleep(IDLE_DELAY);
 
             // Reset state after the queue ends
             const END_OF_QUEUE: &[gst::MessageType] =
