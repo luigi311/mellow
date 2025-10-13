@@ -3,9 +3,11 @@ use gtk::{glib, prelude::*};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use tokio::sync::mpsc as tokio_mpsc;
 
 use mellow::library::{Library, Song};
-use mellow::player::Player;
+use mellow::player::{Player, PlayerRequest};
+use mellow::ui::UpdateUI;
 use mellow::visit_dirs;
 use mellow::{APP_ID, APP_NAME};
 
@@ -22,7 +24,8 @@ pub fn main() -> gtk::glib::ExitCode {
 // from scratch once done experimenting
 
 fn init(app: &Application) {
-    let (mut player, player_tx, ui_rx) = Player::init().expect("Failed to initialize player");
+    let (mut player, player_tx, ui_tx, ui_rx) =
+        Player::init().expect("Failed to initialize player");
 
     mellow::ui::build(app, &player_tx, ui_rx);
 
@@ -30,13 +33,13 @@ fn init(app: &Application) {
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || {
-            init_player_queue(&mut player);
-            player_tx.send(mellow::PlayerRequest::Update).unwrap();
+            init_player_queue(&mut player, ui_tx);
+            player_tx.send(PlayerRequest::Update).unwrap();
             player.controller(player_tx).inspect_err(|e| panic!("{e}"));
         });
 }
 
-fn init_player_queue(player: &mut Player) {
+fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
     let mut args = std::env::args();
     args.next();
     if args.len() > 0 {
@@ -67,10 +70,16 @@ fn init_player_queue(player: &mut Player) {
         });
         player.new_queue(queue.lock().unwrap().take().unwrap());
     } else {
-        let mut library = Library::load_or_init().expect("Library could not be initialized");
-        library.rebuild().unwrap();
+        let mut library = Library::load_or_init(ui_tx).expect("Library could not be initialized");
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| e.to_string())
+            .unwrap();
+        let songs = runtime.block_on(async move {
+            library.rebuild().await.unwrap();
+            library.songs
+        });
         player.shuffle = true;
-        player.new_queue(library.songs);
+        player.new_queue(songs);
         player.randomize_queue();
     }
 }

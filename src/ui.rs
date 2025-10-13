@@ -1,6 +1,6 @@
 use adw::{self, Application, ApplicationWindow};
 use glib::clone;
-use gst::State;
+use gst::{ClockTime, State};
 use gtk::pango::EllipsizeMode;
 use gtk::{self, Align, Orientation, gdk, glib, prelude::*};
 use std::sync::mpsc;
@@ -8,8 +8,16 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::format_duration;
-use crate::player::{PlayerRequest, PlayerResponse};
+use crate::library::SongInfo;
+use crate::player::PlayerRequest;
 use crate::{APP_ID, APP_NAME};
+
+pub enum UpdateUI {
+    PlayerState(State),
+    PlayerTime(Option<ClockTime>),
+    SongInfo(Option<Box<SongInfo>>),
+    Progress(Option<f64>),
+}
 
 // TODO: Use `.ui` files for building the interface
 // TODO: Implement UI changes from the `relm4` branch
@@ -18,7 +26,7 @@ use crate::{APP_ID, APP_NAME};
 pub fn build(
     app: &Application,
     player_tx: &mpsc::SyncSender<PlayerRequest>,
-    mut ui_rx: tokio_mpsc::Receiver<PlayerResponse>,
+    mut ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
     let player_view = gtk::Box::builder()
         .margin_top(0)
@@ -39,6 +47,13 @@ pub fn build(
             .css_classes(["flat"])
             .build(),
     );
+    let progress_bar = gtk::ProgressBar::builder()
+        .hexpand(true)
+        .fraction(0.5)
+        .visible(false)
+        .build();
+    progress_bar.add_css_class("osd");
+    player_ui.add_top_bar(&progress_bar);
 
     // TODO: Display the currently playing song album cover
     let album_cover = gtk::Picture::builder()
@@ -227,6 +242,8 @@ pub fn build(
         time_end_label,
         #[weak]
         lyrics_label,
+        #[weak]
+        progress_bar,
         async move {
             let mut song_duration = Duration::from_secs(0);
             loop {
@@ -236,13 +253,13 @@ pub fn build(
 
                 match response {
                     // TODO: Disable buttons based on state (loading library, no queue, etc)
-                    PlayerResponse::State(state) => {
+                    UpdateUI::PlayerState(state) => {
                         pause_button.set_icon_name(match state {
                             State::Playing => "media-playback-pause-symbolic",
                             _ => "media-playback-start-symbolic",
                         });
                     }
-                    PlayerResponse::SongInfo(song_info) => {
+                    UpdateUI::SongInfo(song_info) => {
                         let Some(song_info) = song_info else { return };
 
                         if let Some(artwork) = song_info.artwork.as_ref() {
@@ -270,11 +287,19 @@ pub fn build(
                             lyrics_label.set_label(&song_info.lyrics);
                         }
                     }
-                    PlayerResponse::Time(time) => {
+                    UpdateUI::PlayerTime(time) => {
                         let time_ms = time.map_or_else(|| 0, gst::ClockTime::mseconds);
                         time_cur_label.set_label(&format_duration(&Duration::from_millis(time_ms)));
                         // TODO: Grey-out the slider when no song is active
                         seek_bar.set_value(time_ms as f64 / song_duration.as_millis() as f64);
+                    }
+                    UpdateUI::Progress(progress) => {
+                        if let Some(progress) = progress {
+                            progress_bar.set_visible(true);
+                            progress_bar.set_fraction(progress);
+                        } else {
+                            progress_bar.set_visible(false);
+                        }
                     }
                 }
             }

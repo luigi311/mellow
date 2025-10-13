@@ -8,7 +8,8 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 use tokio::sync::mpsc::error::SendError;
 
-use crate::library::{Song, SongInfo};
+use crate::library::Song;
+use crate::ui::UpdateUI;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
@@ -27,12 +28,6 @@ pub enum PlayerRequest {
     Update,
 }
 
-pub enum PlayerResponse {
-    State(State),
-    Time(Option<ClockTime>),
-    SongInfo(Option<Box<SongInfo>>),
-}
-
 pub struct Player {
     pub repeat: bool,
     pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
@@ -46,7 +41,7 @@ pub struct Player {
     tokio_rt: tokio::runtime::Runtime,
     backend: gst::Element,
     bus: gst::Bus,
-    ui_tx: tokio_mpsc::Sender<PlayerResponse>,
+    ui_tx: tokio_mpsc::Sender<UpdateUI>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
 
@@ -55,12 +50,13 @@ pub struct Player {
 
 impl Player {
     /// Returns a tuple of a new `Player` instance, a sender for player controls,
-    /// and a receiver for player responses to use with the UI
+    /// and a sender and receiver for the UI
     pub fn init() -> Result<
         (
             Player,
             mpsc::SyncSender<PlayerRequest>,
-            tokio_mpsc::Receiver<PlayerResponse>,
+            tokio_mpsc::Sender<UpdateUI>,
+            tokio_mpsc::Receiver<UpdateUI>,
         ),
         Box<dyn Error>,
     > {
@@ -70,7 +66,7 @@ impl Player {
         let bus = playbin.bus().unwrap();
 
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
-        let (ui_tx, ui_rx) = tokio_mpsc::channel::<PlayerResponse>(4);
+        let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
         Ok((
             Player {
@@ -86,10 +82,11 @@ impl Player {
                 tokio_rt: tokio::runtime::Runtime::new().map_err(|e| e.to_string())?,
                 backend: playbin,
                 bus,
-                ui_tx,
+                ui_tx: ui_tx.clone(),
                 rx,
             },
             player_tx,
+            ui_tx,
             ui_rx,
         ))
     }
@@ -275,31 +272,31 @@ impl Player {
     }
 
     /// Sends the current state to the UI receiver
-    fn transmit_state(&self) -> Result<(), SendError<PlayerResponse>> {
+    fn transmit_state(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
         println!("transmit_state()\n");
         let state = state.0.map_or_else(|_| State::Null, |_| state.1);
         self.tokio_rt
-            .block_on(async move { tx.send(PlayerResponse::State(state)).await })
+            .block_on(async move { tx.send(UpdateUI::PlayerState(state)).await })
     }
 
     /// Sends the current song info to the UI receiver
-    fn transmit_song_info(&mut self) -> Result<(), SendError<PlayerResponse>> {
+    fn transmit_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let song_info = self.queue[self.song_index].info.take();
         println!("transmit_song_info()");
         self.tokio_rt
-            .block_on(async move { tx.send(PlayerResponse::SongInfo(song_info)).await })
+            .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
     }
 
     /// Sends the current playback time to the UI receiver
-    fn transmit_time(&self) -> Result<(), SendError<PlayerResponse>> {
+    fn transmit_time(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let time = self.current_time();
         // println!("transmit_time({time:?})");
         self.tokio_rt
-            .block_on(async move { tx.send(PlayerResponse::Time(time)).await })
+            .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
     }
 
     /// Replaces the current queue with the provided one

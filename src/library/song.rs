@@ -23,6 +23,14 @@ pub struct SongInfo {
     pub duration: ClockTime,
     // TODO: Move memory-heavy fields elsewhere?
     pub artwork: Option<Texture>,
+    // pub detailed_info: Option<DetailedSongInfo>,
+}
+
+// TODO: Move memory-heavy fields into here
+/// Fields which do not need to be held in memory at all times
+pub struct DetailedSongInfo {
+    pub lyrics: String,
+    pub artwork: Option<Texture>,
 }
 
 impl Song {

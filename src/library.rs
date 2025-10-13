@@ -7,7 +7,9 @@ use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::ui::UpdateUI;
 use crate::visit_dirs;
 
 pub mod album;
@@ -51,19 +53,9 @@ pub struct LibraryConfig {
     pub directories: Box<[String]>,
 }
 
-pub struct Library {
-    pub songs: Vec<Song>,
-    pub albums: Vec<Album>,
-    pub artists: Vec<Artist>,
-    config: LibraryConfig,
-}
-
-impl Library {
-    pub fn load_or_init() -> Result<Library, Box<dyn Error>> {
-        // TODO: Load library to avoid rebuilding each time
-
-        // TODO: Load config from disk
-        let config = LibraryConfig {
+impl Default for LibraryConfig {
+    fn default() -> Self {
+        LibraryConfig {
             directories: [
                 glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
                     || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
@@ -71,25 +63,40 @@ impl Library {
                 ),
             ]
             .into(),
-        };
+        }
+    }
+}
+
+pub struct Library {
+    pub songs: Vec<Song>,
+    pub albums: Vec<Album>,
+    pub artists: Vec<Artist>,
+
+    config: LibraryConfig,
+    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+}
+
+impl Library {
+    // TODO: Load library to avoid rebuilding each time
+    pub fn load_or_init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Result<Library, Box<dyn Error>> {
+        // TODO: Load config from disk
+        let config = LibraryConfig::default();
 
         Ok(Library {
             songs: vec![],
             albums: vec![],
             artists: vec![],
+
             config,
+            ui_tx,
         })
     }
 
-    // TODO: Don't block thread while rebuilding (async?)
-    pub fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
         let songs = Arc::new(Mutex::new(Some(Vec::new())));
-        let albums = Arc::new(Mutex::new(Some(Vec::new())));
-        let artists = Arc::new(Mutex::new(Some(Vec::new())));
         self.config.directories.iter().for_each(|library_path| {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
-
                 if !Library::file_supported(&file.parse_name()) {
                     return;
                 }
@@ -99,28 +106,45 @@ impl Library {
                     album: None,
                     info: None,
                 };
-                // TODO: Read song info - note that this will take a while,
-                // so it's best to implement disk serialization first
-                // song.get_info_or_assign();
 
-                // TODO: Assign song/album/artist index relations
-
-                // TODO: Initialize album/artist
-                // let album = Album {
-                //     // TODO
-                // };
-                // let artist = Artist {
-                //     // TODO
-                // };
                 songs.lock().unwrap().as_mut().unwrap().push(song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
 
-        self.songs = songs.lock().unwrap().take().unwrap();
+        let albums = Arc::new(Mutex::new(Some(Vec::new())));
+        let artists = Arc::new(Mutex::new(Some(Vec::new())));
+
+        const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
+        let songs = songs.lock().unwrap().take().unwrap();
+        let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
+        for i in 0..songs.len() {
+            // TODO: Assign song info, but skip memory-heavy fields (artwork, etc)
+            // songs[i].get_info_or_assign();
+
+            // // TODO: Assign song/album/artist index relations
+
+            // // TODO: Initialize album/artist
+            // let album = Album {
+            //     // TODO
+            // };
+            // let artist = Artist {
+            //     // TODO
+            // };
+
+            if i % progress_freq == 0 {
+                println!("{i}");
+                self.ui_tx
+                    .send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))
+                    .await?
+            }
+        }
+
+        self.songs = songs;
         self.albums = albums.lock().unwrap().take().unwrap();
         self.artists = artists.lock().unwrap().take().unwrap();
 
+        self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
     }
     #[inline]
