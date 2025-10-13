@@ -25,13 +25,6 @@ pub enum PlayerRequest {
     SongEnd,
     /// Refresh local player state
     Update,
-
-    // TODO: Transmit time automatically instead
-    // Either:
-    // - on a fixed interval while playing, or
-    // - only on seek or state change, and count time manually in the UI
-    /// Send the current time to `ui_rx`
-    Tick,
 }
 
 pub enum PlayerResponse {
@@ -61,6 +54,8 @@ pub struct Player {
 // https://gstreamer.freedesktop.org/documentation/tutorials/basic/debugging-tools.html
 
 impl Player {
+    /// Returns a tuple of a new `Player` instance, a sender for player controls,
+    /// and a receiver for player responses to use with the UI
     pub fn init() -> Result<
         (
             Player,
@@ -109,14 +104,13 @@ impl Player {
             None
         });
 
-        // TODO: Gracefully handle errors whenever possible
-
         // const SEND_RATE: f64 = 16.0;
         // const SEND_DELAY: Duration = Duration::from_millis((1000.0 / SEND_RATE) as u64);
         // let time_update_timer =
         const IDLE_CHECK_RATE: f64 = 32.0;
         const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
+            // TODO: Gracefully handle errors whenever possible
             if let Ok(player_request) = self.rx.try_recv() {
                 match player_request {
                     PlayerRequest::SongEnd => self.move_next(),
@@ -125,12 +119,7 @@ impl Player {
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                     PlayerRequest::SkipNext => self.skip_next(),
                     PlayerRequest::Update => (),
-                    PlayerRequest::Tick => {
-                        self.transmit_time()?;
-                        continue;
-                    }
                 }
-
                 self.update()?;
                 self.transmit_state()?;
             } else {
@@ -140,20 +129,16 @@ impl Player {
             self.transmit_time()?;
 
             // Reset state after the queue ends
-            if self.end_of_queue {
-                if self
-                    .bus
-                    .pop_filtered(&[gst::MessageType::Eos, gst::MessageType::StateChanged])
-                    .is_some()
-                {
-                    self.flush_gst_messages();
-                    self.backend.set_state(State::Ready)?;
-                    let _ = self.backend.state(None);
-                    self.transmit_state()?;
-                    self.pending_track = true;
-                    self.end_of_queue = false;
-                    self.update()?;
-                }
+            const END_OF_QUEUE: &[gst::MessageType] =
+                &[gst::MessageType::Eos, gst::MessageType::StateChanged];
+            if self.end_of_queue && self.bus.pop_filtered(END_OF_QUEUE).is_some() {
+                self.flush_gst_messages();
+                self.backend.set_state(State::Ready)?;
+                let _ = self.backend.state(None);
+                self.transmit_state()?;
+                self.pending_track = true;
+                self.end_of_queue = false;
+                self.update()?;
             }
 
             // Wait the current track to end, then update the UI
@@ -175,6 +160,7 @@ impl Player {
         }
     }
 
+    /// Manages the playback state
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
         if self.song_index == self.queue.len() {
             self.song_index = 0;
@@ -198,6 +184,7 @@ impl Player {
         Ok(())
     }
 
+    /// Starts or pauses playback depending on state
     fn play_or_pause(&mut self) {
         self.request_state(match self.backend.current_state() {
             State::Playing => State::Paused,
@@ -207,11 +194,13 @@ impl Player {
         });
     }
 
+    /// Moves to the next track in the queue without flushing the stream
     fn move_next(&mut self) {
         self.pending_track = true;
         self.song_index += 1;
     }
 
+    /// Skips to next track
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
         if self.song_index + 1 == self.queue.len() {
@@ -220,6 +209,7 @@ impl Player {
         self.move_next();
     }
 
+    /// Skips to previous track
     fn skip_prev(&mut self) {
         self.backend.set_property("instant-uri", true);
         self.pending_track = true;
@@ -232,10 +222,12 @@ impl Player {
         self.song_index -= 1;
     }
 
+    /// Seeks to the beginning of the current track
     fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
         self.seek_to_time(ClockTime::from_seconds(0))
     }
 
+    /// Skips to previous track or restarts the current one if above the time threshold
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
@@ -277,17 +269,12 @@ impl Player {
         self.pending_state = Some(state);
     }
 
+    /// Current playback time in the song
     fn current_time(&self) -> Option<ClockTime> {
         self.backend.query_position::<ClockTime>()
     }
 
-    fn song_duration(&self) -> Option<ClockTime> {
-        if self.queue.is_empty() {
-            return None;
-        }
-        self.queue[0].info.as_ref().map(|info| info.duration)
-    }
-
+    /// Sends the current state to the UI receiver
     fn transmit_state(&self) -> Result<(), SendError<PlayerResponse>> {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
@@ -297,6 +284,7 @@ impl Player {
             .block_on(async move { tx.send(PlayerResponse::State(state)).await })
     }
 
+    /// Sends the current song info to the UI receiver
     fn transmit_song_info(&mut self) -> Result<(), SendError<PlayerResponse>> {
         let tx = self.ui_tx.clone();
         let song_info = self.queue[self.song_index].info.take();
@@ -305,6 +293,7 @@ impl Player {
             .block_on(async move { tx.send(PlayerResponse::SongInfo(song_info)).await })
     }
 
+    /// Sends the current playback time to the UI receiver
     fn transmit_time(&self) -> Result<(), SendError<PlayerResponse>> {
         let tx = self.ui_tx.clone();
         let time = self.current_time();
@@ -360,7 +349,7 @@ impl Player {
             match message.type_() {
                 gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
-                gst::MessageType::Eos => println!("gstreamer: Reached end of stream"),
+                gst::MessageType::Eos => eprintln!("gstreamer: Reached end of stream"),
                 _ => (),
             }
         }
