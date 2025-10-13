@@ -238,14 +238,12 @@ impl Player {
 
     // It looks like `current_clock_time()` remains outdated while paused
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
-        if let Some(time) = self.current_time()
-            && (time > ClockTime::from_seconds(10) || (self.song_index == 0 && !self.repeat))
-        {
-            return self.repeat_song();
+        const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
+        match self.current_time() {
+            Some(time) if time > REPEAT_THRESHOLD => self.repeat_song(),
+            _ if (self.song_index == 0 && !self.repeat) => self.repeat_song(),
+            _ => Ok(self.skip_prev()),
         }
-
-        self.skip_prev();
-        Ok(())
     }
 
     /// Seek to a position in the song using a 0 to 1 value
