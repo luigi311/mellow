@@ -1,5 +1,6 @@
 use adw::Application;
-use gtk::{glib, prelude::*};
+use adw::prelude::*;
+use gtk::glib;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;

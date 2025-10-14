@@ -1,8 +1,8 @@
-use adw::{self, Application, ApplicationWindow};
+use adw::{self, Application, prelude::*};
 use glib::clone;
 use gst::{ClockTime, State};
 use gtk::pango::EllipsizeMode;
-use gtk::{self, Align, Orientation, gdk, glib, prelude::*};
+use gtk::{self, Align, Orientation, gdk, glib};
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
@@ -209,19 +209,13 @@ pub fn build(
         .sheet(&bottom_sheet)
         .build();
 
-    ApplicationWindow::builder()
-        .content(&player_and_library_ui)
-        // .content(&player_ui)
-        .default_width(270)
-        .default_height(470)
-        .width_request(0)
-        .height_request(0)
-        .title(APP_NAME)
-        .name(APP_NAME)
-        .icon_name(APP_ID)
-        .application(app)
-        .build()
-        .present();
+    let window = crate::window::Window::new(&app);
+    window.set_content(Some(&player_and_library_ui));
+    window.set_width_request(0);
+    window.set_height_request(0);
+    window.set_title(Some(APP_NAME));
+    window.set_icon_name(Some(APP_ID));
+    window.present();
 
     glib::spawn_future_local(clone!(
         #[weak]
