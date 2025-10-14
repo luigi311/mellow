@@ -282,9 +282,17 @@ pub fn build(
                         }
                     }
                     UpdateUI::PlayerTime(time) => {
-                        let time_ms = time.map_or_else(|| 0, gst::ClockTime::mseconds);
+                        let Some(time_ms) = time.map(gst::ClockTime::mseconds) else {
+                            seek_bar.set_sensitive(false);
+                            seek_bar.set_child_visible(false);
+                            time_cur_label.set_label("-:--");
+                            seek_bar.set_value(0.0);
+                            continue;
+                        };
+
+                        seek_bar.set_sensitive(true);
+                        seek_bar.set_child_visible(true);
                         time_cur_label.set_label(&format_duration(&Duration::from_millis(time_ms)));
-                        // TODO: Grey-out the slider when no song is active
                         seek_bar.set_value(time_ms as f64 / song_duration.as_millis() as f64);
                     }
                     UpdateUI::Progress(progress) => {
