@@ -10,6 +10,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::format_duration;
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
+use crate::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub enum UpdateUI {
@@ -209,12 +210,11 @@ pub fn build(
         .sheet(&bottom_sheet)
         .build();
 
-    let window = crate::window::Window::new(&app);
+    let window = Window::new(&app);
     window.set_content(Some(&player_and_library_ui));
-    window.set_width_request(0);
-    window.set_height_request(0);
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
+
     window.present();
 
     glib::spawn_future_local(clone!(
