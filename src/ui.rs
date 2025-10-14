@@ -166,7 +166,10 @@ pub fn build(
 
     // TODO: Library interface
     player_view.append(&gtk::Box::builder().height_request(15).build());
-    let bottom_bar = gtk::Box::builder().height_request(30).build();
+    let bottom_bar = gtk::Box::builder()
+        .css_classes(["flat"])
+        .height_request(30)
+        .build();
     bottom_bar.append(
         &gtk::Image::builder()
             .icon_name("view-continuous-symbolic")
