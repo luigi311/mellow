@@ -31,7 +31,7 @@ pub fn build(
 ) {
     let player_view = gtk::Box::builder()
         .margin_top(0)
-        .margin_bottom(12)
+        .margin_bottom(6)
         .margin_end(26)
         .margin_start(26)
         .hexpand(true)
@@ -166,7 +166,7 @@ pub fn build(
     player_view.append(&media_toolbar);
 
     // TODO: Library interface
-    player_view.append(&gtk::Box::builder().height_request(15).build());
+    player_view.append(&gtk::Box::builder().height_request(24).build());
     let bottom_bar = gtk::Box::builder()
         .css_classes(["flat"])
         .height_request(30)
@@ -214,7 +214,7 @@ pub fn build(
         .sheet(&bottom_sheet)
         .build();
 
-    let window = Window::new(&app);
+    let window = Window::new(app);
     window.set_content(Some(&player_and_library_ui));
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
