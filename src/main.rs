@@ -1,5 +1,6 @@
 use adw::Application;
 use adw::prelude::*;
+use gtk::gio;
 use gtk::glib;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -16,6 +17,8 @@ pub fn main() -> gtk::glib::ExitCode {
     glib::set_application_name(APP_NAME);
     glib::set_program_name(Some(APP_NAME.to_lowercase()));
 
+    gio::resources_register_include!("mellow.gresource").expect("Failed to register resources");
+
     let app = Application::builder().application_id(APP_ID).build();
     app.connect_activate(init);
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
@@ -29,7 +32,7 @@ fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) =
         Player::init().expect("Failed to initialize player");
 
-    mellow::ui::build(app, &player_tx, ui_rx);
+    mellow::ui::build(app, player_tx.clone(), ui_rx);
 
     #[allow(unused_must_use)]
     thread::Builder::new()

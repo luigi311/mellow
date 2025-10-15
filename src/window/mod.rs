@@ -6,7 +6,10 @@ use gio::Settings;
 use glib::Object;
 use gtk::{Orientation, gio, glib};
 
+use std::sync::mpsc;
+
 use crate::APP_ID;
+use crate::player::PlayerRequest;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -19,6 +22,10 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         Object::builder().property("application", app).build()
+    }
+
+    pub fn register_player_tx(&self, player_tx: mpsc::SyncSender<PlayerRequest>) {
+        self.imp().player_tx.set(player_tx).unwrap();
     }
 
     fn setup_settings(&self) {

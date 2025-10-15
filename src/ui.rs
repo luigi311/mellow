@@ -2,6 +2,7 @@ use adw::{self, Application, prelude::*};
 use glib::clone;
 use gst::{ClockTime, State};
 use gtk::pango::EllipsizeMode;
+use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{self, Align, Orientation, gdk, glib};
 use std::sync::mpsc;
 use std::time::Duration;
@@ -20,15 +21,39 @@ pub enum UpdateUI {
     Progress(Option<f64>),
 }
 
-// TODO: Use `.ui` files for building the interface
-// TODO: Implement UI changes from the `relm4` branch
-
 // TODO: When queue is empty, display a landing page
+
 pub fn build(
     app: &Application,
-    player_tx: &mpsc::SyncSender<PlayerRequest>,
+    player_tx: mpsc::SyncSender<PlayerRequest>,
+    ui_rx: tokio_mpsc::Receiver<UpdateUI>,
+) {
+    let window = Window::new(app);
+    window.set_title(Some(APP_NAME));
+    window.set_icon_name(Some(APP_ID));
+    window.register_player_tx(player_tx);
+    window.present();
+
+    glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
+}
+
+// This function can be removed now, but keeping it
+// for comparison/testing purposes
+pub fn build_old(
+    app: &Application,
+    player_tx: mpsc::SyncSender<PlayerRequest>,
     mut ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
+    // TODO: Center the title and player controls inside the
+    // remaining space below the album cover
+    // Maybe this could be done by manually adjusting the
+    // spacing value on window resize, but it could be
+    // buggy if the determined value causes the image
+    // or window to resize
+    // Ideally, the cover would be centered with an offset to
+    // account for the player controls, then the controls would
+    // be centered using a new box spanning from the bottom of
+    // the image to the bottom of the window
     let player_view = gtk::Box::builder()
         .margin_top(0)
         .margin_bottom(6)

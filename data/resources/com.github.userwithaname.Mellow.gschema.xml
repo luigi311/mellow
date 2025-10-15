@@ -2,11 +2,11 @@
 <schemalist>
   <schema id="com.github.userwithaname.Mellow" path="/com/github/userwithaname/Mellow/">
     <key name="window-width" type="i">
-      <default>270</default>
+      <default>300</default>
       <summary>Default window width</summary>
     </key>
     <key name="window-height" type="i">
-      <default>470</default>
+      <default>500</default>
       <summary>Default window height</summary>
     </key>
   </schema>

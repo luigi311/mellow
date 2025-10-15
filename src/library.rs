@@ -112,8 +112,8 @@ impl Library {
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
 
-        let albums = Arc::new(Mutex::new(Some(Vec::new())));
-        let artists = Arc::new(Mutex::new(Some(Vec::new())));
+        let albums = Vec::new();
+        let artists = Vec::new();
 
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
         let songs = songs.lock().unwrap().take().unwrap();
@@ -131,9 +131,11 @@ impl Library {
             // let artist = Artist {
             //     // TODO
             // };
+            //
+            // albums.push(album);
+            // artists.push(artist);
 
             if i % progress_freq == 0 {
-                println!("{i}");
                 self.ui_tx
                     .send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))
                     .await?
@@ -141,8 +143,8 @@ impl Library {
         }
 
         self.songs = songs;
-        self.albums = albums.lock().unwrap().take().unwrap();
-        self.artists = artists.lock().unwrap().take().unwrap();
+        self.albums = albums;
+        self.artists = artists;
 
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
