@@ -14,7 +14,7 @@ use crate::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub enum UpdateUI {
-    PlayerState(State),
+    PlayerState(State, bool),
     PlayerTime(Option<ClockTime>),
     SongInfo(Option<Box<SongInfo>>),
     Progress(Option<f64>),
@@ -90,6 +90,7 @@ pub fn build(
     let media_toolbar = gtk::Box::builder()
         .orientation(Orientation::Vertical)
         .hexpand(true)
+        .sensitive(false)
         .css_classes(["toolbar", "osd"])
         .build();
 
@@ -230,6 +231,8 @@ pub fn build(
         #[weak]
         artist_label,
         #[weak]
+        media_toolbar,
+        #[weak]
         pause_button,
         #[weak]
         time_cur_label,
@@ -249,12 +252,12 @@ pub fn build(
                 };
 
                 match response {
-                    // TODO: Disable buttons based on state (loading library, no queue, etc)
-                    UpdateUI::PlayerState(state) => {
+                    UpdateUI::PlayerState(state, interactive) => {
                         pause_button.set_icon_name(match state {
                             State::Playing => "media-playback-pause-symbolic",
                             _ => "media-playback-start-symbolic",
                         });
+                        media_toolbar.set_sensitive(interactive);
                     }
                     UpdateUI::SongInfo(song_info) => {
                         let Some(song_info) = song_info else { return };

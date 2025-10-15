@@ -118,11 +118,11 @@ impl Player {
                     PlayerRequest::Update => (),
                 }
                 self.update()?;
-                self.transmit_state()?;
+                self.ui_set_state()?;
                 continue;
             }
 
-            self.transmit_time()?;
+            self.ui_set_time()?;
             thread::sleep(IDLE_DELAY);
 
             // Reset state after the queue ends
@@ -132,7 +132,7 @@ impl Player {
                 self.flush_gst_messages();
                 self.backend.set_state(State::Ready)?;
                 let _ = self.backend.state(None);
-                self.transmit_state()?;
+                self.ui_set_state()?;
                 self.pending_track = true;
                 self.end_of_queue = false;
                 self.update()?;
@@ -148,7 +148,7 @@ impl Player {
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
                     self.queue[self.song_index].assign_info_with_fallback();
-                    self.transmit_song_info()?;
+                    self.ui_set_song_info()?;
 
                     self.pending_track_info = false;
                     self.flush_gst_messages();
@@ -272,29 +272,30 @@ impl Player {
     }
 
     /// Sends the current state to the UI receiver
-    fn transmit_state(&self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_set_state(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
-        println!("transmit_state()\n");
+        let interactive = !self.queue.is_empty();
+        println!("ui_set_state()\n");
         let state = state.0.map_or_else(|_| State::Null, |_| state.1);
         self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::PlayerState(state)).await })
+            .block_on(async move { tx.send(UpdateUI::PlayerState(state, interactive)).await })
     }
 
     /// Sends the current song info to the UI receiver
-    fn transmit_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let song_info = self.queue[self.song_index].info.take();
-        println!("transmit_song_info()");
+        println!("ui_set_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
     }
 
     /// Sends the current playback time to the UI receiver
-    fn transmit_time(&self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_set_time(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         let time = self.current_time();
-        // println!("transmit_time({time:?})");
+        // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
     }
