@@ -13,6 +13,7 @@ use crate::ui::UpdateUI;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
+#[derive(Debug)]
 pub enum PlayerRequest {
     /// Play or pause depending on the current state
     PlayOrPause,
@@ -38,9 +39,9 @@ pub struct Player {
     pending_track: bool,
     pending_track_info: bool,
     end_of_queue: bool,
-    tokio_rt: tokio::runtime::Runtime,
     backend: gst::Element,
     bus: gst::Bus,
+    tokio_rt: tokio::runtime::Runtime,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
@@ -62,9 +63,10 @@ impl Player {
     > {
         gst::init().unwrap();
 
-        let playbin = gst::ElementFactory::make("playbin3").build()?;
-        let bus = playbin.bus().unwrap();
+        let backend = gst::ElementFactory::make("playbin3").build()?;
+        let bus = backend.bus().unwrap();
 
+        let tokio_rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
@@ -79,9 +81,9 @@ impl Player {
                 pending_track: true,
                 pending_state: None,
                 end_of_queue: false,
-                tokio_rt: tokio::runtime::Runtime::new().map_err(|e| e.to_string())?,
-                backend: playbin,
+                backend,
                 bus,
+                tokio_rt,
                 ui_tx: ui_tx.clone(),
                 rx,
             },
@@ -104,11 +106,17 @@ impl Player {
         // const SEND_RATE: f64 = 16.0;
         // const SEND_DELAY: Duration = Duration::from_millis((1000.0 / SEND_RATE) as u64);
         // let time_update_timer =
-        const IDLE_CHECK_RATE: f64 = 32.0;
+        const IDLE_CHECK_RATE: f64 = 60.2;
         const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
             // TODO: Gracefully handle errors whenever possible
+            //
+            // For exmample: create a 0 byte music file and try to play it
+            // Expected behavior: prints an error and skips the song
+            // Actual behavior: the program panics
+
             if let Ok(player_request) = self.rx.try_recv() {
+                dbg!(&player_request);
                 match player_request {
                     PlayerRequest::SongEnd => self.move_next(),
                     PlayerRequest::PlayOrPause => self.play_or_pause(),
@@ -167,7 +175,7 @@ impl Player {
 
         if self.pending_track {
             let file_uri = self.queue[self.song_index].file_uri();
-            println!("{file_uri}");
+            println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
         }
 
@@ -221,17 +229,18 @@ impl Player {
 
     /// Seeks to the beginning of the current track
     fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
-        self.seek_to_time(ClockTime::from_seconds(0))
+        self.seek_to_time(ClockTime::default())
     }
 
     /// Skips to previous track or restarts the current one if above the time threshold
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
-            Some(time) if time > REPEAT_THRESHOLD => self.repeat_song(),
-            _ if (self.song_index == 0 && !self.repeat) => self.repeat_song(),
-            _ => Ok(self.skip_prev()),
+            Some(time) if time > REPEAT_THRESHOLD => self.repeat_song()?,
+            _ if (self.song_index == 0 && !self.repeat) => self.repeat_song()?,
+            _ => self.skip_prev(),
         }
+        Ok(())
     }
 
     /// Seek to a position in the song using a 0 to 1 value
@@ -242,7 +251,7 @@ impl Player {
         let target_ms = (self
             .backend
             .query_duration::<ClockTime>()
-            .unwrap_or_else(|| ClockTime::from_seconds(0))
+            .unwrap_or_default()
             .mseconds() as f64
             * position) as u64;
         // println!("Target seek position (ms): {target_ms}");
@@ -276,7 +285,7 @@ impl Player {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
-        println!("ui_set_state()\n");
+        println!("ui_set_state()");
         let state = state.0.map_or_else(|_| State::Null, |_| state.1);
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerState(state, interactive)).await })

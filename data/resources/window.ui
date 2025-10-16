@@ -3,10 +3,11 @@
   <requires lib="libadwaita" version="1.8"/>
   <template class="MellowWindow" parent="AdwApplicationWindow">
     <property name="title">Mellow</property>
+    <property name="width_request">0</property>
+    <property name="height_request">0</property>
 
     <child>
       <object class="AdwBottomSheet" id="sheet">
-        <property name="css_classes">flat</property>
         <property name="content">
           <object class="AdwToolbarView">
             
@@ -179,8 +180,8 @@
                         <property name="hexpand">True</property>
                       </object>
                     </child>
+                  
                   </object>
-
                 </child>
               </object>
             </property>
@@ -207,6 +208,10 @@
 
         <property name="sheet">
           <object class="AdwToolbarView">
+            <style>
+              <class name="view"/>
+              <class name="toolbar"/>
+            </style>
             <child type="top">
               <object class="AdwHeaderBar"/>
             </child>

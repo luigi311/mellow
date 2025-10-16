@@ -78,14 +78,13 @@ impl Window {
     }
 
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
-        self.seek_bar.connect_change_value({
-            let player_tx = self.player_tx.get().unwrap().clone();
-            move |_, _, value| {
-                player_tx.send(PlayerRequest::Seek(value)).unwrap();
-                glib::Propagation::Proceed
-            }
+        let player_tx = self.player_tx.get().unwrap().clone();
+        self.seek_bar.connect_change_value(move |_, _, value| {
+            player_tx.send(PlayerRequest::Seek(value)).unwrap();
+            glib::Propagation::Proceed
         });
-        let mut song_duration = Duration::from_secs(0);
+
+        let mut song_duration = Duration::default();
         loop {
             let Some(response) = ui_rx.recv().await else {
                 continue;
@@ -114,7 +113,6 @@ impl Window {
             _ => "media-playback-start-symbolic",
         });
         self.media_controls.set_sensitive(interactive);
-        println!("State set request received");
     }
 
     fn update_song_info(&self, song_info: Option<Box<SongInfo>>, song_duration: &mut Duration) {

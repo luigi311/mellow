@@ -74,7 +74,7 @@ impl Song {
                     track: String::new(),
                     year: String::new(),
                     lyrics: String::new(),
-                    duration: ClockTime::from_seconds(0),
+                    duration: ClockTime::default(),
                     artwork: None,
                 }));
             });

@@ -52,6 +52,5 @@ impl Window {
         let height = self.settings().int("window-height");
 
         self.set_default_size(width, height);
-        self.set_size_request(0, 0);
     }
 }
