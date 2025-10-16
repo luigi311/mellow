@@ -135,9 +135,14 @@ impl Window {
         self.album_title.set_label(&song_info.album);
         self.artist_name.set_label(&song_info.artist);
 
-        *song_duration = Duration::from_millis(song_info.duration.mseconds());
-        self.time_end_label
-            .set_label(&format_duration(&song_duration));
+        let duration_ms = song_info.duration.mseconds();
+        *song_duration = Duration::from_millis(duration_ms);
+        if duration_ms > 0 {
+            self.time_end_label
+                .set_label(&format_duration(&song_duration));
+        } else {
+            self.time_end_label.set_label("-:--");
+        }
 
         if song_info.lyrics.is_empty() {
             self.lyrics.set_label("Lyrics not available");
@@ -148,15 +153,20 @@ impl Window {
 
     fn update_time(&self, time: Option<ClockTime>, duration: f64) {
         if let Some(time_ms) = time.map(gst::ClockTime::mseconds) {
-            self.seek_bar.set_sensitive(true);
-            self.seek_bar.set_child_visible(true);
             self.time_cur_label
                 .set_label(&format_duration(&Duration::from_millis(time_ms)));
-            self.seek_bar.set_value(time_ms as f64 / duration);
+            self.seek_bar.set_child_visible(true);
+            if duration > 0.0 {
+                self.seek_bar.set_sensitive(true);
+                self.seek_bar.set_value(time_ms as f64 / duration);
+            } else {
+                self.seek_bar.set_sensitive(false);
+                self.seek_bar.set_value(0.0);
+            }
         } else {
-            self.seek_bar.set_sensitive(false);
-            self.seek_bar.set_child_visible(false);
             self.time_cur_label.set_label("-:--");
+            self.seek_bar.set_child_visible(false);
+            self.seek_bar.set_sensitive(false);
             self.seek_bar.set_value(0.0);
         }
     }
