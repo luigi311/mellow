@@ -83,7 +83,7 @@
                     </child>
 
                     <!-- Media controls -->
-                    <child>
+                    <child type="overlay">
                       <object class="GtkBox" id="media_controls">
                         <property name="orientation">vertical</property>
                         <property name="hexpand">True</property>
@@ -192,7 +192,7 @@
         <property name="bottom-bar">
           <object class="GtkCenterBox">
             <style>
-              <class name="toolbar"/>
+              <class name="flat"/>
             </style>
             <property name="height-request">30</property>
             <property name="center-widget">
@@ -205,41 +205,102 @@
             </property>
           </object>
         </property>
-
+        <property name="show-drag-handle">False</property>
         <property name="sheet">
           <object class="AdwToolbarView">
             <style>
               <class name="view"/>
-              <class name="toolbar"/>
             </style>
             <child type="top">
-              <object class="AdwHeaderBar"/>
+              <object class="AdwHeaderBar">
+                <property name="show_title">False</property>
+                <!-- <property name="title-widget"> -->
+                  <!-- <object class=""> -->
+                  <!-- </object> -->
+                <!-- </property> -->
+              </object>
             </child>
             <property name="content">
-              <object class="AdwStatusPage">
+              <object class="AdwViewStack" id="view_stack">
                 <child>
-                  <object class="GtkBox">
-                    <property name="vexpand">True</property>
-                    <child>
-                      <object class="GtkLabel" id="lyrics">
-                        <property name="label">Lyrics not available</property>
-                        <property name="justify">center</property>
-                        <property name="wrap_mode">word</property>
-                        <property name="wrap">True</property>
-                        <property name="hexpand">True</property>
-                        <property name="halign">center</property>
-                        <property name="margin_start">12</property>
-                        <property name="margin_end">12</property>
-                        <property name="wrap_mode">word</property>
-                        <style>
-                          <class name="body"/>
-                        </style>
+                  <object class="AdwViewStackPage">
+                    <property name="name">library</property>
+                    <property name="title" translatable="yes">_Library</property>
+                    <property name="icon-name">applications-multimedia-symbolic</property>
+                    <property name="use-underline">True</property>
+                    <property name="child">
+                      <object class="AdwStatusPage">
+                        <property name="icon-name">applications-multimedia-symbolic</property>
+                        <property name="title" translatable="yes">Library</property>
+                        <property name="description" translatable="yes">No songs were found</property>
                       </object>
-                    </child>
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwViewStackPage">
+                    <property name="name">playing</property>
+                    <property name="title" translatable="yes">_Playing</property>
+                    <property name="icon-name">media-playback-start-symbolic</property>
+                    <property name="use-underline">True</property>
+                    <property name="child">
+                      <object class="AdwStatusPage">
+                        <style>
+                          <class name="compact"/>
+                        </style>
+                        <child>
+                          <!-- TODO: Show the current queue, and the lyrics in a submenu or tab -->
+                          <object class="AdwToolbarView">
+                            <property name="content">
+                              <object class="GtkLabel" id="lyrics">
+                                <property name="label" translatable="yes">Lyrics not available</property>
+                                <property name="justify">center</property>
+                                <property name="wrap_mode">word</property>
+                                <property name="wrap">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="halign">center</property>
+                                <property name="margin_start">12</property>
+                                <property name="margin_end">12</property>
+                                <property name="wrap_mode">word</property>
+                                <style>
+                                  <class name="body"/>
+                                </style>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                      </object>
+                      <!-- <object class="AdwStatusPage"> -->
+                        <!-- <property name="icon-name">media-optical-cd-audio-symbolic</property> -->
+                        <!-- <property name="title" translatable="yes">Playing</property> -->
+                        <!-- <property name="description" translatable="yes">No albums were found</property> -->
+                      <!-- </object> -->
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwViewStackPage">
+                    <property name="name">settings</property>
+                    <property name="title" translatable="yes">_Settings</property>
+                    <property name="icon-name">preferences-system-symbolic</property>
+                    <property name="use-underline">True</property>
+                    <property name="child">
+                      <object class="AdwStatusPage">
+                        <property name="icon-name">preferences-system-symbolic</property>
+                        <property name="title" translatable="yes">Settings</property>
+                        <property name="description" translatable="yes">Settings are not yet implemented</property>
+                      </object>
+                    </property>
                   </object>
                 </child>
               </object>
             </property>
+            <child type="bottom">
+              <object class="AdwViewSwitcherBar" id="view_switcher_bar">
+                <property name="stack">view_stack</property>
+                <property name="reveal">True</property>
+              </object>
+            </child>
           </object>
         </property>
       

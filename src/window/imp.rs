@@ -45,8 +45,12 @@ pub struct Window {
     #[template_child]
     pub time_end_label: TemplateChild<gtk::Label>,
 
-    pub settings: OnceCell<Settings>,
+    #[template_child]
+    pub view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
 
+    pub settings: OnceCell<Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 }
 
@@ -124,11 +128,7 @@ impl Window {
             self.album_cover
                 .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
         }
-        // IDEA: Once the controls toolbar auto-hide is implemented,
-        // instead of letting the artwork shrink to 0, disable it when
-        // the window height is too small to fit the artwork at the
-        // minimum size. This is because the library might not be easy
-        // to navigate when the window height is too small
+
         self.album_cover.set_width_request(0);
         self.album_cover.set_height_request(0);
         self.song_title.set_label(&song_info.title);
