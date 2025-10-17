@@ -135,16 +135,13 @@ impl Player {
                     PlayerRequest::SkipNext => self.skip_next(),
                     PlayerRequest::Update => (),
 
-                    PlayerRequest::SetVolume(vol) => {
-                        self.set_volume(vol);
-                        continue;
-                    }
-                    PlayerRequest::SetShuffle(shuffle) => {
-                        self.toggle_shuffle(shuffle);
-                        continue;
-                    }
-                    PlayerRequest::SetRepeat(repeat) => {
-                        self.repeat = repeat;
+                    player_settings => {
+                        match player_settings {
+                            PlayerRequest::SetVolume(vol) => self.set_volume(vol),
+                            PlayerRequest::SetShuffle(shuffle) => self.toggle_shuffle(shuffle),
+                            PlayerRequest::SetRepeat(repeat) => self.repeat = repeat,
+                            _ => (),
+                        }
                         continue;
                     }
                 }
