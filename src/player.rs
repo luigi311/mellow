@@ -28,14 +28,21 @@ pub enum PlayerRequest {
     /// Refresh local player state
     Update,
 
+    /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
+    /// Turn the shuffle mode on or off
+    SetShuffle(bool),
+    /// Turn the repeat mode on or off
+    SetRepeat(bool),
 }
 
 pub struct Player {
-    pub repeat: bool,
-    pub shuffle: bool, // TODO: Button to randomize the queue instead of shuffle mode
+    repeat: bool,
+    shuffle: bool,
+
     song_index: usize,
     queue: Vec<Song>,
+    shuffled: Vec<usize>,
 
     pending_state: Option<State>,
     pending_track: bool,
@@ -74,10 +81,11 @@ impl Player {
 
         Ok((
             Player {
-                song_index: 0,
-                queue: vec![],
                 repeat: false,
                 shuffle: false,
+                song_index: 0,
+                queue: vec![],
+                shuffled: vec![],
 
                 pending_track_info: false,
                 pending_track: true,
@@ -125,8 +133,11 @@ impl Player {
                     PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                     PlayerRequest::SkipNext => self.skip_next(),
-                    PlayerRequest::SetVolume(vol) => self.set_volume(vol),
                     PlayerRequest::Update => (),
+
+                    PlayerRequest::SetVolume(vol) => self.set_volume(vol),
+                    PlayerRequest::SetShuffle(shuffle) => self.toggle_shuffle(shuffle),
+                    PlayerRequest::SetRepeat(repeat) => self.repeat = repeat,
                 }
                 self.update()?;
                 self.ui_set_state()?;
@@ -158,7 +169,7 @@ impl Player {
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
-                    self.queue[self.song_index].assign_info_with_fallback();
+                    self.current_song().assign_info_with_fallback();
                     self.ui_set_song_info()?;
 
                     self.pending_track_info = false;
@@ -177,7 +188,7 @@ impl Player {
         }
 
         if self.pending_track {
-            let file_uri = self.queue[self.song_index].file_uri();
+            let file_uri = self.current_song().file_uri();
             println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
         }
@@ -239,8 +250,9 @@ impl Player {
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
-            Some(time) if time > REPEAT_THRESHOLD => self.repeat_song()?,
-            _ if (self.song_index == 0 && !self.repeat) => self.repeat_song()?,
+            Some(time) if (time > REPEAT_THRESHOLD || (self.song_index == 0 && !self.repeat)) => {
+                self.repeat_song()?
+            }
             _ => self.skip_prev(),
         }
         Ok(())
@@ -287,6 +299,22 @@ impl Player {
         self.backend.query_position::<ClockTime>()
     }
 
+    /// Get the current song index based on the shuffle mode option
+    fn song_index(&self) -> usize {
+        match self.shuffle {
+            true => self.shuffled[self.song_index],
+            false => self.song_index,
+        }
+    }
+
+    /// Returns a mutable reference to the current song
+    fn current_song(&mut self) -> &mut Song {
+        match self.shuffle {
+            true => &mut self.queue[self.shuffled[self.song_index]],
+            false => &mut self.queue[self.song_index],
+        }
+    }
+
     /// Sends the current state to the UI receiver
     fn ui_set_state(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
@@ -301,7 +329,7 @@ impl Player {
     /// Sends the current song info to the UI receiver
     fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
-        let song_info = self.queue[self.song_index].info.take();
+        let song_info = self.current_song().info.take();
         println!("ui_set_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
@@ -322,6 +350,7 @@ impl Player {
         self.backend.set_property("instant-uri", true);
         self.pending_track = true;
         self.queue = queue;
+        self.update_shuffled_queue();
     }
 
     /// Restarts the queue from the beginning
@@ -332,16 +361,35 @@ impl Player {
         self.song_index = 0;
     }
 
-    /// Randomizez the order of songs in the queue
-    /// Playback state has to be manually updated
-    pub fn randomize_queue(&mut self) {
-        self.backend.set_property("instant-uri", true);
-        self.pending_track = true;
-        for i in 0..self.queue.len() {
-            let rand_index = random_range(0..self.queue.len());
-            self.queue.swap(i, rand_index);
+    fn toggle_shuffle(&mut self, shuffle: bool) {
+        if self.shuffle == shuffle {
+            return;
         }
-        self.song_index = 0;
+        if self.shuffle {
+            self.song_index = self.song_index()
+        }
+        self.shuffle = shuffle;
+        self.update_shuffled_queue();
+    }
+
+    fn update_shuffled_queue(&mut self) {
+        if self.queue.is_empty() {
+            eprintln!("Cannot shuffle an empty queue");
+            return;
+        }
+        self.shuffled = (0..self.queue.len()).collect();
+        let start = match self.song_index() {
+            index if index > 0 && self.shuffle => {
+                self.shuffled.swap(0, index);
+                self.song_index = 0;
+                1
+            }
+            _ => 0,
+        };
+        for i in start..self.shuffled.len() {
+            let rand_index = random_range(0..self.shuffled.len());
+            self.shuffled.swap(i, rand_index);
+        }
     }
 
     /// Removes all upcomming songs from the queue

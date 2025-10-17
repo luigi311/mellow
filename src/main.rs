@@ -83,8 +83,6 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
             library.rebuild().await.unwrap();
             library.songs
         });
-        player.shuffle = true;
         player.new_queue(songs);
-        player.randomize_queue();
     }
 }

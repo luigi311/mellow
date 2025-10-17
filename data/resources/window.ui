@@ -300,7 +300,8 @@
                         <child>
                           <object class="AdwPreferencesGroup">
                             <property name="hexpand">True</property>
-                            <property name="title">Playback</property>
+                            <property name="title" translatable="yes">Playback</property>
+                            
                             <child>
                               <object class="AdwPreferencesRow">
                                 <child>
@@ -308,14 +309,13 @@
                                     <style>
                                       <class name="horizontal"/>
                                     </style>
-                                    <!-- <property name="halign">center</property> -->
                                     <property name="margin_top">12</property>
                                     <property name="margin_bottom">12</property>
                                     <property name="margin_start">12</property>
                                     <property name="margin_end">12</property>
                                     <child>
                                       <object class="GtkLabel">
-                                        <property name="label">Volume</property>
+                                        <property name="label" translatable="yes">Volume</property>
                                       </object>
                                     </child>
                                     <child>
@@ -332,6 +332,19 @@
                                     </child>
                                   </object>
                                 </child>
+                              </object>
+                            </child>
+                          
+                            <!-- TODO: Move the shuffle/repeat buttons into the queue view once impelemented -->
+                            <!-- ... or use the more standard position for those buttons -->
+                            <child>
+                              <object class="AdwSwitchRow" id="settings_shuffle">
+                                <property name="title" translatable="yes">Shuffle</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwSwitchRow" id="settings_repeat">
+                                <property name="title" translatable="yes">Repeat</property>
                               </object>
                             </child>
                           </object>

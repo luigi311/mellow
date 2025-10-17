@@ -52,6 +52,10 @@ pub struct Window {
 
     #[template_child]
     pub settings_volume: TemplateChild<gtk::Scale>,
+    #[template_child]
+    pub settings_shuffle: TemplateChild<adw::SwitchRow>,
+    #[template_child]
+    pub settings_repeat: TemplateChild<adw::SwitchRow>,
 
     pub settings: OnceCell<Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
@@ -94,11 +98,28 @@ impl Window {
                 glib::Propagation::Proceed
             }
         });
+
         self.settings_volume.connect_change_value({
             let player_tx = player_tx.clone();
             move |_, _, value| {
                 player_tx.send(PlayerRequest::SetVolume(value)).unwrap();
                 glib::Propagation::Proceed
+            }
+        });
+        self.settings_shuffle.connect_active_notify({
+            let player_tx = player_tx.clone();
+            move |switch| {
+                player_tx
+                    .send(PlayerRequest::SetShuffle(switch.is_active()))
+                    .unwrap();
+            }
+        });
+        self.settings_repeat.connect_active_notify({
+            let player_tx = player_tx.clone();
+            move |switch| {
+                player_tx
+                    .send(PlayerRequest::SetRepeat(switch.is_active()))
+                    .unwrap();
             }
         });
     }
