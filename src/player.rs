@@ -135,9 +135,18 @@ impl Player {
                     PlayerRequest::SkipNext => self.skip_next(),
                     PlayerRequest::Update => (),
 
-                    PlayerRequest::SetVolume(vol) => self.set_volume(vol),
-                    PlayerRequest::SetShuffle(shuffle) => self.toggle_shuffle(shuffle),
-                    PlayerRequest::SetRepeat(repeat) => self.repeat = repeat,
+                    PlayerRequest::SetVolume(vol) => {
+                        self.set_volume(vol);
+                        continue;
+                    }
+                    PlayerRequest::SetShuffle(shuffle) => {
+                        self.toggle_shuffle(shuffle);
+                        continue;
+                    }
+                    PlayerRequest::SetRepeat(repeat) => {
+                        self.repeat = repeat;
+                        continue;
+                    }
                 }
                 self.update()?;
                 self.ui_set_state()?;
@@ -379,7 +388,7 @@ impl Player {
         }
         self.shuffled = (0..self.queue.len()).collect();
         let start = match self.song_index() {
-            index if index > 0 && self.shuffle => {
+            index if self.shuffle => {
                 self.shuffled.swap(0, index);
                 self.song_index = 0;
                 1
@@ -387,7 +396,7 @@ impl Player {
             _ => 0,
         };
         for i in start..self.shuffled.len() {
-            let rand_index = random_range(0..self.shuffled.len());
+            let rand_index = random_range(start..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
     }
