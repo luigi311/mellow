@@ -27,6 +27,8 @@ pub enum PlayerRequest {
     SongEnd,
     /// Refresh local player state
     Update,
+
+    SetVolume(f64),
 }
 
 pub struct Player {
@@ -123,6 +125,7 @@ impl Player {
                     PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                     PlayerRequest::SkipNext => self.skip_next(),
+                    PlayerRequest::SetVolume(vol) => self.set_volume(vol),
                     PlayerRequest::Update => (),
                 }
                 self.update()?;
@@ -134,9 +137,9 @@ impl Player {
             thread::sleep(IDLE_DELAY);
 
             // Reset state after the queue ends
-            const END_OF_QUEUE: &[gst::MessageType] =
+            const EOQ_FILTERS: &[gst::MessageType] =
                 &[gst::MessageType::Eos, gst::MessageType::StateChanged];
-            if self.end_of_queue && self.bus.pop_filtered(END_OF_QUEUE).is_some() {
+            if self.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
                 self.flush_gst_messages();
                 self.backend.set_state(State::Ready)?;
                 let _ = self.backend.state(None);
@@ -268,6 +271,10 @@ impl Player {
         self.backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)?;
         Ok(())
+    }
+
+    fn set_volume(&self, volume: f64) {
+        self.backend.set_property("volume", volume);
     }
 
     /// Sets player state the next time `update()` is called

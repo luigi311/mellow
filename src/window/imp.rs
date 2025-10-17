@@ -50,6 +50,9 @@ pub struct Window {
     #[template_child]
     pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
 
+    #[template_child]
+    pub settings_volume: TemplateChild<gtk::Scale>,
+
     pub settings: OnceCell<Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 }
@@ -81,14 +84,29 @@ impl Window {
             .unwrap();
     }
 
-    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
+    fn connect_closures(&self) {
         let player_tx = self.player_tx.get().unwrap().clone();
-        self.seek_bar.connect_change_value(move |_, _, value| {
-            player_tx.send(PlayerRequest::Seek(value)).unwrap();
-            glib::Propagation::Proceed
-        });
 
+        self.seek_bar.connect_change_value({
+            let player_tx = player_tx.clone();
+            move |_, _, value| {
+                player_tx.send(PlayerRequest::Seek(value)).unwrap();
+                glib::Propagation::Proceed
+            }
+        });
+        self.settings_volume.connect_change_value({
+            let player_tx = player_tx.clone();
+            move |_, _, value| {
+                player_tx.send(PlayerRequest::SetVolume(value)).unwrap();
+                glib::Propagation::Proceed
+            }
+        });
+    }
+
+    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
+        self.connect_closures();
         let mut song_duration = Duration::default();
+
         loop {
             let Some(response) = ui_rx.recv().await else {
                 continue;
