@@ -40,7 +40,7 @@ fn init(app: &Application) {
         .spawn(move || {
             init_player_queue(&mut player, ui_tx);
             player_tx.send(PlayerRequest::Update).unwrap();
-            player.controller(player_tx).inspect_err(|e| panic!("{e}"));
+            player.controller().inspect_err(|e| panic!("{e}"));
         });
 }
 

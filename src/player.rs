@@ -17,14 +17,15 @@ use crate::ui::UpdateUI;
 pub enum PlayerRequest {
     /// Play or pause depending on the current state
     PlayOrPause,
-    /// Skip to the next song in the queue
-    SkipNext,
     /// Skip to beginning or previous song
     SkipPrevious,
     /// Seek to a particular point in the song using a 0 to 1 value
     Seek(f64),
-    /// Used internally to signal when song is about to end
-    SongEnd,
+    /// Skip to the next song in the queue
+    SkipNext,
+    /// Loads the next song without clearing the stream
+    /// (does nothing if `gapless` is turned off)
+    LoadNext,
     /// Refresh local player state
     Update,
 
@@ -34,11 +35,14 @@ pub enum PlayerRequest {
     SetShuffle(bool),
     /// Turn the repeat mode on or off
     SetRepeat(bool),
+    /// Turn gapless playback on or off
+    SetGapless(bool),
 }
 
 pub struct Player {
     repeat: bool,
     shuffle: bool,
+    gapless: bool,
 
     song_index: usize,
     queue: Vec<Song>,
@@ -52,6 +56,7 @@ pub struct Player {
     bus: gst::Bus,
     tokio_rt: tokio::runtime::Runtime,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    player_tx: mpsc::SyncSender<PlayerRequest>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
 
@@ -83,6 +88,7 @@ impl Player {
             Player {
                 repeat: false,
                 shuffle: false,
+                gapless: true,
                 song_index: 0,
                 queue: vec![],
                 shuffled: vec![],
@@ -95,6 +101,7 @@ impl Player {
                 bus,
                 tokio_rt,
                 ui_tx: ui_tx.clone(),
+                player_tx: player_tx.clone(),
                 rx,
             },
             player_tx,
@@ -104,12 +111,10 @@ impl Player {
     }
 
     /// Main controller loop which handles player requests
-    pub fn controller(
-        &mut self,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
-    ) -> Result<(), Box<dyn Error>> {
+    pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
+        let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
-            player_tx.send(PlayerRequest::SongEnd).unwrap();
+            player_tx.send(PlayerRequest::LoadNext).unwrap();
             None
         });
 
@@ -128,11 +133,16 @@ impl Player {
             if let Ok(player_request) = self.rx.try_recv() {
                 dbg!(&player_request);
                 match player_request {
-                    PlayerRequest::SongEnd => self.move_next(),
                     PlayerRequest::PlayOrPause => self.play_or_pause(),
                     PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                     PlayerRequest::SkipNext => self.skip_next(),
+                    PlayerRequest::LoadNext => {
+                        if !self.gapless {
+                            continue;
+                        }
+                        self.move_next()
+                    }
                     PlayerRequest::Update => (),
 
                     player_settings => {
@@ -140,7 +150,8 @@ impl Player {
                             PlayerRequest::SetVolume(vol) => self.set_volume(vol),
                             PlayerRequest::SetShuffle(shuffle) => self.toggle_shuffle(shuffle),
                             PlayerRequest::SetRepeat(repeat) => self.repeat = repeat,
-                            _ => (),
+                            PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
+                            request => panic!("Unhandled player request: {request:?}"),
                         }
                         continue;
                     }
@@ -157,7 +168,7 @@ impl Player {
             const EOQ_FILTERS: &[gst::MessageType] =
                 &[gst::MessageType::Eos, gst::MessageType::StateChanged];
             if self.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
-                self.flush_gst_messages();
+                self.handle_gst_messages();
                 self.backend.set_state(State::Ready)?;
                 let _ = self.backend.state(None);
                 self.ui_set_state()?;
@@ -171,17 +182,16 @@ impl Player {
                 if self.pending_track {
                     self.pending_track_info = true;
                     self.pending_track = false;
-                    self.flush_gst_messages();
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
                     self.current_song().assign_info_with_fallback();
                     self.ui_set_song_info()?;
-
                     self.pending_track_info = false;
-                    self.flush_gst_messages();
                 }
             }
+
+            self.handle_gst_messages();
         }
     }
 
@@ -279,7 +289,7 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        // FIX: Hangs when seeking towards the end of song and back again
+        // FIX: Hangs when seeking to song end
         match self.backend.current_state() {
             State::Playing | State::Paused | State::Ready => (),
             _ => return Ok(()),
@@ -409,13 +419,16 @@ impl Player {
         }
     }
 
-    /// Clears the GStreamer message queue and prints out errors/warnings/EOS
-    fn flush_gst_messages(&self) {
+    /// Clears and hadles the GStreamer message queue
+    fn handle_gst_messages(&self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
                 gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
-                gst::MessageType::Eos => eprintln!("gstreamer: Reached end of stream"),
+                gst::MessageType::Eos => {
+                    println!("gstreamer: Reached end of stream");
+                    self.player_tx.send(PlayerRequest::SkipNext).unwrap();
+                }
                 _ => (),
             }
         }

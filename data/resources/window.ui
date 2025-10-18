@@ -347,6 +347,12 @@
                                 <property name="title" translatable="yes">Repeat</property>
                               </object>
                             </child>
+                            <child>
+                              <object class="AdwSwitchRow" id="settings_gapless">
+                                <property name="title" translatable="yes">Gapless</property>
+                                <property name="active">True</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
 
