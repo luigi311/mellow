@@ -32,7 +32,7 @@ fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) =
         Player::init().expect("Failed to initialize player");
 
-    mellow::ui::build(app, player_tx.clone(), ui_rx);
+    mellow::ui::build(app, &player_tx, ui_rx);
 
     #[allow(unused_must_use)]
     thread::Builder::new()

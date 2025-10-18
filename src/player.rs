@@ -213,14 +213,12 @@ impl Player {
     fn play_or_pause(&mut self) {
         self.request_state(match self.backend.current_state() {
             State::Playing => State::Paused,
-            State::Paused => State::Playing,
-            State::Ready => State::Playing,
             _ => State::Playing,
         });
     }
 
     /// Moves to the next track in the queue without flushing the stream
-    fn move_next(&mut self) {
+    const fn move_next(&mut self) {
         self.pending_track = true;
         self.song_index += 1;
     }
@@ -257,7 +255,7 @@ impl Player {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
             Some(time) if (time > REPEAT_THRESHOLD || (self.song_index == 0 && !self.repeat)) => {
-                self.repeat_song()?
+                self.repeat_song()?;
             }
             _ => self.skip_prev(),
         }
@@ -372,7 +370,7 @@ impl Player {
             return;
         }
         if self.shuffle {
-            self.song_index = self.song_index()
+            self.song_index = self.song_index();
         }
         self.shuffle = shuffle;
         self.update_shuffled_queue();

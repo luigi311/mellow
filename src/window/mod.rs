@@ -20,6 +20,7 @@ glib::wrapper! {
 }
 
 impl Window {
+    #[must_use]
     pub fn new(app: &Application) -> Self {
         Object::builder().property("application", app).build()
     }

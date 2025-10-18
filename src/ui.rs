@@ -25,13 +25,13 @@ pub enum UpdateUI {
 
 pub fn build(
     app: &Application,
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: &mpsc::SyncSender<PlayerRequest>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
     let window = Window::new(app);
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
-    window.register_player_tx(player_tx);
+    window.register_player_tx(player_tx.clone());
     window.present();
 
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
@@ -41,7 +41,7 @@ pub fn build(
 // for comparison/testing purposes
 pub fn build_old(
     app: &Application,
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: &mpsc::SyncSender<PlayerRequest>,
     mut ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
     // TODO: Center the title and player controls inside the

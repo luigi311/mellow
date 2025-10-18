@@ -50,6 +50,7 @@ pub struct Window {
     #[template_child]
     pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
 
+    // TODO: Save/load settings
     #[template_child]
     pub settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]
@@ -178,7 +179,7 @@ impl Window {
         *song_duration = Duration::from_millis(duration_ms);
         if duration_ms > 0 {
             self.time_end_label
-                .set_label(&format_duration(&song_duration));
+                .set_label(&format_duration(song_duration));
         } else {
             self.time_end_label.set_label("-:--");
         }
