@@ -236,7 +236,7 @@ impl Player {
     /// Skips to next track
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-        if self.song_index + 1 == self.queue.len() {
+        if !self.repeat && self.song_index + 1 == self.queue.len() {
             self.request_state(State::Ready);
         }
         self.move_next();
