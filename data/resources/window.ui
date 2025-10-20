@@ -6,6 +6,8 @@
     <property name="width_request">0</property>
     <property name="height_request">0</property>
 
+    <!-- TODO: Organize views into separate files/widgets -->
+    
     <child>
       <object class="AdwBottomSheet" id="sheet">
         <style>
@@ -416,19 +418,41 @@
                           <!-- TODO: Show the current queue, and the lyrics in a submenu or tab -->
                           <object class="AdwToolbarView">
                             <property name="content">
-                              <object class="GtkLabel" id="lyrics">
-                                <property name="label" translatable="yes">Lyrics not available</property>
-                                <property name="justify">center</property>
-                                <property name="wrap_mode">word</property>
-                                <property name="wrap">True</property>
-                                <property name="hexpand">True</property>
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
                                 <property name="halign">center</property>
-                                <property name="margin_start">12</property>
-                                <property name="margin_end">12</property>
-                                <property name="wrap_mode">word</property>
-                                <style>
-                                  <class name="body"/>
-                                </style>
+                                <property name="spacing">16</property>
+                                <child>
+                                  <object class="GtkLabel" id="info_song_title">
+                                    <property name="justify">center</property>
+                                    <property name="wrap_mode">word</property>
+                                    <property name="wrap">True</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin_start">12</property>
+                                    <property name="margin_end">12</property>
+                                    <property name="wrap_mode">word</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="info_lyrics">
+                                    <property name="label" translatable="yes">Lyrics not available</property>
+                                    <property name="justify">center</property>
+                                    <property name="wrap_mode">word</property>
+                                    <property name="wrap">True</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin_start">12</property>
+                                    <property name="margin_end">12</property>
+                                    <property name="wrap_mode">word</property>
+                                    <style>
+                                      <class name="body"/>
+                                    </style>
+                                  </object>
+                                </child>
                               </object>
                             </property>
                           </object>
@@ -515,12 +539,12 @@
                             <property name="hexpand">True</property>
                             <property name="title">Library</property>
                             <child>
-                              <object class="AdwExpanderRow">
+                              <object class="AdwExpanderRow" id="settings_directories">
                                 <property name="title">Directories</property>
                                 <property name="expanded">True</property>
-                                <!-- TODO: Allow adding/removing directories -->
                                 <child>
-                                  <object class="AdwButtonRow">
+                                  <!-- TODO: Allow adding/removing directories -->
+                                  <object class="AdwButtonRow" id="add_directory_button">
                                     <property name="title" translatable="yes">Add Directory</property>
                                     <property name="start_icon_name">list-add-symbolic</property>
                                     <!-- <style> -->

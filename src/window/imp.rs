@@ -31,8 +31,6 @@ pub struct Window {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
-    #[template_child]
-    lyrics: TemplateChild<gtk::Label>,
 
     #[template_child]
     pub media_controls: TemplateChild<gtk::Box>,
@@ -49,6 +47,11 @@ pub struct Window {
     pub view_stack: TemplateChild<adw::ViewStack>,
     #[template_child]
     pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
+
+    #[template_child]
+    info_song_title: TemplateChild<gtk::Label>,
+    #[template_child]
+    info_lyrics: TemplateChild<gtk::Label>,
 
     // TODO: Save/load settings
     #[template_child]
@@ -194,10 +197,11 @@ impl Window {
             self.time_end_label.set_label("-:--");
         }
 
+        self.info_song_title.set_label(&song_info.title);
         if song_info.lyrics.is_empty() {
-            self.lyrics.set_label("Lyrics not available");
+            self.info_lyrics.set_label("Lyrics not available");
         } else {
-            self.lyrics.set_label(&song_info.lyrics);
+            self.info_lyrics.set_label(&song_info.lyrics);
         }
     }
 
