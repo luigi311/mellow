@@ -1,0 +1,21 @@
+- [ ] Interactive song queue
+  - [ ] Display the song queue
+  - [ ] Allow adding/removing items from the queue
+  - [ ] Allow reordering the queue
+  - [ ] Allow inserting stoppers (scheduled pause)
+  - [ ] Access song lyrics using a header-bar icon
+- [ ] Music library
+  - [ ] Interface
+    - [ ] Songs page: show all songs
+    - [ ] Albums page: show all albums
+    - [ ] Artists page: show all artists
+    - [ ] Album details page: show album cover, songs, rating, tags, etc
+    - [ ] Artist page: show all albums by artist
+  - [ ] Features
+    - [ ] Ratings
+    - [ ] Play counts
+    - [ ] Custom tags
+    - [ ] Search and filters (tags, ratings, year, etc)
+    - [ ] Advanced filters (year < 2000, rating > 3, play-count = 0, etc)
+- [ ] Background color(s) matching the album cover
+  - [ ] Bonus: alter the colors differently for dark/light theme

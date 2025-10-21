@@ -1,3 +1,5 @@
+Note: Parts of the design were altered in the actual implementation.
+
 # Player
 ```
           ╭─ Titlebar appears on hover
@@ -78,17 +80,33 @@ to access the music          │            │  ││  Lyircs:  ││
   │╰────╯ Year  │
   │  🟊 🟊 🟊 ・・ │
   │  ▶ Play Now │
-  │             │
-  │ 1. Track 1  │
-  │ 2. Track 2  │
-  │ 3. Track 3  │
-  │ 4. Track 4  │
-  │ 5. Track 5  │
-  │             │
-  │ Tags:       │
-  │ [Calm|×] [+]│⟵— Album tags are inherited by individual tracks
-  │───┬──┬──────│   The individual tracks can use overrides to add or
-  │ ♫ │🖸 │🎙  🎟  │   remove tags separately from those set the album
+╭─│  More by… > │
+│ │             │
+│ │ 1. Track 1  │
+│ │ 2. Track 2  │
+│ │ 3. Track 3  │
+│ │ 4. Track 4  │
+│ │ 5. Track 5  │
+│ │             │
+│ │ Tags:       │
+│ │ [Calm|×] [+]│⟵— Album tags are inherited by individual tracks
+│ │───┬──┬──────│   The individual tracks can use overrides to add or
+│ │ ♫ │🖸 │🎙  🎟  │   remove tags separately from those set the album
+│ ╰───┴──┴──────╯
+│
+│     Artist
+│ ╭─────────────╮
+│ ├─────────────┤
+│ │ ×    𝍢    ⌕ │
+│ │ Artist Name │
+╰⟶│╭────╮ Album 1
+  ││ 🖸♬ │ Year
+  │╰────╯ 🟊 🟊 🟊 ・・
+  │╭────╮ Album 2
+  ││ 🖸♬ │ Year
+  │╰────╯ 🟊 🟊 🟊 🟊 ・
+  │───┬──┬──────│
+  │ ♫ │🖸 │🎙  🎟  │
   ╰───┴──┴──────╯
 ```
 # Settings

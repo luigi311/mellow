@@ -102,32 +102,14 @@ the application visuals.
     refresh rate.
 - The playback controls could also match the colors and glow while playing
 
-# Quality Control
+## Gradient background
 
-Playback:
-
-- Pause/play/skip work as expected
-- Seamless playback with no audible gaps between tracks
-    (for example when a note extends into the next song on the album)
-- Output should match the format and sample rate of the currently playing file
-    (to allow dynamic sample rate switching using PipeWire)
-
-Interface:
-
-- Positional awareness for off-screen elements
-  Elements should never appear or disappear, but instead move smoothly onto the screen
-  Different elements should avoid sharing the same off-screen position
-- UI should adapt to the window size, and look good at all sizes
-
-Performance:
-
-- App should load instantly - if library loading takes a long time, do it progressively
-- Artwork caching and dynamic loading/unloading
-  Only show the full resolution cover while playing the song, otherwise downscale it
-- Responsive search - results should show up quickly and progressively
-- Responsive UI - all actions should respond instantly with no stutters whatsoever
-  Actions which require time to complete should not block the UI, and instead display
-  a progress bar
+- Find the two dominant colors ("main" and "secondary")
+- Use the secondary color as the base for the window
+- Use the main color as a gradient, expanding outwards from behind the artwork
+- Apply some sort of color grading or tonemapping to darken it and increase contrast
+- For the light system theme, there could be some gamma or offset applied
+- Could also use different tonemappers for light/dark themes
 
 # Implementation Ideas
 
