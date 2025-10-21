@@ -73,7 +73,10 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                 });
             }
         });
-        player.new_queue(queue.lock().unwrap().take().unwrap());
+        player
+            .queue
+            .replace(queue.lock().unwrap().take().unwrap())
+            .unwrap();
     } else {
         let mut library = Library::load_or_init(ui_tx).expect("Library could not be initialized");
         let runtime = tokio::runtime::Runtime::new()
@@ -83,6 +86,6 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
             library.rebuild().await.unwrap();
             library.songs
         });
-        player.new_queue(songs);
+        player.queue.replace(songs).unwrap();
     }
 }

@@ -1,15 +1,16 @@
 use core::error::Error;
 use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
 use gst::{ClockTime, SeekFlags, State};
-use rand::random_range;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 use tokio::sync::mpsc::error::SendError;
 
-use crate::library::Song;
+use crate::player::song_queue::SongQueue;
 use crate::ui::UpdateUI;
+
+pub mod song_queue;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
@@ -37,21 +38,17 @@ pub enum PlayerRequest {
     SetRepeat(bool),
     /// Turn gapless playback on or off
     SetGapless(bool),
+
+    SetInstantURI(bool),
 }
 
 pub struct Player {
-    repeat: bool,
-    shuffle: bool,
+    pub queue: SongQueue,
+
     gapless: bool,
 
-    song_index: usize,
-    queue: Vec<Song>,
-    shuffled: Vec<usize>,
-
     pending_state: Option<State>,
-    pending_track: bool,
     pending_track_info: bool,
-    end_of_queue: bool,
     backend: gst::Element,
     bus: gst::Bus,
     tokio_rt: tokio::runtime::Runtime,
@@ -86,17 +83,12 @@ impl Player {
 
         Ok((
             Player {
-                repeat: false,
-                shuffle: false,
+                queue: SongQueue::new(player_tx.clone()),
+
                 gapless: true,
-                song_index: 0,
-                queue: vec![],
-                shuffled: vec![],
 
                 pending_track_info: false,
-                pending_track: true,
                 pending_state: None,
-                end_of_queue: false,
                 backend,
                 bus,
                 tokio_rt,
@@ -125,8 +117,14 @@ impl Player {
         const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
             // TODO: Gracefully handle errors whenever possible
-            //
-            // For exmample: create a 0 byte music file and try to play it
+
+            // FIX: Panic on unsupproted file
+            // Create a 0 byte music file and try to play it
+            // Expected behavior: prints an error and skips the song
+            // Actual behavior: the program panics
+
+            // FIX: Panic on missing file
+            // Play music and delete or rename the next song in the queue
             // Expected behavior: prints an error and skips the song
             // Actual behavior: the program panics
 
@@ -145,12 +143,15 @@ impl Player {
                     }
                     PlayerRequest::Update => (),
 
-                    player_settings => {
-                        match player_settings {
+                    no_update => {
+                        match no_update {
                             PlayerRequest::SetVolume(vol) => self.set_volume(vol),
-                            PlayerRequest::SetShuffle(shuffle) => self.toggle_shuffle(shuffle),
-                            PlayerRequest::SetRepeat(repeat) => self.repeat = repeat,
+                            PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle),
+                            PlayerRequest::SetRepeat(repeat) => self.queue.repeat = repeat,
                             PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
+                            PlayerRequest::SetInstantURI(instant_uri) => {
+                                self.backend.set_property("instant-uri", instant_uri);
+                            }
                             request => panic!("Unhandled player request: {request:?}"),
                         }
                         continue;
@@ -167,25 +168,25 @@ impl Player {
             // Reset state after the queue ends
             const EOQ_FILTERS: &[gst::MessageType] =
                 &[gst::MessageType::Eos, gst::MessageType::StateChanged];
-            if self.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
+            if self.queue.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
                 self.handle_gst_messages();
                 self.backend.set_state(State::Ready)?;
                 let _ = self.backend.state(None);
                 self.ui_set_state()?;
-                self.pending_track = true;
-                self.end_of_queue = false;
+                self.queue.pending_track = true;
+                self.queue.end_of_queue = false;
                 self.update()?;
             }
 
             // Wait the current track to end, then update the UI
-            if self.pending_track || self.pending_track_info {
-                if self.pending_track {
+            if self.queue.pending_track || self.pending_track_info {
+                if self.queue.pending_track {
                     self.pending_track_info = true;
-                    self.pending_track = false;
+                    self.queue.pending_track = false;
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
-                    self.current_song().assign_info_with_fallback();
+                    self.queue.get_current().assign_info_with_fallback();
                     self.ui_set_song_info()?;
                     self.pending_track_info = false;
                 }
@@ -197,14 +198,8 @@ impl Player {
 
     /// Manages the playback state
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
-        if self.song_index == self.queue.len() {
-            self.song_index = 0;
-            self.end_of_queue = !self.repeat;
-            self.pending_track &= !self.end_of_queue;
-        }
-
-        if self.pending_track {
-            let file_uri = self.current_song().file_uri();
+        if self.queue.pending_track {
+            let file_uri = self.queue.get_current().file_uri();
             println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
         }
@@ -228,15 +223,15 @@ impl Player {
     }
 
     /// Moves to the next track in the queue without flushing the stream
-    const fn move_next(&mut self) {
-        self.pending_track = true;
-        self.song_index += 1;
+    fn move_next(&mut self) {
+        self.queue.pending_track = true;
+        self.queue.next();
     }
 
     /// Skips to next track
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-        if !self.repeat && self.song_index + 1 == self.queue.len() {
+        if !self.queue.repeat && self.queue.is_last() {
             self.request_state(State::Ready);
         }
         self.move_next();
@@ -245,14 +240,8 @@ impl Player {
     /// Skips to previous track
     fn skip_prev(&mut self) {
         self.backend.set_property("instant-uri", true);
-        self.pending_track = true;
-        if self.song_index == 0 {
-            if self.repeat {
-                self.song_index = self.queue.len() - 1;
-            }
-            return;
-        }
-        self.song_index -= 1;
+        self.queue.pending_track = true;
+        self.queue.previous();
     }
 
     /// Seeks to the beginning of the current track
@@ -264,7 +253,9 @@ impl Player {
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
-            Some(time) if (time > REPEAT_THRESHOLD || (self.song_index == 0 && !self.repeat)) => {
+            Some(time)
+                if (time > REPEAT_THRESHOLD || (self.queue.is_first() && !self.queue.repeat)) =>
+            {
                 self.repeat_song()?;
             }
             _ => self.skip_prev(),
@@ -313,22 +304,6 @@ impl Player {
         self.backend.query_position::<ClockTime>()
     }
 
-    /// Get the current song index based on the shuffle mode option
-    fn song_index(&self) -> usize {
-        match self.shuffle {
-            true => self.shuffled[self.song_index],
-            false => self.song_index,
-        }
-    }
-
-    /// Returns a mutable reference to the current song
-    fn current_song(&mut self) -> &mut Song {
-        match self.shuffle {
-            true => &mut self.queue[self.shuffled[self.song_index]],
-            false => &mut self.queue[self.song_index],
-        }
-    }
-
     /// Sends the current state to the UI receiver
     fn ui_set_state(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
@@ -343,7 +318,7 @@ impl Player {
     /// Sends the current song info to the UI receiver
     fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
-        let song_info = self.current_song().info.take();
+        let song_info = self.queue.get_current().info.take();
         println!("ui_set_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
@@ -356,67 +331,6 @@ impl Player {
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
-    }
-
-    /// Replaces the current queue with the provided one
-    /// Playback state has to be manually updated
-    pub fn new_queue(&mut self, queue: Vec<Song>) {
-        self.backend.set_property("instant-uri", true);
-        self.pending_track = true;
-        self.queue = queue;
-        self.update_shuffled_queue();
-    }
-
-    /// Restarts the queue from the beginning
-    /// Playback state has to be manually updated
-    pub fn restart_queue(&mut self) {
-        self.backend.set_property("instant-uri", true);
-        self.pending_track = true;
-        self.song_index = 0;
-    }
-
-    fn toggle_shuffle(&mut self, shuffle: bool) {
-        if self.shuffle == shuffle {
-            return;
-        }
-        if self.shuffle {
-            self.song_index = self.song_index();
-        }
-        self.shuffle = shuffle;
-        self.update_shuffled_queue();
-    }
-
-    fn update_shuffled_queue(&mut self) {
-        if self.queue.is_empty() {
-            eprintln!("Cannot shuffle an empty queue");
-            return;
-        }
-        self.shuffled = (0..self.queue.len()).collect();
-        let start = match self.song_index() {
-            index if self.shuffle => {
-                self.shuffled.swap(0, index);
-                self.song_index = 0;
-                1
-            }
-            _ => 0,
-        };
-        for i in start..self.shuffled.len() {
-            let rand_index = random_range(start..self.shuffled.len());
-            self.shuffled.swap(i, rand_index);
-        }
-    }
-
-    /// Removes all upcomming songs from the queue
-    pub fn clear_queue(&mut self) {
-        let current_song = self.queue.remove(0);
-        self.queue = vec![current_song];
-    }
-
-    /// Removes all queued songs after the provided index
-    pub fn clear_queue_after_index(&mut self, index: usize) {
-        while self.queue.len() > index + 1 {
-            self.queue.remove(index + 1);
-        }
     }
 
     /// Clears and hadles the GStreamer message queue
