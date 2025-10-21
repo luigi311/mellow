@@ -59,7 +59,6 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="song_title">
-                        <property name="label">Song Title</property>
                         <property name="margin_top">6</property>
                         <property name="ellipsize">end</property>
                         <style>
@@ -69,7 +68,6 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="album_title">
-                        <property name="label">Album Title</property>
                         <property name="ellipsize">end</property>
                         <style>
                           <class name="caption-heading"/>
@@ -78,7 +76,6 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="artist_name">
-                        <property name="label">Artist Name</property>
                         <property name="margin_bottom">6</property>
                         <property name="ellipsize">end</property>
                         <style>
