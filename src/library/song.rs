@@ -5,11 +5,14 @@ use gtk::{
     gio::{self, prelude::FileExt},
     glib,
 };
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Song {
     pub file: gio::File,
     pub album: Option<usize>,
-    pub info: Option<Box<SongInfo>>,
+    pub info: Option<Arc<SongInfo>>,
+    pub detailed_info: Option<Arc<DetailedSongInfo>>,
 }
 
 pub struct SongInfo {
@@ -21,9 +24,9 @@ pub struct SongInfo {
     pub year: String,
     pub lyrics: String,
     pub duration: ClockTime,
-    // TODO: Move memory-heavy fields elsewhere?
+    // TODO: Move memory-heavy into `Song::detailed_info`,
+    // so they can be assigned on-demand
     pub artwork: Option<Texture>,
-    // pub detailed_info: Option<DetailedSongInfo>,
 }
 
 // TODO: Move memory-heavy fields into here
@@ -39,6 +42,7 @@ impl Song {
             file: gio::File::for_path(file),
             album,
             info: None,
+            detailed_info: None,
         })
     }
 
@@ -59,14 +63,21 @@ impl Song {
         if self.info.is_none() {
             self.assign_info_with_fallback();
         }
-        self.info.as_ref().unwrap()
+        self.info.as_mut().unwrap()
+    }
+
+    pub fn get_detailed_info_or_assign(&mut self) -> &DetailedSongInfo {
+        if self.detailed_info.is_none() {
+            todo!();
+        }
+        self.detailed_info.as_mut().unwrap()
     }
 
     pub fn assign_info_with_fallback(&mut self) {
         self.assign_info()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
-                self.info = Some(Box::new(SongInfo {
+                self.info = Some(Arc::new(SongInfo {
                     title: self.filename(),
                     album: String::new(),
                     artist: String::new(),
@@ -95,7 +106,7 @@ impl Song {
 
         let properties = tagged_file.properties();
 
-        self.info = Some(Box::new(SongInfo {
+        self.info = Some(Arc::new(SongInfo {
             title: tag.title().map_or_else(
                 || self.filename(),
                 |title| match title.trim().is_empty() {

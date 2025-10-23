@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 use tokio::sync::mpsc::error::SendError;
 
-use crate::player::song_queue::SongQueue;
+use crate::player::song_queue::{QueueItem, SongQueue};
 use crate::ui::UpdateUI;
 
 pub mod song_queue;
@@ -187,7 +187,10 @@ impl Player {
                 }
 
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
-                    self.queue.get_current().assign_info_with_fallback();
+                    self.queue
+                        .get_current()
+                        .as_mut_song()
+                        .assign_info_with_fallback();
                     self.ui_set_song_info()?;
                     self.pending_track_info = false;
                 }
@@ -199,8 +202,16 @@ impl Player {
 
     /// Manages the playback state
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
+        let file_uri = match self.queue.get_current() {
+            QueueItem::Song(song) => song.file_uri(),
+            QueueItem::Stopper => {
+                self.queue.remove_current();
+                self.request_state(State::Paused);
+                return self.update();
+            }
+        };
+
         if self.queue.pending_track {
-            let file_uri = self.queue.get_current().file_uri();
             println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
         }
@@ -319,7 +330,7 @@ impl Player {
     /// Sends the current song info to the UI receiver
     fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
-        let song_info = self.queue.get_current().info.take();
+        let song_info = self.queue.get_current().as_mut_song().info.take();
         println!("ui_set_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })

@@ -105,6 +105,7 @@ impl Library {
                     file,
                     album: None,
                     info: None,
+                    detailed_info: None,
                 };
 
                 songs.lock().unwrap().as_mut().unwrap().push(song);
@@ -136,9 +137,8 @@ impl Library {
             // artists.push(artist);
 
             if i % progress_freq == 0 {
-                self.ui_tx
-                    .send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))
-                    .await?
+                let progress = Some(i as f64 / songs.len() as f64);
+                self.ui_tx.send(UpdateUI::Progress(progress)).await?;
             }
         }
 

@@ -2,18 +2,19 @@ use adw::{self, Application, prelude::*};
 use gst::{ClockTime, State};
 use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{self, glib};
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
+use crate::player::song_queue::SongQueue;
 use crate::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub enum UpdateUI {
     PlayerState(State, bool),
     PlayerTime(Option<ClockTime>),
-    SongInfo(Option<Box<SongInfo>>),
+    SongInfo(Option<Arc<SongInfo>>),
     Progress(Option<f64>),
 }
 

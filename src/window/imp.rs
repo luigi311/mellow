@@ -5,15 +5,17 @@ use gio::Settings;
 use glib::subclass::InitializingObject;
 use gtk::prelude::{ButtonExt, RangeExt, WidgetExt};
 use gtk::{CompositeTemplate, gdk};
+use std::rc::Rc;
 
 use std::cell::OnceCell;
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::format_duration;
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
+use crate::player::song_queue::SongQueue;
 use crate::ui::UpdateUI;
 use gst::{ClockTime, State};
 
@@ -93,6 +95,10 @@ impl Window {
             .send(PlayerRequest::SkipNext)
             .unwrap();
     }
+    #[template_callback]
+    pub fn handle_add_library(&self) {
+        println!("TODO: handle_add_library(): Open directory dialog");
+    }
 
     fn connect_closures(&self) {
         let player_tx = self.player_tx.get().unwrap().clone();
@@ -104,7 +110,6 @@ impl Window {
                 glib::Propagation::Proceed
             }
         });
-
         self.settings_volume.connect_change_value({
             let player_tx = player_tx.clone();
             move |_, _, value| {
@@ -112,6 +117,7 @@ impl Window {
                 glib::Propagation::Proceed
             }
         });
+
         self.settings_shuffle.connect_active_notify({
             let player_tx = player_tx.clone();
             move |switch| {
@@ -172,7 +178,7 @@ impl Window {
         self.media_controls.set_sensitive(interactive);
     }
 
-    fn update_song_info(&self, song_info: Option<Box<SongInfo>>, song_duration: &mut Duration) {
+    fn update_song_info(&self, song_info: Option<Arc<SongInfo>>, song_duration: &mut Duration) {
         let Some(song_info) = song_info else { return };
 
         if let Some(artwork) = song_info.artwork.as_ref() {

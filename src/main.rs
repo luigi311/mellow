@@ -8,6 +8,7 @@ use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use mellow::library::{Library, Song};
+use mellow::player::song_queue::QueueItem;
 use mellow::player::{Player, PlayerRequest};
 use mellow::ui::UpdateUI;
 use mellow::visit_dirs;
@@ -54,6 +55,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                     if !Library::file_supported(&file) {
                         return;
                     }
+                    let song = QueueItem::Song(song);
                     queue.lock().unwrap().as_mut().unwrap().push(song);
                 }
             } else if Path::exists(path) {
@@ -65,6 +67,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                         if !Library::file_supported(file) {
                             return;
                         }
+                        let song = QueueItem::Song(song);
                         queue.lock().unwrap().as_mut().unwrap().push(song);
                     }
                 });
@@ -81,7 +84,11 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
             .unwrap();
         let songs = runtime.block_on(async move {
             library.rebuild().await.unwrap();
-            library.songs
+            library
+                .songs
+                .iter()
+                .map(|song| QueueItem::Song(song.clone()))
+                .collect()
         });
         player.queue.replace(songs).unwrap();
     }
