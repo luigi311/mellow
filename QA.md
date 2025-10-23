@@ -6,8 +6,11 @@ Playback:
 
 - [x] Pause/play/skip work as expected
 - [x] Shuffle/repeat/normal modes work as expected
-- [x] Gapless/non-gapless playback works as expected
+- [ ] Gapless/non-gapless playback works as expected
+  - FIX: Crash when seeking to song end (both modes)
 - [ ] Non-fatal errors are handled gracefully
+  - FIX: Crash on invalid file/format
+  - FIX: Crash when loading a missing file
 
 Interface:
 

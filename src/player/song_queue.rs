@@ -98,6 +98,7 @@ impl SongQueue {
 
     /// Returns references to all songs in the queue,
     /// ordered with respect to shuffle setting
+    #[must_use]
     pub fn ordered_queue(&self) -> Vec<&Song> {
         let mut songs = vec![];
         for i in 0..self.len() {
@@ -200,11 +201,11 @@ impl SongQueue {
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     /// Returns the song which was previously located at that index
     pub fn remove(&mut self, index: usize) -> Song {
-        if !self.shuffle {
+        if self.shuffle {
+            self.songs.remove(self.shuffled.remove(index))
+        } else {
             self.shuffled.remove(self.shuffled_index(index).unwrap());
             self.songs.remove(index)
-        } else {
-            self.songs.remove(self.shuffled.remove(index))
         }
     }
 

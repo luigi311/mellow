@@ -25,9 +25,6 @@ pub fn main() -> gtk::glib::ExitCode {
     app.run_with_args(&[] as &[&str; 0])
 }
 
-// NOTE: It might be a good idea to rewrite all of the UI
-// from scratch once done experimenting
-
 fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) =
         Player::init().expect("Failed to initialize player");

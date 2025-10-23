@@ -39,6 +39,7 @@ pub enum PlayerRequest {
     /// Turn gapless playback on or off
     SetGapless(bool),
 
+    /// Used internally by `SongQueue`
     SetInstantURI(bool),
 }
 
@@ -131,6 +132,7 @@ impl Player {
             if let Ok(player_request) = self.rx.try_recv() {
                 dbg!(&player_request);
                 match player_request {
+                    PlayerRequest::Update => (),
                     PlayerRequest::PlayOrPause => self.play_or_pause(),
                     PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
@@ -139,9 +141,8 @@ impl Player {
                         if !self.gapless {
                             continue;
                         }
-                        self.move_next()
+                        self.move_next();
                     }
-                    PlayerRequest::Update => (),
 
                     no_update => {
                         match no_update {
