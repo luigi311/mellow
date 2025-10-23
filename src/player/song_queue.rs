@@ -75,6 +75,17 @@ impl SongQueue {
         &mut self.songs[index]
     }
 
+    /// Locates a song within the `shuffled` vec and returns its index
+    #[must_use]
+    pub fn shuffled_index(&self, index: usize) -> Option<usize> {
+        for i in 0..self.len() {
+            if self.shuffled[i] == index {
+                return Some(index);
+            }
+        }
+        None
+    }
+
     /// Turns an index from `shuffled` into one which can be used with `songs`.
     /// If the shuffle mode is off, the input index is returned.
     #[must_use]
@@ -187,6 +198,7 @@ impl SongQueue {
 
     /// Removes a song from the queue at the specified index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
+    /// Returns the song which was previously located at that index
     pub fn remove(&mut self, index: usize) -> Song {
         if !self.shuffle {
             self.shuffled.remove(self.shuffled_index(index).unwrap());
@@ -196,33 +208,27 @@ impl SongQueue {
         }
     }
 
+    /// Returns the total number of songs in the queue
     #[must_use]
     pub fn len(&self) -> usize {
         self.songs.len()
     }
 
+    /// Returns `true` if the current song is first in the queue
     #[must_use]
     pub fn is_first(&self) -> bool {
         self.index == 0
     }
 
+    /// Returns `true` if the current song is last in the queue
     #[must_use]
     pub fn is_last(&self) -> bool {
         self.index == self.songs.len() - 1
     }
 
+    /// Returns `true` if the queue contains no songs
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.songs.is_empty()
-    }
-
-    #[must_use]
-    pub fn shuffled_index(&self, index: usize) -> Option<usize> {
-        for i in 0..self.len() {
-            if self.shuffled[i] == index {
-                return Some(index);
-            }
-        }
-        None
     }
 }
