@@ -36,24 +36,7 @@ impl SongQueue {
         }
     }
 
-    /// Get the current song index based on the shuffle mode option
-    #[must_use]
-    pub fn get_current_index(&self) -> usize {
-        match self.shuffle {
-            true => self.shuffled[self.index],
-            false => self.index,
-        }
-    }
-
-    /// Returns a mutable reference to the current song
-    #[must_use]
-    pub fn get_current(&mut self) -> &mut Song {
-        match self.shuffle {
-            true => &mut self.songs[self.shuffled[self.index]],
-            false => &mut self.songs[self.index],
-        }
-    }
-
+    /// Moves to the next song in the queue
     pub fn next(&mut self) {
         self.index += 1;
         if self.index == self.len() {
@@ -63,6 +46,7 @@ impl SongQueue {
         }
     }
 
+    /// Moves to the previous song in the queue
     pub fn previous(&mut self) {
         if self.index == 0 {
             if self.repeat {
@@ -73,11 +57,46 @@ impl SongQueue {
         self.index -= 1;
     }
 
+    /// Moves to the song in the queue at specified index
     pub fn jump_to(&mut self, index: usize) {
         self.index = index;
     }
 
+    /// Get the current song index based on the shuffle mode option
+    #[must_use]
+    pub fn get_current_index(&self) -> usize {
+        self.ordered_index(self.index)
+    }
+
+    /// Returns a mutable reference to the current song
+    #[must_use]
+    pub fn get_current(&mut self) -> &mut Song {
+        let index = self.get_current_index();
+        &mut self.songs[index]
+    }
+
+    /// Turns an index from `shuffled` into one which can be used with `songs`.
+    /// If the shuffle mode is off, the input index is returned.
+    #[must_use]
+    pub fn ordered_index(&self, index: usize) -> usize {
+        match self.shuffle {
+            true => self.shuffled[index],
+            false => index,
+        }
+    }
+
+    /// Returns references to all songs in the queue,
+    /// ordered with respect to shuffle setting
+    pub fn ordered_queue(&self) -> Vec<&Song> {
+        let mut songs = vec![];
+        for i in 0..self.len() {
+            songs.push(&self.songs[self.ordered_index(i)]);
+        }
+        songs
+    }
+
     /// Replaces the current queue with the provided one
+    /// Index depends on shuffle mode (use `ordered_queue()` index)
     /// Playback state has to be manually updated
     pub fn replace(&mut self, queue: Vec<Song>) -> Result<(), mpsc::SendError<PlayerRequest>> {
         self.player_tx.send(PlayerRequest::SetInstantURI(true))?;
@@ -96,6 +115,7 @@ impl SongQueue {
         Ok(())
     }
 
+    /// Enables or disables the shuffle mode
     pub fn set_shuffle(&mut self, shuffle: bool) {
         if self.shuffle == shuffle {
             return;
@@ -107,6 +127,7 @@ impl SongQueue {
         self.update_shuffled_queue();
     }
 
+    /// Creates a vec of random indexes for the shuffle mode
     fn new_shuffled_queue(&mut self) {
         self.shuffled = (0..self.len()).collect();
         for i in 0..self.shuffled.len() {
@@ -115,6 +136,8 @@ impl SongQueue {
         }
     }
 
+    /// Randomizes indexes for the shuffle mode
+    /// without changing the currently playing track
     fn update_shuffled_queue(&mut self) {
         if self.is_empty() {
             eprintln!("Cannot shuffle an empty queue");
@@ -143,9 +166,33 @@ impl SongQueue {
     }
 
     /// Removes all queued songs after the provided index
+    /// Index depends on shuffle mode (use `ordered_queue()` index)
     pub fn clear_queue_after_index(&mut self, index: usize) {
         while self.len() > index + 1 {
             self.remove(index + 1);
+        }
+    }
+
+    /// Moves a song in the queue from `index` to `target`
+    /// Index depends on shuffle mode (use `ordered_queue()` index)
+    pub fn reorder(&mut self, index: usize, target: usize) {
+        if self.shuffle {
+            let item = self.shuffled.remove(index);
+            self.shuffled.insert(target, item);
+        } else {
+            let item = self.songs.remove(index);
+            self.songs.insert(target, item);
+        }
+    }
+
+    /// Removes a song from the queue at the specified index
+    /// Index depends on shuffle mode (use `ordered_queue()` index)
+    pub fn remove(&mut self, index: usize) -> Song {
+        if !self.shuffle {
+            self.shuffled.remove(self.shuffled_index(index).unwrap());
+            self.songs.remove(index)
+        } else {
+            self.songs.remove(self.shuffled.remove(index))
         }
     }
 
@@ -170,26 +217,12 @@ impl SongQueue {
     }
 
     #[must_use]
-    pub fn index_to_shuffled(&self, index: usize) -> Option<usize> {
+    pub fn shuffled_index(&self, index: usize) -> Option<usize> {
         for i in 0..self.len() {
             if self.shuffled[i] == index {
                 return Some(index);
             }
         }
         None
-    }
-
-    #[must_use]
-    pub fn shuffled_to_index(&self, index: usize) -> usize {
-        self.shuffled[index]
-    }
-
-    pub fn remove(&mut self, index: usize) -> Song {
-        self.shuffled.remove(self.index_to_shuffled(index).unwrap());
-        self.songs.remove(index)
-    }
-
-    pub fn remove_shuffled(&mut self, index: usize) -> Song {
-        self.songs.remove(self.shuffled.remove(index))
     }
 }
