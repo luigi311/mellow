@@ -7,7 +7,7 @@
     <property name="height_request">0</property>
 
     <!-- TODO: Organize views into separate files/widgets -->
-    
+
     <child>
       <object class="AdwBottomSheet" id="sheet">
         <style>
@@ -15,7 +15,7 @@
         </style>
         <property name="content">
           <object class="AdwToolbarView">
-            
+
             <child type="top">
               <object class="AdwHeaderBar">
                 <property name="show-title">False</property>
@@ -29,7 +29,7 @@
                 </style>
               </object>
             </child>
-          
+
             <!-- Main player view -->
             <property name="content">
               <object class="GtkWindowHandle">
@@ -44,7 +44,7 @@
                     <property name="hexpand">True</property>
                     <property name="valign">center</property>
                     <property name="orientation">vertical</property>
-                    
+
                     <!-- Song info -->
                     <child>
                       <object class="GtkPicture" id="album_cover">
@@ -182,15 +182,15 @@
                         <property name="hexpand">True</property>
                       </object>
                     </child>
-                  
+
                   </object>
                 </child>
               </object>
             </property>
-          
+
           </object>
         </property>
-      
+
         <property name="bottom-bar">
           <object class="GtkCenterBox">
             <style>
@@ -210,10 +210,10 @@
         </property>
 
         <!-- Bottom sheet overlay -->
-      
+
         <property name="show-drag-handle">False</property>
         <property name="sheet">
-          
+
           <object class="AdwToolbarView">
             <style>
               <class name="osd"/>
@@ -379,7 +379,7 @@
                             </property>
                           </object>
                         </child>
-                                  
+
                       </object>
                     </property>
                   </object>
@@ -393,58 +393,252 @@
                     <property name="icon-name">media-playback-start-symbolic</property>
                     <property name="use-underline">True</property>
                     <property name="child">
-                      <object class="AdwToolbarView">
-                        <child type="top">
-                          <object class="AdwHeaderBar">
-                            <property name="show_title">False</property>
+                      <object class="AdwNavigationView">
+
+                        <child>
+                          <object class="AdwNavigationPage">
+                            <property name="title" translatable="yes">Playing</property>
+                            <property name="tag">playing</property>
+                            <property name="child">
+                              <object class="AdwToolbarView">
+                                <child type="top">
+                                  <object class="AdwHeaderBar">
+                                    <property name="show_title">False</property>
+                                  </object>
+                                </child>
+                                <property name="content">
+                                  <object class="AdwPreferencesPage">
+                                    <property name="valign">center</property>
+                                    <child>
+                                      <object class="AdwPreferencesGroup">
+
+                                        <!-- TODO: Show song info -->
+                                        <child>
+                                          <object class="AdwPreferencesRow">
+                                            <child>
+                                              <object class="GtkBox">
+                                                <property name="orientation">vertical</property>
+                                                <property name="halign">center</property>
+                                                <child>
+                                                  <object class="GtkLabel" id="playing_song_title">
+                                                    <property name="margin_top">6</property>
+                                                    <property name="wrap">true</property>
+                                                    <property name="wrap-mode">word</property>
+                                                    <style>
+                                                      <class name="heading"/>
+                                                    </style>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="playing_album_title">
+                                                    <property name="wrap">true</property>
+                                                    <property name="wrap-mode">word</property>
+                                                    <style>
+                                                      <class name="caption-heading"/>
+                                                    </style>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="playing_artist_name">
+                                                    <property name="margin_bottom">6</property>
+                                                    <property name="wrap">true</property>
+                                                    <property name="wrap-mode">word</property>
+                                                    <style>
+                                                      <class name="caption-heading"/>
+                                                    </style>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkBox">
+                                                    <property name="halign">center</property>
+                                                    <child>
+                                                      <object class="GtkButton">
+                                                        <property name="icon_name">starred-symbolic</property>
+                                                        <style>
+                                                          <class name="flat"/>
+                                                          <class name="circular"/>
+                                                        </style>
+                                                      </object>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkButton">
+                                                        <property name="icon_name">starred-symbolic</property>
+                                                        <style>
+                                                          <class name="flat"/>
+                                                          <class name="circular"/>
+                                                        </style>
+                                                      </object>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkButton">
+                                                        <property name="icon_name">starred-symbolic</property>
+                                                        <style>
+                                                          <class name="flat"/>
+                                                          <class name="circular"/>
+                                                        </style>
+                                                      </object>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkButton">
+                                                        <property name="icon_name">starred-symbolic</property>
+                                                        <style>
+                                                          <class name="flat"/>
+                                                          <class name="circular"/>
+                                                        </style>
+                                                      </object>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkButton">
+                                                        <property name="icon_name">starred-symbolic</property>
+                                                        <style>
+                                                          <class name="flat"/>
+                                                          <class name="circular"/>
+                                                        </style>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="AdwActionRow">
+                                            <property name="title">Lyrics</property>
+                                            <property name="activatable">True</property>
+                                            <property name="action-name">navigation.push</property>
+                                            <property name="action-target">'lyrics'</property>
+                                            <child type="prefix">
+                                              <object class="GtkImage">
+                                                <property name="icon_name">text-x-generic-symbolic</property>
+                                              </object>
+                                            </child>
+                                            <child type="suffix">
+                                              <object class="GtkImage">
+                                                <property name="icon_name">go-next-symbolic</property>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="AdwPreferencesGroup">
+                                        <child>
+                                          <object class="AdwActionRow">
+                                            <property name="title">Song Queue</property>
+                                            <property name="activatable">True</property>
+                                            <property name="action-name">navigation.push</property>
+                                            <property name="action-target">'song_queue'</property>
+                                            <child type="prefix">
+                                              <object class="GtkImage">
+                                                <property name="icon_name">media-playlist-consecutive-symbolic</property>
+                                              </object>
+                                            </child>
+                                            <child type="suffix">
+                                              <object class="GtkImage">
+                                                <property name="icon_name">go-next-symbolic</property>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+
+                                      </object>
+                                    </child>
+                                  </object>
+
+                                </property>
+                              </object>
+                            </property>
                           </object>
                         </child>
-                        <property name="content">
-                          <object class="AdwStatusPage">
-                            <style>
-                              <class name="compact"/>
-                            </style>
-                            <child>
-                              <!-- TODO: Show the current queue, and the lyrics in a submenu or tab -->
-                              <object class="GtkBox">
-                                <property name="orientation">vertical</property>
-                                <property name="halign">center</property>
-                                <property name="spacing">16</property>
-                                <child>
-                                  <object class="GtkLabel" id="info_song_title">
-                                    <property name="justify">center</property>
-                                    <property name="wrap_mode">word</property>
-                                    <property name="wrap">True</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="halign">center</property>
-                                    <property name="margin_start">12</property>
-                                    <property name="margin_end">12</property>
-                                    <property name="wrap_mode">word</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
+
+                        <!-- Lyrics -->
+                        <child>
+                          <object class="AdwNavigationPage">
+                            <property name="title" translatable="yes">Lyrics</property>
+                            <property name="tag">lyrics</property>
+                            <property name="child">
+                              <object class="AdwToolbarView">
+                                <child type="top">
+                                  <object class="AdwHeaderBar">
+                                    <property name="show_title">False</property>
                                   </object>
                                 </child>
-                                <child>
-                                  <object class="GtkLabel" id="info_lyrics">
-                                    <property name="label" translatable="yes">Lyrics not available</property>
-                                    <property name="justify">center</property>
-                                    <property name="wrap_mode">word</property>
-                                    <property name="wrap">True</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="halign">center</property>
-                                    <property name="margin_start">12</property>
-                                    <property name="margin_end">12</property>
-                                    <property name="wrap_mode">word</property>
+                                <property name="content">
+                                  <object class="AdwStatusPage">
                                     <style>
-                                      <class name="body"/>
+                                      <class name="compact"/>
                                     </style>
+                                    <child>
+                                      <object class="GtkBox">
+                                        <property name="orientation">vertical</property>
+                                        <property name="halign">center</property>
+                                        <property name="spacing">16</property>
+                                        <child>
+                                          <object class="GtkLabel" id="info_song_title">
+                                            <property name="justify">center</property>
+                                            <property name="wrap_mode">word</property>
+                                            <property name="wrap">True</property>
+                                            <property name="hexpand">True</property>
+                                            <property name="halign">center</property>
+                                            <property name="margin_start">12</property>
+                                            <property name="margin_end">12</property>
+                                            <property name="wrap_mode">word</property>
+                                            <style>
+                                              <class name="heading"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="info_lyrics">
+                                            <property name="label" translatable="yes">Lyrics not available</property>
+                                            <property name="justify">center</property>
+                                            <property name="wrap_mode">word</property>
+                                            <property name="wrap">True</property>
+                                            <property name="hexpand">True</property>
+                                            <property name="halign">center</property>
+                                            <property name="margin_start">12</property>
+                                            <property name="margin_end">12</property>
+                                            <property name="wrap_mode">word</property>
+                                            <style>
+                                              <class name="body"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
                                   </object>
-                                </child>
+                                </property>
                               </object>
-                            </child>
+                            </property>
                           </object>
-                        </property>
+                        </child>
+
+                        <!-- Song queue -->
+                        <child>
+                          <object class="AdwNavigationPage">
+                            <property name="title" translatable="yes">Song Queue</property>
+                            <property name="tag">song_queue</property>
+                            <property name="child">
+                              <object class="AdwToolbarView">
+                                <child type="top">
+                                  <object class="AdwHeaderBar">
+                                    <property name="show_title">False</property>
+                                  </object>
+                                </child>
+                                <!-- IDEA: Queue items could be AdwExpanderRows, expanding into -->
+                                <!-- "Play now", a ratings widget, "Stop after", etc -->
+                                <!-- Alternatively, a context menu might be useful for this -->
+                                <property name="content">
+                                  <object class="GtkBox">
+                                  </object>
+                                </property>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
                       </object>
                     </property>
                   </object>
@@ -467,13 +661,13 @@
                         <property name="content">
                           <object class="AdwPreferencesPage">
                             <property name="valign">center</property>
-                        
+
                             <!-- Playback settings -->
                             <child>
                               <object class="AdwPreferencesGroup">
                                 <property name="hexpand">True</property>
                                 <property name="title" translatable="yes">Playback</property>
-                            
+
                                 <child>
                                   <object class="AdwPreferencesRow">
                                     <child>
@@ -506,7 +700,7 @@
                                     </child>
                                   </object>
                                 </child>
-                          
+
                                 <!-- TODO: Move the shuffle/repeat buttons into the queue view once impelemented -->
                                 <!-- ... or use the more standard position for those buttons -->
                                 <child>
@@ -539,7 +733,7 @@
                                     <property name="expanded">True</property>
                                     <child>
                                       <!-- TODO: Allow adding/removing directories -->
-                                      <object class="AdwButtonRow" id="add_library_button">
+                                      <object class="AdwButtonRow">
                                         <signal name="activated" handler="handle_add_library" swapped="true"/>
                                         <property name="title" translatable="yes">Add Directory</property>
                                         <property name="start_icon_name">list-add-symbolic</property>
@@ -580,7 +774,7 @@
             </child>
           </object>
         </property>
-      
+
       </object>
     </child>
 

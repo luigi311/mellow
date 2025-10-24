@@ -5,7 +5,6 @@ use gio::Settings;
 use glib::subclass::InitializingObject;
 use gtk::prelude::{ButtonExt, RangeExt, WidgetExt};
 use gtk::{CompositeTemplate, gdk};
-use std::rc::Rc;
 
 use std::cell::OnceCell;
 use std::sync::{Arc, Mutex, mpsc};
@@ -46,6 +45,8 @@ pub struct Window {
     pub time_end_label: TemplateChild<gtk::Label>,
 
     #[template_child]
+    pub sheet: TemplateChild<adw::BottomSheet>,
+    #[template_child]
     pub view_stack: TemplateChild<adw::ViewStack>,
     #[template_child]
     pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
@@ -54,6 +55,12 @@ pub struct Window {
     info_song_title: TemplateChild<gtk::Label>,
     #[template_child]
     info_lyrics: TemplateChild<gtk::Label>,
+    #[template_child]
+    playing_song_title: TemplateChild<gtk::Label>,
+    #[template_child]
+    playing_album_title: TemplateChild<gtk::Label>,
+    #[template_child]
+    playing_artist_name: TemplateChild<gtk::Label>,
 
     // TODO: Save/load settings
     #[template_child]
@@ -203,6 +210,9 @@ impl Window {
             self.time_end_label.set_label("-:--");
         }
 
+        self.playing_song_title.set_label(&song_info.title);
+        self.playing_album_title.set_label(&song_info.album);
+        self.playing_artist_name.set_label(&song_info.artist);
         self.info_song_title.set_label(&song_info.title);
         if song_info.lyrics.is_empty() {
             self.info_lyrics.set_label("Lyrics not available");
