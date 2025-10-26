@@ -9,8 +9,6 @@ Playback:
 - [ ] Gapless/non-gapless playback works as expected
   - FIX: Crash when seeking to song end (both modes)
 - [ ] Non-fatal errors are handled gracefully
-  - FIX: Crash on invalid file/format
-  - FIX: Crash when loading a missing file
 
 Interface:
 

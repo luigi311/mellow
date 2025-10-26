@@ -48,6 +48,7 @@ pub struct Player {
 
     gapless: bool,
 
+    current_state: State,
     pending_state: Option<State>,
     pending_track_info: bool,
     backend: gst::Element,
@@ -88,8 +89,9 @@ impl Player {
 
                 gapless: true,
 
-                pending_track_info: false,
+                current_state: State::Null,
                 pending_state: None,
+                pending_track_info: false,
                 backend,
                 bus,
                 tokio_rt,
@@ -117,18 +119,6 @@ impl Player {
         const IDLE_CHECK_RATE: f64 = 60.2;
         const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
-            // TODO: Gracefully handle errors whenever possible
-
-            // FIX: Panic on unsupproted file
-            // Create a 0 byte music file and try to play it
-            // Expected behavior: prints an error and skips the song
-            // Actual behavior: the program panics
-
-            // FIX: Panic on missing file
-            // Play music and delete or rename the next song in the queue
-            // Expected behavior: prints an error and skips the song
-            // Actual behavior: the program panics
-
             if let Ok(player_request) = self.rx.try_recv() {
                 dbg!(&player_request);
                 match player_request {
@@ -217,7 +207,10 @@ impl Player {
         }
 
         if let Some(state) = self.pending_state.take() {
-            self.backend.set_state(state)?;
+            match self.backend.set_state(state) {
+                Ok(_) => self.current_state = state,
+                Err(_) => self.force_skip_track(state),
+            }
         }
 
         // Re-enable gapless playback (for example after track skip)
@@ -245,6 +238,7 @@ impl Player {
         self.backend.set_property("instant-uri", true);
         if !self.queue.repeat && self.queue.is_last() {
             self.request_state(State::Ready);
+            return;
         }
         self.move_next();
     }
@@ -346,10 +340,18 @@ impl Player {
     }
 
     /// Clears and hadles the GStreamer message queue
-    fn handle_gst_messages(&self) {
+    fn handle_gst_messages(&mut self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
-                gst::MessageType::Error => eprintln!("gstreamer error: {message:?}\n"),
+                gst::MessageType::Error => {
+                    let dbg = format!("{message:?}");
+                    eprintln!("gstreamer error: {dbg}\n");
+
+                    // TODO: This could be done better
+                    if dbg.contains(&self.queue.get_current().as_ref_song().file_uri()) {
+                        self.force_skip_track(self.current_state);
+                    }
+                }
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
                 gst::MessageType::Eos => {
                     println!("gstreamer: Reached end of stream");
@@ -358,5 +360,17 @@ impl Player {
                 _ => (),
             }
         }
+    }
+
+    /// Removes the current track from queue and resets player state
+    /// Should only be used for error handling
+    fn force_skip_track(&mut self, new_state: State) {
+        // TODO: Display a toast informing the user of the issue
+        eprintln!("Skipping song due to an issue");
+        self.backend.set_state(State::Null).unwrap();
+        self.queue.remove_current();
+        // self.move_next();
+        self.request_state(new_state);
+        self.player_tx.send(PlayerRequest::Update).unwrap();
     }
 }

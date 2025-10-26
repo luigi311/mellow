@@ -62,7 +62,7 @@ impl SongQueue {
         if self.index == self.len() {
             self.index = 0;
             self.end_of_queue = !self.repeat;
-            self.pending_track &= !self.end_of_queue;
+            // self.pending_track &= !self.end_of_queue;
         }
     }
 
@@ -241,6 +241,11 @@ impl SongQueue {
 
     /// Removes the current song from the queue
     pub fn remove_current(&mut self) -> QueueItem {
+        if self.index + 1 == self.len() {
+            self.index = 0;
+            self.end_of_queue = !self.repeat;
+        }
+        self.pending_track = true;
         self.remove(self.index)
     }
 
