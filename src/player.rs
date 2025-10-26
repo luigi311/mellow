@@ -107,17 +107,17 @@ impl Player {
 
     /// Main controller loop which handles player requests
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
+        const LOOP_RATE: f64 = 60.2;
+        const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
+        const EOQ_FILTERS: &[gst::MessageType] =
+            &[gst::MessageType::Eos, gst::MessageType::StateChanged];
+
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::LoadNext).unwrap();
             None
         });
 
-        // const SEND_RATE: f64 = 16.0;
-        // const SEND_DELAY: Duration = Duration::from_millis((1000.0 / SEND_RATE) as u64);
-        // let time_update_timer =
-        const IDLE_CHECK_RATE: f64 = 60.2;
-        const IDLE_DELAY: Duration = Duration::from_millis((1000.0 / IDLE_CHECK_RATE) as u64);
         loop {
             if let Ok(player_request) = self.rx.try_recv() {
                 dbg!(&player_request);
@@ -154,11 +154,9 @@ impl Player {
             }
 
             self.ui_set_time()?;
-            thread::sleep(IDLE_DELAY);
+            thread::sleep(LOOP_DELAY);
 
             // Reset state after the queue ends
-            const EOQ_FILTERS: &[gst::MessageType] =
-                &[gst::MessageType::Eos, gst::MessageType::StateChanged];
             if self.queue.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
                 self.handle_gst_messages();
                 self.backend.set_state(State::Ready)?;
@@ -170,12 +168,7 @@ impl Player {
             }
 
             // Wait the current track to end, then update the UI
-            if self.queue.pending_track || self.pending_track_info {
-                if self.queue.pending_track {
-                    self.pending_track_info = true;
-                    self.queue.pending_track = false;
-                }
-
+            if self.pending_track_info {
                 if self.current_time().unwrap_or_default() < ClockTime::from_seconds(1) {
                     self.queue
                         .get_current()
@@ -204,6 +197,8 @@ impl Player {
         if self.queue.pending_track {
             println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
+            self.queue.pending_track = false;
+            self.pending_track_info = true;
         }
 
         if let Some(state) = self.pending_state.take() {
