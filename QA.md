@@ -5,10 +5,14 @@ Ensure the following:
 Playback:
 
 - [x] Pause/play/skip work as expected
-- [x] Shuffle/repeat/normal modes work as expected
+- [x] Shuffle/repeat/sequential modes work as expected
+- [ ] Seeking works as expected
+  - FIX: Sometimes hangs when seeking to song end
+  - FIX: Playback sometimes breaks when seeking to song end
+  - FIX: UI song info sometimes doesn't update when seeking to song end
 - [ ] Gapless/non-gapless playback works as expected
-  - FIX: Crash when seeking to song end (both modes)
-- [ ] Non-fatal errors are handled gracefully
+  - FIX: Issues with seeking (see above)
+- [x] Non-fatal errors are handled gracefully
 
 Interface:
 

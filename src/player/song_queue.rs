@@ -10,6 +10,7 @@ pub struct SongQueue {
 
     pub pending_track: bool,
     pub end_of_queue: bool,
+    pub lock_current: bool,
 
     index: usize,
     songs: Vec<QueueItem>,
@@ -47,6 +48,7 @@ impl SongQueue {
 
             pending_track: true,
             end_of_queue: false,
+            lock_current: false,
 
             index: 0,
             songs: vec![],
