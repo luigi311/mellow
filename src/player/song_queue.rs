@@ -130,12 +130,15 @@ impl SongQueue {
     }
 
     /// Replaces the current queue with the provided one
-    /// Index depends on shuffle mode (use `ordered_queue()` index)
     /// Playback state has to be manually updated
-    pub fn replace(&mut self, queue: Vec<QueueItem>) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    pub fn load_new(
+        &mut self,
+        queue: Vec<QueueItem>,
+    ) -> Result<(), mpsc::SendError<PlayerRequest>> {
         self.player_tx.send(PlayerRequest::SetInstantURI(true))?;
         self.pending_track = true;
         self.songs = queue;
+        self.index = 0;
         self.new_shuffled_queue();
         Ok(())
     }
