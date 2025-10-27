@@ -178,8 +178,7 @@ impl Player {
 
             // Wait the current track to end, then update the UI
             if self.pending_track_info
-                && (self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
-                    || self.queue.lock_current)
+                && self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
             {
                 self.queue
                     .get_current()
@@ -296,7 +295,7 @@ impl Player {
         // IDEA: For less buggy behavior, either:
         // - Pause the player while the seek bar is being interacted with, or
         // - Disable seeking for a few moments after track change
-        if self.queue.lock_current {
+        if self.queue.lock_current || self.pending_track_info {
             return Ok(());
         }
         match self.backend.current_state() {
