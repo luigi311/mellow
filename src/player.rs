@@ -195,6 +195,11 @@ impl Player {
 
     /// Manages the playback state
     fn update(&mut self) -> Result<(), Box<dyn Error>> {
+        if self.queue.is_empty() {
+            eprintln!("Queue is empty - cannot update player");
+            return Ok(());
+        }
+
         let file_uri = match self.queue.get_current() {
             QueueItem::Song(song) => song.file_uri(),
             QueueItem::Stopper => {
@@ -241,7 +246,7 @@ impl Player {
     /// Skips to next track
     fn skip_next(&mut self) {
         self.backend.set_property("instant-uri", true);
-        if !self.queue.repeat && self.queue.is_last() {
+        if !self.queue.get_repeat() && self.queue.is_last() {
             self.request_state(State::Ready);
             return;
         }

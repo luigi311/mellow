@@ -9,7 +9,6 @@ Playback:
 - [ ] Seeking works as expected
   - FIX: Sometimes hangs when seeking to song end
   - FIX: Playback sometimes breaks when seeking to song end
-  - FIX: UI song info sometimes doesn't update when seeking to song end
 - [ ] Gapless/non-gapless playback works as expected
   - FIX: Issues with seeking (see above)
 - [x] Non-fatal errors are handled gracefully
