@@ -22,35 +22,35 @@ use gst::{ClockTime, State};
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
 pub struct Window {
     #[template_child]
-    pub progress_bar: TemplateChild<gtk::ProgressBar>,
+    progress_bar: TemplateChild<gtk::ProgressBar>,
 
     #[template_child]
-    pub album_cover: TemplateChild<gtk::Picture>,
+    album_cover: TemplateChild<gtk::Picture>,
     #[template_child]
-    pub song_title: TemplateChild<gtk::Label>,
+    song_title: TemplateChild<gtk::Label>,
     #[template_child]
-    pub album_title: TemplateChild<gtk::Label>,
+    album_title: TemplateChild<gtk::Label>,
     #[template_child]
-    pub artist_name: TemplateChild<gtk::Label>,
+    artist_name: TemplateChild<gtk::Label>,
 
     #[template_child]
-    pub media_controls: TemplateChild<gtk::Box>,
+    media_controls: TemplateChild<gtk::Box>,
     #[template_child]
-    pub pause_button: TemplateChild<gtk::Button>,
+    pause_button: TemplateChild<gtk::Button>,
     #[template_child]
-    pub seek_bar: TemplateChild<gtk::Scale>,
+    seek_bar: TemplateChild<gtk::Scale>,
     #[template_child]
-    pub time_cur_label: TemplateChild<gtk::Label>,
+    time_cur_label: TemplateChild<gtk::Label>,
     #[template_child]
-    pub time_end_label: TemplateChild<gtk::Label>,
+    time_end_label: TemplateChild<gtk::Label>,
 
     #[template_child]
-    pub sheet: TemplateChild<adw::BottomSheet>,
+    sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
-    pub view_stack: TemplateChild<adw::ViewStack>,
-    #[template_child]
-    pub view_switcher_bar: TemplateChild<adw::ViewSwitcherBar>,
+    view_stack: TemplateChild<adw::ViewStack>,
 
+    // #[template_child]
+    // lyrics_page_title: TemplateChild<adw::WindowTitle>,
     #[template_child]
     info_song_title: TemplateChild<gtk::Label>,
     #[template_child]
@@ -63,14 +63,15 @@ pub struct Window {
     playing_artist_name: TemplateChild<gtk::Label>,
 
     // TODO: Save/load settings
+    // TODO: Keep switch positions (etc) in sync with the player settings (where needed)
     #[template_child]
-    pub settings_volume: TemplateChild<gtk::Scale>,
+    settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]
-    pub settings_shuffle: TemplateChild<adw::SwitchRow>,
+    settings_shuffle: TemplateChild<adw::SwitchRow>,
     #[template_child]
-    pub settings_repeat: TemplateChild<adw::SwitchRow>,
+    settings_repeat: TemplateChild<adw::SwitchRow>,
     #[template_child]
-    pub settings_gapless: TemplateChild<adw::SwitchRow>,
+    settings_gapless: TemplateChild<adw::SwitchRow>,
 
     pub settings: OnceCell<Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
@@ -217,6 +218,8 @@ impl Window {
         self.playing_song_title.set_label(&song_info.title);
         self.playing_album_title.set_label(&song_info.album);
         self.playing_artist_name.set_label(&song_info.artist);
+        // self.lyrics_page_title.set_title(&song_info.title);
+        // self.lyrics_page_title.set_subtitle(&song_info.artist);
         self.info_song_title.set_label(&song_info.title);
         if song_info.lyrics.is_empty() {
             self.info_lyrics.set_label("Lyrics not available");

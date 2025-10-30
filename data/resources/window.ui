@@ -568,6 +568,11 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <!-- <property name="title_widget"> -->
+                                      <!-- <object class="AdwWindowTitle" id="lyrics_page_title"> -->
+                                        <!-- <property name="title"></property> -->
+                                      <!-- </object> -->
+                                    <!-- </property> -->
                                   </object>
                                 </child>
                                 <property name="content">
@@ -772,7 +777,7 @@
             <!-- </child> -->
 
             <child type="bottom">
-              <object class="AdwViewSwitcherBar" id="view_switcher_bar">
+              <object class="AdwViewSwitcherBar">
                 <property name="stack">view_stack</property>
                 <property name="reveal">True</property>
               </object>
