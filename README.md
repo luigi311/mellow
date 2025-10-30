@@ -35,7 +35,7 @@ On Linux or macOS:
 
 ```bash
 mkdir -p $HOME/.local/share/glib-2.0/schemas
-cp data/com.github.userwithaname.Mellow.gschema.xml $HOME/.local/share/glib-2.0/schemas/
+cp data/resources/com.github.userwithaname.Mellow.gschema.xml $HOME/.local/share/glib-2.0/schemas/
 glib-compile-schemas $HOME/.local/share/glib-2.0/schemas/
 ```
 
@@ -43,7 +43,7 @@ Or on Windows:
 
 ```bash
 mkdir C:/ProgramData/glib-2.0/schemas/
-cp data/com.github.userwithaname.Mellow.gschema.xml C:/ProgramData/glib-2.0/schemas/
+cp data/resources/com.github.userwithaname.Mellow.gschema.xml C:/ProgramData/glib-2.0/schemas/
 glib-compile-schemas C:/ProgramData/glib-2.0/schemas/
 ```
 
