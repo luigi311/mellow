@@ -173,6 +173,10 @@ impl Window {
                 UpdateUI::Progress(progress) => {
                     self.update_progress(progress);
                 }
+
+                UpdateUI::OpenLibrary => {
+                    self.open_library();
+                }
             }
         }
     }
@@ -248,6 +252,11 @@ impl Window {
         } else {
             self.progress_bar.set_visible(false);
         }
+    }
+
+    fn open_library(&self) {
+        self.view_stack.set_visible_child_name("library");
+        self.sheet.set_open(true);
     }
 }
 

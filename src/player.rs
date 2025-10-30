@@ -115,6 +115,10 @@ impl Player {
         const EOQ_FILTERS: &[gst::MessageType] =
             &[gst::MessageType::Eos, gst::MessageType::StateChanged];
 
+        if self.queue.is_empty() {
+            self.ui_open_library()?;
+        }
+
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
@@ -359,6 +363,13 @@ impl Player {
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
+    }
+
+    /// Requests the UI to open the music library
+    fn ui_open_library(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::OpenLibrary).await })
     }
 
     /// Clears and hadles the GStreamer message queue

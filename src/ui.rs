@@ -16,6 +16,8 @@ pub enum UpdateUI {
     PlayerTime(Option<ClockTime>),
     SongInfo(Option<Arc<SongInfo>>),
     Progress(Option<f64>),
+
+    OpenLibrary,
 }
 
 // TODO: When queue is empty, display a landing page
