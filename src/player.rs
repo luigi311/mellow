@@ -147,7 +147,7 @@ impl Player {
                         match no_update {
                             PlayerRequest::SetVolume(vol) => self.set_volume(vol),
                             PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle),
-                            PlayerRequest::SetRepeat(repeat) => self.queue.repeat = repeat,
+                            PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat),
                             PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
                             PlayerRequest::SetInstantURI(instant_uri) => {
                                 self.backend.set_property("instant-uri", instant_uri);
@@ -270,7 +270,8 @@ impl Player {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
             Some(time)
-                if (time > REPEAT_THRESHOLD || (self.queue.is_first() && !self.queue.repeat)) =>
+                if (time > REPEAT_THRESHOLD
+                    || (self.queue.is_first() && !self.queue.get_repeat())) =>
             {
                 self.repeat_song()?;
             }

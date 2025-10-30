@@ -5,8 +5,8 @@ use crate::library::Song;
 use crate::player::PlayerRequest;
 
 pub struct SongQueue {
-    pub repeat: bool,
-    pub shuffle: bool,
+    repeat: bool,
+    shuffle: bool,
 
     pub pending_track: bool,
     pub end_of_queue: bool,
@@ -152,17 +152,32 @@ impl SongQueue {
         Ok(())
     }
 
-    /// Enables or disables the shuffle mode
+    /// Enables or disables shuffle mode for the queue
     pub fn set_shuffle(&mut self, shuffle: bool) {
         // TODO: Keep stoppers in the same place in the queue when toggling shuffle
         if self.shuffle == shuffle {
             return;
         }
-        if self.shuffle {
+        if self.shuffle && !self.is_empty() {
             self.index = self.get_current_index();
         }
         self.shuffle = shuffle;
         self.update_shuffled_queue();
+    }
+
+    /// Returns the current shuffle mode for the queue
+    pub fn get_shuffle(&self) -> bool {
+        self.shuffle
+    }
+
+    /// Enables or disables repeat mode for the queue
+    pub fn set_repeat(&mut self, repeat: bool) {
+        self.repeat = repeat;
+    }
+
+    /// Returns the current repeat mode for the queue
+    pub fn get_repeat(&self) -> bool {
+        self.repeat
     }
 
     /// Creates a vec of random indexes for the shuffle mode
