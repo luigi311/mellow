@@ -55,7 +55,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                     if !Library::file_supported(&file) {
                         return;
                     }
-                    let song = QueueItem::Song(song);
+                    let song = QueueItem::Song(Arc::new(Mutex::new(song)));
                     queue.lock().unwrap().as_mut().unwrap().push(song);
                 }
             } else if Path::exists(path) {
@@ -67,7 +67,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                         if !Library::file_supported(file) {
                             return;
                         }
-                        let song = QueueItem::Song(song);
+                        let song = QueueItem::Song(Arc::new(Mutex::new(song)));
                         queue.lock().unwrap().as_mut().unwrap().push(song);
                     }
                 });
@@ -87,7 +87,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
             library
                 .songs
                 .iter()
-                .map(|song| QueueItem::Song(song.clone()))
+                .map(|song| QueueItem::Song(Arc::new(Mutex::new(song.clone()))))
                 .collect()
         });
         player.queue.load_new(songs).unwrap();

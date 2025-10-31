@@ -1,5 +1,5 @@
 use rand::random_range;
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 
 use crate::library::Song;
 use crate::player::PlayerRequest;
@@ -19,21 +19,16 @@ pub struct SongQueue {
     player_tx: mpsc::SyncSender<PlayerRequest>,
 }
 
+#[derive(Clone)]
 pub enum QueueItem {
-    Song(Song),
+    Song(Arc<Mutex<Song>>),
     Stopper,
 }
 
 impl QueueItem {
-    pub fn as_ref_song(&self) -> &Song {
+    pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
-            QueueItem::Song(song) => song,
-            _ => panic!("Item is not a `Song`"),
-        }
-    }
-    pub fn as_mut_song(&mut self) -> &mut Song {
-        match self {
-            QueueItem::Song(song) => song,
+            QueueItem::Song(song) => song.lock().unwrap(),
             _ => panic!("Item is not a `Song`"),
         }
     }
@@ -86,15 +81,20 @@ impl SongQueue {
 
     /// Get the current song index based on the shuffle mode option
     #[must_use]
-    pub fn get_current_index(&self) -> usize {
+    pub fn current_index(&self) -> usize {
         self.ordered_index(self.index)
     }
 
     /// Returns a mutable reference to the current song
     #[must_use]
-    pub fn get_current(&mut self) -> &mut QueueItem {
-        let index = self.get_current_index();
+    pub fn current(&mut self) -> &mut QueueItem {
+        let index = self.current_index();
         &mut self.songs[index]
+    }
+
+    #[must_use]
+    pub fn index(&self) -> usize {
+        self.index
     }
 
     /// Locates a song within the `shuffled` vec and returns its index
@@ -121,12 +121,12 @@ impl SongQueue {
     /// Returns references to all songs in the queue,
     /// ordered with respect to shuffle setting
     #[must_use]
-    pub fn ordered_queue(&self) -> Vec<&QueueItem> {
+    pub fn ordered_queue(&self) -> Box<[QueueItem]> {
         let mut songs = vec![];
         for i in 0..self.len() {
-            songs.push(&self.songs[self.ordered_index(i)]);
+            songs.push(self.songs[self.ordered_index(i)].clone());
         }
-        songs
+        songs.into()
     }
 
     /// Replaces the current queue with the provided one
@@ -139,7 +139,7 @@ impl SongQueue {
         self.pending_track = true;
         self.songs = queue;
         self.index = 0;
-        self.new_shuffled_queue();
+        self.new_shuffled_queue()?;
         Ok(())
     }
 
@@ -153,16 +153,17 @@ impl SongQueue {
     }
 
     /// Enables or disables shuffle mode for the queue
-    pub fn set_shuffle(&mut self, shuffle: bool) {
+    pub fn set_shuffle(&mut self, shuffle: bool) -> Result<(), mpsc::SendError<PlayerRequest>> {
         // TODO: Keep stoppers in the same place in the queue when toggling shuffle
         if self.shuffle == shuffle {
-            return;
+            return Ok(());
         }
         if self.shuffle && !self.is_empty() {
-            self.index = self.get_current_index();
+            self.index = self.current_index();
         }
         self.shuffle = shuffle;
-        self.update_shuffled_queue();
+        self.update_shuffled_queue()?;
+        Ok(())
     }
 
     /// Returns the current shuffle mode for the queue
@@ -181,23 +182,24 @@ impl SongQueue {
     }
 
     /// Creates a vec of random indexes for the shuffle mode
-    fn new_shuffled_queue(&mut self) {
+    fn new_shuffled_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
         self.shuffled = (0..self.len()).collect();
         for i in 0..self.shuffled.len() {
             let rand_index = random_range(0..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
+        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        Ok(())
     }
 
     /// Randomizes indexes for the shuffle mode
     /// without changing the currently playing track
-    fn update_shuffled_queue(&mut self) {
+    fn update_shuffled_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
         if self.is_empty() {
-            eprintln!("Cannot shuffle an empty queue");
-            return;
+            return Ok(());
         }
         self.shuffled = (0..self.len()).collect();
-        let start = match self.get_current_index() {
+        let start = match self.current_index() {
             index if self.shuffle => {
                 self.shuffled.swap(0, index);
                 self.index = 0;
@@ -209,21 +211,29 @@ impl SongQueue {
             let rand_index = random_range(start..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
+        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        Ok(())
     }
 
     /// Removes all upcomming songs from the queue
-    pub fn clear_queue(&mut self) {
-        let current_song = self.remove(self.get_current_index());
+    pub fn clear_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
+        let current_song = self.remove(self.current_index());
         self.songs = vec![current_song];
-        self.update_shuffled_queue();
+        self.update_shuffled_queue()?;
+        Ok(())
     }
 
     /// Removes all queued songs after the provided index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
-    pub fn clear_queue_after_index(&mut self, index: usize) {
+    pub fn clear_queue_after_index(
+        &mut self,
+        index: usize,
+    ) -> Result<(), mpsc::SendError<PlayerRequest>> {
         while self.len() > index + 1 {
             self.remove(index + 1);
         }
+        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        Ok(())
     }
 
     /// Moves a song in the queue from `index` to `target`

@@ -641,7 +641,15 @@
                                 <!-- "Play now", a ratings widget, "Stop after", etc -->
                                 <!-- Alternatively, a context menu might be useful for this -->
                                 <property name="content">
-                                  <object class="GtkBox">
+                                  <object class="AdwPreferencesPage">
+                                    <property name="valign">center</property>
+
+                                    <!-- List of songs in the queue -->
+                                    <child>
+                                      <!-- TODO: Button to scroll back to the playing song -->
+                                      <object class="AdwPreferencesGroup" id="song_queue_group">
+                                      </object>
+                                    </child>
                                   </object>
                                 </property>
                               </object>

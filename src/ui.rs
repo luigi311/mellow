@@ -2,12 +2,12 @@ use adw::{self, Application, prelude::*};
 use gst::{ClockTime, State};
 use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{self, glib};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
-use crate::player::song_queue::SongQueue;
+use crate::player::song_queue::QueueItem;
 use crate::window::Window;
 use crate::{APP_ID, APP_NAME};
 
@@ -15,12 +15,11 @@ pub enum UpdateUI {
     PlayerState(State, bool),
     PlayerTime(Option<ClockTime>),
     SongInfo(Option<Arc<SongInfo>>),
+    SongQueue(Box<[QueueItem]>),
+    QueueIndex(usize),
     Progress(Option<f64>),
-
     OpenLibrary,
 }
-
-// TODO: When queue is empty, display a landing page
 
 pub fn build(
     app: &Application,

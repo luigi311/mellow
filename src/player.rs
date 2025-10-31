@@ -31,6 +31,8 @@ pub enum PlayerRequest {
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
     SongEnd,
 
+    UIUpdateQueue,
+
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
     /// Turn the shuffle mode on or off
@@ -82,7 +84,7 @@ impl Player {
         let bus = backend.bus().unwrap();
 
         let tokio_rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
-        let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(2);
+        let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
         Ok((
@@ -149,8 +151,11 @@ impl Player {
 
                     no_update => {
                         match no_update {
+                            PlayerRequest::UIUpdateQueue => self.ui_update_queue()?,
                             PlayerRequest::SetVolume(vol) => self.set_volume(vol),
-                            PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle),
+                            PlayerRequest::SetShuffle(shuffle) => {
+                                self.queue.set_shuffle(shuffle)?
+                            }
                             PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat),
                             PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
                             PlayerRequest::SetInstantURI(instant_uri) => {
@@ -184,11 +189,9 @@ impl Player {
             if self.pending_track_info
                 && self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
             {
-                self.queue
-                    .get_current()
-                    .as_mut_song()
-                    .assign_info_with_fallback();
+                self.queue.current().as_song().assign_info_with_fallback();
                 self.ui_set_song_info()?;
+                self.ui_update_queue_index()?;
                 self.pending_track_info = false;
             }
 
@@ -204,8 +207,8 @@ impl Player {
             return Ok(());
         }
 
-        let file_uri = match self.queue.get_current() {
-            QueueItem::Song(song) => song.file_uri(),
+        let file_uri = match self.queue.current() {
+            QueueItem::Song(song) => song.lock().unwrap().file_uri(),
             QueueItem::Stopper => {
                 self.queue.remove_current();
                 self.request_state(State::Paused);
@@ -350,7 +353,7 @@ impl Player {
     /// Sends the current song info to the UI receiver
     fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
-        let song_info = self.queue.get_current().as_mut_song().info.take();
+        let song_info = self.queue.current().as_song().info.take();
         println!("ui_set_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
@@ -363,6 +366,23 @@ impl Player {
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
+    }
+
+    fn ui_update_queue(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        let queue = self.queue.ordered_queue();
+        println!("ui_update_queue()");
+        self.ui_update_queue_index()?;
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::SongQueue(queue)).await })
+    }
+
+    fn ui_update_queue_index(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        let index = self.queue.index();
+        println!("ui_update_queue_index({index})");
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::QueueIndex(index)).await })
     }
 
     /// Requests the UI to open the music library
@@ -381,7 +401,7 @@ impl Player {
                     eprintln!("gstreamer error: {dbg}\n");
 
                     // TODO: This could be done better
-                    if dbg.contains(&self.queue.get_current().as_ref_song().file_uri()) {
+                    if dbg.contains(&self.queue.current().as_song().file_uri()) {
                         self.force_skip_track(self.current_state);
                     }
                 }

@@ -1,20 +1,18 @@
 use adw::ApplicationWindow;
-use adw::subclass::prelude::*;
 use adw::{gio, glib};
-use gio::Settings;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
-use gtk::prelude::{ButtonExt, RangeExt, WidgetExt};
 use gtk::{CompositeTemplate, gdk};
 
-use std::cell::OnceCell;
-use std::sync::{Arc, Mutex, mpsc};
+use std::cell::{Cell, OnceCell, RefCell};
+use std::sync::{Arc, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::format_duration;
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
-use crate::player::song_queue::SongQueue;
+use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use gst::{ClockTime, State};
 
@@ -61,6 +59,8 @@ pub struct Window {
     playing_album_title: TemplateChild<gtk::Label>,
     #[template_child]
     playing_artist_name: TemplateChild<gtk::Label>,
+    #[template_child]
+    song_queue_group: TemplateChild<adw::PreferencesGroup>,
 
     // TODO: Save/load settings
     // TODO: Keep switch positions (etc) in sync with the player settings (where needed)
@@ -73,8 +73,11 @@ pub struct Window {
     #[template_child]
     settings_gapless: TemplateChild<adw::SwitchRow>,
 
-    pub settings: OnceCell<Settings>,
+    pub settings: OnceCell<gio::Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+
+    song_queue: RefCell<Box<[QueueItem]>>,
+    song_queue_index: Cell<usize>,
 }
 
 #[gtk::template_callbacks]
@@ -171,13 +174,10 @@ impl Window {
                 UpdateUI::PlayerTime(time) => {
                     self.update_time(time, song_duration.as_millis() as f64);
                 }
-                UpdateUI::Progress(progress) => {
-                    self.update_progress(progress);
-                }
-
-                UpdateUI::OpenLibrary => {
-                    self.open_library();
-                }
+                UpdateUI::SongQueue(queue) => self.update_song_queue(queue),
+                UpdateUI::QueueIndex(index) => self.song_queue_index.set(index),
+                UpdateUI::Progress(progress) => self.update_progress(progress),
+                UpdateUI::OpenLibrary => self.open_library(),
             }
         }
     }
@@ -254,6 +254,58 @@ impl Window {
             self.progress_bar.set_fraction(progress);
         } else {
             self.progress_bar.set_visible(false);
+        }
+    }
+
+    fn update_song_queue(&self, queue: Box<[QueueItem]>) {
+        // TODO: Clear old items when updating
+        // TODO: Display the list properly using a factory
+        // TODO: Display the entire queue
+        // TODO: Support removing queue items
+        // TODO: Support reordering queue items
+        // TODO: Support jumping between songs in the queue
+        // TODO: Support inserting stoppers
+        // TODO: Support rating/tagging songs (AdwExpanderRow or context menu)
+        let _ = self.song_queue.replace(queue);
+        for i in 0..20 {
+            match &self.song_queue.borrow()[i] {
+                QueueItem::Song(song) => {
+                    let is_playing = i == self.song_queue_index.get();
+                    let mut song = song.lock().unwrap();
+                    let song_info = song.get_info_or_assign();
+                    let title = song_info.title.clone();
+                    let subtitle = song_info.artist.clone();
+                    let queue_entry = adw::ActionRow::builder()
+                        .use_markup(false)
+                        .title(title)
+                        .subtitle(subtitle)
+                        .activatable(true)
+                        .build();
+                    if is_playing {
+                        queue_entry.add_css_class("heading");
+                        queue_entry.add_css_class("card");
+                    }
+                    let cover_widget = gtk::Picture::builder()
+                        .valign(gtk::Align::Center)
+                        .content_fit(gtk::ContentFit::Fill)
+                        .margin_top(if is_playing { 4 } else { 8 })
+                        .margin_bottom(if is_playing { 4 } else { 8 })
+                        .css_classes(["card"])
+                        .build();
+                    // TODO: Cached low-res album covers
+                    if let Some(artwork) = song_info.artwork.as_ref() {
+                        cover_widget.set_paintable(Some(artwork));
+                    } else {
+                        cover_widget.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+                    }
+                    queue_entry.add_prefix(&cover_widget);
+
+                    self.song_queue_group.add(&queue_entry);
+                }
+                QueueItem::Stopper => {
+                    // TODO: Display stoppers
+                }
+            }
         }
     }
 
