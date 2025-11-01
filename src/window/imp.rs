@@ -259,15 +259,18 @@ impl Window {
 
     fn update_song_queue(&self, queue: Box<[QueueItem]>) {
         // TODO: Clear old items when updating
-        // TODO: Display the list properly using a factory
-        // TODO: Display the entire queue
+        // TODO: Indicate the currently playing song after each track change
+        // TODO: Display the list properly (model/factory/view)
         // TODO: Support removing queue items
         // TODO: Support reordering queue items
         // TODO: Support jumping between songs in the queue
         // TODO: Support inserting stoppers
         // TODO: Support rating/tagging songs (AdwExpanderRow or context menu)
         let _ = self.song_queue.replace(queue);
-        for i in 0..20 {
+        // TODO: Display the entire queue
+        for i in self.song_queue_index.get().saturating_sub(5)
+            ..(self.song_queue_index.get() + 10).min(self.song_queue.borrow().len())
+        {
             match &self.song_queue.borrow()[i] {
                 QueueItem::Song(song) => {
                     let is_playing = i == self.song_queue_index.get();
