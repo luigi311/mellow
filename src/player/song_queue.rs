@@ -199,7 +199,7 @@ impl SongQueue {
     /// Enables or disables repeat mode for the queue
     pub fn set_repeat(&mut self, repeat: bool) -> Result<(), SendError<UpdateUI>> {
         self.repeat = repeat;
-        self.ui_update_shuffle()?;
+        self.ui_update_repeat()?;
         Ok(())
     }
 
