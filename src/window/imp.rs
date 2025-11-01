@@ -272,16 +272,14 @@ impl Window {
                     let is_playing = i == self.song_queue_index.get();
                     let mut song = song.lock().unwrap();
                     let song_info = song.get_info_or_assign();
-                    let title = song_info.title.clone();
-                    let subtitle = song_info.artist.clone();
                     let queue_entry = adw::ActionRow::builder()
-                        .use_markup(false)
                         .title_lines(1)
-                        .title(title)
                         .subtitle_lines(1)
-                        .subtitle(subtitle)
+                        .use_markup(false)
                         .activatable(true)
                         .build();
+                    queue_entry.set_title(&song_info.title);
+                    queue_entry.set_subtitle(&song_info.artist);
                     if is_playing {
                         queue_entry.add_css_class("heading");
                         queue_entry.add_css_class("card");
