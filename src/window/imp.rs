@@ -276,7 +276,9 @@ impl Window {
                     let subtitle = song_info.artist.clone();
                     let queue_entry = adw::ActionRow::builder()
                         .use_markup(false)
+                        .title_lines(1)
                         .title(title)
+                        .subtitle_lines(1)
                         .subtitle(subtitle)
                         .activatable(true)
                         .build();
