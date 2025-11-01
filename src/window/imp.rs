@@ -67,10 +67,6 @@ pub struct Window {
     #[template_child]
     settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]
-    settings_shuffle: TemplateChild<adw::SwitchRow>,
-    #[template_child]
-    settings_repeat: TemplateChild<adw::SwitchRow>,
-    #[template_child]
     settings_gapless: TemplateChild<adw::SwitchRow>,
 
     pub settings: OnceCell<gio::Settings>,
@@ -107,6 +103,22 @@ impl Window {
             .unwrap();
     }
     #[template_callback]
+    pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
+        self.player_tx
+            .get()
+            .unwrap()
+            .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
+            .unwrap();
+    }
+    #[template_callback]
+    pub fn handle_set_shuffle(&self, tb: &gtk::ToggleButton) {
+        self.player_tx
+            .get()
+            .unwrap()
+            .send(PlayerRequest::SetShuffle(tb.is_active()))
+            .unwrap();
+    }
+    #[template_callback]
     pub fn handle_add_library(&self) {
         println!("TODO: handle_add_library(): Open directory dialog");
     }
@@ -129,22 +141,6 @@ impl Window {
             }
         });
 
-        self.settings_shuffle.connect_active_notify({
-            let player_tx = player_tx.clone();
-            move |switch| {
-                player_tx
-                    .send(PlayerRequest::SetShuffle(switch.is_active()))
-                    .unwrap();
-            }
-        });
-        self.settings_repeat.connect_active_notify({
-            let player_tx = player_tx.clone();
-            move |switch| {
-                player_tx
-                    .send(PlayerRequest::SetRepeat(switch.is_active()))
-                    .unwrap();
-            }
-        });
         self.settings_gapless.connect_active_notify({
             let player_tx = player_tx.clone();
             move |switch| {

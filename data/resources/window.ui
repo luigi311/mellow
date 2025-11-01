@@ -635,6 +635,18 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">media-playlist-shuffle-symbolic</property>
+                                        <signal name="toggled" handler="handle_set_shuffle" swapped="true"/>
+                                      </object>
+                                    </child>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
+                                        <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <!-- IDEA: Queue items could be AdwExpanderRows, expanding into -->
@@ -719,18 +731,6 @@
                                   </object>
                                 </child>
 
-                                <!-- TODO: Move the shuffle/repeat buttons into the queue view once impelemented -->
-                                <!-- ... or use the more standard position for those buttons -->
-                                <child>
-                                  <object class="AdwSwitchRow" id="settings_shuffle">
-                                    <property name="title" translatable="yes">Shuffle</property>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="AdwSwitchRow" id="settings_repeat">
-                                    <property name="title" translatable="yes">Repeat</property>
-                                  </object>
-                                </child>
                                 <child>
                                   <object class="AdwSwitchRow" id="settings_gapless">
                                     <property name="title" translatable="yes">Gapless</property>
