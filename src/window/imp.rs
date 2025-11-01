@@ -67,9 +67,6 @@ pub struct Window {
     repeat_toggle: TemplateChild<gtk::ToggleButton>,
 
     // TODO: Save/load settings
-    // TODO: Keep switch positions (etc) in sync with the player settings (where needed)
-    #[template_child]
-    settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]
     settings_gapless: TemplateChild<adw::SwitchRow>,
 
@@ -107,6 +104,32 @@ impl Window {
             .unwrap();
     }
     #[template_callback]
+    pub fn handle_seek(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
+        self.player_tx
+            .get()
+            .unwrap()
+            .send(PlayerRequest::Seek(value))
+            .unwrap();
+        glib::Propagation::Proceed
+    }
+    #[template_callback]
+    pub fn handle_set_volume(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
+        self.player_tx
+            .get()
+            .unwrap()
+            .send(PlayerRequest::SetVolume(value))
+            .unwrap();
+        glib::Propagation::Proceed
+    }
+    #[template_callback]
+    pub fn handle_gapless_switch(&self) {
+        self.player_tx
+            .get()
+            .unwrap()
+            .send(PlayerRequest::SetGapless(self.settings_gapless.is_active()))
+            .unwrap();
+    }
+    #[template_callback]
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
         self.player_tx
             .get()
@@ -127,36 +150,20 @@ impl Window {
         println!("TODO: handle_add_library(): Open directory dialog");
     }
 
-    fn connect_closures(&self) {
-        let player_tx = self.player_tx.get().unwrap().clone();
-
-        self.seek_bar.connect_change_value({
-            let player_tx = player_tx.clone();
-            move |_, _, value| {
-                player_tx.send(PlayerRequest::Seek(value)).unwrap();
-                glib::Propagation::Proceed
-            }
-        });
-        self.settings_volume.connect_change_value({
-            let player_tx = player_tx.clone();
-            move |_, _, value| {
-                player_tx.send(PlayerRequest::SetVolume(value)).unwrap();
-                glib::Propagation::Proceed
-            }
-        });
-
-        self.settings_gapless.connect_active_notify({
-            let player_tx = player_tx.clone();
-            move |switch| {
-                player_tx
-                    .send(PlayerRequest::SetGapless(switch.is_active()))
-                    .unwrap();
-            }
-        });
-    }
+    // fn connect_closures(&self) {
+    //     let player_tx = self.player_tx.get().unwrap().clone();
+    //
+    //     self.seek_bar.connect_change_value({
+    //         let player_tx = player_tx.clone();
+    //         move |_, _, value| {
+    //             player_tx.send(PlayerRequest::Seek(value)).unwrap();
+    //             glib::Propagation::Proceed
+    //         }
+    //     });
+    // }
 
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
-        self.connect_closures();
+        // self.connect_closures();
         let mut song_duration = Duration::default();
 
         loop {

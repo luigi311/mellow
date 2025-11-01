@@ -149,6 +149,7 @@
                             </child>
                             <child>
                               <object class="GtkScale" id="seek_bar">
+                                <signal name="change_value" handler="handle_seek" swapped="true"/>
                                 <property name="hexpand">True</property>
                                 <property name="margin_start">6</property>
                                 <property name="margin_end">6</property>
@@ -715,7 +716,8 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="GtkScale" id="settings_volume">
+                                          <object class="GtkScale">
+                                            <signal name="change_value" handler="handle_set_volume" swapped="true"/>
                                             <property name="hexpand">True</property>
                                             <property name="adjustment">
                                               <object class="GtkAdjustment">
@@ -733,6 +735,7 @@
 
                                 <child>
                                   <object class="AdwSwitchRow" id="settings_gapless">
+                                    <signal name="notify::active" handler="handle_gapless_switch" swapped="true"/>
                                     <property name="title" translatable="yes">Gapless</property>
                                     <property name="active">True</property>
                                   </object>
