@@ -638,14 +638,16 @@
                                     <property name="show_title">False</property>
                                     <child type="end">
                                       <object class="GtkToggleButton" id="shuffle_toggle">
-                                        <property name="icon_name">media-playlist-shuffle-symbolic</property>
                                         <signal name="toggled" handler="handle_set_shuffle" swapped="true"/>
+                                        <property name="icon_name">media-playlist-shuffle-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Shuffle</property>
                                       </object>
                                     </child>
                                     <child type="end">
                                       <object class="GtkToggleButton" id="repeat_toggle">
-                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
                                         <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
+                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Repeat</property>
                                       </object>
                                     </child>
                                   </object>
@@ -747,10 +749,10 @@
                             <child>
                               <object class="AdwPreferencesGroup">
                                 <property name="hexpand">True</property>
-                                <property name="title">Library</property>
+                                <property name="title" translatable="yes">Library</property>
                                 <child>
                                   <object class="AdwExpanderRow" id="settings_directories">
-                                    <property name="title">Directories</property>
+                                    <property name="title" translatable="yes">Directories</property>
                                     <property name="expanded">True</property>
                                     <child>
                                       <!-- TODO: Allow adding/removing directories -->

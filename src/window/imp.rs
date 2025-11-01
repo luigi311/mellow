@@ -308,8 +308,8 @@ impl Window {
                     let cover_widget = gtk::Picture::builder()
                         .valign(gtk::Align::Center)
                         .content_fit(gtk::ContentFit::Fill)
-                        .margin_top(if is_playing { 4 } else { 8 })
-                        .margin_bottom(if is_playing { 4 } else { 8 })
+                        .margin_top(if is_playing { 4 } else { 7 })
+                        .margin_bottom(if is_playing { 4 } else { 7 })
                         .css_classes(["card"])
                         .build();
                     // TODO: Cached low-res album covers
