@@ -1,7 +1,7 @@
 use core::error::Error;
-use gst::prelude::{ElementExt, ElementExtManual, ObjectExt};
+use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
@@ -31,8 +31,6 @@ pub enum PlayerRequest {
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
     SongEnd,
 
-    UIUpdateQueue,
-
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
     /// Turn the shuffle mode on or off
@@ -57,7 +55,7 @@ pub struct Player {
 
     backend: gst::Element,
     bus: gst::Bus,
-    tokio_rt: tokio::runtime::Runtime,
+    tokio_rt: Arc<tokio::runtime::Runtime>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
     player_tx: mpsc::SyncSender<PlayerRequest>,
     rx: mpsc::Receiver<PlayerRequest>,
@@ -83,13 +81,13 @@ impl Player {
         let backend = gst::ElementFactory::make("playbin3").build()?;
         let bus = backend.bus().unwrap();
 
-        let tokio_rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+        let tokio_rt = Arc::new(tokio::runtime::Runtime::new().map_err(|e| e.to_string())?);
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
         Ok((
             Player {
-                queue: SongQueue::new(player_tx.clone()),
+                queue: SongQueue::new(player_tx.clone(), ui_tx.clone(), Arc::clone(&tokio_rt)),
 
                 gapless: true,
 
@@ -151,12 +149,11 @@ impl Player {
 
                     no_update => {
                         match no_update {
-                            PlayerRequest::UIUpdateQueue => self.ui_update_queue()?,
                             PlayerRequest::SetVolume(vol) => self.set_volume(vol),
                             PlayerRequest::SetShuffle(shuffle) => {
                                 self.queue.set_shuffle(shuffle)?
                             }
-                            PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat),
+                            PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)?,
                             PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
                             PlayerRequest::SetInstantURI(instant_uri) => {
                                 self.backend.set_property("instant-uri", instant_uri);
@@ -191,7 +188,7 @@ impl Player {
             {
                 self.queue.current().as_song().assign_info_with_fallback();
                 self.ui_set_song_info()?;
-                self.ui_update_queue_index()?;
+                self.queue.ui_update_queue_index()?;
                 self.pending_track_info = false;
             }
 
@@ -366,23 +363,6 @@ impl Player {
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
-    }
-
-    fn ui_update_queue(&self) -> Result<(), SendError<UpdateUI>> {
-        let tx = self.ui_tx.clone();
-        let queue = self.queue.ordered_queue();
-        println!("ui_update_queue()");
-        self.ui_update_queue_index()?;
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::SongQueue(queue)).await })
-    }
-
-    fn ui_update_queue_index(&self) -> Result<(), SendError<UpdateUI>> {
-        let tx = self.ui_tx.clone();
-        let index = self.queue.index();
-        println!("ui_update_queue_index({index})");
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::QueueIndex(index)).await })
     }
 
     /// Requests the UI to open the music library

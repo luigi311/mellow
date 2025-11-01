@@ -75,7 +75,7 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
         });
         player
             .queue
-            .load_new(queue.lock().unwrap().take().unwrap())
+            .load_new(queue.lock().unwrap().take().unwrap(), None, None)
             .unwrap();
     } else {
         let mut library = Library::load_or_init(ui_tx).expect("Library could not be initialized");
@@ -90,6 +90,6 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
                 .map(|song| QueueItem::Song(Arc::new(Mutex::new(song.clone()))))
                 .collect()
         });
-        player.queue.load_new(songs).unwrap();
+        player.queue.load_new(songs, Some(true), None).unwrap();
     }
 }

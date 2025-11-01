@@ -17,6 +17,8 @@ pub enum UpdateUI {
     SongInfo(Option<Arc<SongInfo>>),
     SongQueue(Box<[QueueItem]>),
     QueueIndex(usize),
+    Shuffle(bool),
+    Repeat(bool),
     Progress(Option<f64>),
     OpenLibrary,
 }

@@ -1,8 +1,12 @@
+use core::error::Error;
 use rand::random_range;
 use std::sync::{Arc, Mutex, MutexGuard, mpsc};
+use tokio::sync::mpsc as tokio_mpsc;
+use tokio::sync::mpsc::error::SendError;
 
 use crate::library::Song;
 use crate::player::PlayerRequest;
+use crate::ui::UpdateUI;
 
 pub struct SongQueue {
     repeat: bool,
@@ -17,6 +21,8 @@ pub struct SongQueue {
     shuffled: Vec<usize>,
 
     player_tx: mpsc::SyncSender<PlayerRequest>,
+    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    tokio_rt: Arc<tokio::runtime::Runtime>,
 }
 
 #[derive(Clone)]
@@ -36,7 +42,11 @@ impl QueueItem {
 
 impl SongQueue {
     #[must_use]
-    pub fn new(player_tx: mpsc::SyncSender<PlayerRequest>) -> Self {
+    pub fn new(
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+        ui_tx: tokio_mpsc::Sender<UpdateUI>,
+        tokio_rt: Arc<tokio::runtime::Runtime>,
+    ) -> Self {
         Self {
             repeat: false,
             shuffle: false,
@@ -50,6 +60,8 @@ impl SongQueue {
             shuffled: vec![],
 
             player_tx,
+            ui_tx,
+            tokio_rt,
         }
     }
 
@@ -130,16 +142,28 @@ impl SongQueue {
     }
 
     /// Replaces the current queue with the provided one
+    /// Shuffle/repeat can be set by providing the `Some(_)` value,
+    /// otherwise previous values are preserved
     /// Playback state has to be manually updated
     pub fn load_new(
         &mut self,
         queue: Vec<QueueItem>,
-    ) -> Result<(), mpsc::SendError<PlayerRequest>> {
+        shuffle: Option<bool>,
+        repeat: Option<bool>,
+    ) -> Result<(), Box<dyn Error>> {
+        if let Some(shuffle) = shuffle {
+            self.set_shuffle(shuffle)?;
+        }
+        if let Some(repeat) = repeat {
+            self.set_repeat(repeat)?;
+        }
+
         self.player_tx.send(PlayerRequest::SetInstantURI(true))?;
         self.pending_track = true;
         self.songs = queue;
         self.index = 0;
         self.new_shuffled_queue()?;
+
         Ok(())
     }
 
@@ -153,7 +177,7 @@ impl SongQueue {
     }
 
     /// Enables or disables shuffle mode for the queue
-    pub fn set_shuffle(&mut self, shuffle: bool) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    pub fn set_shuffle(&mut self, shuffle: bool) -> Result<(), SendError<UpdateUI>> {
         // TODO: Keep stoppers in the same place in the queue when toggling shuffle
         if self.shuffle == shuffle {
             return Ok(());
@@ -162,6 +186,7 @@ impl SongQueue {
             self.index = self.current_index();
         }
         self.shuffle = shuffle;
+        self.ui_update_shuffle()?;
         self.update_shuffled_queue()?;
         Ok(())
     }
@@ -172,8 +197,10 @@ impl SongQueue {
     }
 
     /// Enables or disables repeat mode for the queue
-    pub fn set_repeat(&mut self, repeat: bool) {
+    pub fn set_repeat(&mut self, repeat: bool) -> Result<(), SendError<UpdateUI>> {
         self.repeat = repeat;
+        self.ui_update_shuffle()?;
+        Ok(())
     }
 
     /// Returns the current repeat mode for the queue
@@ -182,19 +209,19 @@ impl SongQueue {
     }
 
     /// Creates a vec of random indexes for the shuffle mode
-    fn new_shuffled_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    fn new_shuffled_queue(&mut self) -> Result<(), SendError<UpdateUI>> {
         self.shuffled = (0..self.len()).collect();
         for i in 0..self.shuffled.len() {
             let rand_index = random_range(0..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
-        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        self.ui_update_queue()?;
         Ok(())
     }
 
     /// Randomizes indexes for the shuffle mode
     /// without changing the currently playing track
-    fn update_shuffled_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    fn update_shuffled_queue(&mut self) -> Result<(), SendError<UpdateUI>> {
         if self.is_empty() {
             return Ok(());
         }
@@ -211,12 +238,12 @@ impl SongQueue {
             let rand_index = random_range(start..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
-        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        self.ui_update_queue()?;
         Ok(())
     }
 
     /// Removes all upcomming songs from the queue
-    pub fn clear_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    pub fn clear_queue(&mut self) -> Result<(), SendError<UpdateUI>> {
         let current_song = self.remove(self.current_index());
         self.songs = vec![current_song];
         self.update_shuffled_queue()?;
@@ -225,14 +252,11 @@ impl SongQueue {
 
     /// Removes all queued songs after the provided index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
-    pub fn clear_queue_after_index(
-        &mut self,
-        index: usize,
-    ) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    pub fn clear_queue_after_index(&mut self, index: usize) -> Result<(), SendError<UpdateUI>> {
         while self.len() > index + 1 {
             self.remove(index + 1);
         }
-        self.player_tx.send(PlayerRequest::UIUpdateQueue)?;
+        self.ui_update_queue()?;
         Ok(())
     }
 
@@ -301,5 +325,36 @@ impl SongQueue {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.songs.is_empty()
+    }
+
+    fn ui_update_shuffle(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        println!("ui_update_shuffle({})", self.shuffle);
+        self.ui_update_queue_index()?;
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::Shuffle(self.shuffle)).await })
+    }
+
+    fn ui_update_repeat(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        println!("ui_update_repeat({})", self.repeat);
+        self.ui_update_queue_index()?;
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::Repeat(self.repeat)).await })
+    }
+
+    fn ui_update_queue(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        println!("ui_update_queue()");
+        self.ui_update_queue_index()?;
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::SongQueue(self.ordered_queue())).await })
+    }
+
+    pub fn ui_update_queue_index(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        println!("ui_update_queue_index({})", self.index);
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::QueueIndex(self.index)).await })
     }
 }

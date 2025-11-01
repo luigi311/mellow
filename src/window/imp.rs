@@ -61,6 +61,10 @@ pub struct Window {
     playing_artist_name: TemplateChild<gtk::Label>,
     #[template_child]
     song_queue_group: TemplateChild<adw::PreferencesGroup>,
+    #[template_child]
+    shuffle_toggle: TemplateChild<gtk::ToggleButton>,
+    #[template_child]
+    repeat_toggle: TemplateChild<gtk::ToggleButton>,
 
     // TODO: Save/load settings
     // TODO: Keep switch positions (etc) in sync with the player settings (where needed)
@@ -169,6 +173,16 @@ impl Window {
                 }
                 UpdateUI::PlayerTime(time) => {
                     self.update_time(time, song_duration.as_millis() as f64);
+                }
+                UpdateUI::Shuffle(shuffle) => {
+                    self.shuffle_toggle.set_icon_name(match shuffle {
+                        true => "media-playlist-shuffle-symbolic",
+                        false => "media-playlist-consecutive-symbolic",
+                    });
+                    self.shuffle_toggle.set_active(shuffle);
+                }
+                UpdateUI::Repeat(repeat) => {
+                    self.repeat_toggle.set_active(repeat);
                 }
                 UpdateUI::SongQueue(queue) => self.update_song_queue(queue),
                 UpdateUI::QueueIndex(index) => self.song_queue_index.set(index),
