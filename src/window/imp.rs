@@ -181,16 +181,8 @@ impl Window {
                 UpdateUI::PlayerTime(time) => {
                     self.update_time(time, song_duration.as_millis() as f64);
                 }
-                UpdateUI::Shuffle(shuffle) => {
-                    self.shuffle_toggle.set_icon_name(match shuffle {
-                        true => "media-playlist-shuffle-symbolic",
-                        false => "media-playlist-consecutive-symbolic",
-                    });
-                    self.shuffle_toggle.set_active(shuffle);
-                }
-                UpdateUI::Repeat(repeat) => {
-                    self.repeat_toggle.set_active(repeat);
-                }
+                UpdateUI::Shuffle(shuffle) => self.update_shuffle(shuffle),
+                UpdateUI::Repeat(repeat) => self.update_repeat(repeat),
                 UpdateUI::SongQueue(queue) => self.update_song_queue(queue),
                 UpdateUI::QueueIndex(index) => self.song_queue_index.set(index),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
@@ -265,13 +257,16 @@ impl Window {
         }
     }
 
-    fn update_progress(&self, progress: Option<f64>) {
-        if let Some(progress) = progress {
-            self.progress_bar.set_visible(true);
-            self.progress_bar.set_fraction(progress);
-        } else {
-            self.progress_bar.set_visible(false);
-        }
+    fn update_shuffle(&self, shuffle: bool) {
+        self.shuffle_toggle.set_icon_name(match shuffle {
+            true => "media-playlist-shuffle-symbolic",
+            false => "media-playlist-consecutive-symbolic",
+        });
+        self.shuffle_toggle.set_active(shuffle);
+    }
+
+    fn update_repeat(&self, repeat: bool) {
+        self.repeat_toggle.set_active(repeat);
     }
 
     fn update_song_queue(&self, queue: Box<[QueueItem]>) {
@@ -330,6 +325,15 @@ impl Window {
                     // TODO: Display stoppers
                 }
             }
+        }
+    }
+
+    fn update_progress(&self, progress: Option<f64>) {
+        if let Some(progress) = progress {
+            self.progress_bar.set_visible(true);
+            self.progress_bar.set_fraction(progress);
+        } else {
+            self.progress_bar.set_visible(false);
         }
     }
 

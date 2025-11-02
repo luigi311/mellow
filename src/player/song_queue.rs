@@ -176,38 +176,6 @@ impl SongQueue {
         Ok(())
     }
 
-    /// Enables or disables shuffle mode for the queue
-    pub fn set_shuffle(&mut self, shuffle: bool) -> Result<(), SendError<UpdateUI>> {
-        // TODO: Keep stoppers in the same place in the queue when toggling shuffle
-        if self.shuffle == shuffle {
-            return Ok(());
-        }
-        if self.shuffle && !self.is_empty() {
-            self.index = self.current_index();
-        }
-        self.shuffle = shuffle;
-        self.ui_update_shuffle()?;
-        self.update_shuffled_queue()?;
-        Ok(())
-    }
-
-    /// Returns the current shuffle mode for the queue
-    pub fn get_shuffle(&self) -> bool {
-        self.shuffle
-    }
-
-    /// Enables or disables repeat mode for the queue
-    pub fn set_repeat(&mut self, repeat: bool) -> Result<(), SendError<UpdateUI>> {
-        self.repeat = repeat;
-        self.ui_update_repeat()?;
-        Ok(())
-    }
-
-    /// Returns the current repeat mode for the queue
-    pub fn get_repeat(&self) -> bool {
-        self.repeat
-    }
-
     /// Creates a vec of random indexes for the shuffle mode
     fn new_shuffled_queue(&mut self) -> Result<(), SendError<UpdateUI>> {
         self.shuffled = (0..self.len()).collect();
@@ -327,10 +295,43 @@ impl SongQueue {
         self.songs.is_empty()
     }
 
+    /// Enables or disables shuffle mode for the queue
+    pub fn set_shuffle(&mut self, shuffle: bool) -> Result<(), SendError<UpdateUI>> {
+        // TODO: Keep stoppers in the same place in the queue when toggling shuffle
+        if self.shuffle == shuffle {
+            return Ok(());
+        }
+        if self.shuffle && !self.is_empty() {
+            self.index = self.current_index();
+        }
+        self.shuffle = shuffle;
+        self.ui_update_shuffle()?;
+        self.update_shuffled_queue()?;
+        Ok(())
+    }
+
+    /// Returns the current shuffle mode for the queue
+    #[must_use]
+    pub fn get_shuffle(&self) -> bool {
+        self.shuffle
+    }
+
+    /// Enables or disables repeat mode for the queue
+    pub fn set_repeat(&mut self, repeat: bool) -> Result<(), SendError<UpdateUI>> {
+        self.repeat = repeat;
+        self.ui_update_repeat()?;
+        Ok(())
+    }
+
+    /// Returns the current repeat mode for the queue
+    #[must_use]
+    pub fn get_repeat(&self) -> bool {
+        self.repeat
+    }
+
     fn ui_update_shuffle(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         println!("ui_update_shuffle({})", self.shuffle);
-        self.ui_update_queue_index()?;
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::Shuffle(self.shuffle)).await })
     }
@@ -338,7 +339,6 @@ impl SongQueue {
     fn ui_update_repeat(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         println!("ui_update_repeat({})", self.repeat);
-        self.ui_update_queue_index()?;
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::Repeat(self.repeat)).await })
     }
