@@ -280,7 +280,7 @@ impl Window {
         let _ = self.song_queue.replace(queue);
         // TODO: Display the entire queue
         for i in self.song_queue_index.get().saturating_sub(5)
-            ..=(self.song_queue_index.get() + 15).min(self.song_queue.borrow().len())
+            ..(self.song_queue_index.get() + 15).min(self.song_queue.borrow().len())
         {
             match &self.song_queue.borrow()[i] {
                 QueueItem::Song(song) => {
