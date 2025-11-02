@@ -128,75 +128,67 @@ impl Player {
         });
 
         loop {
-            if let Ok(player_request) = self.rx.try_recv() {
-                dbg!(&player_request);
-                match player_request {
-                    PlayerRequest::Update => (),
-                    PlayerRequest::PlayOrPause => self.play_or_pause(),
-                    PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
-                    PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
-                    PlayerRequest::SkipNext => self.skip_next(),
-                    PlayerRequest::SkipTo(index) => self.skip_to(index),
-                    PlayerRequest::LoadNext => {
-                        if self.queue.lock_current {
-                            continue;
-                        }
-                        self.move_next();
-                    }
-                    PlayerRequest::SongEnd => {
-                        if !self.gapless || self.queue.lock_current {
-                            continue;
-                        }
-                        self.move_next();
-                    }
+            let Ok(player_request) = self.rx.try_recv() else {
+                self.ui_set_time()?;
+                thread::sleep(LOOP_DELAY);
 
-                    no_update => {
-                        match no_update {
-                            PlayerRequest::SetVolume(vol) => self.set_volume(vol),
-                            PlayerRequest::SetShuffle(shuffle) => {
-                                self.queue.set_shuffle(shuffle)?
-                            }
-                            PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)?,
-                            PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
-                            PlayerRequest::SetInstantURI(instant_uri) => {
-                                self.backend.set_property("instant-uri", instant_uri);
-                            }
-                            request => panic!("Unhandled player request: {request:?}"),
-                        }
-                        continue;
-                    }
+                // Reset state after the queue ends
+                if self.queue.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
+                    self.handle_gst_messages();
+                    self.backend.set_state(State::Ready)?;
+                    let _ = self.backend.state(None);
+                    self.ui_set_state()?;
+                    self.queue.pending_track = true;
+                    self.queue.end_of_queue = false;
+                    self.update()?;
                 }
-                self.update()?;
-                self.ui_set_state()?;
-                continue;
-            }
 
-            self.ui_set_time()?;
-            thread::sleep(LOOP_DELAY);
+                // Wait the current track to end, then update the UI
+                if self.pending_track_info
+                    && self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
+                {
+                    self.queue.current().as_song().assign_info_with_fallback();
+                    self.ui_set_song_info()?;
+                    self.queue.ui_update_queue_index()?;
+                    self.pending_track_info = false;
+                }
 
-            // Reset state after the queue ends
-            if self.queue.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
                 self.handle_gst_messages();
-                self.backend.set_state(State::Ready)?;
-                let _ = self.backend.state(None);
-                self.ui_set_state()?;
-                self.queue.pending_track = true;
-                self.queue.end_of_queue = false;
-                self.update()?;
+                self.queue.lock_current = false;
+
+                continue;
+            };
+
+            dbg!(&player_request);
+            match player_request {
+                PlayerRequest::Update => (),
+                PlayerRequest::PlayOrPause => self.play_or_pause(),
+                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
+                PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
+                PlayerRequest::SkipNext => self.skip_next(),
+                PlayerRequest::SkipTo(index) => self.skip_to(index),
+                PlayerRequest::LoadNext if self.queue.lock_current => continue,
+                PlayerRequest::LoadNext => self.move_next(),
+                PlayerRequest::SongEnd if !self.gapless || self.queue.lock_current => continue,
+                PlayerRequest::SongEnd => self.move_next(),
+
+                no_update => {
+                    match no_update {
+                        PlayerRequest::SetVolume(vol) => self.set_volume(vol),
+                        PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)?,
+                        PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)?,
+                        PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
+                        PlayerRequest::SetInstantURI(instant_uri) => {
+                            self.backend.set_property("instant-uri", instant_uri);
+                        }
+                        request => panic!("Unhandled player request: {request:?}"),
+                    }
+                    continue;
+                }
             }
 
-            // Wait the current track to end, then update the UI
-            if self.pending_track_info
-                && self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
-            {
-                self.queue.current().as_song().assign_info_with_fallback();
-                self.ui_set_song_info()?;
-                self.queue.ui_update_queue_index()?;
-                self.pending_track_info = false;
-            }
-
-            self.handle_gst_messages();
-            self.queue.lock_current = false;
+            self.update()?;
+            self.ui_set_state()?;
         }
     }
 
