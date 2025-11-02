@@ -280,13 +280,12 @@ impl Window {
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support removing queue items
         // TODO: Support reordering queue items
-        // TODO: Support jumping between songs in the queue
         // TODO: Support inserting stoppers
         // TODO: Support rating/tagging songs (AdwExpanderRow or context menu)
         let _ = self.song_queue.replace(queue);
         // TODO: Display the entire queue
         for i in self.song_queue_index.get().saturating_sub(5)
-            ..(self.song_queue_index.get() + 10).min(self.song_queue.borrow().len())
+            ..=(self.song_queue_index.get() + 15).min(self.song_queue.borrow().len())
         {
             match &self.song_queue.borrow()[i] {
                 QueueItem::Song(song) => {
@@ -319,6 +318,11 @@ impl Window {
                         cover_widget.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
                     }
                     queue_entry.add_prefix(&cover_widget);
+
+                    queue_entry.connect_activated({
+                        let player_tx = self.player_tx.get().unwrap().clone();
+                        move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
+                    });
 
                     self.song_queue_group.add(&queue_entry);
                 }

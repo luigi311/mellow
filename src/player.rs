@@ -26,6 +26,8 @@ pub enum PlayerRequest {
     Seek(f64),
     /// Skip to the next song in the queue
     SkipNext,
+    /// Skip to the specified index in the queue
+    SkipTo(usize),
     /// Loads the next song without clearing the stream
     LoadNext,
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
@@ -134,6 +136,7 @@ impl Player {
                     PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
                     PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
                     PlayerRequest::SkipNext => self.skip_next(),
+                    PlayerRequest::SkipTo(index) => self.skip_to(index),
                     PlayerRequest::LoadNext => {
                         if self.queue.lock_current {
                             continue;
@@ -255,6 +258,13 @@ impl Player {
             return;
         }
         self.move_next();
+    }
+
+    /// Skips to the track in the queue at specified `index`
+    fn skip_to(&mut self, index: usize) {
+        self.backend.set_property("instant-uri", true);
+        self.queue.pending_track = true;
+        self.queue.jump_to(index);
     }
 
     /// Skips to previous track
