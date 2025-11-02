@@ -160,35 +160,29 @@ impl Player {
             };
 
             dbg!(&player_request);
-            match player_request {
-                PlayerRequest::Update => (),
-                PlayerRequest::PlayOrPause => self.play_or_pause(),
-                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()?,
-                PlayerRequest::Seek(pos) => self.seek_to_position(pos)?,
-                PlayerRequest::SkipNext => self.skip_next(),
-                PlayerRequest::SkipTo(index) => self.skip_to(index),
-                PlayerRequest::LoadNext if self.queue.lock_current => continue,
-                PlayerRequest::LoadNext => self.move_next(),
-                PlayerRequest::SongEnd if !self.gapless || self.queue.lock_current => continue,
-                PlayerRequest::SongEnd => self.move_next(),
+            if match player_request {
+                PlayerRequest::Update => true,
+                PlayerRequest::PlayOrPause => self.play_or_pause() == (),
+                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
+                PlayerRequest::Seek(pos) => self.seek_to_position(pos)? == (),
+                PlayerRequest::SkipNext => self.skip_next() == (),
+                PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
+                PlayerRequest::LoadNext if self.queue.lock_current => false,
+                PlayerRequest::LoadNext => self.move_next() == (),
+                PlayerRequest::SongEnd if !self.gapless || self.queue.lock_current => false,
+                PlayerRequest::SongEnd => self.move_next() == (),
 
-                no_update => {
-                    match no_update {
-                        PlayerRequest::SetVolume(vol) => self.set_volume(vol),
-                        PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)?,
-                        PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)?,
-                        PlayerRequest::SetGapless(gapless) => self.gapless = gapless,
-                        PlayerRequest::SetInstantURI(instant_uri) => {
-                            self.backend.set_property("instant-uri", instant_uri);
-                        }
-                        request => panic!("Unhandled player request: {request:?}"),
-                    }
-                    continue;
+                PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
+                PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)? != (),
+                PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
+                PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
+                PlayerRequest::SetInstantURI(instant_uri) => {
+                    self.backend.set_property("instant-uri", instant_uri) != ()
                 }
+            } {
+                self.update()?;
+                self.ui_set_state()?;
             }
-
-            self.update()?;
-            self.ui_set_state()?;
         }
     }
 
