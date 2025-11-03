@@ -9,11 +9,11 @@ use std::sync::{Arc, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::format_duration;
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
+use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
 
 #[derive(Default, CompositeTemplate)]
@@ -68,6 +68,8 @@ pub struct Window {
 
     // TODO: Save/load settings
     #[template_child]
+    settings_volume: TemplateChild<gtk::Scale>,
+    #[template_child]
     settings_gapless: TemplateChild<adw::SwitchRow>,
 
     pub settings: OnceCell<gio::Settings>,
@@ -105,6 +107,9 @@ impl Window {
     }
     #[template_callback]
     pub fn handle_seek(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
+        if approx_eq(value, self.seek_bar.value()) {
+            return glib::Propagation::Stop;
+        }
         self.player_tx
             .get()
             .unwrap()
@@ -114,6 +119,9 @@ impl Window {
     }
     #[template_callback]
     pub fn handle_set_volume(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
+        if approx_eq(value, self.settings_volume.value()) {
+            return glib::Propagation::Stop;
+        }
         self.player_tx
             .get()
             .unwrap()
@@ -150,20 +158,24 @@ impl Window {
         println!("TODO: handle_add_library(): Open directory dialog");
     }
 
-    // fn connect_closures(&self) {
-    //     let player_tx = self.player_tx.get().unwrap().clone();
-    //
-    //     self.seek_bar.connect_change_value({
-    //         let player_tx = player_tx.clone();
-    //         move |_, _, value| {
-    //             player_tx.send(PlayerRequest::Seek(value)).unwrap();
-    //             glib::Propagation::Proceed
-    //         }
-    //     });
-    // }
+    fn connect_closures(&self) {
+        let release_seek_bar = gtk::GestureClick::new();
+        release_seek_bar.connect_unpaired_release({
+            let player_tx = self.player_tx.get().unwrap().clone();
+            move |_, _, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
+        });
+        // NOTE: This is needed because `unpaired_release` is not called on quick interactions.
+        // However, `stopped` causes a noticeable delay before playback starts again, so other
+        // solutions might be worth exploring.
+        release_seek_bar.connect_stopped({
+            let player_tx = self.player_tx.get().unwrap().clone();
+            move |_| player_tx.send(PlayerRequest::SeekDone).unwrap()
+        });
+        self.seek_bar.add_controller(release_seek_bar);
+    }
 
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
-        // self.connect_closures();
+        self.connect_closures();
         let mut song_duration = Duration::default();
 
         loop {

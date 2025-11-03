@@ -718,7 +718,7 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="GtkScale">
+                                          <object class="GtkScale" id="settings_volume">
                                             <signal name="change_value" handler="handle_set_volume" swapped="true"/>
                                             <property name="hexpand">True</property>
                                             <property name="adjustment">

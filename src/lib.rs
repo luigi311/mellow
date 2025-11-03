@@ -11,6 +11,7 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
+#[inline]
 #[must_use]
 pub fn format_duration(duration: &Duration) -> String {
     let duration = duration.as_secs();
@@ -38,4 +39,11 @@ pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[inline]
+#[must_use]
+pub fn approx_eq(left: f64, right: f64) -> bool {
+    const TOLERANCE: f64 = 0.00005;
+    f64::abs(left - right) < TOLERANCE
 }

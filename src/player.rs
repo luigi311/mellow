@@ -22,13 +22,15 @@ pub enum PlayerRequest {
     PlayOrPause,
     /// Skip to beginning or previous song
     SkipPrevious,
-    /// Seek to a particular point in the song using a 0 to 1 value
-    Seek(f64),
-    /// Skip to the next song in the queue
-    SkipNext,
     /// Skip to the specified index in the queue
     SkipTo(usize),
-    /// Loads the next song without clearing the stream
+    /// Seek to a particular point in the song using a 0 to 1 value
+    Seek(f64),
+    /// Stop seeking and resume the player state
+    SeekDone,
+    /// Skip to the next song in the queue
+    SkipNext,
+    /// Load the next song without clearing the stream
     LoadNext,
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
     SongEnd,
@@ -54,6 +56,7 @@ pub struct Player {
     current_state: State,
     pending_state: Option<State>,
     pending_track_info: bool,
+    seeking: bool,
 
     backend: gst::Element,
     bus: gst::Bus,
@@ -96,6 +99,7 @@ impl Player {
                 current_state: State::Null,
                 pending_state: None,
                 pending_track_info: false,
+                seeking: false,
 
                 backend,
                 bus,
@@ -154,7 +158,6 @@ impl Player {
                 }
 
                 self.handle_gst_messages();
-                self.queue.lock_current = false;
 
                 continue;
             };
@@ -164,12 +167,13 @@ impl Player {
                 PlayerRequest::Update => true,
                 PlayerRequest::PlayOrPause => self.play_or_pause() == (),
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
-                PlayerRequest::Seek(pos) => self.seek_to_position(pos)? == (),
                 PlayerRequest::SkipNext => self.skip_next() == (),
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
-                PlayerRequest::LoadNext if self.queue.lock_current => false,
+                PlayerRequest::Seek(pos) => self.seek_to_position(pos)? == (),
+                PlayerRequest::SeekDone => self.seek_done()? == (),
+                PlayerRequest::LoadNext if self.seeking => false,
                 PlayerRequest::LoadNext => self.move_next() == (),
-                PlayerRequest::SongEnd if !self.gapless || self.queue.lock_current => false,
+                PlayerRequest::SongEnd if !self.gapless || self.seeking => false,
                 PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
@@ -297,17 +301,15 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        // FIX: Sometimes hangs when seeking to song end
-        // IDEA: For less buggy behavior, either:
-        // - Pause the player while the seek bar is being interacted with, or
-        // - Disable seeking for a few moments after track change
-        if self.queue.lock_current || self.pending_track_info {
-            return Ok(());
-        }
+        // if self.pending_track_info {
+        //     return Ok(());
+        // }
         match self.backend.current_state() {
-            State::Playing | State::Paused => self.queue.lock_current = true,
+            State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
+            State::Paused => (),
             _ => return Ok(()),
         }
+        self.seeking = true;
         match self
             .backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)
@@ -315,6 +317,16 @@ impl Player {
             Ok(()) => self.backend.state(None).0.map(|_| ())?,
             Err(e) => eprintln!("{e}"),
         }
+        Ok(())
+    }
+
+    /// Call to resume the player state when done seeking
+    fn seek_done(&mut self) -> Result<(), gst::StateChangeError> {
+        self.seeking = false;
+        if self.backend.current_state() == State::Null {
+            self.player_tx.send(PlayerRequest::LoadNext).unwrap();
+        }
+        self.request_state(self.current_state);
         Ok(())
     }
 
@@ -391,7 +403,10 @@ impl Player {
                         println!("Ignoring player request due to EOS: {request:?}");
                     }
 
-                    if self.current_state == State::Playing && !self.pending_track_info {
+                    if self.current_state == State::Playing
+                        && !self.seeking
+                        && !self.pending_track_info
+                    {
                         self.request_state(State::Playing);
                         self.player_tx.send(PlayerRequest::LoadNext).unwrap();
                     }
