@@ -169,8 +169,8 @@ impl Player {
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
                 PlayerRequest::SkipNext => self.skip_next() == (),
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
-                PlayerRequest::Seek(pos) => self.seek_to_position(pos)? == (),
-                PlayerRequest::SeekDone => self.seek_done()? == (),
+                PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
+                PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => false,
                 PlayerRequest::LoadNext => self.move_next() == (),
                 PlayerRequest::SongEnd if !self.gapless || self.seeking => false,
@@ -301,15 +301,6 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        // if self.pending_track_info {
-        //     return Ok(());
-        // }
-        match self.backend.current_state() {
-            State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
-            State::Paused => (),
-            _ => return Ok(()),
-        }
-        self.seeking = true;
         match self
             .backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)
@@ -320,14 +311,39 @@ impl Player {
         Ok(())
     }
 
+    /// Seek to a position in the song using a 0 to 1 value
+    fn seek_to_position_paused(&mut self, position: f64) -> Result<(), Box<dyn Error>> {
+        self.begin_seek_paused()?;
+        self.seek_to_position(position)
+    }
+
+    fn seek_to_time_paused(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+        self.begin_seek_paused()?;
+        self.seek_to_time(time)
+    }
+
+    /// Prepare the palyer for interactive seeking in paused state
+    /// Remember to call `seek_done()` to resume playback
+    fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
+        // if self.pending_track_info {
+        //     return Ok(());
+        // }
+        match self.backend.current_state() {
+            State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
+            State::Paused => (),
+            _ => return Ok(()),
+        }
+        self.seeking = true;
+        Ok(())
+    }
+
     /// Call to resume the player state when done seeking
-    fn seek_done(&mut self) -> Result<(), gst::StateChangeError> {
+    fn seek_done(&mut self) {
         self.seeking = false;
         if self.backend.current_state() == State::Null {
             self.player_tx.send(PlayerRequest::LoadNext).unwrap();
         }
         self.request_state(self.current_state);
-        Ok(())
     }
 
     fn set_volume(&self, volume: f64) {
@@ -401,6 +417,11 @@ impl Player {
                     // Ignore pending player requests until EOS is handled
                     while let Ok(request) = self.rx.try_recv() {
                         println!("Ignoring player request due to EOS: {request:?}");
+                    }
+
+                    if self.backend.current_state() == State::Null && self.seeking {
+                        self.seek_done();
+                        self.player_tx.send(PlayerRequest::Update).unwrap();
                     }
 
                     if self.current_state == State::Playing
