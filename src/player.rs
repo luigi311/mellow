@@ -312,8 +312,8 @@ impl Player {
         self.seek_to_position(position)
     }
 
-    /// Seek to a particular time in the song
-    /// Remember to call `seek_done()` to resume playback
+    // /// Seek to a particular time in the song
+    // /// Remember to call `seek_done()` to resume playback
     // fn seek_to_time_paused(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
     //     self.begin_seek_paused()?;
     //     self.seek_to_time(time)
