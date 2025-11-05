@@ -201,7 +201,8 @@
             <property name="height-request">30</property>
             <property name="center-widget">
               <object class="GtkImage">
-                <property name="icon_name">view-continuous-symbolic</property>
+                <property name="icon_name">view-more-horizontal-symbolic</property>
+                <!-- <property name="icon_name">view-continuous-symbolic</property> -->
                 <style>
                   <class name="dimmed"/>
                 </style>
@@ -242,6 +243,12 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">system-search-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Search</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <property name="content">
@@ -323,6 +330,12 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">system-search-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Search</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <property name="content">
@@ -345,6 +358,12 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">system-search-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Search</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <property name="content">
@@ -367,6 +386,12 @@
                                 <child type="top">
                                   <object class="AdwHeaderBar">
                                     <property name="show_title">False</property>
+                                    <child type="end">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">system-search-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Search</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <property name="content">
@@ -396,10 +421,73 @@
                     <property name="child">
                       <object class="AdwNavigationView">
 
+                        <!-- Song queue -->
                         <child>
                           <object class="AdwNavigationPage">
-                            <property name="title" translatable="yes">Playing</property>
-                            <property name="tag">playing</property>
+                            <property name="title" translatable="yes">Song Queue</property>
+                            <property name="tag">song_queue</property>
+                            <property name="child">
+                              <object class="AdwToolbarView">
+                                <child type="top">
+                                  <object class="AdwHeaderBar">
+                                    <property name="show_title">False</property>
+                                    <child type="start">
+                                      <object class="GtkToggleButton">
+                                        <property name="icon_name">accessories-dictionary-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Show Lyrics</property>
+                                        <property name="action-name">navigation.push</property>
+                                        <property name="action-target">'lyrics'</property>
+                                      </object>
+                                    </child>
+                                    <!-- IDEA: The subpage could be accessed from each song in the queue instead -->
+                                    <!-- <child type="start"> -->
+                                      <!-- <object class="GtkToggleButton"> -->
+                                        <!-- <property name="icon_name">info-outline-symbolic</property> -->
+                                        <!-- <property name="tooltip-text" translatable="yes">Show Lyrics</property> -->
+                                        <!-- <property name="action-name">navigation.push</property> -->
+                                        <!-- <property name="action-target">'info'</property> -->
+                                      <!-- </object> -->
+                                    <!-- </child> -->
+                                    <child type="end">
+                                      <object class="GtkToggleButton" id="shuffle_toggle">
+                                        <signal name="toggled" handler="handle_set_shuffle" swapped="true"/>
+                                        <property name="icon_name">media-playlist-consecutive-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Shuffle</property>
+                                      </object>
+                                    </child>
+                                    <child type="end">
+                                      <object class="GtkToggleButton" id="repeat_toggle">
+                                        <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
+                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Repeat</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <!-- IDEA: Queue items could be AdwExpanderRows, expanding into -->
+                                <!-- "Play now", a ratings widget, "Stop after", etc -->
+                                <!-- Alternatively, a context menu might be useful for this -->
+                                <property name="content">
+                                  <object class="AdwPreferencesPage">
+                                    <property name="valign">center</property>
+
+                                    <!-- List of songs in the queue -->
+                                    <child>
+                                      <!-- TODO: Button to scroll back to the playing song -->
+                                      <object class="AdwPreferencesGroup" id="song_queue_group">
+                                      </object>
+                                    </child>
+                                  </object>
+                                </property>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwNavigationPage">
+                            <property name="title" translatable="yes">Song Info</property>
+                            <property name="tag">info</property>
                             <property name="child">
                               <object class="AdwToolbarView">
                                 <child type="top">
@@ -626,51 +714,6 @@
                           </object>
                         </child>
 
-                        <!-- Song queue -->
-                        <child>
-                          <object class="AdwNavigationPage">
-                            <property name="title" translatable="yes">Song Queue</property>
-                            <property name="tag">song_queue</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="end">
-                                      <object class="GtkToggleButton" id="shuffle_toggle">
-                                        <signal name="toggled" handler="handle_set_shuffle" swapped="true"/>
-                                        <property name="icon_name">media-playlist-consecutive-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Shuffle</property>
-                                      </object>
-                                    </child>
-                                    <child type="end">
-                                      <object class="GtkToggleButton" id="repeat_toggle">
-                                        <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
-                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Repeat</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <!-- IDEA: Queue items could be AdwExpanderRows, expanding into -->
-                                <!-- "Play now", a ratings widget, "Stop after", etc -->
-                                <!-- Alternatively, a context menu might be useful for this -->
-                                <property name="content">
-                                  <object class="AdwPreferencesPage">
-                                    <property name="valign">center</property>
-
-                                    <!-- List of songs in the queue -->
-                                    <child>
-                                      <!-- TODO: Button to scroll back to the playing song -->
-                                      <object class="AdwPreferencesGroup" id="song_queue_group">
-                                      </object>
-                                    </child>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
-                          </object>
-                        </child>
 
                       </object>
                     </property>
