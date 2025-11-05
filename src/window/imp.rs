@@ -282,14 +282,14 @@ impl Window {
     }
 
     fn update_song_queue(&self, queue: Box<[QueueItem]>) {
+        let _ = self.song_queue.replace(queue);
         // TODO: Clear old items when updating
         // TODO: Indicate the currently playing song after each track change
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support removing queue items
         // TODO: Support reordering queue items
         // TODO: Support inserting stoppers
-        // TODO: Support rating/tagging songs (AdwExpanderRow or context menu)
-        let _ = self.song_queue.replace(queue);
+        // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
         for i in self.song_queue_index.get().saturating_sub(5)
             ..(self.song_queue_index.get() + 15).min(self.song_queue.borrow().len())
@@ -325,6 +325,9 @@ impl Window {
                         cover_widget.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
                     }
                     queue_entry.add_prefix(&cover_widget);
+
+                    // queue_entry
+                    //     .add_suffix(&gtk::Image::builder().icon_name("go-next-symbolic").build());
 
                     queue_entry.connect_activated({
                         let player_tx = self.player_tx.get().unwrap().clone();

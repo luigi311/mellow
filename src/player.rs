@@ -22,14 +22,14 @@ pub enum PlayerRequest {
     PlayOrPause,
     /// Skip to beginning or previous song
     SkipPrevious,
+    /// Skip to the next song in the queue
+    SkipNext,
     /// Skip to the specified index in the queue
     SkipTo(usize),
     /// Seek to a particular point in the song using a 0 to 1 value
     Seek(f64),
     /// Stop seeking and resume the player state
     SeekDone,
-    /// Skip to the next song in the queue
-    SkipNext,
     /// Load the next song without clearing the stream
     LoadNext,
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
@@ -43,9 +43,6 @@ pub enum PlayerRequest {
     SetRepeat(bool),
     /// Turn gapless playback on or off
     SetGapless(bool),
-
-    /// Used internally by `SongQueue`
-    SetInstantURI(bool),
 }
 
 pub struct Player {
@@ -180,9 +177,6 @@ impl Player {
                 PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)? != (),
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
-                PlayerRequest::SetInstantURI(instant_uri) => {
-                    self.backend.set_property("instant-uri", instant_uri) != ()
-                }
             } {
                 self.update()?;
                 self.ui_set_state()?;
@@ -312,15 +306,18 @@ impl Player {
     }
 
     /// Seek to a position in the song using a 0 to 1 value
+    /// Remember to call `seek_done()` to resume playback
     fn seek_to_position_paused(&mut self, position: f64) -> Result<(), Box<dyn Error>> {
         self.begin_seek_paused()?;
         self.seek_to_position(position)
     }
 
-    fn seek_to_time_paused(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-        self.begin_seek_paused()?;
-        self.seek_to_time(time)
-    }
+    /// Seek to a particular time in the song
+    /// Remember to call `seek_done()` to resume playback
+    // fn seek_to_time_paused(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+    //     self.begin_seek_paused()?;
+    //     self.seek_to_time(time)
+    // }
 
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback

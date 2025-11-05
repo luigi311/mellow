@@ -8,8 +8,8 @@ use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use mellow::library::{Library, Song};
+use mellow::player::Player;
 use mellow::player::song_queue::QueueItem;
-use mellow::player::{Player, PlayerRequest};
 use mellow::ui::UpdateUI;
 use mellow::visit_dirs;
 use mellow::{APP_ID, APP_NAME};
@@ -37,7 +37,6 @@ fn init(app: &Application) {
         .name("player".to_string())
         .spawn(move || {
             init_player_queue(&mut player, ui_tx);
-            player_tx.send(PlayerRequest::Update).unwrap();
             player.controller().inspect_err(|e| panic!("{e}"));
         });
 }

@@ -156,11 +156,9 @@ impl SongQueue {
             self.set_repeat(repeat)?;
         }
 
-        self.player_tx.send(PlayerRequest::SetInstantURI(true))?;
-        self.pending_track = true;
         self.songs = queue;
-        self.index = 0;
         self.new_shuffled_queue()?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
 
         Ok(())
     }
@@ -168,10 +166,7 @@ impl SongQueue {
     /// Restarts the queue from the beginning
     /// Playback state has to be manually updated
     pub fn restart_queue(&mut self) -> Result<(), mpsc::SendError<PlayerRequest>> {
-        self.player_tx.send(PlayerRequest::SetInstantURI(true))?;
-        self.pending_track = true;
-        self.index = 0;
-        Ok(())
+        self.player_tx.send(PlayerRequest::SkipTo(0))
     }
 
     /// Creates a vec of random indexes for the shuffle mode
