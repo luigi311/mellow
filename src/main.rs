@@ -1,9 +1,11 @@
 use adw::Application;
 use adw::prelude::*;
+use core::error::Error;
 use gtk::gio;
 use gtk::glib;
+use mellow::player::PlayerRequest;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -36,18 +38,26 @@ fn init(app: &Application) {
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || {
-            init_player_queue(&mut player, ui_tx);
             player.controller().inspect_err(|e| panic!("{e}"));
+        });
+    #[allow(unused_must_use)]
+    thread::Builder::new()
+        .name("init_player_queue".to_string())
+        .spawn(move || {
+            init_player_queue(player_tx, ui_tx).expect("Could not initialize player queue");
         });
 }
 
-fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
+fn init_player_queue(
+    player_tx: mpsc::SyncSender<PlayerRequest>,
+    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+) -> Result<(), Box<dyn Error>> {
     if let Some(queue) = queue_from_args() {
-        player.queue.load_new(queue, None, None).unwrap();
-        return;
+        player_tx.send(PlayerRequest::LoadQueue(queue))?;
+        return Ok(());
     }
 
-    let mut library = Library::load_or_init(ui_tx).expect("Library could not be initialized");
+    let mut library = Library::load_or_init(ui_tx)?;
     let runtime = tokio::runtime::Runtime::new()
         .map_err(|e| e.to_string())
         .unwrap();
@@ -56,17 +66,18 @@ fn init_player_queue(player: &mut Player, ui_tx: tokio_mpsc::Sender<UpdateUI>) {
         library
     });
 
-    // TODO: Once the library works, don't load all tracks into the queue,
-    // but instead either restore the previous session or open the library
-    // without loading a queue
-    if player.queue.is_empty() {
-        let songs = library
-            .songs
-            .iter()
-            .map(|song| QueueItem::Song(Arc::new(Mutex::new(song.clone()))))
-            .collect();
-        player.queue.load_new(songs, Some(true), None).unwrap();
-    }
+    // TODO: Instead of loading all tracks into the queue, either restore
+    // the previous session or open the library without loading a queue
+    // The library will have to be implemented first
+    let queue = library
+        .songs
+        .iter()
+        .map(|song| QueueItem::Song(Arc::new(Mutex::new(song.clone()))))
+        .collect();
+    player_tx.send(PlayerRequest::SetShuffle(true))?;
+    player_tx.send(PlayerRequest::LoadQueue(queue))?;
+
+    Ok(())
 }
 
 fn queue_from_args() -> Option<Vec<QueueItem>> {

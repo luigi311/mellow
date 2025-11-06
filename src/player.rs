@@ -14,7 +14,6 @@ pub mod song_queue;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
-#[derive(Debug)]
 pub enum PlayerRequest {
     /// Refresh local player state
     Update,
@@ -35,6 +34,9 @@ pub enum PlayerRequest {
     /// Signaled from GStreamer to load next track before EOS (for gapless playback)
     SongEnd,
 
+    /// Load a new queue
+    LoadQueue(Vec<QueueItem>),
+
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
     /// Turn the shuffle mode on or off
@@ -43,6 +45,34 @@ pub enum PlayerRequest {
     SetRepeat(bool),
     /// Turn gapless playback on or off
     SetGapless(bool),
+}
+
+// Required due to `PlayerRequest::LoadQueue`
+impl std::fmt::Debug for PlayerRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::LoadQueue(queue) => {
+                    format!("LoadQueue(…): {} items", queue.len())
+                }
+                Self::Update => "Update".to_string(),
+                Self::PlayOrPause => "PlayOrPause".to_string(),
+                Self::SkipPrevious => "SkipPrevious".to_string(),
+                Self::SkipNext => "SkipNext".to_string(),
+                Self::SkipTo(index) => format!("SkipTo({index})"),
+                Self::Seek(pos) => format!("Seek({pos})"),
+                Self::SeekDone => "SeekDone".to_string(),
+                Self::LoadNext => "LoadNext".to_string(),
+                Self::SongEnd => "SongEnd".to_string(),
+                Self::SetVolume(volume) => format!("SetVolume({volume})"),
+                Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
+                Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
+                Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
+            }
+        )
+    }
 }
 
 pub struct Player {
@@ -118,10 +148,6 @@ impl Player {
         const EOQ_FILTERS: &[gst::MessageType] =
             &[gst::MessageType::Eos, gst::MessageType::StateChanged];
 
-        if self.queue.is_empty() {
-            self.ui_open_library()?;
-        }
-
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
@@ -173,6 +199,10 @@ impl Player {
                 PlayerRequest::SongEnd if !self.gapless || self.seeking => false,
                 PlayerRequest::SongEnd => self.move_next() == (),
 
+                PlayerRequest::LoadQueue(queue) => {
+                    self.queue.load_new(queue)?;
+                    false // `load_new()` sends `SkipTo`, so update is not required
+                }
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
                 PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)? != (),
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
@@ -384,13 +414,6 @@ impl Player {
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
-    }
-
-    /// Requests the UI to open the music library
-    fn ui_open_library(&self) -> Result<(), SendError<UpdateUI>> {
-        let tx = self.ui_tx.clone();
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::OpenLibrary).await })
     }
 
     /// Clears and hadles the GStreamer message queue

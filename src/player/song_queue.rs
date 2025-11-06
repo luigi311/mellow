@@ -140,25 +140,14 @@ impl SongQueue {
     }
 
     /// Replaces the current queue with the provided one
-    /// Shuffle/repeat can be set by providing the `Some(_)` value,
-    /// otherwise previous values are preserved
-    /// Playback state has to be manually updated
-    pub fn load_new(
-        &mut self,
-        queue: Vec<QueueItem>,
-        shuffle: Option<bool>,
-        repeat: Option<bool>,
-    ) -> Result<(), Box<dyn Error>> {
-        if let Some(shuffle) = shuffle {
-            self.set_shuffle(shuffle)?;
-        }
-        if let Some(repeat) = repeat {
-            self.set_repeat(repeat)?;
-        }
-
+    pub fn load_new(&mut self, queue: Vec<QueueItem>) -> Result<(), Box<dyn Error>> {
         self.songs = queue;
         self.new_shuffled_queue()?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
+
+        if self.is_empty() {
+            self.ui_open_library()?;
+        }
 
         Ok(())
     }
@@ -349,5 +338,12 @@ impl SongQueue {
         println!("ui_update_queue_index({})", self.index);
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::QueueIndex(self.index)).await })
+    }
+
+    /// Requests the UI to open the music library
+    fn ui_open_library(&self) -> Result<(), SendError<UpdateUI>> {
+        let tx = self.ui_tx.clone();
+        self.tokio_rt
+            .block_on(async move { tx.send(UpdateUI::OpenLibrary).await })
     }
 }
