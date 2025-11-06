@@ -415,7 +415,7 @@
                 <child>
                   <object class="AdwViewStackPage">
                     <property name="name">playing</property>
-                    <property name="title" translatable="yes">_Playing</property>
+                    <property name="title" translatable="yes">Playing</property>
                     <property name="icon-name">media-playback-start-symbolic</property>
                     <property name="use-underline">True</property>
                     <property name="child">
@@ -819,6 +819,7 @@
                   </object>
                 </child>
 
+                <property name="visible_child_name">playing</property>
               </object>
             </property>
 
