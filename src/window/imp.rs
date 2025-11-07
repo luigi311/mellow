@@ -1,8 +1,7 @@
 use adw::ApplicationWindow;
-use adw::{gio, glib};
 use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
-use gtk::{CompositeTemplate, gdk};
+use gtk::{CompositeTemplate, gdk, gio, glib};
 
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::{Arc, mpsc};
@@ -146,16 +145,18 @@ impl Window {
             .unwrap();
     }
     #[template_callback]
-    pub fn handle_set_shuffle(&self, tb: &gtk::ToggleButton) {
+    pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
         self.player_tx
             .get()
             .unwrap()
-            .send(PlayerRequest::SetShuffle(tb.is_active()))
+            .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .unwrap();
     }
     #[template_callback]
-    pub fn handle_add_library(&self) {
-        println!("TODO: handle_add_library(): Open directory dialog");
+    pub fn handle_add_library(&self, button: &adw::ButtonRow) {
+        let _ = button
+            .activate_action("win.add_library", None)
+            .inspect_err(|e| eprintln!("{e}"));
     }
 
     fn connect_closures(&self) {
@@ -367,6 +368,25 @@ impl ObjectSubclass for Window {
     fn class_init(class: &mut Self::Class) {
         class.bind_template();
         class.bind_template_callbacks();
+
+        class.install_action_async("win.add_library", None, async |window, _, _| {
+            let filter = gtk::FileFilter::new();
+            filter.add_mime_type("Directory");
+            let library_picker = gtk::FileDialog::builder()
+                .modal(true)
+                .default_filter(&filter)
+                .accept_label("Add Library")
+                .initial_folder(&gio::File::for_path(
+                    glib::user_special_dir(glib::UserDirectory::Music)
+                        .unwrap_or_else(|| glib::current_dir()),
+                ))
+                .build();
+
+            if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
+                println!("TODO: Add library");
+                dbg!(dir.path());
+            };
+        });
     }
 
     fn instance_init(obj: &InitializingObject<Self>) {
