@@ -289,7 +289,7 @@ impl Player {
     }
 
     /// Seeks to the beginning of the current track
-    fn repeat_song(&mut self) -> Result<(), Box<dyn Error>> {
+    fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
         self.seek_to_time(ClockTime::default())
     }
 
@@ -309,7 +309,7 @@ impl Player {
     }
 
     /// Seek to a position in the song using a 0 to 1 value
-    fn seek_to_position(&mut self, position: f64) -> Result<(), Box<dyn Error>> {
+    fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
@@ -324,7 +324,7 @@ impl Player {
     }
 
     /// Seek to a particular time in the song
-    fn seek_to_time(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+    fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
         match self
             .backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)

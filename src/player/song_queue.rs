@@ -33,15 +33,15 @@ pub enum QueueItem {
 impl QueueItem {
     pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
-            QueueItem::Song(song) => song.lock().unwrap(),
-            _ => panic!("Item is not a `Song`"),
+            Self::Song(song) => song.lock().unwrap(),
+            Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
         }
     }
 }
 
 impl SongQueue {
     #[must_use]
-    pub fn new(
+    pub const fn new(
         player_tx: mpsc::SyncSender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
         tokio_rt: Arc<tokio::runtime::Runtime>,
@@ -64,7 +64,7 @@ impl SongQueue {
     }
 
     /// Moves to the next song in the queue
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         self.index += 1;
         if self.index == self.len() {
             self.index = 0;
@@ -74,7 +74,7 @@ impl SongQueue {
     }
 
     /// Moves to the previous song in the queue
-    pub fn previous(&mut self) {
+    pub const fn previous(&mut self) {
         if self.is_first() {
             if self.repeat {
                 self.index = self.len() - 1;
@@ -85,7 +85,7 @@ impl SongQueue {
     }
 
     /// Moves to the song in the queue at specified index
-    pub fn jump_to(&mut self, index: usize) {
+    pub const fn jump_to(&mut self, index: usize) {
         self.index = index;
     }
 
@@ -103,7 +103,7 @@ impl SongQueue {
     }
 
     #[must_use]
-    pub fn index(&self) -> usize {
+    pub const fn index(&self) -> usize {
         self.index
     }
 
@@ -255,25 +255,25 @@ impl SongQueue {
 
     /// Returns the total number of songs in the queue
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.songs.len()
     }
 
     /// Returns `true` if the current song is first in the queue
     #[must_use]
-    pub fn is_first(&self) -> bool {
+    pub const fn is_first(&self) -> bool {
         self.index == 0
     }
 
     /// Returns `true` if the current song is last in the queue
     #[must_use]
-    pub fn is_last(&self) -> bool {
+    pub const fn is_last(&self) -> bool {
         self.index == self.songs.len() - 1
     }
 
     /// Returns `true` if the queue contains no songs
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.songs.is_empty()
     }
 
@@ -294,7 +294,7 @@ impl SongQueue {
 
     /// Returns the current shuffle mode for the queue
     #[must_use]
-    pub fn get_shuffle(&self) -> bool {
+    pub const fn get_shuffle(&self) -> bool {
         self.shuffle
     }
 
@@ -310,7 +310,7 @@ impl SongQueue {
 
     /// Returns the current repeat mode for the queue
     #[must_use]
-    pub fn get_repeat(&self) -> bool {
+    pub const fn get_repeat(&self) -> bool {
         self.repeat
     }
 

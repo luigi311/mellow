@@ -175,6 +175,7 @@ impl Window {
         self.seek_bar.add_controller(release_seek_bar);
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
         self.connect_closures();
         let mut song_duration = Duration::default();
@@ -378,14 +379,14 @@ impl ObjectSubclass for Window {
                 .accept_label("Add Library")
                 .initial_folder(&gio::File::for_path(
                     glib::user_special_dir(glib::UserDirectory::Music)
-                        .unwrap_or_else(|| glib::current_dir()),
+                        .unwrap_or_else(glib::current_dir),
                 ))
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
                 println!("TODO: Add library");
                 dbg!(dir.path());
-            };
+            }
         });
     }
 
