@@ -75,7 +75,7 @@ impl SongQueue {
 
     /// Moves to the previous song in the queue
     pub fn previous(&mut self) {
-        if self.index == 0 {
+        if self.is_first() {
             if self.repeat {
                 self.index = self.len() - 1;
             }
@@ -300,6 +300,9 @@ impl SongQueue {
 
     /// Enables or disables repeat mode for the queue
     pub fn set_repeat(&mut self, repeat: bool) -> Result<(), SendError<UpdateUI>> {
+        if self.repeat == repeat {
+            return Ok(());
+        }
         self.repeat = repeat;
         self.ui_update_repeat()?;
         Ok(())

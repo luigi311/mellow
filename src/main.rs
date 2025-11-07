@@ -29,23 +29,18 @@ pub fn main() -> gtk::glib::ExitCode {
 }
 
 fn init(app: &Application) {
-    let (mut player, player_tx, ui_tx, ui_rx) =
-        Player::init().expect("Failed to initialize player");
+    let (mut player, player_tx, ui_tx, ui_rx) = Player::init().unwrap();
 
     mellow::ui::build(app, &player_tx, ui_rx);
 
-    #[allow(unused_must_use)]
     thread::Builder::new()
         .name("player".to_string())
-        .spawn(move || {
-            player.controller().inspect_err(|e| panic!("{e}"));
-        });
-    #[allow(unused_must_use)]
+        .spawn(move || player.controller().unwrap())
+        .unwrap();
     thread::Builder::new()
         .name("init_player_queue".to_string())
-        .spawn(move || {
-            init_player_queue(player_tx, ui_tx).expect("Could not initialize player queue");
-        });
+        .spawn(move || init_player_queue(player_tx, ui_tx).unwrap())
+        .unwrap();
 }
 
 fn init_player_queue(
