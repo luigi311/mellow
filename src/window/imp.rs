@@ -372,7 +372,7 @@ impl ObjectSubclass for Window {
 
         class.install_action_async("win.add_library", None, async |window, _, _| {
             let filter = gtk::FileFilter::new();
-            filter.add_mime_type("Directory");
+            filter.add_mime_type("inode/directory");
             let library_picker = gtk::FileDialog::builder()
                 .modal(true)
                 .default_filter(&filter)
