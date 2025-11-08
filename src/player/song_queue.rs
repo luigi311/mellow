@@ -69,7 +69,7 @@ impl SongQueue {
         if self.index == self.len() {
             self.index = 0;
             self.end_of_queue = !self.repeat;
-            // self.pending_track &= !self.end_of_queue;
+            self.pending_track &= !self.end_of_queue;
         }
     }
 
