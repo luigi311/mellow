@@ -196,7 +196,7 @@ impl Player {
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => false,
                 PlayerRequest::LoadNext => self.move_next() == (),
-                PlayerRequest::SongEnd if !self.gapless || self.seeking => false,
+                PlayerRequest::SongEnd if !self.can_use_gapless() => false,
                 PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => {
@@ -225,7 +225,7 @@ impl Player {
             QueueItem::Song(song) => song.lock().unwrap().file_uri(),
             QueueItem::Stopper => {
                 self.queue.remove_current();
-                self.request_state(State::Paused);
+                self.request_state(State::Null);
                 return self.update();
             }
         };
@@ -261,7 +261,7 @@ impl Player {
     /// Moves to the next track in the queue without flushing the stream
     fn move_next(&mut self) {
         self.queue.pending_track = true;
-        self.queue.next();
+        self.queue.move_next();
     }
 
     /// Skips to next track
@@ -385,6 +385,15 @@ impl Player {
     /// Current playback time in the song
     fn current_time(&self) -> Option<ClockTime> {
         self.backend.query_position::<ClockTime>()
+    }
+
+    /// Retruns `true` if a gapless transition is appropriate for the
+    /// current state. Always returns `false` if gapless mode is disabled
+    fn can_use_gapless(&self) -> bool {
+        self.gapless
+            && !self.seeking
+            && !self.queue.next().is_some_and(QueueItem::is_stopper)
+            && (!self.queue.is_last() || self.queue.get_repeat())
     }
 
     /// Sends the current state to the UI receiver

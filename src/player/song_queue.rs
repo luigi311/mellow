@@ -37,6 +37,18 @@ impl QueueItem {
             Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
         }
     }
+    pub const fn is_song(&self) -> bool {
+        match self {
+            Self::Song(_) => true,
+            _ => false,
+        }
+    }
+    pub const fn is_stopper(&self) -> bool {
+        match self {
+            Self::Stopper => true,
+            _ => false,
+        }
+    }
 }
 
 impl SongQueue {
@@ -64,7 +76,7 @@ impl SongQueue {
     }
 
     /// Moves to the next song in the queue
-    pub const fn next(&mut self) {
+    pub const fn move_next(&mut self) {
         self.index += 1;
         if self.index == self.len() {
             self.index = 0;
@@ -100,6 +112,14 @@ impl SongQueue {
     pub fn current(&mut self) -> &mut QueueItem {
         let index = self.current_index();
         &mut self.songs[index]
+    }
+
+    /// Returns a reference to the next item in the queue
+    pub fn next(&self) -> Option<&QueueItem> {
+        if self.is_last() {
+            return None;
+        }
+        Some(&self.songs[self.ordered_index(self.index + 1)])
     }
 
     #[must_use]
