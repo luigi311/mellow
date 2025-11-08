@@ -36,6 +36,10 @@ pub enum PlayerRequest {
 
     /// Load a new queue
     LoadQueue(Vec<QueueItem>),
+    /// Inserts an item into the queue
+    InsertAt(Box<(QueueItem, usize)>),
+    /// Remove item at the specified index from the queue
+    RemoveAt(usize),
 
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
@@ -66,6 +70,8 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
+                Self::InsertAt(item) => format!("InsertAt(…, {})", item.1),
+                Self::RemoveAt(index) => format!("RemoveAt({index})"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
@@ -181,7 +187,6 @@ impl Player {
                 }
 
                 self.handle_gst_messages();
-
                 continue;
             };
 
@@ -199,10 +204,13 @@ impl Player {
                 PlayerRequest::SongEnd if !self.can_use_gapless() => false,
                 PlayerRequest::SongEnd => self.move_next() == (),
 
-                PlayerRequest::LoadQueue(queue) => {
-                    self.queue.load_new(queue)?;
-                    false // `load_new()` sends `SkipTo`, so update is not required
+                PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
+                PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0) == (),
+                PlayerRequest::RemoveAt(index) => {
+                    self.queue.remove(index);
+                    continue;
                 }
+
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
                 PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)? != (),
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
