@@ -31,23 +31,22 @@ pub enum QueueItem {
 }
 
 impl QueueItem {
+    /// Assumes the `QueueItem` is a `Song`, and returns a
+    /// `MutexGuard` for accessing the inner value
+    /// The function panics if it is not, so use with caution
     pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
             Self::Song(song) => song.lock().unwrap(),
             Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
         }
     }
+    /// Returns `true` if the `QueueItem` is a `Song`
     pub const fn is_song(&self) -> bool {
-        match self {
-            Self::Song(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Song(_))
     }
+    /// Returns `true` if the `QueueItem` is a `Stopper`
     pub const fn is_stopper(&self) -> bool {
-        match self {
-            Self::Stopper => true,
-            _ => false,
-        }
+        matches!(self, Self::Stopper)
     }
 }
 
@@ -81,7 +80,7 @@ impl SongQueue {
         if self.index == self.len() {
             self.index = 0;
             self.end_of_queue = !self.repeat;
-            self.pending_track &= !self.end_of_queue;
+            // self.pending_track &= !self.end_of_queue;
         }
     }
 
@@ -101,12 +100,6 @@ impl SongQueue {
         self.index = index;
     }
 
-    /// Get the current song index based on the shuffle mode option
-    #[must_use]
-    pub fn current_index(&self) -> usize {
-        self.ordered_index(self.index)
-    }
-
     /// Returns a mutable reference to the current song
     #[must_use]
     pub fn current(&mut self) -> &mut QueueItem {
@@ -115,6 +108,7 @@ impl SongQueue {
     }
 
     /// Returns a reference to the next item in the queue
+    #[must_use]
     pub fn next(&self) -> Option<&QueueItem> {
         if self.is_last() {
             return None;
@@ -122,6 +116,15 @@ impl SongQueue {
         Some(&self.songs[self.ordered_index(self.index + 1)])
     }
 
+    /// Get the current song index based on the shuffle mode option
+    #[must_use]
+    pub fn current_index(&self) -> usize {
+        self.ordered_index(self.index)
+    }
+
+    /// Returns the current index used internally by the queue
+    /// When indexing into a shuffled or sequential list (such as
+    /// for display by the UI), use `ordered_index()` instead
     #[must_use]
     pub const fn index(&self) -> usize {
         self.index
