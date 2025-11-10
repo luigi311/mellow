@@ -248,13 +248,19 @@ impl SongQueue {
     /// Inserts an item into the queue at the specified index
     pub fn insert(&mut self, index: usize, item: QueueItem) -> Result<(), SendError<UpdateUI>> {
         let ordered_index = self.ordered_index(index);
+
+        if self.index >= ordered_index {
+            self.index += 1;
+        }
         self.songs.insert(ordered_index, item);
-        if self.shuffle {
-            self.shuffled.insert(index, ordered_index - 1);
+
+        for shuffled in &mut self.shuffled {
+            if *shuffled >= ordered_index {
+                *shuffled += 1
+            }
         }
-        if ordered_index <= self.index {
-            self.move_next();
-        }
+        self.shuffled.insert(index, ordered_index);
+
         self.ui_update_queue()
     }
 
