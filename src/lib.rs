@@ -1,5 +1,6 @@
 pub mod library;
 pub mod player;
+pub mod queue_row;
 pub mod ui;
 pub mod window;
 
