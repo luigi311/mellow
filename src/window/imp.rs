@@ -326,7 +326,6 @@ impl Window {
                     self.song_queue_group.add(&queue_entry);
                 }
                 QueueItem::Stopper => {
-                    // TODO: Display stoppers
                     let queue_entry = QueueRow::new();
 
                     queue_entry.set_title("Stopper");

@@ -14,9 +14,7 @@ glib::wrapper! {
 
 impl QueueRow {
     pub fn new() -> Self {
-        Object::builder()
-            // TODO
-            .build()
+        Object::builder().build()
     }
 
     pub fn set_prefix_image(&self, image: &impl IsA<gdk::Paintable>) {

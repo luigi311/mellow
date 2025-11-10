@@ -5,7 +5,6 @@ use gtk::glib;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_row.ui")]
 pub struct QueueRow {
-    // TODO
     #[template_child]
     pub prefix_image: TemplateChild<gtk::Picture>,
 }
