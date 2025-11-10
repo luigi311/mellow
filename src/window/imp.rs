@@ -340,6 +340,34 @@ impl Window {
                 }
                 QueueItem::Stopper => {
                     // TODO: Display stoppers
+                    let queue_entry = adw::ActionRow::builder()
+                        .title_lines(1)
+                        .subtitle_lines(1)
+                        .use_markup(false)
+                        .activatable(true)
+                        .build();
+                    queue_entry.set_title("Stopper");
+                    queue_entry.add_css_class("heading");
+                    queue_entry.add_css_class("dim");
+                    let cover_widget = gtk::Picture::builder()
+                        .valign(gtk::Align::Center)
+                        .content_fit(gtk::ContentFit::Contain)
+                        .margin_top(7)
+                        .margin_bottom(7)
+                        .css_classes(["card"])
+                        .build();
+                    // IDEA: Draw a pause icon in place of the album cover
+                    queue_entry.add_prefix(&cover_widget);
+
+                    // queue_entry
+                    //     .add_suffix(&gtk::Image::builder().icon_name("go-next-symbolic").build());
+
+                    queue_entry.connect_activated({
+                        let player_tx = self.player_tx.get().unwrap().clone();
+                        move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
+                    });
+
+                    self.song_queue_group.add(&queue_entry);
                 }
             }
         }

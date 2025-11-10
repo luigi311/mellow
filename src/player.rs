@@ -200,12 +200,11 @@ impl Player {
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => false,
-                PlayerRequest::LoadNext => self.move_next() == (),
                 PlayerRequest::SongEnd if !self.can_use_gapless() => false,
-                PlayerRequest::SongEnd => self.move_next() == (),
+                PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
-                PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0) == (),
+                PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0).map(|_| true)?,
                 PlayerRequest::RemoveAt(index) => {
                     self.queue.remove(index);
                     continue;
@@ -267,7 +266,7 @@ impl Player {
     }
 
     /// Moves to the next track in the queue without flushing the stream
-    fn move_next(&mut self) {
+    const fn move_next(&mut self) {
         self.queue.pending_track = true;
         self.queue.move_next();
     }

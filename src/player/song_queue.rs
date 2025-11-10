@@ -116,7 +116,7 @@ impl SongQueue {
         Some(&self.songs[self.ordered_index(self.index + 1)])
     }
 
-    /// Get the current song index based on the shuffle mode option
+    /// Returns the current song index based on the shuffle mode option
     #[must_use]
     pub fn current_index(&self) -> usize {
         self.ordered_index(self.index)
@@ -246,24 +246,35 @@ impl SongQueue {
     }
 
     /// Inserts an item into the queue at the specified index
-    pub fn insert(&mut self, index: usize, item: QueueItem) {
+    pub fn insert(&mut self, index: usize, item: QueueItem) -> Result<(), SendError<UpdateUI>> {
         let ordered_index = self.ordered_index(index);
         self.songs.insert(ordered_index, item);
         if self.shuffle {
-            self.shuffled.insert(index, ordered_index);
+            self.shuffled.insert(index, ordered_index - 1);
         }
+        if ordered_index <= self.index {
+            self.move_next();
+        }
+        self.ui_update_queue()
     }
 
     /// Removes a song from the queue at the specified index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
-    /// Returns the song which was previously located at that index
+    /// Returns the removed `QueueItem`
     pub fn remove(&mut self, index: usize) -> QueueItem {
-        if self.shuffle {
-            self.songs.remove(self.shuffled.remove(index))
-        } else {
-            self.shuffled.remove(self.shuffled_index(index).unwrap());
-            self.songs.remove(index)
+        let previous = match self.shuffle {
+            true => self.songs.remove(self.shuffled.remove(index)),
+            false => {
+                self.shuffled.remove(self.shuffled_index(index).unwrap());
+                self.songs.remove(index)
+            }
+        };
+        if index < self.index {
+            self.index -= 1;
+            self.ui_update_queue_index().unwrap();
         }
+        self.ui_update_queue().unwrap();
+        previous
     }
 
     /// Removes the current song from the queue
