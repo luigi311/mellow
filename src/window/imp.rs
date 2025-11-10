@@ -11,6 +11,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::library::SongInfo;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
+use crate::queue_row::QueueRow;
 use crate::ui::UpdateUI;
 use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
@@ -301,35 +302,21 @@ impl Window {
                     let is_playing = i == self.song_queue_index.get();
                     let mut song = song.lock().unwrap();
                     let song_info = song.get_info_or_assign();
-                    let queue_entry = adw::ActionRow::builder()
-                        .title_lines(1)
-                        .subtitle_lines(1)
-                        .use_markup(false)
-                        .activatable(true)
-                        .build();
+                    let queue_entry = QueueRow::new();
+
                     queue_entry.set_title(&song_info.title);
                     queue_entry.set_subtitle(&song_info.artist);
                     if is_playing {
                         queue_entry.add_css_class("heading");
                         queue_entry.add_css_class("card");
                     }
-                    let cover_widget = gtk::Picture::builder()
-                        .valign(gtk::Align::Center)
-                        .content_fit(gtk::ContentFit::Fill)
-                        .margin_top(if is_playing { 4 } else { 7 })
-                        .margin_bottom(if is_playing { 4 } else { 7 })
-                        .css_classes(["card"])
-                        .build();
+
                     // TODO: Cached low-res album covers
                     if let Some(artwork) = song_info.artwork.as_ref() {
-                        cover_widget.set_paintable(Some(artwork));
+                        queue_entry.set_prefix_image(artwork);
                     } else {
-                        cover_widget.set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+                        queue_entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
                     }
-                    queue_entry.add_prefix(&cover_widget);
-
-                    // queue_entry
-                    //     .add_suffix(&gtk::Image::builder().icon_name("go-next-symbolic").build());
 
                     queue_entry.connect_activated({
                         let player_tx = self.player_tx.get().unwrap().clone();
@@ -340,27 +327,14 @@ impl Window {
                 }
                 QueueItem::Stopper => {
                     // TODO: Display stoppers
-                    let queue_entry = adw::ActionRow::builder()
-                        .title_lines(1)
-                        .subtitle_lines(1)
-                        .use_markup(false)
-                        .activatable(true)
-                        .build();
+                    let queue_entry = QueueRow::new();
+
                     queue_entry.set_title("Stopper");
                     queue_entry.add_css_class("heading");
                     queue_entry.add_css_class("dim");
-                    let cover_widget = gtk::Picture::builder()
-                        .valign(gtk::Align::Center)
-                        .content_fit(gtk::ContentFit::Contain)
-                        .margin_top(7)
-                        .margin_bottom(7)
-                        .css_classes(["card"])
-                        .build();
-                    // IDEA: Draw a pause icon in place of the album cover
-                    queue_entry.add_prefix(&cover_widget);
 
-                    // queue_entry
-                    //     .add_suffix(&gtk::Image::builder().icon_name("go-next-symbolic").build());
+                    // IDEA: Draw a pause icon in place of the album cover
+                    // queue_entry.set_prefix_image();
 
                     queue_entry.connect_activated({
                         let player_tx = self.player_tx.get().unwrap().clone();

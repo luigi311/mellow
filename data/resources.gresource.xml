@@ -2,5 +2,6 @@
 <gresources>
   <gresource prefix="/com/github/userwithaname/Mellow/">
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">queue_row.ui</file>
   </gresource>
 </gresources>
