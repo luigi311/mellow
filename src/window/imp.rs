@@ -68,9 +68,9 @@ pub struct Window {
 
     // TODO: Save/load settings
     #[template_child]
-    settings_volume: TemplateChild<gtk::Scale>,
+    pub settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]
-    settings_gapless: TemplateChild<adw::SwitchRow>,
+    pub settings_gapless: TemplateChild<adw::SwitchRow>,
 
     pub settings: OnceCell<gio::Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
@@ -179,6 +179,7 @@ impl Window {
     #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
         self.connect_closures();
+        self.load_settings();
         let mut song_duration = Duration::default();
 
         loop {
@@ -359,6 +360,14 @@ impl Window {
         self.view_stack.set_visible_child_name("library");
         self.sheet.set_open(true);
     }
+
+    fn load_settings(&self) {
+        let volume = self.settings.get().unwrap().double("volume");
+        let gapless = self.settings.get().unwrap().boolean("gapless");
+
+        self.settings_volume.set_value(volume);
+        self.settings_gapless.set_active(gapless);
+    }
 }
 
 #[glib::object_subclass]
@@ -398,6 +407,7 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
+
         let obj = self.obj();
         obj.setup_settings();
         obj.load_window_size();
@@ -410,7 +420,7 @@ impl WidgetImpl for Window {}
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
         self.obj()
-            .save_window_size()
+            .save_settings()
             .expect("Failed to save window state");
         glib::Propagation::Proceed
     }

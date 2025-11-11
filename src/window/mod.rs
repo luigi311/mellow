@@ -38,12 +38,20 @@ impl Window {
         self.imp().settings.get().unwrap()
     }
 
-    pub fn save_window_size(&self) -> Result<(), glib::BoolError> {
+    fn library(&self) -> MutexGuard<'_, Library> {
+        self.imp().library.get().unwrap().lock().unwrap()
+    }
+
+    pub fn save_settings(&self) -> Result<(), glib::BoolError> {
         let width = self.size(Orientation::Horizontal);
         let height = self.size(Orientation::Vertical);
+        let volume = self.imp().settings_volume.value();
+        let gapless = self.imp().settings_gapless.is_active();
 
         self.settings().set_int("window-width", width)?;
         self.settings().set_int("window-height", height)?;
+        self.settings().set_double("volume", volume)?;
+        self.settings().set_boolean("gapless", gapless)?;
 
         Ok(())
     }
