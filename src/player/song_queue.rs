@@ -268,12 +268,16 @@ impl SongQueue {
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     /// Returns the removed `QueueItem`
     pub fn remove(&mut self, index: usize) -> QueueItem {
-        let previous = match self.shuffle {
-            true => self.songs.remove(self.shuffled.remove(index)),
-            false => {
-                self.shuffled.remove(self.shuffled_index(index).unwrap());
-                self.songs.remove(index)
+        let previous = if self.shuffle {
+            for shuffled in &mut self.shuffled {
+                if *shuffled > index {
+                    *shuffled -= 1;
+                };
             }
+            self.songs.remove(self.shuffled.remove(index))
+        } else {
+            // self.shuffled.remove(self.shuffled_index(index).unwrap());
+            self.songs.remove(index)
         };
         if index < self.index {
             self.index -= 1;
