@@ -125,7 +125,7 @@ impl Window {
         self.player_tx
             .get()
             .unwrap()
-            .send(PlayerRequest::SetVolume(value))
+            .send(PlayerRequest::SetVolume(value * value))
             .unwrap();
         glib::Propagation::Proceed
     }
@@ -364,6 +364,10 @@ impl Window {
     fn load_settings(&self) {
         let volume = self.settings.get().unwrap().double("volume");
         let gapless = self.settings.get().unwrap().boolean("gapless");
+
+        // Slider callback `change_value` doesn't work for `set_value()`,
+        // so the volume has to be manually updated before being set
+        self.handle_set_volume(gtk::ScrollType::Jump, volume);
 
         self.settings_volume.set_value(volume);
         self.settings_gapless.set_active(gapless);
