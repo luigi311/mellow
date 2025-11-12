@@ -38,10 +38,6 @@ impl Window {
         self.imp().settings.get().unwrap()
     }
 
-    fn library(&self) -> MutexGuard<'_, Library> {
-        self.imp().library.get().unwrap().lock().unwrap()
-    }
-
     pub fn save_settings(&self) -> Result<(), glib::BoolError> {
         let width = self.size(Orientation::Horizontal);
         let height = self.size(Orientation::Vertical);
