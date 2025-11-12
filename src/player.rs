@@ -362,12 +362,12 @@ impl Player {
         // if self.pending_track_info {
         //     return Ok(());
         // }
+        self.seeking = true;
         match self.backend.current_state() {
             State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
             State::Paused => (),
             _ => return Ok(()),
         }
-        self.seeking = true;
         Ok(())
     }
 
@@ -455,7 +455,15 @@ impl Player {
                         println!("Ignoring player request due to EOS: {request:?}");
                     }
 
+                    if self.seeking {
+                        println!("EOS ignored while seeking");
+                        self.request_state(self.current_state);
+                        self.player_tx.send(PlayerRequest::Update).unwrap();
+                        continue;
+                    }
+
                     if self.backend.current_state() == State::Null && self.seeking {
+                        println!("Received EOS while seeking in null state");
                         self.seek_done();
                         self.player_tx.send(PlayerRequest::Update).unwrap();
                     }
@@ -464,6 +472,7 @@ impl Player {
                         && !self.seeking
                         && !self.pending_track_info
                     {
+                        println!("Moving to next track due to EOS");
                         self.request_state(State::Playing);
                         self.player_tx.send(PlayerRequest::LoadNext).unwrap();
                     }

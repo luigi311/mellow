@@ -7,9 +7,8 @@ Playback:
 - [x] Pause/play/skip work as expected
 - [x] Shuffle/repeat/sequential modes work as expected
 - [ ] Seeking works as expected
-  - FIX: Playback sometimes breaks when seeking to song end
-- [ ] Gapless/non-gapless playback works as expected
-  - FIX: Issues with seeking (see above)
+  - FIX: Seeking to the end very quickly ends up skipping songs
+- [x] Gapless/non-gapless playback works as expected
 - [x] Non-fatal errors are handled gracefully
 
 Interface:

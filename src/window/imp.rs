@@ -166,12 +166,18 @@ impl Window {
             let player_tx = self.player_tx.get().unwrap().clone();
             move |_, _, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
         });
-        // NOTE: This is needed because `unpaired_release` is not called on quick interactions.
-        // However, `stopped` causes a noticeable delay before playback starts again, so other
-        // solutions might be worth exploring.
+        // NOTE: This is needed because `unpaired_release` ignores quick interactions.
+        // However, there is a noticable delay which is causing some issues
+        // FIX: Due to the delay, it is possible to skip to next track while seeking
         release_seek_bar.connect_stopped({
             let player_tx = self.player_tx.get().unwrap().clone();
             move |_| player_tx.send(PlayerRequest::SeekDone).unwrap()
+        });
+        // This resolves the delay for single-click interactions, but
+        // `stopped` is still needed for quick drag interactions
+        release_seek_bar.connect_end({
+            let player_tx = self.player_tx.get().unwrap().clone();
+            move |_, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
         });
         self.seek_bar.add_controller(release_seek_bar);
     }
