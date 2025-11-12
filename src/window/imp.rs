@@ -361,6 +361,18 @@ impl Window {
         self.view_stack.set_visible_child_name("library");
         self.sheet.set_open(true);
     }
+
+    pub fn load_settings(&self) {
+        let volume = self.settings.get().unwrap().double("volume");
+        let gapless = self.settings.get().unwrap().boolean("gapless");
+
+        // Slider callback `change_value` doesn't work for `set_value()`,
+        // so the volume has to be manually updated before being set
+        self.handle_set_volume(gtk::ScrollType::Jump, volume);
+
+        self.settings_volume.set_value(volume);
+        self.settings_gapless.set_active(gapless);
+    }
 }
 
 #[glib::object_subclass]
@@ -403,7 +415,7 @@ impl ObjectImpl for Window {
 
         let obj = self.obj();
         obj.setup_settings();
-        obj.load_settings();
+        obj.load_window_size();
 
         self.album_cover
             .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
