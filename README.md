@@ -19,11 +19,19 @@ bringing music to the center of your focus.
 > features, and may or may not maintain backward/forward compatibility going
 > forward.
 
-# Features
+# Roadmap
 
-- Sleek and minimal interface
-- Allows opening files and folders (library support will come later)
-- Gapless playback support
+|  #  | Feature                                   | Status  |
+| :-: | ----------------------------------------- | :-----: |
+|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Seek bar issues with fast interactions |
+|  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
+|  3  | Open files/folders to create a queue      | ✅ Done |
+|  4  | Song queue management                     | ⚠️ WIP: Limited prototype UI |
+|  5  | Music library                             | ❌ TODO |
+|  6  | Music library search/filters              | ❌ TODO |
+|  7  | Play counts and ratings                   | ❌ TODO |
+|  8  | Tag-like playlists                        | ❌ TODO |
+|  9  | Adaptive background/colors                | ❌ TODO |
 
 # Building from source
 
