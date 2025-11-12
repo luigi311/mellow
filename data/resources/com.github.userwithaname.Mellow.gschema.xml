@@ -3,17 +3,19 @@
   <schema id="com.github.userwithaname.Mellow" path="/com/github/userwithaname/Mellow/">
     <key name="window-width" type="i">
       <default>300</default>
-      <summary>Default window width</summary>
+      <summary>Width of the window (in pixels)</summary>
     </key>
     <key name="window-height" type="i">
       <default>500</default>
-      <summary>Default window height</summary>
+      <summary>Height of the window (in pixels)</summary>
     </key>
     <key name="volume" type="d">
       <default>1</default>
+      <summary>Playback volume (0 to 1)</summary>
     </key>
     <key name="gapless" type="b">
       <default>true</default>
+      <summary>When enabled, the next song starts loading before the current one ends, to ensure uninterrupted playback</summary>
     </key>
   </schema>
 </schemalist>
