@@ -34,6 +34,7 @@ impl QueueItem {
     /// Assumes the `QueueItem` is a `Song`, and returns a
     /// `MutexGuard` for accessing the inner value
     /// The function panics if it is not, so use with caution
+    #[must_use]
     pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
             Self::Song(song) => song.lock().unwrap(),
@@ -41,10 +42,12 @@ impl QueueItem {
         }
     }
     /// Returns `true` if the `QueueItem` is a `Song`
+    #[must_use]
     pub const fn is_song(&self) -> bool {
         matches!(self, Self::Song(_))
     }
     /// Returns `true` if the `QueueItem` is a `Stopper`
+    #[must_use]
     pub const fn is_stopper(&self) -> bool {
         matches!(self, Self::Stopper)
     }
@@ -256,7 +259,7 @@ impl SongQueue {
 
         for shuffled in &mut self.shuffled {
             if *shuffled >= ordered_index {
-                *shuffled += 1
+                *shuffled += 1;
             }
         }
         self.shuffled.insert(index, ordered_index);
@@ -272,7 +275,7 @@ impl SongQueue {
             for shuffled in &mut self.shuffled {
                 if *shuffled > index {
                     *shuffled -= 1;
-                };
+                }
             }
             self.songs.remove(self.shuffled.remove(index))
         } else {

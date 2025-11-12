@@ -153,12 +153,6 @@ impl Window {
             .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .unwrap();
     }
-    #[template_callback]
-    pub fn handle_add_library(&self, button: &adw::ButtonRow) {
-        let _ = button
-            .activate_action("win.add_library", None)
-            .inspect_err(|e| eprintln!("{e}"));
-    }
 
     fn connect_closures(&self) {
         let release_seek_bar = gtk::GestureClick::new();
@@ -186,8 +180,8 @@ impl Window {
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
         self.connect_closures();
         self.load_settings();
-        let mut song_duration = Duration::default();
 
+        let mut song_duration = Duration::default();
         loop {
             let Some(response) = ui_rx.recv().await else {
                 continue;

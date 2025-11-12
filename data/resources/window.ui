@@ -800,7 +800,7 @@
                                     <child>
                                       <!-- TODO: Allow adding/removing directories -->
                                       <object class="AdwButtonRow">
-                                        <signal name="activated" handler="handle_add_library" swapped="true"/>
+                                        <property name="action-name">win.add_library</property>
                                         <property name="title" translatable="yes">Add Directory</property>
                                         <property name="start_icon_name">list-add-symbolic</property>
                                         <!-- <style> -->

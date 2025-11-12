@@ -25,9 +25,7 @@ impl ObjectSubclass for QueueRow {
 }
 
 impl ObjectImpl for QueueRow {}
-
 impl WidgetImpl for QueueRow {}
-
 impl ActionRowImpl for QueueRow {}
 impl PreferencesRowImpl for QueueRow {}
 impl ListBoxRowImpl for QueueRow {}

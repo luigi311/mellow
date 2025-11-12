@@ -12,9 +12,16 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl QueueRow {
-    pub fn new() -> Self {
+impl Default for QueueRow {
+    fn default() -> Self {
         Object::builder().build()
+    }
+}
+
+impl QueueRow {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn set_prefix_image(&self, image: &impl IsA<gdk::Paintable>) {
