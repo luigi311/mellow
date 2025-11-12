@@ -28,10 +28,9 @@ pub fn build(
     player_tx: &mpsc::SyncSender<PlayerRequest>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
-    let window = Window::new(app);
+    let window = Window::new(app, player_tx.clone());
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
-    window.register_player_tx(player_tx.clone());
     window.present();
 
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
