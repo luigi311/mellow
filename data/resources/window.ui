@@ -30,7 +30,7 @@
               </object>
             </child>
 
-            <!-- Main player view -->
+            Main player view
             <property name="content">
               <object class="GtkWindowHandle">
                 <child>
@@ -45,7 +45,7 @@
                     <property name="valign">center</property>
                     <property name="orientation">vertical</property>
 
-                    <!-- Song info -->
+                    Song info
                     <child>
                       <object class="GtkPicture" id="album_cover">
                         <property name="content_fit">contain</property>
@@ -84,7 +84,7 @@
                       </object>
                     </child>
 
-                    <!-- Media controls -->
+                    Media controls
                     <child type="overlay">
                       <object class="GtkBox" id="media_controls">
                         <property name="orientation">vertical</property>
@@ -103,7 +103,7 @@
                             <property name="margin_start">6</property>
                             <property name="margin_end">6</property>
 
-                            <!-- Media buttons -->
+                            Media buttons
                             <child>
                               <object class="GtkButton" id="prev_button">
                                 <signal name="clicked" handler="handle_skip_prev" swapped="true"/>
@@ -134,7 +134,7 @@
                           </object>
                         </child>
 
-                        <!-- Seek bar -->
+                        Seek bar
                         <child>
                           <object class="GtkBox">
                             <property name="hexpand">True</property>
@@ -176,7 +176,7 @@
                       </object>
                     </child>
 
-                    <!-- Padding to account for the bottom bar -->
+                    Padding to account for the bottom bar
                     <child>
                       <object class="GtkBox">
                         <property name="height_request">24</property>
@@ -202,7 +202,6 @@
             <property name="center-widget">
               <object class="GtkImage">
                 <property name="icon_name">view-more-horizontal-symbolic</property>
-                <!-- <property name="icon_name">view-continuous-symbolic</property> -->
                 <style>
                   <class name="dimmed"/>
                 </style>
@@ -211,20 +210,17 @@
           </object>
         </property>
 
-        <!-- Bottom sheet overlay -->
-
+        Bottom sheet overlay
         <property name="show-drag-handle">False</property>
         <property name="sheet">
-
           <object class="AdwToolbarView">
             <style>
               <class name="osd"/>
             </style>
-
             <property name="content">
               <object class="AdwViewStack" id="view_stack">
 
-                <!-- Library -->
+                Library
                 <child>
                   <object class="AdwViewStackPage">
                     <property name="name">library</property>
@@ -316,11 +312,11 @@
                                 </property>
                               </object>
 
-
                             </property>
                           </object>
                         </child>
 
+                        Songs
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Songs</property>
@@ -349,6 +345,8 @@
                             </property>
                           </object>
                         </child>
+
+                        Albums
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Albums</property>
@@ -377,6 +375,8 @@
                             </property>
                           </object>
                         </child>
+
+                        Artists
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Artists</property>
@@ -411,7 +411,7 @@
                   </object>
                 </child>
 
-                <!-- Playing -->
+                Playing
                 <child>
                   <object class="AdwViewStackPage">
                     <property name="name">playing</property>
@@ -421,7 +421,7 @@
                     <property name="child">
                       <object class="AdwNavigationView">
 
-                        <!-- Song queue -->
+                        Song queue page
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Song Queue</property>
@@ -471,7 +471,7 @@
                                   <object class="AdwPreferencesPage">
                                     <property name="valign">center</property>
 
-                                    <!-- List of songs in the queue -->
+                                    List of songs in the queue
                                     <child>
                                       <!-- TODO: Button to scroll back to the playing song -->
                                       <object class="AdwPreferencesGroup" id="song_queue_group">
@@ -484,6 +484,7 @@
                           </object>
                         </child>
 
+                        Song info page
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Song Info</property>
@@ -647,7 +648,7 @@
                           </object>
                         </child>
 
-                        <!-- Lyrics -->
+                        Lyrics page
                         <child>
                           <object class="AdwNavigationPage">
                             <property name="title" translatable="yes">Lyrics</property>
@@ -714,13 +715,12 @@
                           </object>
                         </child>
 
-
                       </object>
                     </property>
                   </object>
                 </child>
 
-                <!-- Settings -->
+                Settings
                 <child>
                   <object class="AdwViewStackPage">
                     <property name="name">settings</property>
@@ -738,7 +738,7 @@
                           <object class="AdwPreferencesPage">
                             <property name="valign">center</property>
 
-                            <!-- Playback settings -->
+                            Playback settings
                             <child>
                               <object class="AdwPreferencesGroup">
                                 <property name="hexpand">True</property>
@@ -788,7 +788,7 @@
                               </object>
                             </child>
 
-                            <!-- Library settings -->
+                            Library settings
                             <child>
                               <object class="AdwPreferencesGroup">
                                 <property name="hexpand">True</property>
@@ -823,7 +823,7 @@
               </object>
             </property>
 
-            <!-- TODO: Show a banner with song info, close bottom sheet on click -->
+            <!-- IDEA: Show a banner with song info, close bottom sheet on click -->
             <!-- <child type="bottom"> -->
               <!-- <object class="GtkBox"> -->
                 <!-- <property name="height_request">46</property> -->
@@ -833,6 +833,7 @@
               <!-- </object> -->
             <!-- </child> -->
 
+            Tab icons
             <child type="bottom">
               <object class="AdwViewSwitcherBar">
                 <property name="stack">view_stack</property>
