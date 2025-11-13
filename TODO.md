@@ -1,3 +1,5 @@
+- [ ] Main Player
+  - [ ] Marquee long titles
 - [-] Interactive song queue
   - [-] Display the song queue
   - [-] Allow adding/removing items from the queue

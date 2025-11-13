@@ -6,8 +6,11 @@ Playback:
 
 - [x] Pause/play/skip work as expected
 - [x] Shuffle/repeat/sequential modes work as expected
-- [x] Seeking works as expected
-- [x] Gapless/non-gapless playback works as expected
+- [ ] Seeking works as expected
+  - FIX: Gapless: Seeking after next track is loaded sometimes breaks the player
+  - FIX: Gapless: Seeking to the end and back sometimes breaks the "about-to-finish" callback
+- [ ] Gapless/non-gapless playback works as expected
+  - FIX: Issues with seeking
 - [x] Non-fatal errors are handled gracefully
 
 Interface:

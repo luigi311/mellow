@@ -178,7 +178,10 @@ impl Player {
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => false,
-                PlayerRequest::SongEnd if !self.can_use_gapless() => false,
+                PlayerRequest::SongEnd if !self.can_use_gapless() => {
+                    self.request_state(self.current_state);
+                    true
+                }
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
@@ -339,17 +342,18 @@ impl Player {
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
+        self.seeking = true;
+
         // If next track is already loaded, move back to the current one
         if self.next_song_loaded {
+            // FIX: Seeking after next song is loaded causes playback issues
             self.queue.pending_track = true;
             self.queue.set_index(self.queue.index() - 1);
             self.backend.set_property("instant-uri", true);
             self.update();
             self.next_song_loaded = false;
-            self.handle_gst_events();
-            self.backend.state(None).0?;
         }
-        self.seeking = true;
+
         match self.backend.current_state() {
             State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
             State::Paused => (),

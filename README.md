@@ -23,7 +23,7 @@ bringing music to the center of your focus.
 
 |  #  | Feature                                   | Status  |
 | :-: | ----------------------------------------- | :-----: |
-|  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
+|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Possible issues with seeking |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue management                     | ⚠️ WIP: Limited prototype UI |
@@ -31,7 +31,8 @@ bringing music to the center of your focus.
 |  6  | Music library search/filters              | ❌ TODO |
 |  7  | Play counts and ratings                   | ❌ TODO |
 |  8  | Tag-like playlists                        | ❌ TODO |
-|  9  | Adaptive background/colors                | ❌ TODO |
+|  9  | Media controller support (MPRIS)          | ❌ TODO |
+| 10  | Adaptive background/colors                | ❌ TODO |
 
 # Building from source
 
