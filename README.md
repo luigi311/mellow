@@ -23,7 +23,7 @@ bringing music to the center of your focus.
 
 |  #  | Feature                                   | Status  |
 | :-: | ----------------------------------------- | :-----: |
-|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Seek bar issues with fast interactions |
+|  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue management                     | ⚠️ WIP: Limited prototype UI |
@@ -37,7 +37,7 @@ bringing music to the center of your focus.
 
 ## Prerequisites
 
-### [Compile GSchemas](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html):
+### [Compile the Mellow GSchema](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html):
 
 On Linux or macOS:
 

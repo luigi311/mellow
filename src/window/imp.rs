@@ -157,24 +157,19 @@ impl Window {
     fn connect_closures(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
         let release_seek_bar = gtk::GestureClick::new();
-        release_seek_bar.connect_unpaired_release({
+        release_seek_bar.connect_released({
             let player_tx = self.player_tx.get().unwrap().clone();
-            move |_, _, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
+            move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
         });
-        // NOTE: This is needed because `unpaired_release` ignores quick interactions.
-        // However, there is a noticable delay which is causing some issues
-        // FIX: Due to the delay, it is possible to skip to next track while seeking
-        release_seek_bar.connect_stopped({
-            let player_tx = self.player_tx.get().unwrap().clone();
-            move |_| player_tx.send(PlayerRequest::SeekDone).unwrap()
-        });
-        // This resolves the delay for single-click interactions, but
-        // `stopped` is still needed for quick drag interactions
-        release_seek_bar.connect_end({
-            let player_tx = self.player_tx.get().unwrap().clone();
-            move |_, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
-        });
-        self.seek_bar.add_controller(release_seek_bar);
+
+        // As a workaround for `release` not being signaled by `GtkScale`,
+        // set propagation phase to `Capture` and add controller to parent
+        // Source: https://stackoverflow.com/a/79108304
+        release_seek_bar.set_propagation_phase(gtk::PropagationPhase::Capture);
+        self.seek_bar
+            .parent()
+            .unwrap()
+            .add_controller(release_seek_bar);
     }
 
     #[allow(clippy::future_not_send)]
