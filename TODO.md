@@ -1,9 +1,12 @@
-- [ ] Interactive song queue
-  - [ ] Display the song queue
-  - [ ] Allow adding/removing items from the queue
-  - [ ] Allow reordering the queue
-  - [ ] Allow inserting stoppers (scheduled pause)
-  - [ ] Access song lyrics using a header-bar icon
+- [-] Interactive song queue
+  - [-] Display the song queue
+  - [-] Allow adding/removing items from the queue
+  > Functionality exists, needs UI
+  - [-] Allow reordering the queue
+  > Functionality untested, needs UI
+  - [-] Allow inserting stoppers (scheduled pause)
+  > Functionality exists, needs UI
+  - [x] Access song lyrics using a header-bar icon
 - [ ] Music library
   - [ ] Interface
     - [ ] Songs page: show all songs
