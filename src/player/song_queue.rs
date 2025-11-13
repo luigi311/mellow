@@ -13,7 +13,6 @@ pub struct SongQueue {
     shuffle: bool,
 
     pub pending_track: bool,
-    pub end_of_queue: bool,
 
     index: usize,
     songs: Vec<QueueItem>,
@@ -65,7 +64,6 @@ impl SongQueue {
             shuffle: false,
 
             pending_track: true,
-            end_of_queue: false,
 
             index: 0,
             songs: vec![],
@@ -82,7 +80,6 @@ impl SongQueue {
         self.index += 1;
         if self.index == self.len() {
             self.index = 0;
-            self.end_of_queue = !self.repeat;
             // self.pending_track &= !self.end_of_queue;
         }
     }
@@ -294,7 +291,6 @@ impl SongQueue {
     pub fn remove_current(&mut self) -> QueueItem {
         if self.index + 1 == self.len() {
             self.index = 0;
-            self.end_of_queue = !self.repeat;
         }
         self.pending_track = true;
         self.remove(self.index)
@@ -316,6 +312,14 @@ impl SongQueue {
     #[must_use]
     pub const fn is_last(&self) -> bool {
         self.index == self.songs.len() - 1
+    }
+
+    /// Returns `true` if there are more tracks in the queue,
+    /// or `false` if there is nothing to play afterwrads
+    /// Always returns `true` if `repeat` is enabeld
+    #[must_use]
+    pub const fn has_next(&self) -> bool {
+        self.repeat || !self.is_last()
     }
 
     /// Returns `true` if the queue contains no songs

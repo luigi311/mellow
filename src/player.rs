@@ -88,7 +88,7 @@ pub struct Player {
 
     current_state: State,
     pending_state: Option<State>,
-    pending_track_info: bool,
+    next_song_loaded: bool,
     seeking: bool,
 
     backend: gst::Element,
@@ -131,7 +131,7 @@ impl Player {
 
                 current_state: State::Null,
                 pending_state: None,
-                pending_track_info: false,
+                next_song_loaded: false,
                 seeking: false,
 
                 backend,
@@ -151,9 +151,8 @@ impl Player {
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
         const LOOP_RATE: f64 = 60.2;
         const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
-        const EOQ_FILTERS: &[gst::MessageType] =
-            &[gst::MessageType::Eos, gst::MessageType::StateChanged];
 
+        // Enable gapless playback
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
             player_tx.send(PlayerRequest::SongEnd).unwrap();
@@ -163,30 +162,9 @@ impl Player {
         loop {
             let Ok(player_request) = self.rx.try_recv() else {
                 self.ui_set_time()?;
+
                 thread::sleep(LOOP_DELAY);
-
-                // Reset state after the queue ends
-                if self.queue.end_of_queue && self.bus.pop_filtered(EOQ_FILTERS).is_some() {
-                    self.handle_gst_messages();
-                    self.backend.set_state(State::Ready)?;
-                    let _ = self.backend.state(None);
-                    self.ui_set_state()?;
-                    self.queue.pending_track = true;
-                    self.queue.end_of_queue = false;
-                    self.update();
-                }
-
-                // Wait the current track to end, then update the UI
-                if self.pending_track_info
-                    && self.current_time().unwrap_or_default() < ClockTime::from_seconds(1)
-                {
-                    self.queue.current().as_song().assign_info_with_fallback();
-                    self.ui_set_song_info()?;
-                    self.queue.ui_update_queue_index()?;
-                    self.pending_track_info = false;
-                }
-
-                self.handle_gst_messages();
+                self.handle_gst_events();
                 continue;
             };
 
@@ -238,10 +216,14 @@ impl Player {
         };
 
         if self.queue.pending_track {
-            println!("\n{file_uri}");
+            println!("\nLoading: {file_uri}");
             self.backend.set_property("uri", file_uri);
             self.queue.pending_track = false;
-            self.pending_track_info = true;
+            self.next_song_loaded = true;
+
+            if self.current_state == State::Null {
+                self.request_state(State::Paused);
+            }
         }
 
         if let Some(state) = self.pending_state.take() {
@@ -357,13 +339,13 @@ impl Player {
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
-        if self.pending_track_info {
+        if self.next_song_loaded {
             // If next track is already loaded, move back to the current one
             self.queue.pending_track = true;
             self.queue.set_index(self.queue.index().saturating_sub(1));
             self.update();
-            self.pending_track_info = false;
-            self.handle_gst_messages();
+            self.next_song_loaded = false;
+            self.handle_gst_events();
             self.backend.state(None).0?;
         }
         self.seeking = true;
@@ -436,8 +418,8 @@ impl Player {
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
     }
 
-    /// Clears and hadles the GStreamer message queue
-    fn handle_gst_messages(&mut self) {
+    /// Handles `GStreamer` events and empties the message queue
+    fn handle_gst_events(&mut self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
                 gst::MessageType::Error => {
@@ -450,32 +432,36 @@ impl Player {
                     }
                 }
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
+                gst::MessageType::StreamStart => {
+                    println!("Song started");
+                    self.queue.current().as_song().assign_info_with_fallback();
+                    self.ui_set_song_info().unwrap();
+                    self.queue.ui_update_queue_index().unwrap();
+                    self.next_song_loaded = false;
+                }
+                gst::MessageType::Eos if self.seeking => {
+                    println!("EOS ignored while seeking");
+                    self.request_state(self.current_state);
+                    self.player_tx.send(PlayerRequest::Update).unwrap();
+                }
                 gst::MessageType::Eos => {
-                    println!("gstreamer: Reached end of stream");
-                    // Clear potential duplicate EOS messages
-                    while self.bus.pop_filtered(&[gst::MessageType::Eos]).is_some() {}
-                    // Ignore pending player requests until EOS is handled
-                    while let Ok(request) = self.rx.try_recv() {
-                        println!("Ignoring player request due to EOS: {request:?}");
+                    println!("Reached end of stream");
+
+                    while self.bus.pop_filtered(&[gst::MessageType::Eos]).is_some() {
+                        eprintln!("Warning: EOS received multiple times");
                     }
 
-                    if self.seeking {
-                        println!("EOS ignored while seeking");
-                        self.request_state(self.current_state);
-                        self.player_tx.send(PlayerRequest::Update).unwrap();
-                        continue;
+                    if !self.queue.has_next() {
+                        println!("End of queue");
+                        self.handle_gst_events();
+                        self.backend.set_state(State::Ready).unwrap();
+                        let _ = self.backend.state(None);
+                        self.ui_set_state().unwrap();
+                        self.queue.pending_track = true;
+                        self.update();
                     }
 
-                    if self.backend.current_state() == State::Null && self.seeking {
-                        println!("Received EOS while seeking in null state");
-                        self.seek_done();
-                        self.player_tx.send(PlayerRequest::Update).unwrap();
-                    }
-
-                    if self.current_state == State::Playing
-                        && !self.seeking
-                        && !self.pending_track_info
-                    {
+                    if self.current_state == State::Playing {
                         println!("Moving to next track due to EOS");
                         self.request_state(State::Playing);
                         self.player_tx.send(PlayerRequest::LoadNext).unwrap();
