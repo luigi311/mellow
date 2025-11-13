@@ -99,7 +99,7 @@ impl SongQueue {
     }
 
     /// Moves to the song in the queue at specified index
-    pub const fn jump_to(&mut self, index: usize) {
+    pub fn set_index(&mut self, index: usize) {
         self.index = index;
     }
 

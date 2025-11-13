@@ -173,7 +173,7 @@ impl Player {
                     self.ui_set_state()?;
                     self.queue.pending_track = true;
                     self.queue.end_of_queue = false;
-                    self.update()?;
+                    self.update();
                 }
 
                 // Wait the current track to end, then update the UI
@@ -215,17 +215,17 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
             } {
-                self.update()?;
+                self.update();
                 self.ui_set_state()?;
             }
         }
     }
 
     /// Manages the playback state
-    fn update(&mut self) -> Result<(), Box<dyn Error>> {
+    fn update(&mut self) {
         if self.queue.is_empty() {
             eprintln!("Queue is empty - cannot update player");
-            return Ok(());
+            return;
         }
 
         let file_uri = match self.queue.current() {
@@ -253,8 +253,6 @@ impl Player {
 
         // Re-enable gapless playback (for example after track skip)
         self.backend.set_property("instant-uri", false);
-
-        Ok(())
     }
 
     /// Starts or pauses playback depending on state
@@ -285,7 +283,7 @@ impl Player {
     fn skip_to(&mut self, index: usize) {
         self.backend.set_property("instant-uri", true);
         self.queue.pending_track = true;
-        self.queue.jump_to(index);
+        self.queue.set_index(index);
     }
 
     /// Skips to previous track
@@ -359,9 +357,15 @@ impl Player {
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
-        // if self.pending_track_info {
-        //     return Ok(());
-        // }
+        if self.pending_track_info {
+            // If next track is already loaded, move back to the current one
+            self.queue.pending_track = true;
+            self.queue.set_index(self.queue.index().saturating_sub(1));
+            self.update();
+            self.pending_track_info = false;
+            self.handle_gst_messages();
+            self.backend.state(None).0?;
+        }
         self.seeking = true;
         match self.backend.current_state() {
             State::Playing => self.backend.set_state(State::Paused).map(|_| ())?,
