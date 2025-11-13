@@ -464,20 +464,39 @@
                                     </child>
                                   </object>
                                 </child>
-                                <!-- IDEA: Queue items could be AdwExpanderRows, expanding into -->
+                                <!-- IDEA: Queue items could open a subpage to decide what to do -->
                                 <!-- "Play now", a ratings widget, "Stop after", etc -->
                                 <!-- Alternatively, a context menu might be useful for this -->
                                 <property name="content">
-                                  <object class="AdwPreferencesPage">
-                                    <property name="valign">center</property>
+                                  <!-- TODO: Approach this differently, AdwPreferencesPage won't work -->
+                                  <!-- TODO: Button to scroll back to the playing song -->
+                                  <!-- <object class="AdwPreferencesPage"> -->
+                                    <!-- <property name="valign">center</property> -->
 
-                                    List of songs in the queue
+                                    <!-- List of songs in the queue -->
+                                    <!-- <child> -->
+                                      <!-- <object class="AdwPreferencesGroup" id="song_queue_group"> -->
+                                      <!-- </object> -->
+                                    <!-- </child> -->
+                                  <!-- </object> -->
+                                  <object class="GtkScrolledWindow" id="song_queue_scrolled_window">
+                                    <!-- FIX: Setting max width doesn't work -->
+                                    <property name="max_content_width">450</property>
                                     <child>
-                                      <!-- TODO: Button to scroll back to the playing song -->
-                                      <object class="AdwPreferencesGroup" id="song_queue_group">
+                                      <object class="GtkListBox" id="song_queue_list_box">
+                                      <!-- <object class="GtkListView" id="song_queue_list_view"> -->
+                                        <property name="margin_top">12</property>
+                                        <property name="margin_bottom">12</property>
+                                        <property name="margin_start">12</property>
+                                        <property name="margin_end">12</property>
+                                        <style>
+                                          <class name="card"/>
+                                        </style>
                                       </object>
                                     </child>
                                   </object>
+                                  <!-- <object class="GtkListView" id="song_queue_list_view"> -->
+                                  <!-- </object> -->
                                 </property>
                               </object>
                             </property>

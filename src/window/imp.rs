@@ -60,7 +60,11 @@ pub struct Window {
     #[template_child]
     playing_artist_name: TemplateChild<gtk::Label>,
     #[template_child]
-    song_queue_group: TemplateChild<adw::PreferencesGroup>,
+    song_queue_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
+    #[template_child]
+    song_queue_list_box: TemplateChild<gtk::ListBox>,
+    // #[template_child]
+    // song_queue_list_view: TemplateChild<gtk::ListView>,
     #[template_child]
     shuffle_toggle: TemplateChild<gtk::ToggleButton>,
     #[template_child]
@@ -193,8 +197,8 @@ impl Window {
                 }
                 UpdateUI::Shuffle(shuffle) => self.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.update_repeat(repeat),
-                UpdateUI::SongQueue(queue) => self.update_song_queue(queue),
-                UpdateUI::QueueIndex(index) => self.song_queue_index.set(index),
+                UpdateUI::SongQueue(queue) => self.update_song_queue(Some(queue)),
+                UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
                 UpdateUI::OpenLibrary => self.open_library(),
             }
@@ -278,26 +282,33 @@ impl Window {
     fn update_repeat(&self, repeat: bool) {
         self.repeat_toggle.set_active(repeat);
     }
+    fn update_song_index(&self, index: usize) {
+        self.song_queue_index.set(index);
+        self.update_song_queue(None);
+    }
+    fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {
+        if let Some(queue) = queue {
+            let _ = self.song_queue.replace(queue);
+        }
 
-    fn update_song_queue(&self, queue: Box<[QueueItem]>) {
-        let _ = self.song_queue.replace(queue);
-        // TODO: Clear old items when updating
-        // TODO: Indicate the currently playing song after each track change
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support removing queue items
         // TODO: Support reordering queue items
         // TODO: Support inserting stoppers
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
-        for i in self.song_queue_index.get().saturating_sub(5)
-            ..(self.song_queue_index.get() + 15).min(self.song_queue.borrow().len())
-        {
+        self.song_queue_list_box.remove_all();
+        self.song_queue_list_box
+            .set_selection_mode(gtk::SelectionMode::None);
+        let start = self.song_queue_index.get().saturating_sub(10);
+        let end = (self.song_queue_index.get() + 15).min(self.song_queue.borrow().len());
+        for i in start..end {
             match &self.song_queue.borrow()[i] {
                 QueueItem::Song(song) => {
                     let is_playing = i == self.song_queue_index.get();
                     let mut song = song.lock().unwrap();
                     let song_info = song.get_info_or_assign();
-                    let queue_entry = QueueRow::new();
+                    let queue_entry = QueueRow::default();
 
                     queue_entry.set_title(&song_info.title);
                     queue_entry.set_subtitle(&song_info.artist);
@@ -318,10 +329,10 @@ impl Window {
                         move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
                     });
 
-                    self.song_queue_group.add(&queue_entry);
+                    self.song_queue_list_box.append(&queue_entry);
                 }
                 QueueItem::Stopper => {
-                    let queue_entry = QueueRow::new();
+                    let queue_entry = QueueRow::default();
 
                     queue_entry.set_title("Stopper");
                     queue_entry.add_css_class("heading");
@@ -335,10 +346,14 @@ impl Window {
                         move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
                     });
 
-                    self.song_queue_group.add(&queue_entry);
+                    self.song_queue_list_box.append(&queue_entry);
                 }
             }
         }
+        // let new_value = (self.song_queue_index.get() - start) * 48;
+        // self.song_queue_scrolled_window
+        //     .vadjustment()
+        //     .set_value(new_value as f64);
     }
 
     fn update_progress(&self, progress: Option<f64>) {
