@@ -46,5 +46,5 @@ pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
 #[must_use]
 pub fn approx_eq(left: f64, right: f64) -> bool {
     const TOLERANCE: f64 = 0.0005;
-    f64::abs(left - right) < TOLERANCE
+    (left - right).abs() < TOLERANCE
 }

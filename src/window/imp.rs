@@ -66,7 +66,6 @@ pub struct Window {
     #[template_child]
     repeat_toggle: TemplateChild<gtk::ToggleButton>,
 
-    // TODO: Save/load settings
     #[template_child]
     pub settings_volume: TemplateChild<gtk::Scale>,
     #[template_child]

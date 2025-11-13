@@ -216,7 +216,7 @@ impl Player {
         };
 
         if self.queue.pending_track {
-            println!("\nLoading: {file_uri}");
+            println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
             self.queue.pending_track = false;
             self.next_song_loaded = true;
@@ -339,10 +339,11 @@ impl Player {
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
+        // If next track is already loaded, move back to the current one
         if self.next_song_loaded {
-            // If next track is already loaded, move back to the current one
             self.queue.pending_track = true;
-            self.queue.set_index(self.queue.index().saturating_sub(1));
+            self.queue.set_index(self.queue.index() - 1);
+            self.backend.set_property("instant-uri", true);
             self.update();
             self.next_song_loaded = false;
             self.handle_gst_events();
@@ -426,7 +427,6 @@ impl Player {
                     let dbg = format!("{message:?}");
                     eprintln!("gstreamer error: {dbg}\n");
 
-                    // TODO: This could be done better
                     if dbg.contains(&self.queue.current().as_song().file_uri()) {
                         self.force_skip_track(self.current_state);
                     }
@@ -453,7 +453,6 @@ impl Player {
 
                     if !self.queue.has_next() {
                         println!("End of queue");
-                        self.handle_gst_events();
                         self.backend.set_state(State::Ready).unwrap();
                         let _ = self.backend.state(None);
                         self.ui_set_state().unwrap();

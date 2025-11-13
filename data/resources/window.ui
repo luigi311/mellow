@@ -502,7 +502,6 @@
                                     <child>
                                       <object class="AdwPreferencesGroup">
 
-                                        <!-- TODO: Show song info -->
                                         <child>
                                           <object class="AdwPreferencesRow">
                                             <child>
