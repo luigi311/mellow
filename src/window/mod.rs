@@ -24,6 +24,7 @@ impl Window {
     pub fn new(app: &Application, player_tx: mpsc::SyncSender<PlayerRequest>) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         window.imp().player_tx.set(player_tx).unwrap();
+        window.load_settings();
         window
     }
 
@@ -50,10 +51,20 @@ impl Window {
         Ok(())
     }
 
-    pub fn load_window_size(&self) {
+    pub fn load_settings(&self) {
         let width = self.settings().int("window-width");
         let height = self.settings().int("window-height");
 
         self.set_default_size(width, height);
+
+        let volume = self.settings().double("volume");
+        let gapless = self.settings().boolean("gapless");
+
+        // Slider callback `change_value` doesn't work for `set_value()`,
+        // so the volume has to be manually updated before being set
+        self.imp().handle_set_volume(gtk::ScrollType::Jump, volume);
+
+        self.imp().settings_volume.set_value(volume);
+        self.imp().settings_gapless.set_active(gapless);
     }
 }
