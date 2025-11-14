@@ -298,8 +298,6 @@ impl Window {
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
         self.song_queue_list_box.remove_all();
-        self.song_queue_list_box
-            .set_selection_mode(gtk::SelectionMode::None);
         let start = self.song_queue_index.get().saturating_sub(10);
         let end = (self.song_queue_index.get() + 15).min(self.song_queue.borrow().len());
         for i in start..end {
@@ -350,10 +348,10 @@ impl Window {
                 }
             }
         }
-        // let new_value = (self.song_queue_index.get() - start) * 48;
-        // self.song_queue_scrolled_window
-        //     .vadjustment()
-        //     .set_value(new_value as f64);
+        let new_value = (self.song_queue_index.get() - start) * 48;
+        self.song_queue_scrolled_window
+            .vadjustment()
+            .set_value(new_value as f64);
     }
 
     fn update_progress(&self, progress: Option<f64>) {

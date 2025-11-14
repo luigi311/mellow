@@ -480,18 +480,21 @@
                                     <!-- </child> -->
                                   <!-- </object> -->
                                   <object class="GtkScrolledWindow" id="song_queue_scrolled_window">
-                                    <!-- FIX: Setting max width doesn't work -->
-                                    <property name="max_content_width">450</property>
                                     <child>
-                                      <object class="GtkListBox" id="song_queue_list_box">
-                                      <!-- <object class="GtkListView" id="song_queue_list_view"> -->
-                                        <property name="margin_top">12</property>
-                                        <property name="margin_bottom">12</property>
-                                        <property name="margin_start">12</property>
-                                        <property name="margin_end">12</property>
-                                        <style>
-                                          <class name="card"/>
-                                        </style>
+                                      <object class="AdwClamp">
+                                        <child>
+                                          <object class="GtkListBox" id="song_queue_list_box">
+                                          <!-- <object class="GtkListView" id="song_queue_list_view"> -->
+                                            <property name="selection_mode">none</property>
+                                            <property name="margin_top">18</property>
+                                            <property name="margin_bottom">18</property>
+                                            <property name="margin_start">12</property>
+                                            <property name="margin_end">12</property>
+                                            <style>
+                                              <class name="card"/>
+                                            </style>
+                                          </object>
+                                        </child>
                                       </object>
                                     </child>
                                   </object>
