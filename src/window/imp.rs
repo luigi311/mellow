@@ -227,9 +227,10 @@ impl Window {
         }
         let mut song = song.as_song();
         let mut info = song.info();
+        let detailed_info = info.take_detailed();
         let song_info = info.basic();
 
-        if let Some(artwork) = song_info.artwork.as_ref() {
+        if let Some(artwork) = detailed_info.artwork.as_ref() {
             self.album_cover.set_paintable(Some(artwork));
         } else {
             self.album_cover
@@ -257,10 +258,10 @@ impl Window {
         // self.lyrics_page_title.set_title(&song_info.title);
         // self.lyrics_page_title.set_subtitle(&song_info.artist);
         self.info_song_title.set_label(&song_info.title);
-        if song_info.lyrics.is_empty() {
+        if detailed_info.lyrics.is_empty() {
             self.info_lyrics.set_label("Lyrics not available");
         } else {
-            self.info_lyrics.set_label(&song_info.lyrics);
+            self.info_lyrics.set_label(&detailed_info.lyrics);
         }
     }
 
@@ -325,6 +326,7 @@ impl Window {
 
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
+                    let detailed_info = info.take_detailed();
                     let song_info = info.take_basic();
 
                     queue_entry.set_title(&song_info.title);
@@ -335,7 +337,7 @@ impl Window {
                     }
 
                     // TODO: Cached low-res album covers
-                    if let Some(artwork) = song_info.artwork.as_ref() {
+                    if let Some(artwork) = detailed_info.artwork.as_ref() {
                         queue_entry.set_prefix_image(artwork);
                     } else {
                         queue_entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));

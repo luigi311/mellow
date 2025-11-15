@@ -23,11 +23,7 @@ pub struct SongInfo {
     pub album_artist: String,
     pub track: String,
     pub year: String,
-    pub lyrics: String,
     pub duration: ClockTime,
-    // TODO: Move memory-heavy into `Song::detailed_info`,
-    // so they can be assigned on-demand
-    pub artwork: Option<Texture>,
 }
 
 // TODO: Move memory-heavy fields into here
@@ -37,19 +33,19 @@ pub struct DetailedSongInfo {
     pub artwork: Option<Texture>,
 }
 
-impl<'a> Song {
+impl<'s> Song {
     pub fn new(file: gio::File, album: Option<usize>) -> Song {
         Song {
-            file,
             album,
+            file,
             info: None,
             detailed_info: None,
         }
     }
     pub fn new_from_str(file: &str, album: Option<usize>) -> Song {
         Song {
-            file: gio::File::for_path(file),
             album,
+            file: gio::File::for_path(file),
             info: None,
             detailed_info: None,
         }
@@ -57,7 +53,7 @@ impl<'a> Song {
 
     /// Returns a `SongInfoLoader`, which can be used to access the
     /// song file tags. Loaded info is assigned to `self`.
-    pub fn info(&'a mut self) -> SongInfoLoader<'a> {
+    pub fn info(&'s mut self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
             info: &mut self.info,
@@ -67,14 +63,14 @@ impl<'a> Song {
     }
 }
 
-pub struct SongInfoLoader<'a> {
-    file: &'a gio::File,
-    info: &'a mut Option<Arc<SongInfo>>,
-    detailed_info: &'a mut Option<Arc<DetailedSongInfo>>,
+pub struct SongInfoLoader<'i> {
+    file: &'i gio::File,
+    info: &'i mut Option<Arc<SongInfo>>,
+    detailed_info: &'i mut Option<Arc<DetailedSongInfo>>,
     tagged: Option<TaggedFile>,
 }
 
-impl<'a> SongInfoLoader<'a> {
+impl<'i> SongInfoLoader<'i> {
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
@@ -110,9 +106,7 @@ impl<'a> SongInfoLoader<'a> {
                     album_artist: String::new(),
                     track: String::new(),
                     year: String::new(),
-                    lyrics: String::new(),
                     duration: ClockTime::default(),
-                    artwork: None,
                 }))
             });
         self
@@ -144,20 +138,8 @@ impl<'a> SongInfoLoader<'a> {
                 .to_string(),
             track: tag.track().unwrap_or_default().to_string(),
             year: tag.year().unwrap_or_default().to_string(),
-            lyrics: tag
-                .get_string(&ItemKey::Lyrics)
-                .unwrap_or_default()
-                .to_string(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
-            // TODO: Look for a `cover` file in the song directroy
-            artwork: if tag.picture_count() > 0 {
-                Some(Texture::from_bytes(&glib::Bytes::from(
-                    tag.pictures()[0].data(),
-                ))?)
-            } else {
-                None
-            },
         })))
     }
     pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
