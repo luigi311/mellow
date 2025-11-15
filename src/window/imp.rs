@@ -304,9 +304,11 @@ impl Window {
             match &self.song_queue.borrow()[i] {
                 QueueItem::Song(song) => {
                     let is_playing = i == self.song_queue_index.get();
-                    let mut song = song.lock().unwrap();
-                    let song_info = song.get_info_or_assign();
                     let queue_entry = QueueRow::default();
+
+                    let mut song = song.lock().unwrap();
+                    let mut info = song.info();
+                    let song_info = info.basic();
 
                     queue_entry.set_title(&song_info.title);
                     queue_entry.set_subtitle(&song_info.artist);

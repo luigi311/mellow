@@ -438,7 +438,12 @@ impl Player {
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
                 gst::MessageType::StreamStart => {
                     println!("Song started");
-                    self.queue.current().as_song().assign_info_with_fallback();
+                    self.queue
+                        .current()
+                        .as_song()
+                        .info()
+                        .load_basic()
+                        .load_detailed();
                     self.ui_set_song_info().unwrap();
                     self.queue.ui_update_queue_index().unwrap();
                     self.next_song_loaded = false;

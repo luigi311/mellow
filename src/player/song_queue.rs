@@ -281,7 +281,7 @@ impl SongQueue {
         };
         if index < self.index {
             self.index -= 1;
-            self.ui_update_queue_index().unwrap();
+            // self.ui_update_queue_index().unwrap();
         }
         self.ui_update_queue().unwrap();
         previous

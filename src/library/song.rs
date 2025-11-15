@@ -1,11 +1,12 @@
 use core::error::Error;
+use gio::prelude::*;
 use gst::ClockTime;
-use gtk::{
-    gdk::Texture,
-    gio::{self, prelude::FileExt},
-    glib,
-};
+use gtk::{gdk::Texture, gio, glib};
 use std::sync::Arc;
+
+use lofty::file::TaggedFile;
+use lofty::prelude::*;
+use lofty::probe::Probe;
 
 #[derive(Clone)]
 pub struct Song {
@@ -36,7 +37,7 @@ pub struct DetailedSongInfo {
     pub artwork: Option<Texture>,
 }
 
-impl Song {
+impl<'a> Song {
     pub fn new(file: &str, album: Option<usize>) -> Result<Song, Box<dyn Error>> {
         Ok(Song {
             file: gio::File::for_path(file),
@@ -59,26 +60,44 @@ impl Song {
         )
     }
 
-    pub fn get_info_or_assign(&mut self) -> &SongInfo {
-        if self.info.is_none() {
-            self.assign_info_with_fallback();
-        }
-        self.info.as_mut().unwrap()
-    }
+    /// Returns a `SongInfoLoader`, which can be used to access the
+    /// song file tags. Loaded info is assigned to `self`.
+    pub fn info(&'a mut self) -> SongInfoLoader<'a> {
+        // let info = self.info.take();
+        // let detailed_info = self.detailed_info.take();
 
-    pub fn get_detailed_info_or_assign(&mut self) -> &DetailedSongInfo {
-        if self.detailed_info.is_none() {
-            todo!();
+        SongInfoLoader {
+            song: self,
+            // info,
+            // detailed_info,
+            tagged: None,
         }
-        self.detailed_info.as_mut().unwrap()
     }
+}
 
-    pub fn assign_info_with_fallback(&mut self) {
-        self.assign_info()
+pub struct SongInfoLoader<'a> {
+    song: &'a mut Song,
+    // info: Option<Arc<SongInfo>>,
+    // detailed_info: Option<Arc<DetailedSongInfo>>,
+    tagged: Option<TaggedFile>,
+}
+
+impl<'a> SongInfoLoader<'a> {
+    pub fn basic(&mut self) -> &Arc<SongInfo> {
+        self.load_basic();
+        self.song.info.as_ref().unwrap()
+    }
+    pub fn load_basic(&mut self) -> &mut Self {
+        if self.song.info.is_some() {
+            return self;
+        }
+        println!("Loading basic song info for {}...", self.song.filename());
+        self.song.info = self
+            .load_basic_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
-                self.info = Some(Arc::new(SongInfo {
-                    title: self.filename(),
+                Some(Arc::new(SongInfo {
+                    title: self.song.filename(),
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
@@ -87,30 +106,46 @@ impl Song {
                     lyrics: String::new(),
                     duration: ClockTime::default(),
                     artwork: None,
-                }));
+                }))
             });
+        self
     }
-
-    pub fn assign_info(&mut self) -> Result<(), Box<dyn Error>> {
-        // See: https://github.com/Serial-ATA/lofty-rs/blob/main/examples/tag_reader.rs
-
-        use lofty::prelude::*;
-        use lofty::probe::Probe;
-
-        let tagged_file = Probe::open(self.file.path().unwrap())?.read()?;
-
-        let tag = tagged_file
+    pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
+        self.load_detailed();
+        self.song.detailed_info.as_ref().unwrap()
+    }
+    pub fn load_detailed(&mut self) -> &mut Self {
+        if self.song.detailed_info.is_some() {
+            return self;
+        }
+        println!("Loading detailed song info for {}...", self.song.filename());
+        self.song.detailed_info = self
+            .load_detailed_from_file()
+            .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
+            .unwrap_or_else(|_| {
+                Some(Arc::new(DetailedSongInfo {
+                    lyrics: String::new(),
+                    artwork: None,
+                }))
+            });
+        self
+    }
+    fn load_basic_from_file(&mut self) -> Result<Option<Arc<SongInfo>>, Box<dyn Error>> {
+        if self.tagged.is_none() {
+            self.tagged = Some(Probe::open(self.song.file.path().unwrap())?.read()?);
+        }
+        let tagged = self.tagged.as_ref().unwrap();
+        let tag = tagged
             .primary_tag()
-            .or_else(|| tagged_file.first_tag())
+            .or_else(|| tagged.first_tag())
             .ok_or("No tags found")?;
+        let properties = tagged.properties();
 
-        let properties = tagged_file.properties();
-
-        self.info = Some(Arc::new(SongInfo {
+        Ok(Some(Arc::new(SongInfo {
             title: tag.title().map_or_else(
-                || self.filename(),
+                || self.song.filename(),
                 |title| match title.trim().is_empty() {
-                    true => self.filename(),
+                    true => self.song.filename(),
                     false => title.to_string(),
                 },
             ),
@@ -136,8 +171,37 @@ impl Song {
             } else {
                 None
             },
-        }));
-
-        Ok(())
+        })))
+    }
+    fn load_detailed_from_file(&mut self) -> Result<Option<Arc<DetailedSongInfo>>, Box<dyn Error>> {
+        if self.tagged.is_none() {
+            self.tagged = Some(Probe::open(self.song.file.path().unwrap())?.read()?);
+        }
+        let tagged = self.tagged.as_ref().unwrap();
+        let tag = tagged
+            .primary_tag()
+            .or_else(|| tagged.first_tag())
+            .ok_or("No tags found")?;
+        Ok(Some(Arc::new(DetailedSongInfo {
+            lyrics: tag
+                .get_string(&ItemKey::Lyrics)
+                .unwrap_or_default()
+                .to_string(),
+            // TODO: Look for a `cover` file in the song directroy
+            artwork: if tag.picture_count() > 0 {
+                Some(Texture::from_bytes(&glib::Bytes::from(
+                    tag.pictures()[0].data(),
+                ))?)
+            } else {
+                None
+            },
+        })))
     }
 }
+
+// impl<'a> Drop for SongInfoLoader<'a> {
+//     fn drop(&mut self) {
+//         self.song.info = self.info.take();
+//         self.song.detailed_info = self.detailed_info.take();
+//     }
+// }
