@@ -210,7 +210,7 @@ impl Player {
         }
 
         let file_uri = match self.queue.current() {
-            QueueItem::Song(song) => song.lock().unwrap().file_uri(),
+            QueueItem::Song(song) => song.lock().unwrap().info().file_uri(),
             QueueItem::Stopper => {
                 self.queue.remove_current();
                 self.request_state(State::Null);
@@ -430,7 +430,7 @@ impl Player {
                     let dbg = format!("{message:?}");
                     eprintln!("gstreamer error: {dbg}\n");
 
-                    if dbg.contains(&self.queue.current().as_song().file_uri()) {
+                    if dbg.contains(&self.queue.current().as_song().info().file_uri()) {
                         self.force_skip_track(self.current_state);
                     }
                 }

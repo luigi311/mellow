@@ -2,10 +2,9 @@ use adw::{self, Application, prelude::*};
 use gst::{ClockTime, State};
 use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{self, glib};
-use std::sync::{Arc, mpsc};
+use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::library::SongInfo;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::window::Window;

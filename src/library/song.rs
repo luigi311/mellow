@@ -10,10 +10,10 @@ use lofty::probe::Probe;
 
 #[derive(Clone)]
 pub struct Song {
-    pub file: gio::File,
     pub album: Option<usize>,
-    pub info: Option<Arc<SongInfo>>,
-    pub detailed_info: Option<Arc<DetailedSongInfo>>,
+    file: gio::File,
+    info: Option<Arc<SongInfo>>,
+    detailed_info: Option<Arc<DetailedSongInfo>>,
 }
 
 pub struct SongInfo {
@@ -38,20 +38,47 @@ pub struct DetailedSongInfo {
 }
 
 impl<'a> Song {
-    pub fn new(file: &str, album: Option<usize>) -> Result<Song, Box<dyn Error>> {
-        Ok(Song {
+    pub fn new(file: gio::File, album: Option<usize>) -> Song {
+        Song {
+            file,
+            album,
+            info: None,
+            detailed_info: None,
+        }
+    }
+    pub fn new_from_str(file: &str, album: Option<usize>) -> Song {
+        Song {
             file: gio::File::for_path(file),
             album,
             info: None,
             detailed_info: None,
-        })
+        }
     }
 
+    /// Returns a `SongInfoLoader`, which can be used to access the
+    /// song file tags. Loaded info is assigned to `self`.
+    pub fn info(&'a mut self) -> SongInfoLoader<'a> {
+        SongInfoLoader {
+            file: &self.file,
+            info: &mut self.info,
+            detailed_info: &mut self.detailed_info,
+            tagged: None,
+        }
+    }
+}
+
+pub struct SongInfoLoader<'a> {
+    file: &'a gio::File,
+    info: &'a mut Option<Arc<SongInfo>>,
+    detailed_info: &'a mut Option<Arc<DetailedSongInfo>>,
+    tagged: Option<TaggedFile>,
+}
+
+impl<'a> SongInfoLoader<'a> {
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
     }
-
     #[must_use]
     pub fn filename(&self) -> String {
         self.file.basename().map_or_else(
@@ -59,49 +86,25 @@ impl<'a> Song {
             |f| f.to_str().unwrap().to_string(),
         )
     }
-
-    /// Returns a `SongInfoLoader`, which can be used to access the
-    /// song file tags. Loaded info is assigned to `self`.
-    pub fn info(&'a mut self) -> SongInfoLoader<'a> {
-        // let info = self.info.take();
-        // let detailed_info = self.detailed_info.take();
-
-        SongInfoLoader {
-            song: self,
-            // info,
-            // detailed_info,
-            tagged: None,
-        }
-    }
-}
-
-pub struct SongInfoLoader<'a> {
-    song: &'a mut Song,
-    // info: Option<Arc<SongInfo>>,
-    // detailed_info: Option<Arc<DetailedSongInfo>>,
-    tagged: Option<TaggedFile>,
-}
-
-impl<'a> SongInfoLoader<'a> {
     pub fn basic(&mut self) -> &Arc<SongInfo> {
         self.load_basic();
-        self.song.info.as_ref().unwrap()
+        self.info.as_ref().unwrap()
     }
     pub fn take_basic(&mut self) -> Arc<SongInfo> {
         self.load_basic();
-        self.song.info.take().unwrap()
+        self.info.take().unwrap()
     }
     pub fn load_basic(&mut self) -> &mut Self {
-        if self.song.info.is_some() {
+        if self.info.is_some() {
             return self;
         }
-        println!("Loading basic song info for {}...", self.song.filename());
-        self.song.info = self
+        println!("Loading basic song info for {}...", self.filename());
+        *self.info = self
             .load_basic_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
                 Some(Arc::new(SongInfo {
-                    title: self.song.filename(),
+                    title: self.filename(),
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
@@ -114,33 +117,9 @@ impl<'a> SongInfoLoader<'a> {
             });
         self
     }
-    pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
-        self.load_detailed();
-        self.song.detailed_info.as_ref().unwrap()
-    }
-    pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
-        self.load_detailed();
-        self.song.detailed_info.take().unwrap()
-    }
-    pub fn load_detailed(&mut self) -> &mut Self {
-        if self.song.detailed_info.is_some() {
-            return self;
-        }
-        println!("Loading detailed song info for {}...", self.song.filename());
-        self.song.detailed_info = self
-            .load_detailed_from_file()
-            .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
-            .unwrap_or_else(|_| {
-                Some(Arc::new(DetailedSongInfo {
-                    lyrics: String::new(),
-                    artwork: None,
-                }))
-            });
-        self
-    }
     fn load_basic_from_file(&mut self) -> Result<Option<Arc<SongInfo>>, Box<dyn Error>> {
         if self.tagged.is_none() {
-            self.tagged = Some(Probe::open(self.song.file.path().unwrap())?.read()?);
+            self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
         let tagged = self.tagged.as_ref().unwrap();
         let tag = tagged
@@ -151,9 +130,9 @@ impl<'a> SongInfoLoader<'a> {
 
         Ok(Some(Arc::new(SongInfo {
             title: tag.title().map_or_else(
-                || self.song.filename(),
+                || self.filename(),
                 |title| match title.trim().is_empty() {
-                    true => self.song.filename(),
+                    true => self.filename(),
                     false => title.to_string(),
                 },
             ),
@@ -181,9 +160,33 @@ impl<'a> SongInfoLoader<'a> {
             },
         })))
     }
+    pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
+        self.load_detailed();
+        self.detailed_info.as_ref().unwrap()
+    }
+    pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
+        self.load_detailed();
+        self.detailed_info.take().unwrap()
+    }
+    pub fn load_detailed(&mut self) -> &mut Self {
+        if self.detailed_info.is_some() {
+            return self;
+        }
+        println!("Loading detailed song info for {}...", self.filename());
+        *self.detailed_info = self
+            .load_detailed_from_file()
+            .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
+            .unwrap_or_else(|_| {
+                Some(Arc::new(DetailedSongInfo {
+                    lyrics: String::new(),
+                    artwork: None,
+                }))
+            });
+        self
+    }
     fn load_detailed_from_file(&mut self) -> Result<Option<Arc<DetailedSongInfo>>, Box<dyn Error>> {
         if self.tagged.is_none() {
-            self.tagged = Some(Probe::open(self.song.file.path().unwrap())?.read()?);
+            self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
         let tagged = self.tagged.as_ref().unwrap();
         let tag = tagged
@@ -206,10 +209,3 @@ impl<'a> SongInfoLoader<'a> {
         })))
     }
 }
-
-// impl<'a> Drop for SongInfoLoader<'a> {
-//     fn drop(&mut self) {
-//         self.song.info = self.info.take();
-//         self.song.detailed_info = self.detailed_info.take();
-//     }
-// }

@@ -101,12 +101,7 @@ impl Library {
                     return;
                 }
 
-                let song = Song {
-                    file,
-                    album: None,
-                    info: None,
-                    detailed_info: None,
-                };
+                let song = Song::new(file, None);
 
                 songs.lock().unwrap().as_mut().unwrap().push(song);
             })
@@ -121,7 +116,8 @@ impl Library {
         let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
         for i in 0..songs.len() {
             // TODO: Assign song info, but skip memory-heavy fields (artwork, etc)
-            // songs[i].get_info_or_assign();
+            // let mut info = songs[i].info();
+            // let song_info = info.basic();
 
             // // TODO: Assign song/album/artist index relations
 
