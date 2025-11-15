@@ -87,6 +87,10 @@ impl<'a> SongInfoLoader<'a> {
         self.load_basic();
         self.song.info.as_ref().unwrap()
     }
+    pub fn take_basic(&mut self) -> Arc<SongInfo> {
+        self.load_basic();
+        self.song.info.take().unwrap()
+    }
     pub fn load_basic(&mut self) -> &mut Self {
         if self.song.info.is_some() {
             return self;
@@ -113,6 +117,10 @@ impl<'a> SongInfoLoader<'a> {
     pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
         self.load_detailed();
         self.song.detailed_info.as_ref().unwrap()
+    }
+    pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
+        self.load_detailed();
+        self.song.detailed_info.take().unwrap()
     }
     pub fn load_detailed(&mut self) -> &mut Self {
         if self.song.detailed_info.is_some() {

@@ -1,4 +1,4 @@
-# Quality Control
+# Quality Assurance
 
 Ensure the following:
 
@@ -10,10 +10,17 @@ Playback:
   - FIX: Gapless: Seeking after next track is loaded sometimes breaks the player
   - FIX: Gapless: Seeking to the end and back sometimes breaks the "about-to-finish" callback
 - [ ] Gapless/non-gapless playback works as expected
-  - FIX: Issues with seeking
+  - FIX: Gapless: Issues with seeking
 - [x] Non-fatal errors are handled gracefully
 
-Interface:
+Song Queue:
+
+- [ ] Adding songs works as expected
+- [ ] Removing items works as expected
+- [ ] Reordering the queue works as expected
+- [ ] Stoppers work as expected
+
+Design:
 
 - [x] UI adapts to window size, and looks good at all sizes
 - [x] Positional awareness for off-screen elements

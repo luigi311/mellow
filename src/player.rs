@@ -406,12 +406,11 @@ impl Player {
     }
 
     /// Sends the current song info to the UI receiver
-    fn ui_set_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_update_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
-        let song_info = self.queue.current().as_song().info.take();
-        println!("ui_set_song_info()");
+        println!("ui_update_song_info()");
         self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::SongInfo(song_info)).await })
+            .block_on(async move { tx.send(UpdateUI::SongInfo).await })
     }
 
     /// Sends the current playback time to the UI receiver
@@ -438,14 +437,8 @@ impl Player {
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
                 gst::MessageType::StreamStart => {
                     println!("Song started");
-                    self.queue
-                        .current()
-                        .as_song()
-                        .info()
-                        .load_basic()
-                        .load_detailed();
-                    self.ui_set_song_info().unwrap();
                     self.queue.ui_update_queue_index().unwrap();
+                    self.ui_update_song_info().unwrap();
                     self.next_song_loaded = false;
                 }
                 gst::MessageType::Eos if self.seeking => {

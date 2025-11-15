@@ -14,7 +14,7 @@ use crate::{APP_ID, APP_NAME};
 pub enum UpdateUI {
     PlayerState(State, bool),
     PlayerTime(Option<ClockTime>),
-    SongInfo(Option<Arc<SongInfo>>),
+    SongInfo,
     SongQueue(Box<[QueueItem]>),
     QueueIndex(usize),
     Shuffle(bool),

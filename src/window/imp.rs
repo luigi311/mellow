@@ -189,8 +189,9 @@ impl Window {
                 UpdateUI::PlayerState(state, interactive) => {
                     self.update_state(state, interactive);
                 }
-                UpdateUI::SongInfo(song_info) => {
-                    self.update_song_info(song_info, &mut song_duration);
+                // TODO: Get rid of `UpdateUI::SongInfo` if possible
+                UpdateUI::SongInfo => {
+                    self.update_song_info(&mut song_duration);
                 }
                 UpdateUI::PlayerTime(time) => {
                     self.update_time(time, song_duration.as_millis() as f64);
@@ -213,8 +214,20 @@ impl Window {
         self.media_controls.set_sensitive(interactive);
     }
 
-    fn update_song_info(&self, song_info: Option<Arc<SongInfo>>, song_duration: &mut Duration) {
-        let Some(song_info) = song_info else { return };
+    fn update_song_info(&self, song_duration: &mut Duration) {
+        println!("update_song_info()");
+        let queue = self.song_queue.borrow();
+        if queue.is_empty() {
+            return;
+        }
+        let index = self.song_queue_index.get();
+        let song = &queue[index];
+        if song.is_stopper() {
+            return;
+        }
+        let mut song = song.as_song();
+        let mut info = song.info();
+        let song_info = info.basic();
 
         if let Some(artwork) = song_info.artwork.as_ref() {
             self.album_cover.set_paintable(Some(artwork));
@@ -283,10 +296,12 @@ impl Window {
         self.repeat_toggle.set_active(repeat);
     }
     fn update_song_index(&self, index: usize) {
+        println!("update_song_index()");
         self.song_queue_index.set(index);
         self.update_song_queue(None);
     }
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {
+        println!("update_song_queue()");
         if let Some(queue) = queue {
             let _ = self.song_queue.replace(queue);
         }
@@ -298,17 +313,19 @@ impl Window {
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
         self.song_queue_list_box.remove_all();
-        let start = self.song_queue_index.get().saturating_sub(10);
-        let end = (self.song_queue_index.get() + 15).min(self.song_queue.borrow().len());
+        let index = self.song_queue_index.get();
+        let start = index.saturating_sub(10);
+        let end = (index + 15).min(self.song_queue.borrow().len());
+        let queue = self.song_queue.borrow();
         for i in start..end {
-            match &self.song_queue.borrow()[i] {
+            match &queue[i] {
                 QueueItem::Song(song) => {
-                    let is_playing = i == self.song_queue_index.get();
+                    let is_playing = i == index;
                     let queue_entry = QueueRow::default();
 
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
-                    let song_info = info.basic();
+                    let song_info = info.take_basic();
 
                     queue_entry.set_title(&song_info.title);
                     queue_entry.set_subtitle(&song_info.artist);
@@ -350,7 +367,7 @@ impl Window {
                 }
             }
         }
-        let new_value = (self.song_queue_index.get() - start) * 48;
+        let new_value = (index - start) * 48;
         self.song_queue_scrolled_window
             .vadjustment()
             .set_value(new_value as f64);

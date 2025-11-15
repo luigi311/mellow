@@ -2,12 +2,16 @@
   - [ ] Marquee long titles
 - [-] Interactive song queue
   - [-] Display the song queue
-  - [-] Allow adding/removing items from the queue
-  > Functionality exists, needs UI
+    - TODO: Optimize memory usage/artwork loading performance
+    - TODO: Draw the entire queue (using a more performant approach)
+  - [-] Allow adding songs to the queue
+  > Implemented, needs UI
+  - [-] Allow removing items from the queue
+  > Implemented, needs UI
   - [-] Allow reordering the queue
-  > Functionality untested, needs UI
+  > Untested, needs UI
   - [-] Allow inserting stoppers (scheduled pause)
-  > Functionality exists, needs UI
+  > Implemented, needs UI
   - [x] Access song lyrics using a header-bar icon
 - [ ] Music library
   - [ ] Interface

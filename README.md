@@ -14,19 +14,19 @@ Mellow is an experimental music player, which strives for maximal immersion with
 minimal distraction. Elements of the interface are purposefully abstracted away,
 bringing music to the center of your focus.
 
+# Roadmap
+
 > [!CAUTION]
 > This software is still in early development. It may be buggy or missing crucial
 > features, and may or may not maintain backward/forward compatibility going
-> forward.
-
-# Roadmap
+> forward. See [QA.md](QA.md) and [TODO.md](TODO.md) for more information.
 
 |  #  | Feature                                   | Status  |
 | :-: | ----------------------------------------- | :-----: |
-|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Possible issues with seeking |
+|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Rare issues with seeking |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
-|  4  | Song queue management                     | ⚠️ WIP: Limited prototype UI |
+|  4  | Song queue interface & management         | ⚠️ WIP  |
 |  5  | Music library                             | ❌ TODO |
 |  6  | Music library search/filters              | ❌ TODO |
 |  7  | Play counts and ratings                   | ❌ TODO |
