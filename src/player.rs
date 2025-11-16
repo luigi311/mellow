@@ -193,12 +193,13 @@ impl Player {
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
                 PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0).map(|_| true)?,
                 PlayerRequest::RemoveAt(index) => {
-                    self.queue.remove(index);
                     if index == self.queue.index() {
                         self.backend.set_property("instant-uri", true);
                         self.queue.pending_track = true;
+                        self.queue.remove(index);
                         true
                     } else {
+                        self.queue.remove(index);
                         continue;
                     }
                 }
