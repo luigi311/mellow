@@ -336,7 +336,7 @@ impl Window {
                     let artist_name = song_info.artist.clone();
 
                     queue_entry.set_title(&song_title);
-                    queue_entry.set_subtitle(&album_title);
+                    queue_entry.set_subtitle(&artist_name);
                     if is_playing {
                         queue_entry.add_css_class("heading");
                         queue_entry.add_css_class("card");
