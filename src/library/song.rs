@@ -120,7 +120,7 @@ impl<'i> SongInfoLoader<'i> {
             });
         self
     }
-    /// Unloads basic song info from self
+    /// Unloads basic song info
     pub fn unload_basic(&mut self) -> &mut Self {
         *self.info = None;
         self
@@ -165,7 +165,7 @@ impl<'i> SongInfoLoader<'i> {
     }
     /// Loads detailed song info if needed, then returns and unloads it
     pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
-        let _ = self.load_detailed();
+        self.load_detailed();
         self.detailed_info.take().unwrap()
     }
     /// Loads detailed song info so it is ready to be used later
@@ -186,7 +186,7 @@ impl<'i> SongInfoLoader<'i> {
             });
         self
     }
-    /// Unloads detailed song info from self
+    /// Unloads detailed song info
     pub fn unload_detailed(&mut self) -> &mut Self {
         *self.detailed_info = None;
         self

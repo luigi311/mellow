@@ -1,5 +1,6 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
+use glib::clone;
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 
@@ -12,6 +13,7 @@ use crate::library::SongInfo;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::queue_row::QueueRow;
+use crate::song_page::SongPage;
 use crate::ui::UpdateUI;
 use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
@@ -46,6 +48,8 @@ pub struct Window {
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    playing_navigation_view: TemplateChild<adw::NavigationView>,
 
     // #[template_child]
     // lyrics_page_title: TemplateChild<adw::WindowTitle>,
@@ -54,11 +58,7 @@ pub struct Window {
     #[template_child]
     info_lyrics: TemplateChild<gtk::Label>,
     #[template_child]
-    playing_song_title: TemplateChild<gtk::Label>,
-    #[template_child]
-    playing_album_title: TemplateChild<gtk::Label>,
-    #[template_child]
-    playing_artist_name: TemplateChild<gtk::Label>,
+    song_page: TemplateChild<SongPage>,
     #[template_child]
     song_queue_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
     #[template_child]
@@ -97,7 +97,7 @@ impl Window {
         self.player_tx
             .get()
             .unwrap()
-            .send(PlayerRequest::PlayOrPause)
+            .send(PlayerRequest::TogglePlay(None))
             .unwrap();
     }
     #[template_callback]
@@ -173,6 +173,12 @@ impl Window {
             .parent()
             .unwrap()
             .add_controller(release_seek_bar);
+
+        self.song_page.init(
+            self.player_tx.get().unwrap().clone(),
+            self.playing_navigation_view.get(),
+            self.sheet.get(),
+        );
     }
 
     #[allow(clippy::future_not_send)]
@@ -252,9 +258,6 @@ impl Window {
             self.time_end_label.set_label("-:--");
         }
 
-        self.playing_song_title.set_label(&song_info.title);
-        self.playing_album_title.set_label(&song_info.album);
-        self.playing_artist_name.set_label(&song_info.artist);
         // self.lyrics_page_title.set_title(&song_info.title);
         // self.lyrics_page_title.set_subtitle(&song_info.artist);
         self.info_song_title.set_label(&song_info.title);
@@ -328,8 +331,12 @@ impl Window {
                     let mut info = song.info();
 
                     let song_info = info.basic();
-                    queue_entry.set_title(&song_info.title);
-                    queue_entry.set_subtitle(&song_info.artist);
+                    let song_title = song_info.title.clone();
+                    let album_title = song_info.album.clone();
+                    let artist_name = song_info.artist.clone();
+
+                    queue_entry.set_title(&song_title);
+                    queue_entry.set_subtitle(&album_title);
                     if is_playing {
                         queue_entry.add_css_class("heading");
                         queue_entry.add_css_class("card");
@@ -344,8 +351,16 @@ impl Window {
                     }
 
                     queue_entry.connect_activated({
-                        let player_tx = self.player_tx.get().unwrap().clone();
-                        move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
+                        clone!(
+                            #[weak(rename_to=song_page)]
+                            self.song_page,
+                            #[weak(rename_to=navigation)]
+                            self.playing_navigation_view,
+                            move |_| {
+                                navigation.push_by_tag("info");
+                                song_page.set_info(i, &song_title, &album_title, &artist_name);
+                            }
+                        )
                     });
 
                     self.song_queue_list_box.append(&queue_entry);
@@ -353,17 +368,20 @@ impl Window {
                 QueueItem::Stopper => {
                     let queue_entry = QueueRow::default();
 
-                    queue_entry.set_title("Stopper");
+                    queue_entry.set_title("Pause");
                     queue_entry.add_css_class("heading");
-                    queue_entry.add_css_class("dim");
+                    queue_entry.add_css_class("dimmed");
 
                     // IDEA: Draw a pause icon in place of the album cover
                     // queue_entry.set_prefix_image();
 
-                    queue_entry.connect_activated({
-                        let player_tx = self.player_tx.get().unwrap().clone();
-                        move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
-                    });
+                    // TODO: Open a page for stoppers as well
+                    // TODO: Allow removing stoppers
+                    // TODO: Allow reordering stoppers
+                    // queue_entry.connect_activated({
+                    //     let player_tx = self.player_tx.get().unwrap().clone();
+                    //     move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
+                    // });
 
                     self.song_queue_list_box.append(&queue_entry);
                 }

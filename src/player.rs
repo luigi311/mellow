@@ -18,7 +18,7 @@ pub enum PlayerRequest {
     /// Refresh local player state
     Update,
     /// Play or pause depending on the current state
-    PlayOrPause,
+    TogglePlay(Option<bool>),
     /// Skip to beginning or previous song
     SkipPrevious,
     /// Skip to the next song in the queue
@@ -62,7 +62,7 @@ impl std::fmt::Debug for PlayerRequest {
                     format!("LoadQueue(…): {} items", queue.len())
                 }
                 Self::Update => "Update".to_string(),
-                Self::PlayOrPause => "PlayOrPause".to_string(),
+                Self::TogglePlay(play) => format!("TogglePlay({play:?})",),
                 Self::SkipPrevious => "SkipPrevious".to_string(),
                 Self::SkipNext => "SkipNext".to_string(),
                 Self::SkipTo(index) => format!("SkipTo({index})"),
@@ -171,7 +171,13 @@ impl Player {
             dbg!(&player_request);
             if match player_request {
                 PlayerRequest::Update => true,
-                PlayerRequest::PlayOrPause => self.play_or_pause() == (),
+                PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
+                PlayerRequest::TogglePlay(Some(play)) => match self.current_state {
+                    State::Playing if !play => self.play_or_pause() == (),
+                    State::Playing => continue,
+                    _ if play => self.play_or_pause() == (),
+                    _ => continue,
+                },
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
                 PlayerRequest::SkipNext => self.skip_next() == (),
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
@@ -188,7 +194,13 @@ impl Player {
                 PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0).map(|_| true)?,
                 PlayerRequest::RemoveAt(index) => {
                     self.queue.remove(index);
-                    continue;
+                    if index == self.queue.index() {
+                        self.backend.set_property("instant-uri", true);
+                        self.queue.pending_track = true;
+                        true
+                    } else {
+                        continue;
+                    }
                 }
 
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
@@ -213,7 +225,8 @@ impl Player {
             QueueItem::Song(song) => song.lock().unwrap().info().file_uri(),
             QueueItem::Stopper => {
                 self.queue.remove_current();
-                self.request_state(State::Null);
+                let _ = self.backend.set_state(State::Null);
+                self.request_state(State::Paused);
                 return self.update();
             }
         };

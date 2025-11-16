@@ -18,11 +18,11 @@
       </object>
     </child>
 
-    <!-- <child type="suffix"> -->
-      <!-- <object class="GtkImage"> -->
-        <!-- <property name="icon_name">go-next-symbolic</property> -->
-      <!-- </object> -->
-    <!-- </child> -->
+    <child type="suffix">
+      <object class="GtkImage">
+        <property name="icon_name">go-next-symbolic</property>
+      </object>
+    </child>
 
   </template>
 </interface>

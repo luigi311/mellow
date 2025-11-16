@@ -16,9 +16,9 @@ Playback:
 Song Queue:
 
 - [ ] Adding songs works as expected
-- [ ] Removing items works as expected
+- [x] Removing items works as expected
 - [ ] Reordering the queue works as expected
-- [ ] Stoppers work as expected
+- [x] Stoppers work as expected
 
 Design:
 

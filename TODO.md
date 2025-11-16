@@ -7,11 +7,10 @@
   - [-] Allow adding songs to the queue
   > Implemented, needs UI
   - [-] Allow removing items from the queue
-  > Implemented, needs UI
+  > Needs UI for removing stoppers
   - [-] Allow reordering the queue
   > Untested, needs UI
-  - [-] Allow inserting stoppers (scheduled pause)
-  > Implemented, needs UI
+  - [x] Allow inserting stoppers (scheduled pause)
   - [x] Access song lyrics using a header-bar icon
 - [ ] Music library
   - [ ] Interface
