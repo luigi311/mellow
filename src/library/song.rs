@@ -51,8 +51,9 @@ impl<'s> Song {
         }
     }
 
-    /// Returns a `SongInfoLoader`, which can be used to access the
-    /// song file tags. Loaded info is assigned to `self`.
+    /// Returns a `SongInfoLoader`, which can be used to access information
+    /// about the file and song. Tags are loaded on-demand, and remain in
+    /// memory until the respective `unload` or `take` method is called.
     pub fn info(&'s mut self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
@@ -71,10 +72,12 @@ pub struct SongInfoLoader<'i> {
 }
 
 impl<'i> SongInfoLoader<'i> {
+    /// Retruns the song file URI, which can be used with `GStreamer`
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
     }
+    /// Returns the song filename (such as: "01 - Example.mp3")
     #[must_use]
     pub fn filename(&self) -> String {
         self.file.basename().map_or_else(
@@ -82,14 +85,25 @@ impl<'i> SongInfoLoader<'i> {
             |f| f.to_str().unwrap().to_string(),
         )
     }
+
+    /// Loads basic song info if needed, then returns it
+    #[must_use]
     pub fn basic(&mut self) -> &Arc<SongInfo> {
         self.load_basic();
         self.info.as_ref().unwrap()
     }
+    /// Loads basic song info if needed, then returns and unloads it
     pub fn take_basic(&mut self) -> Arc<SongInfo> {
         self.load_basic();
         self.info.take().unwrap()
     }
+    /// Unloads basic song info from self
+    pub fn unload_basic(&mut self) -> &mut Self {
+        *self.info = None;
+        self
+    }
+    /// Loads detailed song info so it is ready to be used later
+    /// This method call can be chained
     pub fn load_basic(&mut self) -> &mut Self {
         if self.info.is_some() {
             return self;
@@ -142,14 +156,25 @@ impl<'i> SongInfoLoader<'i> {
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
         })))
     }
+
+    /// Loads detailed song info if needed, then returns it
+    #[must_use]
     pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
-        self.load_detailed();
+        let _ = self.load_detailed();
         self.detailed_info.as_ref().unwrap()
     }
+    /// Loads basic song info if needed, then returns and unloads it
     pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
-        self.load_detailed();
+        let _ = self.load_detailed();
         self.detailed_info.take().unwrap()
     }
+    /// Unloads detailed song info from self
+    pub fn unload_detailed(&mut self) -> &mut Self {
+        *self.detailed_info = None;
+        self
+    }
+    /// Loads detailed song info so it is ready to be used later
+    /// This method call can be chained
     pub fn load_detailed(&mut self) -> &mut Self {
         if self.detailed_info.is_some() {
             return self;

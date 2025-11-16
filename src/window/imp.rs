@@ -326,9 +326,8 @@ impl Window {
 
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
-                    let detailed_info = info.take_detailed();
-                    let song_info = info.take_basic();
 
+                    let song_info = info.basic();
                     queue_entry.set_title(&song_info.title);
                     queue_entry.set_subtitle(&song_info.artist);
                     if is_playing {
@@ -337,6 +336,7 @@ impl Window {
                     }
 
                     // TODO: Cached low-res album covers
+                    let detailed_info = info.detailed();
                     if let Some(artwork) = detailed_info.artwork.as_ref() {
                         queue_entry.set_prefix_image(artwork);
                     } else {
@@ -373,6 +373,17 @@ impl Window {
         self.song_queue_scrolled_window
             .vadjustment()
             .set_value(new_value as f64);
+
+        // Garbage collection
+        for (index, item) in queue.iter().enumerate() {
+            if !(start..end).contains(&index) {
+                if let QueueItem::Song(song) = item {
+                    let _ = song.lock().map(|mut song| {
+                        song.info().unload_detailed();
+                    });
+                }
+            }
+        }
     }
 
     fn update_progress(&self, progress: Option<f64>) {
