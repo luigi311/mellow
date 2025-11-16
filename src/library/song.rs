@@ -97,18 +97,13 @@ impl<'i> SongInfoLoader<'i> {
         self.load_basic();
         self.info.take().unwrap()
     }
-    /// Unloads basic song info from self
-    pub fn unload_basic(&mut self) -> &mut Self {
-        *self.info = None;
-        self
-    }
-    /// Loads detailed song info so it is ready to be used later
+    /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
     pub fn load_basic(&mut self) -> &mut Self {
         if self.info.is_some() {
             return self;
         }
-        println!("Loading basic song info for {}...", self.filename());
+        // println!("Loading basic song info for {}...", self.filename());
         *self.info = self
             .load_basic_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
@@ -123,6 +118,11 @@ impl<'i> SongInfoLoader<'i> {
                     duration: ClockTime::default(),
                 }))
             });
+        self
+    }
+    /// Unloads basic song info from self
+    pub fn unload_basic(&mut self) -> &mut Self {
+        *self.info = None;
         self
     }
     fn load_basic_from_file(&mut self) -> Result<Option<Arc<SongInfo>>, Box<dyn Error>> {
@@ -163,15 +163,10 @@ impl<'i> SongInfoLoader<'i> {
         let _ = self.load_detailed();
         self.detailed_info.as_ref().unwrap()
     }
-    /// Loads basic song info if needed, then returns and unloads it
+    /// Loads detailed song info if needed, then returns and unloads it
     pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
         let _ = self.load_detailed();
         self.detailed_info.take().unwrap()
-    }
-    /// Unloads detailed song info from self
-    pub fn unload_detailed(&mut self) -> &mut Self {
-        *self.detailed_info = None;
-        self
     }
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained
@@ -179,7 +174,7 @@ impl<'i> SongInfoLoader<'i> {
         if self.detailed_info.is_some() {
             return self;
         }
-        println!("Loading detailed song info for {}...", self.filename());
+        // println!("Loading detailed song info for {}...", self.filename());
         *self.detailed_info = self
             .load_detailed_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
@@ -189,6 +184,11 @@ impl<'i> SongInfoLoader<'i> {
                     artwork: None,
                 }))
             });
+        self
+    }
+    /// Unloads detailed song info from self
+    pub fn unload_detailed(&mut self) -> &mut Self {
+        *self.detailed_info = None;
         self
     }
     fn load_detailed_from_file(&mut self) -> Result<Option<Arc<DetailedSongInfo>>, Box<dyn Error>> {

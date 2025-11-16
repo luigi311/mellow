@@ -61,7 +61,7 @@ impl Window {
         let gapless = self.settings().boolean("gapless");
 
         // Slider callback `change_value` doesn't work for `set_value()`,
-        // so the volume has to be manually updated before being set
+        // so the volume has to be manually updated before the slider
         self.imp().handle_set_volume(gtk::ScrollType::Jump, volume);
 
         self.imp().settings_volume.set_value(volume);
