@@ -113,7 +113,14 @@ impl SongQueue {
         if self.is_last() {
             return None;
         }
-        Some(&self.songs[self.ordered_index(self.index + 1)])
+        Some(&self.nth(self.index + 1))
+    }
+
+    /// Returns a reference to the `n`th item in the queue,
+    /// respecting the shuffle mode setting
+    #[must_use]
+    pub fn nth(&self, n: usize) -> &QueueItem {
+        &self.songs[self.ordered_index(n)]
     }
 
     /// Returns the current song index based on the shuffle mode option
@@ -157,7 +164,7 @@ impl SongQueue {
     pub fn ordered_queue(&self) -> Box<[QueueItem]> {
         let mut songs = vec![];
         for i in 0..self.len() {
-            songs.push(self.songs[self.ordered_index(i)].clone());
+            songs.push(self.nth(i).clone());
         }
         songs.into()
     }
@@ -247,11 +254,14 @@ impl SongQueue {
 
     /// Inserts an item into the queue at the specified index
     pub fn insert(&mut self, index: usize, item: QueueItem) -> Result<(), SendError<UpdateUI>> {
-        let ordered_index = self.ordered_index(index);
+        if item.is_stopper() && self.nth(index).is_stopper() {
+            return Ok(());
+        }
 
-        if self.index >= ordered_index {
+        if self.index >= index {
             self.index += 1;
         }
+        let ordered_index = self.ordered_index(index);
         self.songs.insert(ordered_index, item);
 
         for shuffled in &mut self.shuffled {
@@ -269,8 +279,9 @@ impl SongQueue {
     /// Returns the removed `QueueItem`
     pub fn remove(&mut self, index: usize) -> QueueItem {
         let previous = if self.shuffle {
+            let ordered = self.ordered_index(index);
             for shuffled in &mut self.shuffled {
-                if *shuffled > index {
+                if *shuffled > ordered {
                     *shuffled -= 1;
                 }
             }

@@ -15,10 +15,11 @@ Playback:
 
 Song Queue:
 
-- [ ] Adding songs works as expected
+- [x] Adding items works as expected
 - [x] Removing items works as expected
 - [ ] Reordering the queue works as expected
-- [x] Stoppers work as expected
+- [ ] Stoppers work and behave as expected
+  - FIX: Stoppers shift when toggling shuffle mode
 
 Design:
 
