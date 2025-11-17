@@ -280,7 +280,7 @@ impl SongQueue {
     pub fn remove(&mut self, index: usize) -> QueueItem {
         let previous = if self.shuffle {
             let target = self.shuffled[index];
-            for i in 0..=index {
+            for i in 0..index {
                 if self.shuffled[i] > target {
                     self.shuffled[i] -= 1;
                 }
