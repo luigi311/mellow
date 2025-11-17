@@ -279,14 +279,23 @@ impl SongQueue {
     /// Returns the removed `QueueItem`
     pub fn remove(&mut self, index: usize) -> QueueItem {
         let previous = if self.shuffle {
-            let ordered = self.ordered_index(index);
-            for shuffled in &mut self.shuffled {
-                if *shuffled > ordered {
-                    *shuffled -= 1;
+            let target = self.shuffled[index];
+            for i in 0..=index {
+                if self.shuffled[i] > target {
+                    self.shuffled[i] -= 1;
                 }
             }
-            self.songs.remove(self.shuffled.remove(index))
+            for i in index + 1..self.shuffled.len() {
+                self.shuffled[i - 1] = match self.shuffled[i] {
+                    n if n > target => n - 1,
+                    n => n,
+                };
+            }
+            self.shuffled.remove(self.shuffled.len() - 1);
+            self.songs.remove(target)
         } else {
+            // No need to update the shuffled queue, because
+            // a new one is created when it is enabled
             // self.shuffled.remove(self.shuffled_index(index).unwrap());
             self.songs.remove(index)
         };
