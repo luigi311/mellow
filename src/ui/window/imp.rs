@@ -394,12 +394,13 @@ impl Window {
 
         // Garbage collection
         for (index, item) in queue.iter().enumerate() {
-            if !(start..end).contains(&index) {
-                if let QueueItem::Song(song) = item {
-                    let _ = song.lock().map(|mut song| {
-                        song.info().unload_detailed();
-                    });
-                }
+            if (start..end).contains(&index) {
+                continue;
+            }
+            if let QueueItem::Song(song) = item {
+                let _ = song.lock().map(|mut song| {
+                    song.info().unload_detailed();
+                });
             }
         }
     }

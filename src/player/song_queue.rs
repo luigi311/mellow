@@ -85,7 +85,7 @@ impl SongQueue {
     }
 
     /// Moves to the previous song in the queue
-    pub const fn previous(&mut self) {
+    pub const fn move_previous(&mut self) {
         if self.is_first() {
             if self.repeat {
                 self.index = self.len() - 1;
@@ -113,7 +113,16 @@ impl SongQueue {
         if self.is_last() {
             return None;
         }
-        Some(&self.nth(self.index + 1))
+        Some(self.nth(self.index + 1))
+    }
+
+    /// Returns a reference to the previous item in the queue
+    #[must_use]
+    pub fn previous(&self) -> Option<&QueueItem> {
+        if self.is_first() {
+            return None;
+        }
+        Some(self.nth(self.index - 1))
     }
 
     /// Returns a reference to the `n`th item in the queue,
@@ -254,7 +263,7 @@ impl SongQueue {
 
     /// Inserts an item into the queue at the specified index
     pub fn insert(&mut self, index: usize, item: QueueItem) -> Result<(), SendError<UpdateUI>> {
-        if item.is_stopper() && self.nth(index).is_stopper() {
+        if item.is_stopper() && index < self.len() && self.nth(index).is_stopper() {
             return Ok(());
         }
 

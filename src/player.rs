@@ -289,7 +289,7 @@ impl Player {
     fn skip_prev(&mut self) {
         self.backend.set_property("instant-uri", true);
         self.queue.pending_track = true;
-        self.queue.previous();
+        self.queue.move_previous();
     }
 
     /// Seeks to the beginning of the current track
