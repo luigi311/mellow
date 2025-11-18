@@ -102,18 +102,17 @@ pub struct Player {
 // NOTE: Set `GST_DEBUG=3` to debug GStreamer
 // https://gstreamer.freedesktop.org/documentation/tutorials/basic/debugging-tools.html
 
+type PlayerInit = (
+    Player,
+    mpsc::SyncSender<PlayerRequest>, // Player sender
+    tokio_mpsc::Sender<UpdateUI>,    // UI sender
+    tokio_mpsc::Receiver<UpdateUI>,  // UI receiver
+);
+
 impl Player {
     /// Returns a tuple of a new `Player` instance, a sender for player controls,
     /// and a sender and receiver for the UI
-    pub fn init() -> Result<
-        (
-            Player,
-            mpsc::SyncSender<PlayerRequest>,
-            tokio_mpsc::Sender<UpdateUI>,
-            tokio_mpsc::Receiver<UpdateUI>,
-        ),
-        Box<dyn Error>,
-    > {
+    pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
         gst::init().unwrap();
 
         let backend = gst::ElementFactory::make("playbin3").build()?;
