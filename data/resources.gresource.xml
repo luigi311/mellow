@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/com/github/userwithaname/Mellow/">
-    <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">queue_row.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">rating.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">song_page.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>
 </gresources>

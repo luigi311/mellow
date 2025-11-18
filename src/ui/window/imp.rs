@@ -13,6 +13,7 @@ use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::ui::queue_row::QueueRow;
+use crate::ui::rating::Rating;
 use crate::ui::song_page::SongPage;
 use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
@@ -425,6 +426,8 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
+        Rating::static_type();
+
         class.bind_template();
         class.bind_template_callbacks();
 

@@ -6,6 +6,7 @@ use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
 mod queue_row;
+mod rating;
 mod song_page;
 mod window;
 

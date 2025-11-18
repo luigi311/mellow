@@ -58,54 +58,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkBox">
-                            <property name="halign">center</property>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="icon_name">starred-symbolic</property>
-                                <style>
-                                  <class name="flat"/>
-                                  <class name="circular"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="icon_name">starred-symbolic</property>
-                                <style>
-                                  <class name="flat"/>
-                                  <class name="circular"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="icon_name">starred-symbolic</property>
-                                <style>
-                                  <class name="flat"/>
-                                  <class name="circular"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="icon_name">starred-symbolic</property>
-                                <style>
-                                  <class name="flat"/>
-                                  <class name="circular"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="icon_name">starred-symbolic</property>
-                                <style>
-                                  <class name="flat"/>
-                                  <class name="circular"/>
-                                </style>
-                              </object>
-                            </child>
-                          </object>
+                          <object class="MellowRating"/>
                         </child>
                       </object>
                     </child>
