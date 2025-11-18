@@ -157,27 +157,27 @@ impl Window {
     }
 
     fn connect_closures(&self) {
-        // Connect the seek bar `release` callback to resume playback after seeking
-        let release_seek_bar = gtk::GestureClick::new();
-        release_seek_bar.connect_released({
-            let player_tx = self.player_tx.get().unwrap().clone();
-            move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
-        });
-
-        // As a workaround for `release` not being signaled by `GtkScale`,
-        // set propagation phase to `Capture` and add controller to parent
-        // Source: https://stackoverflow.com/a/79108304
-        release_seek_bar.set_propagation_phase(gtk::PropagationPhase::Capture);
-        self.seek_bar
-            .parent()
-            .unwrap()
-            .add_controller(release_seek_bar);
-
         self.song_page.init(
             self.player_tx.get().unwrap().clone(),
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
+
+        // Connect the seek bar `release` callback to resume playback after seeking
+        // As a workaround for `release` not being signaled by `GtkScale`,
+        // set propagation phase to `Capture` and add controller to parent
+        // Source: https://stackoverflow.com/a/79108304
+        let release_seek_bar = gtk::GestureClick::builder()
+            .propagation_phase(gtk::PropagationPhase::Capture)
+            .build();
+        release_seek_bar.connect_released({
+            let player_tx = self.player_tx.get().unwrap().clone();
+            move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
+        });
+        self.seek_bar
+            .parent()
+            .unwrap()
+            .add_controller(release_seek_bar);
     }
 
     #[allow(clippy::future_not_send)]

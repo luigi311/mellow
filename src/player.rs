@@ -37,7 +37,7 @@ pub enum PlayerRequest {
     /// Load a new queue
     LoadQueue(Vec<QueueItem>),
     /// Inserts an item into the queue
-    InsertAt(Box<(QueueItem, usize)>),
+    InsertAt(Box<(usize, QueueItem)>),
     /// Remove item at the specified index from the queue
     RemoveAt(usize),
 
@@ -70,7 +70,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
-                Self::InsertAt(item) => format!("InsertAt(…, {})", item.1),
+                Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
@@ -191,7 +191,7 @@ impl Player {
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
-                PlayerRequest::InsertAt(item) => self.queue.insert(item.1, item.0).map(|_| true)?,
+                PlayerRequest::InsertAt(item) => self.queue.insert(item.0, item.1).map(|_| true)?,
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
                         self.backend.set_property("instant-uri", true);

@@ -47,8 +47,8 @@ impl SongPage {
             .get()
             .unwrap()
             .send(PlayerRequest::InsertAt(Box::new((
-                QueueItem::Stopper,
                 self.index.get() + 1,
+                QueueItem::Stopper,
             ))))
             .unwrap();
         self.navigation_view.get().unwrap().pop();
