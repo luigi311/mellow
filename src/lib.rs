@@ -1,9 +1,6 @@
 pub mod library;
 pub mod player;
-pub mod queue_row;
-pub mod song_page;
 pub mod ui;
-pub mod window;
 
 pub const APP_NAME: &str = "Mellow";
 pub const APP_ID: &str = "com.github.userwithaname.Mellow";

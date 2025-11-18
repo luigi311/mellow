@@ -5,9 +5,13 @@ use gtk::{self, glib};
 use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
+mod queue_row;
+mod song_page;
+mod window;
+
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
-use crate::window::Window;
+use crate::ui::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub enum UpdateUI {

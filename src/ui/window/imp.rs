@@ -5,16 +5,15 @@ use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 
 use std::cell::{Cell, OnceCell, RefCell};
-use std::sync::{Arc, mpsc};
+use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::library::SongInfo;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
-use crate::queue_row::QueueRow;
-use crate::song_page::SongPage;
 use crate::ui::UpdateUI;
+use crate::ui::queue_row::QueueRow;
+use crate::ui::song_page::SongPage;
 use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
 
