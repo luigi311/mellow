@@ -378,8 +378,16 @@ impl Player {
     /// Call to resume the player state when done seeking
     fn seek_done(&mut self) {
         self.seeking = false;
-        if self.backend.current_state() == State::Null {
-            self.player_tx.send(PlayerRequest::LoadNext).unwrap();
+        let (pos, dur) = (
+            self.backend
+                .query_position::<ClockTime>()
+                .map(|ct| ct.mseconds()),
+            self.backend
+                .query_duration::<ClockTime>()
+                .map(|ct| ct.mseconds()),
+        );
+        if pos.is_none() || dur.is_none() || dur.unwrap().saturating_sub(pos.unwrap()) == 0 {
+            self.player_tx.send(PlayerRequest::SkipNext).unwrap();
         }
         self.request_state(self.current_state);
     }
@@ -456,8 +464,6 @@ impl Player {
                 }
                 gst::MessageType::Eos if self.seeking => {
                     println!("EOS ignored while seeking");
-                    self.request_state(self.current_state);
-                    self.player_tx.send(PlayerRequest::Update).unwrap();
                 }
                 gst::MessageType::Eos => {
                     println!("Reached end of stream");
