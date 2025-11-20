@@ -46,3 +46,17 @@ pub fn approx_eq(left: f64, right: f64) -> bool {
     const TOLERANCE: f64 = 0.0005;
     (left - right).abs() < TOLERANCE
 }
+
+/// Moves an element of `Vec<T>` from `index` to `target`
+#[inline]
+pub fn reorder_vec<T>(vec: &mut Vec<T>, index: usize, target: usize) {
+    if target > index {
+        for i in index..target {
+            vec.swap(i, i + 1);
+        }
+    } else {
+        for i in target..index {
+            vec.swap(i, i + 1);
+        }
+    }
+}

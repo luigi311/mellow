@@ -6,6 +6,7 @@ use tokio::sync::mpsc::error::SendError;
 
 use crate::library::Song;
 use crate::player::PlayerRequest;
+use crate::reorder_vec;
 use crate::ui::UpdateUI;
 
 pub struct SongQueue {
@@ -253,11 +254,9 @@ impl SongQueue {
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     pub fn reorder(&mut self, index: usize, target: usize) {
         if self.shuffle {
-            let item = self.shuffled.remove(index);
-            self.shuffled.insert(target, item);
+            reorder_vec(&mut self.shuffled, index, target);
         } else {
-            let item = self.songs.remove(index);
-            self.songs.insert(target, item);
+            reorder_vec(&mut self.songs, index, target);
         }
     }
 
