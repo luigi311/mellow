@@ -34,6 +34,7 @@ pub struct DetailedSongInfo {
 }
 
 impl<'s> Song {
+    #[must_use]
     pub fn new(file: gio::File, album: Option<usize>) -> Song {
         Song {
             album,
@@ -42,6 +43,7 @@ impl<'s> Song {
             detailed_info: None,
         }
     }
+    #[must_use]
     pub fn new_from_str(file: &str, album: Option<usize>) -> Song {
         Song {
             album,
@@ -54,6 +56,7 @@ impl<'s> Song {
     /// Returns a `SongInfoLoader`, which can be used to access information
     /// about the file and song. Tags are loaded on-demand, and remain in
     /// memory until the respective `unload` or `take` method is called.
+    #[must_use]
     pub fn info(&'s mut self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
@@ -71,8 +74,8 @@ pub struct SongInfoLoader<'i> {
     tagged: Option<TaggedFile>,
 }
 
-impl<'i> SongInfoLoader<'i> {
-    /// Retruns the song file URI, which can be used with `GStreamer`
+impl SongInfoLoader<'_> {
+    /// Retruns the song file URI, which can be used by `GStreamer`
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()

@@ -31,7 +31,7 @@ pub enum PlayerRequest {
     SeekDone,
     /// Load the next song without clearing the stream
     LoadNext,
-    /// Signaled from GStreamer to load next track before EOS (for gapless playback)
+    /// Signaled from `GStreamer` to load next track before EOS (for gapless playback)
     SongEnd,
 
     /// Load a new queue
@@ -149,6 +149,8 @@ impl Player {
     /// Main controller loop which handles player requests
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
         const LOOP_RATE: f64 = 60.2;
+        #[allow(clippy::cast_sign_loss)]
+        #[allow(clippy::cast_possible_truncation)]
         const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
 
         // Enable gapless playback
@@ -381,10 +383,10 @@ impl Player {
         let (pos, dur) = (
             self.backend
                 .query_position::<ClockTime>()
-                .map(|ct| ct.mseconds()),
+                .map(ClockTime::mseconds),
             self.backend
                 .query_duration::<ClockTime>()
-                .map(|ct| ct.mseconds()),
+                .map(ClockTime::mseconds),
         );
         if pos.is_none() || dur.is_none() || dur.unwrap().saturating_sub(pos.unwrap()) == 0 {
             self.player_tx.send(PlayerRequest::SkipNext).unwrap();
@@ -427,7 +429,7 @@ impl Player {
     }
 
     /// Sends the current song info to the UI receiver
-    fn ui_update_song_info(&mut self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_update_song_info(&self) -> Result<(), SendError<UpdateUI>> {
         let tx = self.ui_tx.clone();
         println!("ui_update_song_info()");
         self.tokio_rt

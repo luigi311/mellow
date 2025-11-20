@@ -3,7 +3,6 @@ use adw::prelude::*;
 use core::error::Error;
 use gtk::gio;
 use gtk::glib;
-use mellow::player::PlayerRequest;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
@@ -11,6 +10,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use mellow::library::{Library, Song};
 use mellow::player::Player;
+use mellow::player::PlayerRequest;
 use mellow::player::song_queue::QueueItem;
 use mellow::ui::UpdateUI;
 use mellow::visit_dirs;

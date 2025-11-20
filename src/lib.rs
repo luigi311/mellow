@@ -65,7 +65,11 @@ pub fn approx_eq(left: f64, right: f64) -> bool {
 /// preserving the order of other elements. Elements in
 /// between are shifted towards `index` by one.
 ///
-/// # Example:
+/// # Panics
+///
+/// Panics if either `index` or `target` is out of bounds
+///
+/// # Example
 /// ```rust
 /// use mellow::reorder_vec;
 ///
@@ -78,7 +82,7 @@ pub fn approx_eq(left: f64, right: f64) -> bool {
 /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
 /// ```
 #[inline]
-pub fn reorder_vec<T>(vec: &mut Vec<T>, index: usize, target: usize) {
+pub fn reorder_vec<T>(vec: &mut [T], index: usize, target: usize) {
     if target > index {
         for i in index..target {
             vec.swap(i, i + 1);

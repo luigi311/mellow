@@ -33,8 +33,9 @@ pub enum QueueItem {
 impl QueueItem {
     /// Assumes the `QueueItem` is a `Song`, and returns a
     /// `MutexGuard` for accessing the inner value
-    /// The function panics if it is not, so use with caution
-    #[must_use]
+    ///
+    /// # Panics
+    /// The function panics if the `QueueItem` is not a `Song`
     pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
             Self::Song(song) => song.lock().unwrap(),
@@ -128,6 +129,9 @@ impl SongQueue {
 
     /// Returns a reference to the `n`th item in the queue,
     /// respecting the shuffle mode setting
+    ///
+    /// # Panics
+    /// The function panics if `n` is out of bounds
     #[must_use]
     pub fn nth(&self, n: usize) -> &QueueItem {
         &self.songs[self.ordered_index(n)]
@@ -160,6 +164,9 @@ impl SongQueue {
 
     /// Turns an index from `shuffled` into one which can be used with `songs`.
     /// If the shuffle mode is off, the input index is returned.
+    ///
+    /// # Panics
+    /// The function panics if `index` is out of bounds
     #[must_use]
     pub fn ordered_index(&self, index: usize) -> usize {
         match self.shuffle {
