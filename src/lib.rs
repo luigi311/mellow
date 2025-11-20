@@ -10,6 +10,19 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
+/// Takes a `&Duration` and returns a nicely formatted `String`
+/// for display
+///
+/// # Example:
+/// ```rust
+/// use std::time::Duration;
+/// use mellow::format_duration;
+///
+/// let duration = Duration::from_secs(83);
+/// let formatted = format_duration(&duration);
+///
+/// assert_eq!(formatted, "1:23".to_string());
+/// ```
 #[inline]
 #[must_use]
 pub fn format_duration(duration: &Duration) -> String {
@@ -40,6 +53,7 @@ pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
     Ok(())
 }
 
+/// Checks if two float numbers are similar
 #[inline]
 #[must_use]
 pub fn approx_eq(left: f64, right: f64) -> bool {
@@ -47,7 +61,22 @@ pub fn approx_eq(left: f64, right: f64) -> bool {
     (left - right).abs() < TOLERANCE
 }
 
-/// Moves an element of `Vec<T>` from `index` to `target`
+/// Moves an element of `Vec<T>` from `index` to `target`,
+/// preserving the order of other elements. Elements in
+/// between are shifted towards `index` by one.
+///
+/// # Example:
+/// ```rust
+/// use mellow::reorder_vec;
+///
+/// let mut vec = vec![1, 2, 3, 4, 5];
+///
+/// reorder_vec(&mut vec, 1, 4);
+/// assert_eq!(vec, vec![1, 3, 4, 5, 2]);
+///
+/// reorder_vec(&mut vec, 4, 1);
+/// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
+/// ```
 #[inline]
 pub fn reorder_vec<T>(vec: &mut Vec<T>, index: usize, target: usize) {
     if target > index {
@@ -55,8 +84,8 @@ pub fn reorder_vec<T>(vec: &mut Vec<T>, index: usize, target: usize) {
             vec.swap(i, i + 1);
         }
     } else {
-        for i in target..index {
-            vec.swap(i, i + 1);
+        for i in (target + 1..=index).rev() {
+            vec.swap(i, i - 1);
         }
     }
 }
