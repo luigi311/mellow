@@ -303,8 +303,9 @@ impl Player {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
         match self.current_time() {
             Some(time)
-                if (time > REPEAT_THRESHOLD
-                    || (self.queue.is_first() && !self.queue.get_repeat())) =>
+                if !self.next_song_loaded
+                    && (time > REPEAT_THRESHOLD
+                        || (self.queue.is_first() && !self.queue.get_repeat())) =>
             {
                 self.repeat_song()?;
             }

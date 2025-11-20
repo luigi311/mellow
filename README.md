@@ -23,9 +23,9 @@ bringing music to the center of your focus.
 
 |  #  | Feature                                   | Status  |
 | :-: | ----------------------------------------- | :-----: |
-|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Rare issues with seeking |
+|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Interrupting a gapless transition can break the player |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
-|  3  | Open files/folders to create a queue      | ✅ Done |
+|  3  | Open files/folders to create a queue      | ⚠️ Folders may create a wrongly ordered queue |
 |  4  | Song queue interface & management         | ⚠️ WIP  |
 |  5  | Music library                             | ❌ TODO |
 |  6  | Music library search/filters              | ❌ TODO |
