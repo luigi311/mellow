@@ -96,12 +96,18 @@ fn queue_from_args() -> Option<Vec<QueueItem>> {
             queue.lock().unwrap().as_mut().unwrap().push(song);
         } else if Path::exists(path) {
             // Add all files within directory arguments to queue
+            let song_files = Arc::new(Mutex::new(Vec::new()));
             let _ = visit_dirs(path, &|file| {
                 let file = file.path();
                 let file = file.to_str().unwrap();
                 if !Library::file_supported(file) {
                     return;
                 }
+                song_files.lock().unwrap().push(file.to_owned());
+            });
+            let mut song_files = song_files.lock().unwrap();
+            song_files.sort();
+            song_files.iter().for_each(|file| {
                 let song = Song::new_from_str(file, None);
                 let song = QueueItem::Song(Arc::new(Mutex::new(song)));
                 queue.lock().unwrap().as_mut().unwrap().push(song);

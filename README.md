@@ -25,7 +25,7 @@ bringing music to the center of your focus.
 | :-: | ----------------------------------------- | :-----: |
 |  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
-|  3  | Open files/folders to create a queue      | ⚠️ Folders may create a wrongly ordered queue |
+|  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP  |
 |  5  | Music library                             | ❌ TODO |
 |  6  | Music library search/filters              | ❌ TODO |
