@@ -1,8 +1,7 @@
 use core::error::Error;
 use gio::prelude::*;
 use gst::ClockTime;
-use gtk::{gdk::Texture, gio, glib};
-use std::sync::Arc;
+use gtk::{gdk, gio, glib};
 
 use lofty::file::TaggedFile;
 use lofty::prelude::*;
@@ -12,25 +11,34 @@ use lofty::probe::Probe;
 pub struct Song {
     pub album: Option<usize>,
     file: gio::File,
-    info: Option<Arc<SongInfo>>,
-    detailed_info: Option<Arc<DetailedSongInfo>>,
+    // IDEA: Internal mutability?
+    info: Option<SongInfo>,
+    detailed_info: Option<DetailedSongInfo>,
 }
 
+#[derive(Clone)]
 pub struct SongInfo {
     pub title: String,
     pub album: String,
     pub artist: String,
     pub album_artist: String,
-    pub track: String,
+    pub track: usize,
     pub year: String,
     pub duration: ClockTime,
 }
 
-// TODO: Move memory-heavy fields into here
+// IDEA: Make all fields optional, and load or access them on-demand
+// using dedicated loader functions (e.g. `song.info().artwork()`)
+// This might be useful once downscaled thumbnails are implemented
+// However, there is an issue with that, because if there is no
+// artwork assigned, the `artwork()` function would try to load it
+// every time it is accessed, even though it does not exist
+// One possible solution might be a nested `Option`
 /// Fields which do not need to be held in memory at all times
+#[derive(Clone)]
 pub struct DetailedSongInfo {
     pub lyrics: String,
-    pub artwork: Option<Texture>,
+    pub artwork: Option<gdk::Texture>,
 }
 
 impl<'s> Song {
@@ -69,8 +77,8 @@ impl<'s> Song {
 
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
-    info: &'i mut Option<Arc<SongInfo>>,
-    detailed_info: &'i mut Option<Arc<DetailedSongInfo>>,
+    info: &'i mut Option<SongInfo>,
+    detailed_info: &'i mut Option<DetailedSongInfo>,
     tagged: Option<TaggedFile>,
 }
 
@@ -91,12 +99,13 @@ impl SongInfoLoader<'_> {
 
     /// Loads basic song info if needed, then returns it
     #[must_use]
-    pub fn basic(&mut self) -> &Arc<SongInfo> {
+    pub fn basic(&mut self) -> &SongInfo {
         self.load_basic();
         self.info.as_ref().unwrap()
     }
     /// Loads basic song info if needed, then returns and unloads it
-    pub fn take_basic(&mut self) -> Arc<SongInfo> {
+    #[allow(clippy::missing_panics_doc)] // Cannot panic
+    pub fn take_basic(&mut self) -> SongInfo {
         self.load_basic();
         self.info.take().unwrap()
     }
@@ -111,15 +120,15 @@ impl SongInfoLoader<'_> {
             .load_basic_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
-                Some(Arc::new(SongInfo {
+                Some(SongInfo {
                     title: self.filename(),
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
-                    track: String::new(),
+                    track: 0,
                     year: String::new(),
                     duration: ClockTime::default(),
-                }))
+                })
             });
         self
     }
@@ -128,7 +137,7 @@ impl SongInfoLoader<'_> {
         *self.info = None;
         self
     }
-    fn load_basic_from_file(&mut self) -> Result<Option<Arc<SongInfo>>, Box<dyn Error>> {
+    fn load_basic_from_file(&mut self) -> Result<Option<SongInfo>, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
@@ -139,7 +148,7 @@ impl SongInfoLoader<'_> {
             .ok_or("No tags found")?;
         let properties = tagged.properties();
 
-        Ok(Some(Arc::new(SongInfo {
+        Ok(Some(SongInfo {
             title: tag.title().map_or_else(
                 || self.filename(),
                 |title| match title.trim().is_empty() {
@@ -153,21 +162,22 @@ impl SongInfoLoader<'_> {
                 .get_string(&ItemKey::AlbumArtist)
                 .unwrap_or_default()
                 .to_string(),
-            track: tag.track().unwrap_or_default().to_string(),
+            track: tag.track().unwrap_or_default().to_string().parse()?,
             year: tag.year().unwrap_or_default().to_string(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
-        })))
+        }))
     }
 
     /// Loads detailed song info if needed, then returns it
     #[must_use]
-    pub fn detailed(&mut self) -> &Arc<DetailedSongInfo> {
+    pub fn detailed(&mut self) -> &DetailedSongInfo {
         let _ = self.load_detailed();
         self.detailed_info.as_ref().unwrap()
     }
     /// Loads detailed song info if needed, then returns and unloads it
-    pub fn take_detailed(&mut self) -> Arc<DetailedSongInfo> {
+    #[allow(clippy::missing_panics_doc)] // Cannot panic
+    pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
         self.detailed_info.take().unwrap()
     }
@@ -182,10 +192,10 @@ impl SongInfoLoader<'_> {
             .load_detailed_from_file()
             .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
             .unwrap_or_else(|_| {
-                Some(Arc::new(DetailedSongInfo {
+                Some(DetailedSongInfo {
                     lyrics: String::new(),
                     artwork: None,
-                }))
+                })
             });
         self
     }
@@ -194,7 +204,7 @@ impl SongInfoLoader<'_> {
         *self.detailed_info = None;
         self
     }
-    fn load_detailed_from_file(&mut self) -> Result<Option<Arc<DetailedSongInfo>>, Box<dyn Error>> {
+    fn load_detailed_from_file(&mut self) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
@@ -203,19 +213,19 @@ impl SongInfoLoader<'_> {
             .primary_tag()
             .or_else(|| tagged.first_tag())
             .ok_or("No tags found")?;
-        Ok(Some(Arc::new(DetailedSongInfo {
+        Ok(Some(DetailedSongInfo {
             lyrics: tag
                 .get_string(&ItemKey::Lyrics)
                 .unwrap_or_default()
                 .to_string(),
             // TODO: Look for a `cover` file in the song directroy
             artwork: if tag.picture_count() > 0 {
-                Some(Texture::from_bytes(&glib::Bytes::from(
+                Some(gdk::Texture::from_bytes(&glib::Bytes::from(
                     tag.pictures()[0].data(),
                 ))?)
             } else {
                 None
             },
-        })))
+        }))
     }
 }
