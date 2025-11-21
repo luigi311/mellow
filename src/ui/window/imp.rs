@@ -322,10 +322,10 @@ impl Window {
         let end = (index + 15).min(self.song_queue.borrow().len());
         let queue = self.song_queue.borrow();
         for i in start..end {
+            let queue_entry = QueueRow::default();
             match &queue[i] {
                 QueueItem::Song(song) => {
                     let is_playing = i == index;
-                    let queue_entry = QueueRow::default();
 
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
@@ -362,12 +362,8 @@ impl Window {
                             }
                         )
                     });
-
-                    self.song_queue_list_box.append(&queue_entry);
                 }
                 QueueItem::Stopper => {
-                    let queue_entry = QueueRow::default();
-
                     queue_entry.set_title("Pause");
                     queue_entry.add_css_class("heading");
                     queue_entry.add_css_class("dimmed");
@@ -382,12 +378,11 @@ impl Window {
                     //     let player_tx = self.player_tx.get().unwrap().clone();
                     //     move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
                     // });
-
-                    self.song_queue_list_box.append(&queue_entry);
                 }
             }
+            self.song_queue_list_box.append(&queue_entry);
         }
-        let new_value = (index - start) * 48;
+        let new_value = (index - start) * 54;
         self.song_queue_scrolled_window
             .vadjustment()
             .set_value(new_value as f64);
