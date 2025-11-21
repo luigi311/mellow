@@ -395,16 +395,30 @@ impl Player {
     fn seek_done(&mut self) {
         self.seeking = false;
         let (pos, dur) = (
-            self.backend
-                .query_position::<ClockTime>()
-                .map(ClockTime::mseconds),
+            self.backend.query_position::<ClockTime>(),
             self.backend
                 .query_duration::<ClockTime>()
                 .map(ClockTime::mseconds),
         );
-        if pos.is_none() || dur.is_none() || dur.unwrap().saturating_sub(pos.unwrap()) == 0 {
+
+        if pos.is_none()
+            || dur.is_none()
+            || dur.unwrap().saturating_sub(pos.unwrap().mseconds()) == 0
+        {
+            // Skip the current song if the song has ended
+            // or the playback time/duration cannot be determined
             self.player_tx.send(PlayerRequest::SkipNext).unwrap();
+        } else {
+            // Reset state to re-enable missed `GStreamer` callbacks
+            let _ = self.backend.set_state(State::Null);
+            let _ = self.backend.state(None); // Wait for backend state
+            let _ = self.backend.set_state(State::Paused);
+            let _ = self.backend.state(None); // Wait for backend state
+
+            // Seek one final time after state reset
+            let _ = self.seek_to_time(pos.unwrap());
         }
+
         self.request_state(self.current_state);
     }
 
