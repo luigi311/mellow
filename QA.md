@@ -4,8 +4,7 @@ Uncheck all boxes and re-test to ensure the following:
 
 Playback:
 
-- [ ] Pause/play/skip work as expected
-  - FIX: Gapless: Skipping with next song loaded crashes the player
+- [x] Pause/play/skip work as expected
 - [x] Shuffle/repeat/sequential modes work as expected
 - [ ] Seeking works as expected
   - [x] Seeking to any point in the song (click or drag)

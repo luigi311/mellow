@@ -180,7 +180,7 @@ impl Player {
                     _ => continue,
                 },
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
-                PlayerRequest::SkipNext => self.skip_next() == (),
+                PlayerRequest::SkipNext => self.skip_next()? == (),
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
@@ -270,13 +270,17 @@ impl Player {
     }
 
     /// Skips to next track
-    fn skip_next(&mut self) {
+    fn skip_next(&mut self) -> Result<(), gst::StateChangeError> {
+        if self.next_song_loaded {
+            return self.repeat_song();
+        }
         self.backend.set_property("instant-uri", true);
         if !self.queue.get_repeat() && self.queue.is_last() {
             self.request_state(State::Ready);
-            return;
+            return Ok(());
         }
         self.move_next();
+        Ok(())
     }
 
     /// Skips to the track in the queue at specified `index`
@@ -294,8 +298,8 @@ impl Player {
     }
 
     /// Seeks to the beginning of the current track
-    fn repeat_song(&self) -> Result<(), Box<dyn Error>> {
-        self.seek_to_time(ClockTime::default())
+    fn repeat_song(&self) -> Result<(), gst::StateChangeError> {
+        self.seek_to_time(ClockTime::ZERO)
     }
 
     /// Skips to previous track or restarts the current one if above the time threshold
@@ -315,7 +319,7 @@ impl Player {
     }
 
     /// Seek to a position in the song using a 0 to 1 value
-    fn seek_to_position(&self, position: f64) -> Result<(), Box<dyn Error>> {
+    fn seek_to_position(&self, position: f64) -> Result<(), gst::StateChangeError> {
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
@@ -330,7 +334,7 @@ impl Player {
     }
 
     /// Seek to a particular time in the song
-    fn seek_to_time(&self, time: ClockTime) -> Result<(), Box<dyn Error>> {
+    fn seek_to_time(&self, time: ClockTime) -> Result<(), gst::StateChangeError> {
         match self
             .backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)
@@ -343,7 +347,7 @@ impl Player {
 
     /// Seek to a position in the song using a 0 to 1 value
     /// Remember to call `seek_done()` to resume playback
-    fn seek_to_position_paused(&mut self, position: f64) -> Result<(), Box<dyn Error>> {
+    fn seek_to_position_paused(&mut self, position: f64) -> Result<(), gst::StateChangeError> {
         self.begin_seek_paused()?;
         self.seek_to_position(position)
     }
