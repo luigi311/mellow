@@ -222,6 +222,10 @@ impl SongQueue {
         if self.is_empty() {
             return Ok(());
         }
+        if !self.shuffle {
+            self.ui_update_queue()?;
+            return Ok(());
+        }
         self.shuffled = (0..self.len()).collect();
         let start = match self.current_index() {
             index if self.shuffle => {
@@ -273,18 +277,21 @@ impl SongQueue {
             return Ok(());
         }
 
+        let ordered_index = self.ordered_index(index);
+
+        self.songs.insert(ordered_index, item);
+        if self.shuffle {
+            for shuffled in &mut self.shuffled {
+                if *shuffled >= ordered_index {
+                    *shuffled += 1;
+                }
+            }
+            self.shuffled.insert(index, ordered_index);
+        }
+
         if self.index >= index {
             self.index += 1;
         }
-        let ordered_index = self.ordered_index(index);
-        self.songs.insert(ordered_index, item);
-
-        for shuffled in &mut self.shuffled {
-            if *shuffled >= ordered_index {
-                *shuffled += 1;
-            }
-        }
-        self.shuffled.insert(index, ordered_index);
 
         self.ui_update_queue()
     }
@@ -369,7 +376,7 @@ impl SongQueue {
         if self.shuffle == shuffle {
             return Ok(());
         }
-        if self.shuffle && !self.is_empty() {
+        if !shuffle && !self.is_empty() {
             self.index = self.current_index();
         }
         self.shuffle = shuffle;

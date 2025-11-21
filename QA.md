@@ -8,12 +8,11 @@ Playback:
 - [x] Shuffle/repeat/sequential modes work as expected
 - [ ] Seeking works as expected
   - [x] Seeking to any point in the song (click or drag)
-  - [x] Seeking to the end and release
+  - [x] Seeking to the end and releasing the seek bar
   - [ ] Seeking to the end and back
     - FIX: Gapless: Seeking after next track is loaded sometimes breaks the player
     - FIX: Gapless: Sometimes breaks the "about-to-finish" callback
 - [ ] Gapless/non-gapless playback works as expected
-  - FIX: Gapless: Issues with skipping
   - FIX: Gapless: Issues with seeking
 - [x] Non-fatal errors are handled gracefully
 
