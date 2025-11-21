@@ -270,9 +270,11 @@ impl SongQueue {
             reorder_vec(&mut self.songs, index, target);
         }
         // TODO: Test if this works
-        if index < target && (index..=target).contains(&self.index) {
+        if self.index == index {
+            self.index = target;
+        } else if index < target && (index..=target).contains(&self.index) {
             self.index -= 1;
-        } else if index > target && (target..=index).contains(&self.index) {
+        } else if index > target && (target..index).contains(&self.index) {
             self.index += 1;
         }
     }
