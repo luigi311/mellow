@@ -23,7 +23,7 @@ bringing music to the center of your focus.
 
 |  #  | Feature                                   | Status  |
 | :-: | ----------------------------------------- | :-----: |
-|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Interrupting a gapless transition can break the player |
+|  1  | Playback & controls: play/pause/skip/seek | ⚠️ Gapless transition ignored when seeking to the end and back |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ⚠️ Folders may create a wrongly ordered queue |
 |  4  | Song queue interface & management         | ⚠️ WIP  |

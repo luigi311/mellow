@@ -166,6 +166,7 @@ impl Player {
 
                 thread::sleep(LOOP_DELAY);
                 self.handle_gst_events();
+
                 continue;
             };
 
@@ -186,8 +187,13 @@ impl Player {
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => false,
                 PlayerRequest::SongEnd if !self.can_use_gapless() => {
-                    self.request_state(self.current_state);
-                    true
+                    if self.seeking {
+                        println!("Ignoring SongEnd while seeking");
+                        false
+                    } else {
+                        self.request_state(self.current_state);
+                        true
+                    }
                 }
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
@@ -362,16 +368,16 @@ impl Player {
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
-        self.seeking = true;
-
         // If next track is already loaded, move back to the current one
         if self.next_song_loaded {
-            // FIX: Seeking after next song is loaded causes playback issues
-            self.queue.pending_track = true;
-            self.queue.set_index(self.queue.index() - 1);
-            self.backend.set_property("instant-uri", true);
-            self.update();
+            println!("Gapless transition interrupted by seek request");
+            self.backend.set_state(State::Null)?;
+            self.request_state(self.current_state);
+            let _ = self.backend.state(None).0; // Wait for backend state
             self.next_song_loaded = false;
+            self.skip_prev();
+            self.update();
+            let _ = self.backend.state(None).0; // Wait for backend state
         }
 
         match self.backend.current_state() {
@@ -379,6 +385,9 @@ impl Player {
             State::Paused => (),
             _ => return Ok(()),
         }
+
+        self.seeking = true;
+        let _ = self.backend.state(None).0; // Wait for backend state
         Ok(())
     }
 
