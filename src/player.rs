@@ -401,14 +401,9 @@ impl Player {
                 .map(ClockTime::mseconds),
         );
 
-        if pos.is_none()
-            || dur.is_none()
-            || dur.unwrap().saturating_sub(pos.unwrap().mseconds()) == 0
+        if let (Some(pos), Some(dur)) = (pos, dur)
+            && dur.saturating_sub(pos.mseconds()) != 0
         {
-            // Skip the current song if the song has ended
-            // or the playback time/duration cannot be determined
-            self.player_tx.send(PlayerRequest::SkipNext).unwrap();
-        } else {
             // Reset state to re-enable missed `GStreamer` callbacks
             let _ = self.backend.set_state(State::Null);
             let _ = self.backend.state(None); // Wait for backend state
@@ -416,7 +411,11 @@ impl Player {
             let _ = self.backend.state(None); // Wait for backend state
 
             // Seek one final time after state reset
-            let _ = self.seek_to_time(pos.unwrap());
+            let _ = self.seek_to_time(pos);
+        } else {
+            // Skip the current song if the song has ended
+            // or the playback time/duration cannot be determined
+            self.player_tx.send(PlayerRequest::SkipNext).unwrap();
         }
 
         self.request_state(self.current_state);
