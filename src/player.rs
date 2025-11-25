@@ -495,24 +495,16 @@ impl Player {
                     println!("EOS ignored while seeking");
                 }
                 gst::MessageType::Eos => {
-                    println!("Reached end of stream");
-
-                    while self.bus.pop_filtered(&[gst::MessageType::Eos]).is_some() {
-                        eprintln!("Warning: EOS received multiple times");
-                    }
-
-                    if !self.queue.has_next() {
-                        println!("End of queue");
+                    if self.queue.has_next() {
+                        println!("Moving to next track due to end of stream");
+                        self.request_state(State::Playing);
+                        self.player_tx.send(PlayerRequest::LoadNext).unwrap();
+                    } else {
+                        println!("Stopping player due to end of queue");
                         self.request_state(State::Null);
                         self.queue.pending_track = true;
                         self.update();
                         self.ui_set_state().unwrap();
-                    }
-
-                    if self.current_state == State::Playing {
-                        println!("Moving to next track due to EOS");
-                        self.request_state(State::Playing);
-                        self.player_tx.send(PlayerRequest::LoadNext).unwrap();
                     }
                 }
                 _ => (),
