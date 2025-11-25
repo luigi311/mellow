@@ -87,13 +87,11 @@ impl SongQueue {
 
     /// Moves to the previous song in the queue
     pub const fn move_previous(&mut self) {
-        if self.is_first() {
-            if self.repeat {
-                self.index = self.len() - 1;
-            }
-            return;
+        match self.is_first() {
+            false => self.index -= 1,
+            true if self.repeat => self.index = self.len() - 1,
+            true => (),
         }
-        self.index -= 1;
     }
 
     /// Moves to the song in the queue at specified index
