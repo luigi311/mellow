@@ -79,10 +79,9 @@ impl SongQueue {
 
     /// Moves to the next song in the queue
     pub const fn move_next(&mut self) {
-        self.index += 1;
-        if self.index == self.len() {
-            self.index = 0;
-            // self.pending_track &= !self.end_of_queue;
+        match self.is_last() {
+            false => self.index += 1,
+            true => self.index = 0,
         }
     }
 
@@ -253,9 +252,9 @@ impl SongQueue {
 
     /// Removes all queued songs after the provided index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
-    pub fn clear_queue_after_index(&mut self, index: usize) -> Result<(), SendError<UpdateUI>> {
+    pub fn remove_all_after_index(&mut self, index: usize) -> Result<(), SendError<UpdateUI>> {
         while self.len() > index + 1 {
-            self.remove(index + 1);
+            self.remove(self.len() - 1);
         }
         self.ui_update_queue()?;
         Ok(())
@@ -339,7 +338,7 @@ impl SongQueue {
 
     /// Removes the current song from the queue
     pub fn remove_current(&mut self) -> QueueItem {
-        if self.index + 1 == self.len() {
+        if self.is_last() {
             self.index = 0;
         }
         self.pending_track = true;

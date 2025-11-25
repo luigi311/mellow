@@ -503,11 +503,10 @@ impl Player {
 
                     if !self.queue.has_next() {
                         println!("End of queue");
-                        self.backend.set_state(State::Ready).unwrap();
-                        let _ = self.backend.state(None);
-                        self.ui_set_state().unwrap();
+                        self.request_state(State::Null);
                         self.queue.pending_track = true;
                         self.update();
+                        self.ui_set_state().unwrap();
                     }
 
                     if self.current_state == State::Playing {
