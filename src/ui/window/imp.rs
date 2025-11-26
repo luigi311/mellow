@@ -25,6 +25,10 @@ pub struct Window {
     progress_bar: TemplateChild<gtk::ProgressBar>,
 
     #[template_child]
+    main_player: TemplateChild<gtk::Box>,
+    #[template_child]
+    song_info: TemplateChild<gtk::Box>,
+    #[template_child]
     album_cover: TemplateChild<gtk::Picture>,
     #[template_child]
     song_title: TemplateChild<gtk::Label>,
@@ -470,6 +474,23 @@ impl WindowImpl for Window {
         glib::Propagation::Proceed
     }
 }
-impl WidgetImpl for Window {}
+impl WidgetImpl for Window {
+    fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
+        self.parent_size_allocate(width, height, baseline);
+
+        // Set main player spacing based on available space
+        const DEFAULT_SPACING: i32 = 6;
+        let headroom = height
+            - self.album_cover.height()
+            - self.song_info.height()
+            - self.media_controls.height()
+            - self.main_player.margin_top()
+            - self.main_player.margin_bottom()
+            - DEFAULT_SPACING * 2
+            - 70;
+        self.main_player
+            .set_spacing((headroom / 4).max(DEFAULT_SPACING));
+    }
+}
 impl ApplicationWindowImpl for Window {}
 impl AdwApplicationWindowImpl for Window {}
