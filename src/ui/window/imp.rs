@@ -486,7 +486,6 @@ impl WidgetImpl for Window {
             - self.media_controls.height()
             - self.main_player.margin_top()
             - self.main_player.margin_bottom()
-            - DEFAULT_SPACING * 2
             - 70;
         self.main_player
             .set_spacing((headroom / 4).max(DEFAULT_SPACING));
