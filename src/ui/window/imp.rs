@@ -186,7 +186,7 @@ impl Window {
     }
 
     #[allow(clippy::future_not_send)]
-    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) {
+    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) -> ! {
         self.connect_closures();
 
         let mut song_duration = Duration::default();
@@ -479,7 +479,6 @@ impl WidgetImpl for Window {
         self.parent_size_allocate(width, height, baseline);
 
         // Set main player spacing based on available space
-        const DEFAULT_SPACING: i32 = 6;
         let headroom = height
             - self.album_cover.height()
             - self.song_info.height()
@@ -487,8 +486,7 @@ impl WidgetImpl for Window {
             - self.main_player.margin_top()
             - self.main_player.margin_bottom()
             - 70;
-        self.main_player
-            .set_spacing((headroom / 4).max(DEFAULT_SPACING));
+        self.main_player.set_spacing((headroom / 4).max(6));
     }
 }
 impl ApplicationWindowImpl for Window {}

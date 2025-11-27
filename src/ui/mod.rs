@@ -27,7 +27,7 @@ pub enum UpdateUI {
     OpenLibrary,
 }
 
-pub fn build(
+pub fn init(
     app: &Application,
     player_tx: &mpsc::SyncSender<PlayerRequest>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,

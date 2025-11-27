@@ -31,7 +31,7 @@ pub fn main() -> gtk::glib::ExitCode {
 fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init().unwrap();
 
-    mellow::ui::build(app, &player_tx, ui_rx);
+    mellow::ui::init(app, &player_tx, ui_rx);
 
     thread::Builder::new()
         .name("player".to_string())

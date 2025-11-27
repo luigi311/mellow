@@ -21,7 +21,7 @@ Song Queue:
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
 
-Design:
+Interface:
 
 - [x] UI adapts to window size, and looks good at all sizes
 - [x] Positional awareness for off-screen elements

@@ -43,7 +43,7 @@ pub struct DetailedSongInfo {
 
 impl<'s> Song {
     #[must_use]
-    pub fn new(file: gio::File, album: Option<usize>) -> Song {
+    pub const fn new(file: gio::File, album: Option<usize>) -> Song {
         Song {
             album,
             file,
@@ -65,7 +65,7 @@ impl<'s> Song {
     /// about the file and song. Tags are loaded on-demand, and remain in
     /// memory until the respective `unload` or `take` method is called.
     #[must_use]
-    pub fn info(&'s mut self) -> SongInfoLoader<'s> {
+    pub const fn info(&'s mut self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
             info: &mut self.info,
