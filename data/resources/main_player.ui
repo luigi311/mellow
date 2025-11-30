@@ -1,160 +1,154 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MellowMainPlayer" parent="GtkBox">
-    <!-- <property name="valign">fill</property> -->
-    <!-- <child> -->
-          <!-- <object class="GtkBox" id="player_box"> -->
-            <property name="spacing">6</property>
-            <property name="margin_top">0</property>
-            <property name="margin_bottom">30</property>
-            <property name="margin_start">26</property>
-            <property name="margin_end">26</property>
-            <property name="vexpand">True</property>
+    <property name="spacing">6</property>
+    <property name="margin_top">0</property>
+    <property name="margin_bottom">30</property>
+    <property name="margin_start">26</property>
+    <property name="margin_end">26</property>
+    <property name="vexpand">True</property>
+    <property name="hexpand">True</property>
+    <property name="valign">center</property>
+    <property name="orientation">vertical</property>
+
+    Album artwork
+    <child>
+      <object class="GtkPicture" id="album_cover">
+        <property name="content_fit">contain</property>
+        <property name="halign">center</property>
+        <property name="width_request">0</property>
+        <property name="height_request">0</property>
+        <style>
+          <class name="card"/>
+        </style>
+      </object>
+    </child>
+
+    Song info
+    <child>
+      <object class="GtkBox">
+        <property name="spacing">6</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="song_title">
+            <property name="margin_top">6</property>
+            <property name="ellipsize">end</property>
+            <style>
+              <class name="heading"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel" id="album_title">
+            <property name="ellipsize">end</property>
+            <style>
+              <class name="caption-heading"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel" id="artist_name">
+            <property name="margin_bottom">6</property>
+            <property name="ellipsize">end</property>
+            <style>
+              <class name="caption-heading"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+
+    Media controls
+    <child type="overlay">
+      <object class="GtkBox" id="media_controls">
+        <property name="orientation">vertical</property>
+        <property name="hexpand">True</property>
+        <property name="sensitive">False</property>
+        <style>
+          <class name="toolbar"/>
+          <class name="osd"/>
+        </style>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <property name="halign">center</property>
             <property name="hexpand">True</property>
-            <property name="valign">center</property>
-            <property name="orientation">vertical</property>
+            <property name="spacing">12</property>
+            <property name="margin_start">6</property>
+            <property name="margin_end">6</property>
 
-            Album artwork
+            Media buttons
             <child>
-              <object class="GtkPicture" id="album_cover">
-                <property name="content_fit">contain</property>
-                <property name="halign">center</property>
-                <property name="width_request">0</property>
-                <property name="height_request">0</property>
+              <object class="GtkButton" id="prev_button">
+                <signal name="clicked" handler="handle_skip_prev" swapped="true"/>
+                <property name="icon_name">media-skip-backward-symbolic</property>
                 <style>
-                  <class name="card"/>
+                  <class name="circular"/>
                 </style>
               </object>
             </child>
-
-            Song info
             <child>
-              <object class="GtkBox" id="song_info">
-                <property name="spacing">6</property>
-                <property name="orientation">vertical</property>
-                <child>
-                  <object class="GtkLabel" id="song_title">
-                    <property name="margin_top">6</property>
-                    <property name="ellipsize">end</property>
-                    <style>
-                      <class name="heading"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="album_title">
-                    <property name="ellipsize">end</property>
-                    <style>
-                      <class name="caption-heading"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="artist_name">
-                    <property name="margin_bottom">6</property>
-                    <property name="ellipsize">end</property>
-                    <style>
-                      <class name="caption-heading"/>
-                    </style>
-                  </object>
-                </child>
+              <object class="GtkButton" id="pause_button">
+                <signal name="clicked" handler="handle_play_pause" swapped="true"/>
+                <property name="icon_name">media-playback-start-symbolic</property>
+                <style>
+                  <class name="circular"/>
+                </style>
               </object>
             </child>
+            <child>
+              <object class="GtkButton" id="next_button">
+                <signal name="clicked" handler="handle_skip_next" swapped="true"/>
+                <property name="icon_name">media-skip-forward-symbolic</property>
+                <style>
+                  <class name="circular"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
 
-            Media controls
-            <child type="overlay">
-              <object class="GtkBox" id="media_controls">
-                <property name="orientation">vertical</property>
+        Seek bar
+        <child>
+          <object class="GtkBox">
+            <property name="hexpand">True</property>
+            <child>
+              <object class="GtkLabel" id="time_cur_label">
+                <property name="label">-:--</property>
+                <property name="halign">start</property>
+                <style>
+                  <class name="numeric"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkScale" id="seek_bar">
+                <signal name="change_value" handler="handle_seek" swapped="true"/>
                 <property name="hexpand">True</property>
-                <property name="sensitive">False</property>
-                <style>
-                  <class name="toolbar"/>
-                  <class name="osd"/>
-                </style>
-                <child>
-                  <object class="GtkBox">
-                    <property name="orientation">horizontal</property>
-                    <property name="halign">center</property>
-                    <property name="hexpand">True</property>
-                    <property name="spacing">12</property>
-                    <property name="margin_start">6</property>
-                    <property name="margin_end">6</property>
-
-                    Media buttons
-                    <child>
-                      <object class="GtkButton" id="prev_button">
-                        <signal name="clicked" handler="handle_skip_prev" swapped="true"/>
-                        <property name="icon_name">media-skip-backward-symbolic</property>
-                        <style>
-                          <class name="circular"/>
-                        </style>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="pause_button">
-                        <signal name="clicked" handler="handle_play_pause" swapped="true"/>
-                        <property name="icon_name">media-playback-start-symbolic</property>
-                        <style>
-                          <class name="circular"/>
-                        </style>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="next_button">
-                        <signal name="clicked" handler="handle_skip_next" swapped="true"/>
-                        <property name="icon_name">media-skip-forward-symbolic</property>
-                        <style>
-                          <class name="circular"/>
-                        </style>
-                      </object>
-                    </child>
+                <property name="margin_start">6</property>
+                <property name="margin_end">6</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">0</property>
+                    <property name="upper">1</property>
+                    <property name="value">0</property>
                   </object>
-                </child>
-
-                Seek bar
-                <child>
-                  <object class="GtkBox">
-                    <property name="hexpand">True</property>
-                    <child>
-                      <object class="GtkLabel" id="time_cur_label">
-                        <property name="label">-:--</property>
-                        <property name="halign">start</property>
-                        <style>
-                          <class name="numeric"/>
-                        </style>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="seek_bar">
-                        <signal name="change_value" handler="handle_seek" swapped="true"/>
-                        <property name="hexpand">True</property>
-                        <property name="margin_start">6</property>
-                        <property name="margin_end">6</property>
-                        <property name="adjustment">
-                          <object class="GtkAdjustment">
-                            <property name="lower">0</property>
-                            <property name="upper">1</property>
-                            <property name="value">0</property>
-                          </object>
-                        </property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="time_end_label">
-                        <property name="label">-:--</property>
-                        <property name="halign">end</property>
-                        <style>
-                          <class name="numeric"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                </child>
+                </property>
               </object>
             </child>
-
-          <!-- </object> -->
-    <!-- </child> -->
+            <child>
+              <object class="GtkLabel" id="time_end_label">
+                <property name="label">-:--</property>
+                <property name="halign">end</property>
+                <style>
+                  <class name="numeric"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
 
   </template>
 </interface>

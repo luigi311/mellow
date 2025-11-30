@@ -11,10 +11,6 @@ use crate::player::PlayerRequest;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/main_player.ui")]
 pub struct MainPlayer {
-    // #[template_child]
-    // player_box: TemplateChild<gtk::Box>,
-    #[template_child]
-    song_info: TemplateChild<gtk::Box>,
     #[template_child]
     pub album_cover: TemplateChild<gtk::Picture>,
     #[template_child]
