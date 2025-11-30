@@ -5,6 +5,7 @@ use gtk::{self, glib};
 use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
+mod lyrics_page;
 mod main_player;
 mod queue_page;
 mod queue_row;
