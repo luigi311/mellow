@@ -1,6 +1,5 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
-use glib::clone;
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 
@@ -13,7 +12,7 @@ use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::ui::main_player::MainPlayer;
-use crate::ui::queue_row::QueueRow;
+use crate::ui::queue_page::QueuePage;
 use crate::ui::rating::Rating;
 use crate::ui::song_page::SongPage;
 use crate::{approx_eq, format_duration};
@@ -27,6 +26,9 @@ pub struct Window {
 
     #[template_child]
     main_player: TemplateChild<MainPlayer>,
+
+    #[template_child]
+    queue_page: TemplateChild<QueuePage>,
 
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
@@ -43,16 +45,6 @@ pub struct Window {
     info_lyrics: TemplateChild<gtk::Label>,
     #[template_child]
     song_page: TemplateChild<SongPage>,
-    #[template_child]
-    song_queue_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
-    #[template_child]
-    song_queue_list_box: TemplateChild<gtk::ListBox>,
-    // #[template_child]
-    // song_queue_list_view: TemplateChild<gtk::ListView>,
-    #[template_child]
-    shuffle_toggle: TemplateChild<gtk::ToggleButton>,
-    #[template_child]
-    repeat_toggle: TemplateChild<gtk::ToggleButton>,
 
     #[template_child]
     pub settings_volume: TemplateChild<gtk::Scale>,
@@ -88,35 +80,24 @@ impl Window {
             .send(PlayerRequest::SetGapless(self.settings_gapless.is_active()))
             .unwrap();
     }
-    #[template_callback]
-    pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
-            .unwrap();
-    }
-    #[template_callback]
-    pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
-            .unwrap();
-    }
 
-    fn connect_closures(&self) {
+    fn init_ui_elements(&self) {
+        self.main_player.init(self.player_tx.get().unwrap().clone());
+        self.queue_page.init(
+            self.player_tx.get().unwrap().clone(),
+            self.song_page.clone(),
+            self.playing_navigation_view.get(),
+        );
         self.song_page.init(
             self.player_tx.get().unwrap().clone(),
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
-        self.main_player.init(self.player_tx.get().unwrap().clone());
     }
 
     #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) -> ! {
-        self.connect_closures();
+        self.init_ui_elements();
 
         let mut song_duration = Duration::default();
         loop {
@@ -137,8 +118,8 @@ impl Window {
                     self.main_player
                         .set_time(time, song_duration.as_millis() as f64);
                 }
-                UpdateUI::Shuffle(shuffle) => self.update_shuffle(shuffle),
-                UpdateUI::Repeat(repeat) => self.update_repeat(repeat),
+                UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
+                UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::SongQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
@@ -183,17 +164,6 @@ impl Window {
         }
     }
 
-    fn update_shuffle(&self, shuffle: bool) {
-        self.shuffle_toggle.set_icon_name(match shuffle {
-            true => "media-playlist-shuffle-symbolic",
-            false => "media-playlist-consecutive-symbolic",
-        });
-        self.shuffle_toggle.set_active(shuffle);
-    }
-
-    fn update_repeat(&self, repeat: bool) {
-        self.repeat_toggle.set_active(repeat);
-    }
     fn update_song_index(&self, index: usize) {
         println!("update_song_index()");
         self.song_queue_index.set(index);
@@ -204,95 +174,8 @@ impl Window {
         if let Some(queue) = queue {
             let _ = self.song_queue.replace(queue);
         }
-
-        // TODO: Display the list properly (model/factory/view)
-        // TODO: Support removing queue items
-        // TODO: Support reordering queue items
-        // TODO: Support inserting stoppers
-        // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
-        // TODO: Display the entire queue
-        self.song_queue_list_box.remove_all();
-        let index = self.song_queue_index.get();
-        let start = index.saturating_sub(10);
-        let end = (index + 15).min(self.song_queue.borrow().len());
-        let queue = self.song_queue.borrow();
-        for i in start..end {
-            let queue_entry = QueueRow::default();
-            match &queue[i] {
-                QueueItem::Song(song) => {
-                    let is_playing = i == index;
-
-                    let mut song = song.lock().unwrap();
-                    let mut info = song.info();
-
-                    let song_info = info.basic();
-                    let song_title = song_info.title.clone();
-                    let album_title = song_info.album.clone();
-                    let artist_name = song_info.artist.clone();
-
-                    queue_entry.set_title(&song_title);
-                    queue_entry.set_subtitle(&artist_name);
-                    if is_playing {
-                        queue_entry.add_css_class("heading");
-                        queue_entry.add_css_class("card");
-                    }
-
-                    // TODO: Cached low-res album covers
-                    let detailed_info = info.detailed();
-                    if let Some(artwork) = detailed_info.artwork.as_ref() {
-                        queue_entry.set_prefix_image(artwork);
-                    } else {
-                        queue_entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
-                    }
-
-                    queue_entry.connect_activated({
-                        clone!(
-                            #[weak(rename_to=song_page)]
-                            self.song_page,
-                            #[weak(rename_to=navigation)]
-                            self.playing_navigation_view,
-                            move |_| {
-                                navigation.push_by_tag("info");
-                                song_page.set_info(i, &song_title, &album_title, &artist_name);
-                            }
-                        )
-                    });
-                }
-                QueueItem::Stopper => {
-                    queue_entry.set_title("Pause");
-                    queue_entry.add_css_class("heading");
-                    queue_entry.add_css_class("dimmed");
-
-                    // IDEA: Draw a pause icon in place of the album cover
-                    // queue_entry.set_prefix_image();
-
-                    // TODO: Open a page for stoppers as well
-                    // TODO: Allow removing stoppers
-                    // TODO: Allow reordering stoppers
-                    // queue_entry.connect_activated({
-                    //     let player_tx = self.player_tx.get().unwrap().clone();
-                    //     move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
-                    // });
-                }
-            }
-            self.song_queue_list_box.append(&queue_entry);
-        }
-        let new_value = (index - start) * 54;
-        self.song_queue_scrolled_window
-            .vadjustment()
-            .set_value(new_value as f64);
-
-        // Garbage collection
-        for (index, item) in queue.iter().enumerate() {
-            if (start..end).contains(&index) {
-                continue;
-            }
-            if let QueueItem::Song(song) = item {
-                let _ = song.lock().map(|mut song| {
-                    song.info().unload_detailed();
-                });
-            }
-        }
+        self.queue_page
+            .update_song_queue(self.song_queue.borrow(), self.song_queue_index.get());
     }
 
     fn update_progress(&self, progress: Option<f64>) {

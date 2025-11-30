@@ -90,7 +90,6 @@
             <child>
               <object class="GtkButton" id="pause_button">
                 <signal name="clicked" handler="handle_play_pause" swapped="true"/>
-                <property name="icon_name">media-playback-start-symbolic</property>
                 <style>
                   <class name="circular"/>
                 </style>

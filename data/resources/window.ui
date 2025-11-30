@@ -273,63 +273,7 @@
 
                         Song queue page
                         <child>
-                          <object class="AdwNavigationPage">
-                            <property name="title" translatable="yes">Song Queue</property>
-                            <property name="tag">song_queue</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="start">
-                                      <object class="GtkToggleButton">
-                                        <property name="icon_name">accessories-dictionary-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Show Lyrics</property>
-                                        <property name="action-name">navigation.push</property>
-                                        <property name="action-target">'lyrics'</property>
-                                      </object>
-                                    </child>
-                                    <child type="end">
-                                      <object class="GtkToggleButton" id="shuffle_toggle">
-                                        <signal name="toggled" handler="handle_set_shuffle" swapped="true"/>
-                                        <property name="icon_name">media-playlist-consecutive-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Shuffle</property>
-                                      </object>
-                                    </child>
-                                    <child type="end">
-                                      <object class="GtkToggleButton" id="repeat_toggle">
-                                        <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
-                                        <property name="icon_name">media-playlist-repeat-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Repeat</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <property name="content">
-                                  <!-- TODO: Button to scroll back to the playing song -->
-                                  <object class="GtkScrolledWindow" id="song_queue_scrolled_window">
-                                    <child>
-                                      <object class="AdwClamp">
-                                        <child>
-                                          <object class="GtkListBox" id="song_queue_list_box">
-                                          <!-- <object class="GtkListView" id="song_queue_list_view"> -->
-                                            <property name="selection_mode">none</property>
-                                            <property name="margin_top">18</property>
-                                            <property name="margin_bottom">18</property>
-                                            <property name="margin_start">12</property>
-                                            <property name="margin_end">12</property>
-                                            <style>
-                                              <class name="card"/>
-                                            </style>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
-                          </object>
+                          <object class="MellowQueuePage" id="queue_page"/>
                         </child>
 
                         Song info page
