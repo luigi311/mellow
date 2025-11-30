@@ -12,6 +12,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
+use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_row::QueueRow;
 use crate::ui::rating::Rating;
 use crate::ui::song_page::SongPage;
@@ -25,28 +26,7 @@ pub struct Window {
     progress_bar: TemplateChild<gtk::ProgressBar>,
 
     #[template_child]
-    main_player: TemplateChild<gtk::Box>,
-    #[template_child]
-    song_info: TemplateChild<gtk::Box>,
-    #[template_child]
-    album_cover: TemplateChild<gtk::Picture>,
-    #[template_child]
-    song_title: TemplateChild<gtk::Label>,
-    #[template_child]
-    album_title: TemplateChild<gtk::Label>,
-    #[template_child]
-    artist_name: TemplateChild<gtk::Label>,
-
-    #[template_child]
-    media_controls: TemplateChild<gtk::Box>,
-    #[template_child]
-    pause_button: TemplateChild<gtk::Button>,
-    #[template_child]
-    seek_bar: TemplateChild<gtk::Scale>,
-    #[template_child]
-    time_cur_label: TemplateChild<gtk::Label>,
-    #[template_child]
-    time_end_label: TemplateChild<gtk::Label>,
+    main_player: TemplateChild<MainPlayer>,
 
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
@@ -88,42 +68,6 @@ pub struct Window {
 
 #[gtk::template_callbacks]
 impl Window {
-    #[template_callback]
-    pub fn handle_skip_prev(&self) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SkipPrevious)
-            .unwrap();
-    }
-    #[template_callback]
-    pub fn handle_play_pause(&self) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::TogglePlay(None))
-            .unwrap();
-    }
-    #[template_callback]
-    pub fn handle_skip_next(&self) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SkipNext)
-            .unwrap();
-    }
-    #[template_callback]
-    pub fn handle_seek(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
-        if approx_eq(value, self.seek_bar.value()) {
-            return glib::Propagation::Stop;
-        }
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::Seek(value))
-            .unwrap();
-        glib::Propagation::Proceed
-    }
     #[template_callback]
     pub fn handle_set_volume(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
         if approx_eq(value, self.settings_volume.value()) {
@@ -167,22 +111,7 @@ impl Window {
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
-
-        // Connect the seek bar `release` callback to resume playback after seeking
-        // As a workaround for `release` not being signaled by `GtkScale`,
-        // set propagation phase to `Capture` and add controller to parent
-        // Source: https://stackoverflow.com/a/79108304
-        let release_seek_bar = gtk::GestureClick::builder()
-            .propagation_phase(gtk::PropagationPhase::Capture)
-            .build();
-        release_seek_bar.connect_released({
-            let player_tx = self.player_tx.get().unwrap().clone();
-            move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).unwrap()
-        });
-        self.seek_bar
-            .parent()
-            .unwrap()
-            .add_controller(release_seek_bar);
+        self.main_player.init(self.player_tx.get().unwrap().clone());
     }
 
     #[allow(clippy::future_not_send)]
@@ -197,14 +126,16 @@ impl Window {
 
             match response {
                 UpdateUI::PlayerState(state, interactive) => {
-                    self.update_state(state, interactive);
+                    self.main_player
+                        .set_state(matches!(state, State::Playing), interactive);
                 }
                 // TODO: Get rid of `UpdateUI::SongInfo` if possible
                 UpdateUI::SongInfo => {
                     self.update_song_info(&mut song_duration);
                 }
                 UpdateUI::PlayerTime(time) => {
-                    self.update_time(time, song_duration.as_millis() as f64);
+                    self.main_player
+                        .set_time(time, song_duration.as_millis() as f64);
                 }
                 UpdateUI::Shuffle(shuffle) => self.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.update_repeat(repeat),
@@ -214,14 +145,6 @@ impl Window {
                 UpdateUI::OpenLibrary => self.open_library(),
             }
         }
-    }
-
-    fn update_state(&self, state: State, interactive: bool) {
-        self.pause_button.set_icon_name(match state {
-            State::Playing => "media-playback-pause-symbolic",
-            _ => "media-playback-start-symbolic",
-        });
-        self.media_controls.set_sensitive(interactive);
     }
 
     fn update_song_info(&self, song_duration: &mut Duration) {
@@ -240,27 +163,15 @@ impl Window {
         let detailed_info = info.take_detailed();
         let song_info = info.basic();
 
-        if let Some(artwork) = detailed_info.artwork.as_ref() {
-            self.album_cover.set_paintable(Some(artwork));
-        } else {
-            self.album_cover
-                .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
-        }
-
-        self.album_cover.set_width_request(0);
-        self.album_cover.set_height_request(0);
-        self.song_title.set_label(&song_info.title);
-        self.album_title.set_label(&song_info.album);
-        self.artist_name.set_label(&song_info.artist);
-
         let duration_ms = song_info.duration.mseconds();
         *song_duration = Duration::from_millis(duration_ms);
-        if duration_ms > 0 {
-            self.time_end_label
-                .set_label(&format_duration(song_duration));
-        } else {
-            self.time_end_label.set_label("-:--");
-        }
+        self.main_player.set_info(
+            &song_info.title,
+            &song_info.album,
+            &song_info.artist,
+            detailed_info.artwork.as_ref(),
+            song_duration,
+        );
 
         // self.lyrics_page_title.set_title(&song_info.title);
         // self.lyrics_page_title.set_subtitle(&song_info.artist);
@@ -269,26 +180,6 @@ impl Window {
             self.info_lyrics.set_label("Lyrics not available");
         } else {
             self.info_lyrics.set_label(&detailed_info.lyrics);
-        }
-    }
-
-    fn update_time(&self, time: Option<ClockTime>, duration: f64) {
-        if let Some(time_ms) = time.map(gst::ClockTime::mseconds) {
-            self.time_cur_label
-                .set_label(&format_duration(&Duration::from_millis(time_ms)));
-            self.seek_bar.set_child_visible(true);
-            if duration > 0.0 {
-                self.seek_bar.set_sensitive(true);
-                self.seek_bar.set_value(time_ms as f64 / duration);
-            } else {
-                self.seek_bar.set_sensitive(false);
-                self.seek_bar.set_value(0.0);
-            }
-        } else {
-            self.time_cur_label.set_label("-:--");
-            self.seek_bar.set_child_visible(false);
-            self.seek_bar.set_sensitive(false);
-            self.seek_bar.set_value(0.0);
         }
     }
 
@@ -426,6 +317,7 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
+        MainPlayer::static_type();
         Rating::static_type();
 
         class.bind_template();
@@ -461,9 +353,6 @@ impl ObjectImpl for Window {
 
         let obj = self.obj();
         obj.setup_settings();
-
-        self.album_cover
-            .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
     }
 }
 impl WindowImpl for Window {
@@ -477,16 +366,7 @@ impl WindowImpl for Window {
 impl WidgetImpl for Window {
     fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
         self.parent_size_allocate(width, height, baseline);
-
-        // Set main player spacing based on available space
-        let headroom = height
-            - self.album_cover.height()
-            - self.song_info.height()
-            - self.media_controls.height()
-            - self.main_player.margin_top()
-            - self.main_player.margin_bottom()
-            - 70;
-        self.main_player.set_spacing((headroom / 4).max(6));
+        self.main_player.update_spacing(height - 48);
     }
 }
 impl ApplicationWindowImpl for Window {}
