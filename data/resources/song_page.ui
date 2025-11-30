@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MellowSongPage" parent="AdwNavigationPage">
-
-    <property name="title" translatable="yes">Song Info</property>
-    <property name="tag">info</property>
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">

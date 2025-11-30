@@ -11,6 +11,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
+use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
 use crate::ui::rating::Rating;
@@ -32,18 +33,15 @@ pub struct Window {
     queue_page: TemplateChild<QueuePage>,
 
     #[template_child]
+    lyrics_page: TemplateChild<LyricsPage>,
+
+    #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
     #[template_child]
     playing_navigation_view: TemplateChild<adw::NavigationView>,
 
-    // #[template_child]
-    // lyrics_page_title: TemplateChild<adw::WindowTitle>,
-    #[template_child]
-    info_song_title: TemplateChild<gtk::Label>,
-    #[template_child]
-    info_lyrics: TemplateChild<gtk::Label>,
     #[template_child]
     song_page: TemplateChild<SongPage>,
 
@@ -133,15 +131,8 @@ impl Window {
             detailed_info.artwork.as_ref(),
             song_duration,
         );
-
-        // self.lyrics_page_title.set_title(&song_info.title);
-        // self.lyrics_page_title.set_subtitle(&song_info.artist);
-        self.info_song_title.set_label(&song_info.title);
-        if detailed_info.lyrics.is_empty() {
-            self.info_lyrics.set_label("Lyrics not available");
-        } else {
-            self.info_lyrics.set_label(&detailed_info.lyrics);
-        }
+        self.lyrics_page
+            .set_content(&song_info.title, &detailed_info.lyrics);
     }
 
     fn update_song_index(&self, index: usize) {

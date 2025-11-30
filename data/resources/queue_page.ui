@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MellowQueuePage" parent="AdwNavigationPage">
-    <property name="title" translatable="yes">Song Queue</property>
-    <property name="tag">song_queue</property>
-
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">
