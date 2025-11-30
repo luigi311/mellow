@@ -5,6 +5,7 @@
     <file compressed="true" preprocess="xml-stripblanks">queue_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">queue_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">rating.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">settings_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">song_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>

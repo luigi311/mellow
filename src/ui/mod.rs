@@ -9,6 +9,7 @@ mod main_player;
 mod queue_page;
 mod queue_row;
 mod rating;
+mod settings_page;
 mod song_page;
 mod window;
 

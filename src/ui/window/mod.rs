@@ -40,8 +40,9 @@ impl Window {
     pub fn save_settings(&self) -> Result<(), glib::BoolError> {
         let width = self.size(Orientation::Horizontal);
         let height = self.size(Orientation::Vertical);
-        let volume = self.imp().settings_volume.value();
-        let gapless = self.imp().settings_gapless.is_active();
+        let settings_page = &self.imp().settings_page;
+        let volume = settings_page.volume();
+        let gapless = settings_page.gapless();
 
         self.settings().set_int("window-width", width)?;
         self.settings().set_int("window-height", height)?;
@@ -62,9 +63,12 @@ impl Window {
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be manually updated before the slider
-        self.imp().handle_set_volume(gtk::ScrollType::Jump, volume);
+        let settings_page = &self.imp().settings_page;
+        settings_page
+            .imp()
+            .handle_set_volume(gtk::ScrollType::Jump, volume);
 
-        self.imp().settings_volume.set_value(volume);
-        self.imp().settings_gapless.set_active(gapless);
+        settings_page.set_volume(volume);
+        settings_page.set_gapless(gapless);
     }
 }

@@ -14,6 +14,7 @@ use crate::ui::UpdateUI;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
 use crate::ui::rating::Rating;
+use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::{approx_eq, format_duration};
 use gst::{ClockTime, State};
@@ -47,9 +48,7 @@ pub struct Window {
     song_page: TemplateChild<SongPage>,
 
     #[template_child]
-    pub settings_volume: TemplateChild<gtk::Scale>,
-    #[template_child]
-    pub settings_gapless: TemplateChild<adw::SwitchRow>,
+    pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
@@ -60,27 +59,6 @@ pub struct Window {
 
 #[gtk::template_callbacks]
 impl Window {
-    #[template_callback]
-    pub fn handle_set_volume(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
-        if approx_eq(value, self.settings_volume.value()) {
-            return glib::Propagation::Stop;
-        }
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SetVolume(value * value))
-            .unwrap();
-        glib::Propagation::Proceed
-    }
-    #[template_callback]
-    pub fn handle_gapless_switch(&self) {
-        self.player_tx
-            .get()
-            .unwrap()
-            .send(PlayerRequest::SetGapless(self.settings_gapless.is_active()))
-            .unwrap();
-    }
-
     fn init_ui_elements(&self) {
         self.main_player.init(self.player_tx.get().unwrap().clone());
         self.queue_page.init(
@@ -93,6 +71,8 @@ impl Window {
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
+        self.settings_page
+            .init(self.player_tx.get().unwrap().clone());
     }
 
     #[allow(clippy::future_not_send)]
@@ -200,7 +180,6 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
-        MainPlayer::static_type();
         Rating::static_type();
 
         class.bind_template();
