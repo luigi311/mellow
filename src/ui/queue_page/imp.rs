@@ -51,9 +51,8 @@ impl QueuePage {
 
     pub fn update_song_queue(&self, queue: Ref<'_, Box<[QueueItem]>>, index: usize) {
         // TODO: Display the list properly (model/factory/view)
-        // TODO: Support removing queue items
+        // TODO: Support removing stoppers
         // TODO: Support reordering queue items
-        // TODO: Support inserting stoppers
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
         let start = index.saturating_sub(10);
