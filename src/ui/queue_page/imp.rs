@@ -50,42 +50,6 @@ impl QueuePage {
     }
 
     pub fn update_song_queue(&self, queue: Ref<'_, Box<[QueueItem]>>, index: usize) {
-        // let queue = self.song_queue.borrow();
-        // let indexes: Vec<QueueObject> = (0..queue.len() as u64)
-        //     .map(|_| QueueObject::new())
-        //     .collect();
-        // let model = gio::ListStore::new::<QueueObject>();
-        // model.extend_from_slice(&indexes);
-        // let factory = gtk::SignalListItemFactory::new();
-
-        // factory.connect_setup(move |_, list_item| {
-        //     let queue_row = QueueRow::default();
-        //     let list_item = list_item
-        //         .downcast_ref::<gtk::ListItem>()
-        //         .expect("Needs to be ListItem");
-        //     list_item.set_child(Some(&queue_row));
-        //     list_item
-        //         .property_expression("item")
-        //         .chain_property::<QueueObject>("index")
-        //         .bind(&queue_row, "title", gtk::Widget::NONE);
-        // });
-
-        // factory.connect_bind(move |_, list_item| {
-        //     let queue_row = QueueRow::default();
-        //     let list_item = list_item
-        //         .downcast_ref::<gtk::ListItem>()
-        //         .expect("Needs to be ListItem");
-        //     list_item.set_child(Some(&queue_row));
-        //     // list_item
-        //     //     .property_expression("item")
-        //     //     .chain_property::<QueueObject>("index")
-        //     //     .bind(&queue_row, "title", gtk::Widget::NONE);
-        // });
-
-        // self.song_queue_list_view
-        //     .set_model(Some(&gtk::NoSelection::new(Some(model))));
-        // self.song_queue_list_view.set_factory(Some(&factory));
-
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support removing queue items
         // TODO: Support reordering queue items
