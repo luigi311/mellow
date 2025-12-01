@@ -3,7 +3,7 @@ mod imp;
 use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
 use gio::Settings;
-use glib::Object;
+use glib::{Object, clone};
 use gtk::{Orientation, gio, glib};
 
 use std::sync::mpsc;
@@ -31,6 +31,40 @@ impl Window {
     fn setup_settings(&self) {
         let settings = Settings::new(APP_ID);
         self.imp().settings.set(settings).unwrap();
+    }
+
+    fn setup_actions(&self) {
+        let player_actions = gio::SimpleActionGroup::new();
+        player_actions.add_action_entries([
+            gio::ActionEntry::builder("skip_prev")
+                .activate(clone!(
+                    #[weak(rename_to=player)]
+                    self.imp().main_player.imp(),
+                    move |_, _, _| {
+                        player.handle_skip_prev();
+                    }
+                ))
+                .build(),
+            gio::ActionEntry::builder("play_pause")
+                .activate(clone!(
+                    #[weak(rename_to=player)]
+                    self.imp().main_player.imp(),
+                    move |_, _, _| {
+                        player.handle_play_pause();
+                    }
+                ))
+                .build(),
+            gio::ActionEntry::builder("skip_next")
+                .activate(clone!(
+                    #[weak(rename_to=player)]
+                    self.imp().main_player.imp(),
+                    move |_, _, _| {
+                        player.handle_skip_next();
+                    }
+                ))
+                .build(),
+        ]);
+        self.insert_action_group("player", Some(&player_actions));
     }
 
     fn settings(&self) -> &Settings {

@@ -17,8 +17,6 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
-use crate::{approx_eq, format_duration};
-use gst::{ClockTime, State};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -27,7 +25,7 @@ pub struct Window {
     progress_bar: TemplateChild<gtk::ProgressBar>,
 
     #[template_child]
-    main_player: TemplateChild<MainPlayer>,
+    pub main_player: TemplateChild<MainPlayer>,
 
     #[template_child]
     queue_page: TemplateChild<QueuePage>,
@@ -205,6 +203,7 @@ impl ObjectImpl for Window {
 
         let obj = self.obj();
         obj.setup_settings();
+        obj.setup_actions();
     }
 }
 impl WindowImpl for Window {
