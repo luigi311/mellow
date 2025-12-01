@@ -22,53 +22,57 @@ use crate::ui::song_page::SongPage;
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
 pub struct Window {
     #[template_child]
-    progress_bar: TemplateChild<gtk::ProgressBar>,
-
-    #[template_child]
     pub main_player: TemplateChild<MainPlayer>,
 
     #[template_child]
-    queue_page: TemplateChild<QueuePage>,
-
-    #[template_child]
-    lyrics_page: TemplateChild<LyricsPage>,
-
+    progress_bar: TemplateChild<gtk::ProgressBar>,
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
+
+    // View stack "Library" tab
+    // TODO
+
+    // View stack "Playing" tab
+    #[template_child]
+    queue_page: TemplateChild<QueuePage>,
+    #[template_child]
+    song_page: TemplateChild<SongPage>,
+    #[template_child]
+    lyrics_page: TemplateChild<LyricsPage>,
     #[template_child]
     playing_navigation_view: TemplateChild<adw::NavigationView>,
 
-    #[template_child]
-    song_page: TemplateChild<SongPage>,
-
+    // View stack "Settings" tab
     #[template_child]
     pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub css_provider: OnceCell<gtk::CssProvider>,
+    pub library: OnceCell<Mutex<Library>>,
 
     song_queue: RefCell<Box<[QueueItem]>>,
     song_queue_index: Cell<usize>,
 }
 
-#[gtk::template_callbacks]
+// #[gtk::template_callbacks]
 impl Window {
     fn init_ui_elements(&self) {
-        self.main_player.init(self.player_tx.get().unwrap().clone());
+        let player_tx = self.player_tx.get().unwrap().clone();
+        self.main_player.init(player_tx.clone());
         self.queue_page.init(
-            self.player_tx.get().unwrap().clone(),
+            player_tx.clone(),
             self.song_page.clone(),
             self.playing_navigation_view.get(),
         );
         self.song_page.init(
-            self.player_tx.get().unwrap().clone(),
+            player_tx.clone(),
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
-        self.settings_page
-            .init(self.player_tx.get().unwrap().clone());
+        self.settings_page.init(player_tx);
     }
 
     #[allow(clippy::future_not_send)]
@@ -171,7 +175,7 @@ impl ObjectSubclass for Window {
         Rating::static_type();
 
         class.bind_template();
-        class.bind_template_callbacks();
+        // class.bind_template_callbacks();
 
         class.install_action_async("win.add_library", None, async |window, _, _| {
             let filter = gtk::FileFilter::new();
