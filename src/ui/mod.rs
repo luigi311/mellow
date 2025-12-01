@@ -20,7 +20,8 @@ use crate::ui::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub enum UpdateUI {
-    PlayerState(State, bool),
+    /// (playing: bool, interactive: bool)
+    PlayerState(bool, bool),
     PlayerTime(Option<ClockTime>),
     SongInfo,
     SongQueue(Box<[QueueItem]>),

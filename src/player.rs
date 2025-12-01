@@ -358,13 +358,6 @@ impl Player {
         self.seek_to_position(position)
     }
 
-    // /// Seek to a particular time in the song
-    // /// Remember to call `seek_done()` to resume playback
-    // fn seek_to_time_paused(&mut self, time: ClockTime) -> Result<(), Box<dyn Error>> {
-    //     self.begin_seek_paused()?;
-    //     self.seek_to_time(time)
-    // }
-
     /// Prepare the palyer for interactive seeking in paused state
     /// Remember to call `seek_done()` to resume playback
     fn begin_seek_paused(&mut self) -> Result<(), gst::StateChangeError> {
@@ -449,10 +442,13 @@ impl Player {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
-        println!("ui_set_state()");
-        let state = state.0.map_or_else(|_| State::Null, |_| state.1);
+        let playing = matches!(
+            state.0.map_or_else(|_| State::Null, |_| state.1),
+            State::Playing
+        );
+        println!("ui_set_state(playing: {playing}, interactive: {interactive})");
         self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::PlayerState(state, interactive)).await })
+            .block_on(async move { tx.send(UpdateUI::PlayerState(playing, interactive)).await })
     }
 
     /// Sends the current song info to the UI receiver

@@ -40,7 +40,6 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="lyrics">
-                    <property name="label" translatable="yes">Lyrics not available</property>
                     <property name="justify">center</property>
                     <property name="wrap_mode">word</property>
                     <property name="wrap">True</property>

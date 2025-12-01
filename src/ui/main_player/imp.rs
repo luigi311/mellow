@@ -94,6 +94,7 @@ impl ObjectImpl for MainPlayer {
     fn constructed(&self) {
         self.album_cover
             .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+        self.obj().set_state(false, false);
     }
 }
 impl WidgetImpl for MainPlayer {}

@@ -27,6 +27,7 @@ impl LyricsPage {
         let lyrics_page = self.imp();
         lyrics_page.song_title.set_label(song_title);
         if lyrics.is_empty() {
+            // TODO: Support translations (see `gettext-rs`)
             lyrics_page.lyrics.set_label("Lyrics not available");
         } else {
             lyrics_page.lyrics.set_label(lyrics);

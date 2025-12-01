@@ -84,9 +84,8 @@ impl Window {
             };
 
             match response {
-                UpdateUI::PlayerState(state, interactive) => {
-                    self.main_player
-                        .set_state(matches!(state, State::Playing), interactive);
+                UpdateUI::PlayerState(playing, interactive) => {
+                    self.main_player.set_state(playing, interactive);
                 }
                 // TODO: Get rid of `UpdateUI::SongInfo` if possible
                 UpdateUI::SongInfo => {

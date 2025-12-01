@@ -304,7 +304,7 @@
                 <child>
                   <object class="AdwViewStackPage">
                     <property name="name">settings</property>
-                    <property name="title" translatable="yes">_Settings</property>
+                    <property name="title" translatable="yes">Settings</property>
                     <property name="icon-name">preferences-system-symbolic</property>
                     <property name="use-underline">True</property>
                     <property name="child">

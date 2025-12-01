@@ -11,8 +11,6 @@ pub struct LyricsPage {
     pub lyrics: TemplateChild<gtk::Label>,
 }
 
-impl LyricsPage {}
-
 #[glib::object_subclass]
 impl ObjectSubclass for LyricsPage {
     const NAME: &str = "MellowLyricsPage";
@@ -27,7 +25,10 @@ impl ObjectSubclass for LyricsPage {
         obj.init_template();
     }
 }
-
-impl ObjectImpl for LyricsPage {}
+impl ObjectImpl for LyricsPage {
+    fn constructed(&self) {
+        self.obj().set_content("", "");
+    }
+}
 impl WidgetImpl for LyricsPage {}
 impl NavigationPageImpl for LyricsPage {}
