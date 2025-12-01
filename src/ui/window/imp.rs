@@ -50,8 +50,6 @@ pub struct Window {
 
     pub settings: OnceCell<gio::Settings>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
-    pub css_provider: OnceCell<gtk::CssProvider>,
-    pub library: OnceCell<Mutex<Library>>,
 
     song_queue: RefCell<Box<[QueueItem]>>,
     song_queue_index: Cell<usize>,
