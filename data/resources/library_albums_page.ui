@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="MellowLibraryAlbumsPage" parent="AdwNavigationPage">
+    <property name="child">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="show_title">False</property>
+            <child type="end">
+              <object class="GtkToggleButton">
+                <property name="icon_name">system-search-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Search</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwStatusPage">
+            <property name="icon-name">media-optical-cd-audio-symbolic</property>
+            <property name="title" translatable="yes">Albums</property>
+            <property name="description" translatable="yes">Albums will appear here in a future version</property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+</interface>

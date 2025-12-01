@@ -1,10 +1,14 @@
 use adw::{self, Application, prelude::*};
-use gst::{ClockTime, State};
+use gst::ClockTime;
 use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{self, glib};
 use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
+mod library_albums_page;
+mod library_artists_page;
+mod library_home_page;
+mod library_songs_page;
 mod lyrics_page;
 mod main_player;
 mod queue_page;

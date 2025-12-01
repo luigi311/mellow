@@ -45,6 +45,7 @@
           </object>
         </property>
 
+        Bottom bar / drag handle
         <property name="bottom-bar">
           <object class="GtkCenterBox">
             <style>
@@ -74,6 +75,7 @@
             </style>
             <property name="content">
               <object class="AdwViewStack" id="view_stack">
+                <property name="enable-transitions">true</property>
 
                 Library
                 <child>
@@ -88,177 +90,33 @@
 
                         Library home page
                         <child>
-                          <object class="AdwNavigationPage">
+                          <object class="MellowLibraryHomePage">
                             <property name="title" translatable="yes">Library</property>
                             <property name="tag">library</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="end">
-                                      <object class="GtkToggleButton">
-                                        <property name="icon_name">system-search-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Search</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <property name="content">
-                                  <object class="AdwPreferencesPage">
-                                    <property name="valign">center</property>
-                                    <child>
-                                      <object class="AdwPreferencesGroup">
-                                        <child>
-                                          <object class="AdwActionRow">
-                                            <property name="title">Songs</property>
-                                            <property name="activatable">True</property>
-                                            <property name="action-name">navigation.push</property>
-                                            <property name="action-target">'library_songs'</property>
-                                            <child type="prefix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">audio-x-generic-symbolic</property>
-                                              </object>
-                                            </child>
-                                            <child type="suffix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">go-next-symbolic</property>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child>
-                                          <object class="AdwActionRow">
-                                            <property name="title">Albums</property>
-                                            <property name="activatable">True</property>
-                                            <property name="action-name">navigation.push</property>
-                                            <property name="action-target">'library_albums'</property>
-                                            <child type="prefix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">media-optical-cd-audio-symbolic</property>
-                                              </object>
-                                            </child>
-                                            <child type="suffix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">go-next-symbolic</property>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child>
-                                          <object class="AdwActionRow">
-                                            <property name="title">Artists</property>
-                                            <property name="activatable">True</property>
-                                            <property name="action-name">navigation.push</property>
-                                            <property name="action-target">'library_artists'</property>
-                                            <child type="prefix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">avatar-default-symbolic</property>
-                                              </object>
-                                            </child>
-                                            <child type="suffix">
-                                              <object class="GtkImage">
-                                                <property name="icon_name">go-next-symbolic</property>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
                           </object>
                         </child>
 
                         Songs
                         <child>
-                          <object class="AdwNavigationPage">
+                          <object class="MellowLibrarySongsPage" id="library_songs_page">
                             <property name="title" translatable="yes">Songs</property>
                             <property name="tag">library_songs</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="end">
-                                      <object class="GtkToggleButton">
-                                        <property name="icon_name">system-search-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Search</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <property name="content">
-                                  <object class="AdwStatusPage">
-                                    <property name="icon-name">audio-x-generic-symbolic</property>
-                                    <property name="title" translatable="yes">Songs</property>
-                                    <property name="description" translatable="yes">Songs will appear here in a future version</property>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
                           </object>
                         </child>
 
                         Albums
                         <child>
-                          <object class="AdwNavigationPage">
+                          <object class="MellowLibraryAlbumsPage" id="library_albums_page">
                             <property name="title" translatable="yes">Albums</property>
                             <property name="tag">library_albums</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="end">
-                                      <object class="GtkToggleButton">
-                                        <property name="icon_name">system-search-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Search</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <property name="content">
-                                  <object class="AdwStatusPage">
-                                    <property name="icon-name">media-optical-cd-audio-symbolic</property>
-                                    <property name="title" translatable="yes">Albums</property>
-                                    <property name="description" translatable="yes">Albums will appear here in a future version</property>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
                           </object>
                         </child>
 
                         Artists
                         <child>
-                          <object class="AdwNavigationPage">
+                          <object class="MellowLibraryArtistsPage" id="library_artists_page">
                             <property name="title" translatable="yes">Artists</property>
                             <property name="tag">library_artists</property>
-                            <property name="child">
-                              <object class="AdwToolbarView">
-                                <child type="top">
-                                  <object class="AdwHeaderBar">
-                                    <property name="show_title">False</property>
-                                    <child type="end">
-                                      <object class="GtkToggleButton">
-                                        <property name="icon_name">system-search-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Search</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <property name="content">
-                                  <object class="AdwStatusPage">
-                                    <property name="icon-name">avatar-default-symbolic</property>
-                                    <property name="title" translatable="yes">Artists</property>
-                                    <property name="description" translatable="yes">Artists will appear here in a future version</property>
-                                  </object>
-                                </property>
-                              </object>
-                            </property>
                           </object>
                         </child>
 

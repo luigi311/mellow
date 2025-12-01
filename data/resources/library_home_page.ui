@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="MellowLibraryHomePage" parent="AdwNavigationPage">
+    <property name="child">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="show_title">False</property>
+            <child type="end">
+              <object class="GtkToggleButton">
+                <property name="icon_name">system-search-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Search</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwPreferencesPage">
+            <property name="valign">center</property>
+            <child>
+              <object class="AdwPreferencesGroup">
+                <child>
+                  <object class="AdwActionRow">
+                    <property name="title">Songs</property>
+                    <property name="activatable">True</property>
+                    <property name="action-name">navigation.push</property>
+                    <property name="action-target">'library_songs'</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">audio-x-generic-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwActionRow">
+                    <property name="title">Albums</property>
+                    <property name="activatable">True</property>
+                    <property name="action-name">navigation.push</property>
+                    <property name="action-target">'library_albums'</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">media-optical-cd-audio-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwActionRow">
+                    <property name="title">Artists</property>
+                    <property name="activatable">True</property>
+                    <property name="action-name">navigation.push</property>
+                    <property name="action-target">'library_artists'</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">avatar-default-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+</interface>

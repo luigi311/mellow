@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="MellowLibraryArtistsPage" parent="AdwNavigationPage">
+    <property name="child">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="show_title">False</property>
+            <child type="end">
+              <object class="GtkToggleButton">
+                <property name="icon_name">system-search-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Search</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwStatusPage">
+            <property name="icon-name">avatar-default-symbolic</property>
+            <property name="title" translatable="yes">Artists</property>
+            <property name="description" translatable="yes">Artists will appear here in a future version</property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+</interface>

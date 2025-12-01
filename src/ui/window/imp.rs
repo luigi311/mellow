@@ -11,6 +11,10 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
+use crate::ui::library_albums_page::LibraryAlbumsPage;
+use crate::ui::library_artists_page::LibraryArtistsPage;
+use crate::ui::library_home_page::LibraryHomePage;
+use crate::ui::library_songs_page::LibrarySongsPage;
 use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
@@ -32,7 +36,12 @@ pub struct Window {
     view_stack: TemplateChild<adw::ViewStack>,
 
     // View stack "Library" tab
-    // TODO
+    #[template_child]
+    library_songs_page: TemplateChild<LibrarySongsPage>,
+    #[template_child]
+    library_albums_page: TemplateChild<LibraryAlbumsPage>,
+    #[template_child]
+    library_artists_page: TemplateChild<LibraryArtistsPage>,
 
     // View stack "Playing" tab
     #[template_child]
@@ -170,6 +179,7 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
+        LibraryHomePage::static_type();
         Rating::static_type();
 
         class.bind_template();
