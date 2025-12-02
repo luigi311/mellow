@@ -52,7 +52,7 @@ fn init_player_queue(
         return Ok(());
     }
 
-    let mut library = Library::load_or_init(ui_tx)?;
+    let mut library = Library::load_or_init(ui_tx);
     let runtime = tokio::runtime::Runtime::new()
         .map_err(|e| e.to_string())
         .unwrap();

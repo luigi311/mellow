@@ -36,6 +36,8 @@ pub enum PlayerRequest {
 
     /// Load a new queue
     LoadQueue(Vec<QueueItem>),
+    /// Appends multiple items to the current queue
+    AppendQueue(Vec<QueueItem>),
     /// Inserts an item into the queue
     InsertAt(Box<(usize, QueueItem)>),
     /// Remove item at the specified index from the queue
@@ -60,6 +62,9 @@ impl std::fmt::Debug for PlayerRequest {
             match self {
                 Self::LoadQueue(queue) => {
                     format!("LoadQueue(…): {} items", queue.len())
+                }
+                Self::AppendQueue(queue) => {
+                    format!("AppendQueue(…): {} items", queue.len())
                 }
                 Self::Update => "Update".to_string(),
                 Self::TogglePlay(play) => format!("TogglePlay({play:?})",),
@@ -148,11 +153,6 @@ impl Player {
 
     /// Main controller loop which handles player requests
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
-        const LOOP_RATE: f64 = 60.2;
-        #[allow(clippy::cast_sign_loss)]
-        #[allow(clippy::cast_possible_truncation)]
-        const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
-
         // Enable gapless playback
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
@@ -164,7 +164,12 @@ impl Player {
             let Ok(player_request) = self.rx.try_recv() else {
                 self.ui_set_time()?;
 
+                const LOOP_RATE: f64 = 60.2;
+                #[allow(clippy::cast_sign_loss)]
+                #[allow(clippy::cast_possible_truncation)]
+                const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
                 thread::sleep(LOOP_DELAY);
+
                 self.handle_gst_events();
 
                 continue;
@@ -185,11 +190,11 @@ impl Player {
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
-                PlayerRequest::LoadNext if self.seeking => false,
+                PlayerRequest::LoadNext if self.seeking => continue,
                 PlayerRequest::SongEnd if !self.can_use_gapless() => {
                     if self.seeking {
                         println!("Ignoring SongEnd while seeking");
-                        false
+                        continue;
                     } else {
                         self.request_state(self.current_state);
                         true
@@ -198,6 +203,7 @@ impl Player {
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
+                PlayerRequest::AppendQueue(queue) => self.queue.append(&queue)? != (),
                 PlayerRequest::InsertAt(item) => self.queue.insert(item.0, item.1).map(|_| true)?,
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
@@ -472,15 +478,6 @@ impl Player {
     fn handle_gst_events(&mut self) {
         while let Some(message) = self.bus.pop() {
             match message.type_() {
-                gst::MessageType::Error => {
-                    let dbg = format!("{message:?}");
-                    eprintln!("gstreamer error: {dbg}\n");
-
-                    if dbg.contains(&self.queue.current().as_song().info().file_uri()) {
-                        self.force_skip_track(self.current_state);
-                    }
-                }
-                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
                 gst::MessageType::StreamStart => {
                     println!("Song started");
                     self.queue.ui_update_queue_index().unwrap();
@@ -501,6 +498,15 @@ impl Player {
                         self.queue.pending_track = true;
                         self.update();
                         self.ui_set_state().unwrap();
+                    }
+                }
+                gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
+                gst::MessageType::Error => {
+                    let dbg = format!("{message:?}");
+                    eprintln!("gstreamer error: {dbg}\n");
+
+                    if dbg.contains(&self.queue.current().as_song().info().file_uri()) {
+                        self.force_skip_track(self.current_state);
                     }
                 }
                 _ => (),

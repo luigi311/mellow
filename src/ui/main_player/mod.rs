@@ -114,11 +114,11 @@ impl MainPlayer {
     /// Sets main player spacing based on available space
     pub fn update_spacing(&self, height: i32) {
         const SPACERS: i32 = 2;
-        const OUTER_SPACE: i32 = SPACERS + 3;
+        const WITH_OUTER: i32 = SPACERS + 3;
         let headroom = height + self.spacing() * SPACERS
             - self.size(Orientation::Vertical)
             - self.margin_top()
             - self.margin_bottom();
-        self.set_spacing((headroom / OUTER_SPACE).max(6));
+        self.set_spacing((headroom / WITH_OUTER).max(6));
     }
 }

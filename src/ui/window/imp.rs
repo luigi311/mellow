@@ -144,12 +144,18 @@ impl Window {
     }
 
     fn update_song_index(&self, index: usize) {
-        println!("update_song_index()");
+        println!("update_song_index({index})");
         self.song_queue_index.set(index);
         self.update_song_queue(None);
     }
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {
-        println!("update_song_queue()");
+        println!(
+            "update_song_queue({}",
+            match queue.as_ref() {
+                Some(q) => format!("Some(…)): {} items", q.len()),
+                None => "None)".to_string(),
+            }
+        );
         if let Some(queue) = queue {
             let _ = self.song_queue.replace(queue);
         }

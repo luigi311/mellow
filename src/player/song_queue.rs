@@ -301,6 +301,20 @@ impl SongQueue {
         self.ui_update_queue()
     }
 
+    /// Adds an item to the end of the queue
+    pub fn add(&mut self, item: QueueItem) -> Result<(), SendError<UpdateUI>> {
+        self.songs.push(item);
+        self.shuffled.push(self.len() - 1);
+        self.ui_update_queue()
+    }
+
+    /// Appends multiple items to the end of the current queue
+    /// UI queue must be manually updated
+    pub fn append(&mut self, items: &[QueueItem]) -> Result<(), SendError<UpdateUI>> {
+        self.songs = [self.songs.as_slice(), items].concat();
+        self.ui_update_queue()
+    }
+
     /// Removes a song from the queue at the specified index
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     /// Returns the removed `QueueItem`

@@ -51,7 +51,7 @@ const FILE_SUPPORT: &[&str] = &[
 ];
 
 pub struct LibraryConfig {
-    pub directories: Box<[String]>,
+    pub directories: Vec<String>,
 }
 
 impl Default for LibraryConfig {
@@ -68,6 +68,21 @@ impl Default for LibraryConfig {
     }
 }
 
+impl LibraryConfig {
+    fn load() -> Self {
+        // TODO: Load config from disk
+        Self::default()
+    }
+
+    pub fn add_library(&mut self, dir: String) {
+        self.directories.push(dir);
+    }
+
+    pub fn remove_library(&mut self, index: usize) {
+        self.directories.remove(index);
+    }
+}
+
 pub struct Library {
     pub songs: Vec<Arc<Mutex<Song>>>,
     pub albums: Vec<Album>,
@@ -79,18 +94,15 @@ pub struct Library {
 
 impl Library {
     // TODO: Load library to avoid rebuilding each time
-    pub fn load_or_init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Result<Library, Box<dyn Error>> {
-        // TODO: Load config from disk
-        let config = LibraryConfig::default();
-
-        Ok(Library {
+    pub fn load_or_init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Library {
+        Library {
             songs: vec![],
             albums: vec![],
             artists: vec![],
 
-            config,
+            config: LibraryConfig::load(),
             ui_tx,
-        })
+        }
     }
 
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
@@ -146,6 +158,7 @@ impl Library {
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
     }
+
     #[inline]
     #[must_use]
     pub fn file_supported(file: &str) -> bool {
@@ -166,10 +179,6 @@ impl Library {
     where
         P: Iterator<Item = String>,
     {
-        if paths.count() == 0 {
-            return None;
-        }
-
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
         paths.for_each(|file| {
             let path = Path::new(&file);
@@ -202,6 +211,9 @@ impl Library {
             }
         });
 
-        Some(queue.lock().unwrap().take().unwrap())
+        match queue.lock().unwrap().take() {
+            Some(queue) if queue.len() > 0 => Some(queue),
+            _ => None,
+        }
     }
 }
