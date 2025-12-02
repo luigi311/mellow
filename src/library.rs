@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::visit_dirs;
 
@@ -68,7 +69,7 @@ impl Default for LibraryConfig {
 }
 
 pub struct Library {
-    pub songs: Vec<Song>,
+    pub songs: Vec<Arc<Mutex<Song>>>,
     pub albums: Vec<Album>,
     pub artists: Vec<Artist>,
 
@@ -101,7 +102,7 @@ impl Library {
                     return;
                 }
 
-                let song = Song::new(file, None);
+                let song = Arc::new(Mutex::new(Song::new(file, None)));
 
                 songs.lock().unwrap().as_mut().unwrap().push(song);
             })
@@ -153,16 +154,54 @@ impl Library {
         };
         FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
-    #[must_use]
-    pub fn song_by_index(&self, index: usize) -> &Song {
-        &self.songs[index]
+
+    pub fn queue_all_songs(&self) -> Vec<QueueItem> {
+        self.songs
+            .iter()
+            .map(|song| QueueItem::Song(Arc::clone(&song)))
+            .collect()
     }
-    #[must_use]
-    pub fn album_by_index(&self, index: usize) -> &Album {
-        &self.albums[index]
-    }
-    #[must_use]
-    pub fn artist_by_index(&self, index: usize) -> &Artist {
-        &self.artists[index]
+
+    pub fn queue_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
+    where
+        P: Iterator<Item = String>,
+    {
+        if paths.count() == 0 {
+            return None;
+        }
+
+        let queue = Arc::new(Mutex::new(Some(Vec::new())));
+        paths.for_each(|file| {
+            let path = Path::new(&file);
+            if path.is_file() {
+                // Add files from arguments to queue
+                if !Library::file_supported(&file) {
+                    return;
+                }
+                let song = Song::new_from_str(&file, None);
+                let song = QueueItem::Song(Arc::new(Mutex::new(song)));
+                queue.lock().unwrap().as_mut().unwrap().push(song);
+            } else if Path::exists(path) {
+                // Add all files within directory arguments to queue
+                let song_files = Arc::new(Mutex::new(Vec::new()));
+                let _ = visit_dirs(path, &|file| {
+                    let file = file.path();
+                    let file = file.to_str().unwrap();
+                    if !Library::file_supported(file) {
+                        return;
+                    }
+                    song_files.lock().unwrap().push(file.to_owned());
+                });
+                let mut song_files = song_files.lock().unwrap();
+                song_files.sort();
+                song_files.iter().for_each(|file| {
+                    let song = Song::new_from_str(file, None);
+                    let song = QueueItem::Song(Arc::new(Mutex::new(song)));
+                    queue.lock().unwrap().as_mut().unwrap().push(song);
+                });
+            }
+        });
+
+        Some(queue.lock().unwrap().take().unwrap())
     }
 }

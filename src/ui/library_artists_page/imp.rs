@@ -6,6 +6,19 @@ use gtk::glib;
 #[template(resource = "/com/github/userwithaname/Mellow/library_artists_page.ui")]
 pub struct LibraryArtistsPage {}
 
+#[gtk::template_callbacks]
+impl LibraryArtistsPage {
+    #[template_callback]
+    pub fn handle_play_sequential(&self) {
+        println!("TODO: Play all albums/songs in sequence");
+    }
+
+    #[template_callback]
+    pub fn handle_play_shuffled(&self) {
+        println!("TODO: Create a queue with randomly ordered artists but sequential albums/songs");
+    }
+}
+
 #[glib::object_subclass]
 impl ObjectSubclass for LibraryArtistsPage {
     const NAME: &str = "MellowLibraryArtistsPage";
@@ -14,6 +27,7 @@ impl ObjectSubclass for LibraryArtistsPage {
 
     fn class_init(class: &mut Self::Class) {
         class.bind_template();
+        class.bind_template_callbacks();
     }
 
     fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {

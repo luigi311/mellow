@@ -6,12 +6,6 @@
         <child type="top">
           <object class="AdwHeaderBar">
             <property name="show_title">False</property>
-            <child type="end">
-              <object class="GtkToggleButton">
-                <property name="icon_name">system-search-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Search</property>
-              </object>
-            </child>
           </object>
         </child>
         <property name="content">

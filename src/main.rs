@@ -3,17 +3,14 @@ use adw::prelude::*;
 use core::error::Error;
 use gtk::gio;
 use gtk::glib;
-use std::path::Path;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::mpsc;
 use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use mellow::library::{Library, Song};
+use mellow::library::Library;
 use mellow::player::Player;
 use mellow::player::PlayerRequest;
-use mellow::player::song_queue::QueueItem;
 use mellow::ui::UpdateUI;
-use mellow::visit_dirs;
 use mellow::{APP_ID, APP_NAME};
 
 pub fn main() -> gtk::glib::ExitCode {
@@ -48,7 +45,9 @@ fn init_player_queue(
     player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
 ) -> Result<(), Box<dyn Error>> {
-    if let Some(queue) = queue_from_args() {
+    let mut args = std::env::args();
+    args.next();
+    if let Some(queue) = Library::queue_from_paths(&mut args) {
         player_tx.send(PlayerRequest::LoadQueue(queue))?;
         return Ok(());
     }
@@ -65,56 +64,8 @@ fn init_player_queue(
     // TODO: Instead of loading all tracks into the queue, either restore
     // the previous session or open the library without loading a queue
     // The library will have to be implemented first
-    let queue = library
-        .songs
-        .iter()
-        .map(|song| QueueItem::Song(Arc::new(Mutex::new(song.clone()))))
-        .collect();
     player_tx.send(PlayerRequest::SetShuffle(true))?;
-    player_tx.send(PlayerRequest::LoadQueue(queue))?;
+    player_tx.send(PlayerRequest::LoadQueue(library.queue_all_songs()))?;
 
     Ok(())
-}
-
-fn queue_from_args() -> Option<Vec<QueueItem>> {
-    let mut args = std::env::args();
-    args.next();
-
-    if args.len() == 0 {
-        return None;
-    }
-
-    let queue = Arc::new(Mutex::new(Some(Vec::new())));
-    args.for_each(|file| {
-        let path = Path::new(&file);
-        if path.is_file() {
-            // Add files from arguments to queue
-            if !Library::file_supported(&file) {
-                return;
-            }
-            let song = Song::new_from_str(&file, None);
-            let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-            queue.lock().unwrap().as_mut().unwrap().push(song);
-        } else if Path::exists(path) {
-            // Add all files within directory arguments to queue
-            let song_files = Arc::new(Mutex::new(Vec::new()));
-            let _ = visit_dirs(path, &|file| {
-                let file = file.path();
-                let file = file.to_str().unwrap();
-                if !Library::file_supported(file) {
-                    return;
-                }
-                song_files.lock().unwrap().push(file.to_owned());
-            });
-            let mut song_files = song_files.lock().unwrap();
-            song_files.sort();
-            song_files.iter().for_each(|file| {
-                let song = Song::new_from_str(file, None);
-                let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-                queue.lock().unwrap().as_mut().unwrap().push(song);
-            });
-        }
-    });
-
-    Some(queue.lock().unwrap().take().unwrap())
 }

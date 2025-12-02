@@ -6,10 +6,24 @@
         <child type="top">
           <object class="AdwHeaderBar">
             <property name="show_title">False</property>
-            <child type="end">
+            <child type="start">
               <object class="GtkToggleButton">
                 <property name="icon_name">system-search-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Search</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton">
+                <signal name="clicked" handler="handle_play_shuffled" swapped="true"/>
+                <property name="icon_name">media-playlist-shuffle-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play Shuffled</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkToggleButton">
+                <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
+                <property name="icon_name">media-playback-start-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play All</property>
               </object>
             </child>
           </object>
