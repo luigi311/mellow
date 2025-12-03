@@ -47,7 +47,7 @@
 
         Bottom bar / drag handle
         <property name="bottom-bar">
-          <object class="GtkCenterBox">
+          <object class="GtkCenterBox" id="bottom_bar">
             <style>
               <class name="view"/>
               <class name="flat"/>

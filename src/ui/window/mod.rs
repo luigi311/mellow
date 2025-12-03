@@ -2,7 +2,7 @@ use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
 use gio::Settings;
 use glib::{Object, clone};
-use gtk::{Orientation, gio, glib};
+use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 
 use crate::APP_ID;
@@ -31,6 +31,16 @@ impl Window {
         let imp = window.imp();
         imp.player_tx.set(player_tx).expect(INIT_ERR);
         imp.library_tx.set(library_tx).expect(INIT_ERR);
+        imp.css_provider
+            .set(gtk::CssProvider::new())
+            .expect(INIT_ERR);
+        if let Some(display) = gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(
+                &display,
+                imp.css_provider.get().expect(EXP_INIT),
+                210,
+            );
+        }
         window.load_settings();
         window
     }

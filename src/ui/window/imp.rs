@@ -32,6 +32,8 @@ pub struct Window {
     #[template_child]
     progress_bar: TemplateChild<gtk::ProgressBar>,
     #[template_child]
+    bottom_bar: TemplateChild<gtk::CenterBox>,
+    #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
@@ -61,6 +63,7 @@ pub struct Window {
     pub settings: OnceCell<gio::Settings>,
     pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub css_provider: OnceCell<gtk::CssProvider>,
 
     song_queue: RefCell<Box<[QueueItem]>>,
     song_queue_index: Cell<usize>,
@@ -142,6 +145,31 @@ impl Window {
         }
     }
 
+    fn set_background_color(&self, r: u8, g: u8, b: u8) {
+        let css_provider = self.css_provider.get().expect(EXP_INIT);
+        if let Some(display) = gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(&display, css_provider, 210);
+        }
+        css_provider.load_from_string(&format!(
+            ".window {{
+                 background-color: rgba({r}, {g}, {b}, 1);
+                 border-top: 0px none;
+                 border-left: 0px none;
+                 border-right: 0px none;
+                 border-bottom: 0px none;
+             }}"
+        ));
+        if !self.sheet.has_css_class("window") {
+            self.sheet.add_css_class("window");
+            self.bottom_bar.add_css_class("window");
+        }
+    }
+
+    fn reset_background_color(&self) {
+        self.sheet.remove_css_class("window");
+        self.bottom_bar.remove_css_class("window");
+    }
+
     fn update_song_info(&self, song_duration: &mut Duration) {
         println!("update_song_info()");
         let queue = self.song_queue.borrow();
@@ -169,6 +197,13 @@ impl Window {
         );
         self.lyrics_page
             .set_content(&song_info.title, &detailed_info.lyrics);
+
+        if let Some(artwork) = detailed_info.artwork {
+            // TODO: Set window background to match artwork colors
+            self.set_background_color(16, 16, 16);
+        } else {
+            self.reset_background_color();
+        }
     }
 
     fn update_song_index(&self, index: usize) {
