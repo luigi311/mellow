@@ -50,7 +50,7 @@ impl QueuePage {
             .expect(EXP_RX);
     }
 
-    pub fn update_song_queue(&self, queue: &Box<[QueueItem]>, index: usize) {
+    pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support reordering queue items
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)

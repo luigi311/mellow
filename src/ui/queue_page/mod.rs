@@ -54,7 +54,7 @@ impl QueuePage {
         self.imp().repeat_toggle.set_active(repeat);
     }
 
-    pub fn update_song_queue(&self, queue: &Box<[QueueItem]>, index: usize) {
+    pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         self.imp().update_song_queue(queue, index);
     }
 }
