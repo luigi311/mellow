@@ -177,6 +177,7 @@ impl Player {
             };
 
             dbg!(&player_request);
+            #[allow(clippy::unit_cmp)]
             if match player_request {
                 PlayerRequest::Update => true,
                 PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
@@ -192,15 +193,10 @@ impl Player {
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => continue,
-                PlayerRequest::SongEnd if !self.can_use_gapless() => {
-                    if self.seeking {
-                        println!("Ignoring SongEnd while seeking");
-                        continue;
-                    } else {
-                        self.request_state(self.current_state);
-                        true
-                    }
-                }
+                PlayerRequest::SongEnd if !self.can_use_gapless() => match self.seeking {
+                    true => println!("Ignoring SongEnd while seeking") != (),
+                    false => self.request_state(self.current_state) == (),
+                },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),

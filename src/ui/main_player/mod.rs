@@ -100,6 +100,7 @@ impl MainPlayer {
             ui.seek_bar.set_child_visible(true);
             if duration_ms > 0.0 {
                 ui.seek_bar.set_sensitive(true);
+                #[allow(clippy::cast_precision_loss)]
                 ui.seek_bar.set_value(time_ms as f64 / duration_ms);
             } else {
                 ui.seek_bar.set_sensitive(false);

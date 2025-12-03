@@ -1,7 +1,6 @@
 use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::{glib, prelude::*};
-use std::cell::Ref;
 use std::sync::mpsc;
 
 use crate::player::PlayerRequest;
@@ -56,7 +55,7 @@ impl QueuePage {
         self.imp().repeat_toggle.set_active(repeat);
     }
 
-    pub fn update_song_queue(&self, queue: Ref<'_, Box<[QueueItem]>>, index: usize) {
+    pub fn update_song_queue(&self, queue: &Box<[QueueItem]>, index: usize) {
         self.imp().update_song_queue(queue, index);
     }
 }

@@ -38,12 +38,12 @@ fn init(app: &Application) {
         .unwrap();
     thread::Builder::new()
         .name("init_player_queue".to_string())
-        .spawn(move || init_player_queue(player_tx, ui_tx).expect(INIT_ERR))
+        .spawn(move || init_player_queue(&player_tx, ui_tx).expect(INIT_ERR))
         .expect(INIT_ERR);
 }
 
 fn init_player_queue(
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: &mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
 ) -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();

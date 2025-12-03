@@ -165,7 +165,7 @@ impl Window {
             let _ = self.song_queue.replace(queue);
         }
         self.queue_page
-            .update_song_queue(self.song_queue.borrow(), self.song_queue_index.get());
+            .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
     }
 
     fn update_progress(&self, progress: Option<f64>) {

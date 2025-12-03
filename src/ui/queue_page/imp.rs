@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::clone;
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
-use std::cell::{OnceCell, Ref};
+use std::cell::OnceCell;
 use std::sync::mpsc;
 
 use crate::player::PlayerRequest;
@@ -51,7 +51,7 @@ impl QueuePage {
             .expect(EXP_RX);
     }
 
-    pub fn update_song_queue(&self, queue: Ref<'_, Box<[QueueItem]>>, index: usize) {
+    pub fn update_song_queue(&self, queue: &Box<[QueueItem]>, index: usize) {
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support reordering queue items
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)

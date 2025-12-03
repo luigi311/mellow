@@ -101,6 +101,7 @@ impl SongInfoLoader<'_> {
 
     /// Loads basic song info if needed, then returns it
     #[must_use]
+    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn basic(&mut self) -> &SongInfo {
         self.load_basic();
         self.info.as_ref().expect(EXP_SAFE)
@@ -173,6 +174,7 @@ impl SongInfoLoader<'_> {
 
     /// Loads detailed song info if needed, then returns it
     #[must_use]
+    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn detailed(&mut self) -> &DetailedSongInfo {
         self.load_detailed();
         self.detailed_info.as_ref().expect(EXP_SAFE)

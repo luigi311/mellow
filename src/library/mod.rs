@@ -94,6 +94,7 @@ pub struct Library {
 
 impl Library {
     // TODO: Load library to avoid rebuilding each time
+    #[must_use]
     pub fn init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Library {
         Library {
             songs: vec![],
