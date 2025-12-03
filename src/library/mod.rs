@@ -94,7 +94,7 @@ pub struct Library {
 
 impl Library {
     // TODO: Load library to avoid rebuilding each time
-    pub fn load_or_init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Library {
+    pub fn init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Library {
         Library {
             songs: vec![],
             albums: vec![],
@@ -168,6 +168,7 @@ impl Library {
         FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
 
+    #[must_use]
     pub fn queue_all_songs(&self) -> Vec<QueueItem> {
         self.songs
             .iter()
@@ -175,6 +176,7 @@ impl Library {
             .collect()
     }
 
+    #[must_use]
     pub fn queue_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
     where
         P: Iterator<Item = String>,

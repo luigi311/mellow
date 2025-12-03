@@ -8,8 +8,7 @@ use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use mellow::library::Library;
-use mellow::player::Player;
-use mellow::player::PlayerRequest;
+use mellow::player::{Player, PlayerRequest};
 use mellow::ui::UpdateUI;
 use mellow::{APP_ID, APP_NAME};
 
@@ -54,10 +53,8 @@ fn init_player_queue(
         return Ok(());
     }
 
-    let mut library = Library::load_or_init(ui_tx);
-    let runtime = tokio::runtime::Runtime::new()
-        .map_err(|e| e.to_string())
-        .expect(INIT_ERR);
+    let mut library = Library::init(ui_tx);
+    let runtime = tokio::runtime::Runtime::new()?;
     let library = runtime.block_on(async move {
         library.rebuild().await.expect(INIT_ERR);
         library

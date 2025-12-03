@@ -119,12 +119,12 @@ impl Player {
     /// Returns a tuple of a new `Player` instance, a sender for player controls,
     /// and a sender and receiver for the UI
     pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
-        gst::init().expect(INIT_ERR);
+        gst::init()?;
 
         let backend = gst::ElementFactory::make("playbin3").build()?;
         let bus = backend.bus().expect(INIT_ERR);
 
-        let tokio_rt = Arc::new(tokio::runtime::Runtime::new().map_err(|e| e.to_string())?);
+        let tokio_rt = Arc::new(tokio::runtime::Runtime::new()?);
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
