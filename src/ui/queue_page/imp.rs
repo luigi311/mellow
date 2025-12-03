@@ -5,12 +5,11 @@ use gtk::{gdk, glib};
 use std::cell::OnceCell;
 use std::sync::mpsc;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::queue_row::QueueRow;
 use crate::ui::song_page::SongPage;
-
-use crate::excuses::{EXP_INIT, EXP_RX};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]

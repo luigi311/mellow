@@ -1,7 +1,11 @@
+use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::glib;
+use std::sync::mpsc;
 
-use crate::library::Song;
+use crate::excuses::INIT_ERR;
+use crate::library::{LibraryRequest, Song};
+use crate::player::PlayerRequest;
 
 mod imp;
 
@@ -22,6 +26,20 @@ impl LibrarySongsPage {
     #[must_use]
     pub fn new() -> Self {
         Object::builder().build()
+    }
+
+    pub fn init(
+        &self,
+        library_tx: mpsc::SyncSender<LibraryRequest>,
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+        bottom_sheet: adw::BottomSheet,
+        view_stack: adw::ViewStack,
+    ) {
+        let songs_page = self.imp();
+        songs_page.library_tx.set(library_tx).expect(INIT_ERR);
+        songs_page.player_tx.set(player_tx).expect(INIT_ERR);
+        songs_page.sheet.set(bottom_sheet).expect(INIT_ERR);
+        songs_page.view_stack.set(view_stack).expect(INIT_ERR);
     }
 
     pub fn load_songs(&self, songs: Box<[Song]>) {

@@ -5,11 +5,10 @@ use gtk::gio;
 use gtk::glib;
 use std::sync::mpsc;
 use std::thread;
-use tokio::sync::mpsc as tokio_mpsc;
 
-use mellow::library::Library;
+use mellow::excuses::EXP_RX;
+use mellow::library::{Library, LibraryRequest};
 use mellow::player::{Player, PlayerRequest};
-use mellow::ui::UpdateUI;
 use mellow::{APP_ID, APP_NAME};
 
 use mellow::excuses::INIT_ERR;
@@ -29,22 +28,30 @@ pub fn main() -> glib::ExitCode {
 
 fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init().expect(INIT_ERR);
+    let (mut library, library_tx) = Library::init(player_tx.clone(), ui_tx.clone());
 
-    mellow::ui::init(app, &player_tx, ui_rx);
+    mellow::ui::init(app, &library_tx, &player_tx, ui_rx);
 
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || player.controller().unwrap())
         .unwrap();
     thread::Builder::new()
-        .name("init_player_queue".to_string())
-        .spawn(move || init_player_queue(&player_tx, ui_tx).expect(INIT_ERR))
-        .expect(INIT_ERR);
+        .name("library".to_string())
+        .spawn(move || {
+            let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
+            runtime.block_on(async move {
+                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                init_player_queue(&library_tx, &player_tx).expect(INIT_ERR);
+                library.request_handler().await.unwrap();
+            });
+        })
+        .unwrap();
 }
 
 fn init_player_queue(
+    library_tx: &mpsc::SyncSender<LibraryRequest>,
     player_tx: &mpsc::SyncSender<PlayerRequest>,
-    ui_tx: tokio_mpsc::Sender<UpdateUI>,
 ) -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();
     args.next();
@@ -53,18 +60,11 @@ fn init_player_queue(
         return Ok(());
     }
 
-    let mut library = Library::init(ui_tx);
-    let runtime = tokio::runtime::Runtime::new()?;
-    let library = runtime.block_on(async move {
-        library.rebuild().await.expect(INIT_ERR);
-        library
-    });
-
     // TODO: Instead of loading all tracks into the queue, either restore
     // the previous session or open the library without loading a queue
     // The library will have to be implemented first
     player_tx.send(PlayerRequest::SetShuffle(true))?;
-    player_tx.send(PlayerRequest::LoadQueue(library.queue_all_songs()))?;
+    library_tx.send(LibraryRequest::QueueAllSongs)?;
 
     Ok(())
 }

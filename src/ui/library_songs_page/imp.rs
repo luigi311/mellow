@@ -1,21 +1,70 @@
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
+use std::cell::OnceCell;
+use std::sync::mpsc;
+
+use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::LibraryRequest;
+use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_songs_page.ui")]
-pub struct LibrarySongsPage {}
+pub struct LibrarySongsPage {
+    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
+    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub view_stack: OnceCell<adw::ViewStack>,
+    pub sheet: OnceCell<adw::BottomSheet>,
+}
 
 #[gtk::template_callbacks]
 impl LibrarySongsPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
-        println!("TODO: Play all songs in sequence");
+        self.player_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::SetShuffle(false))
+            .expect(EXP_RX);
+        self.library_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::QueueAllSongs)
+            .expect(EXP_RX);
+        self.player_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.view_stack
+            .get()
+            .expect(EXP_INIT)
+            .set_visible_child_name("playing");
+        self.sheet.get().expect(EXP_INIT).set_open(false);
     }
 
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
-        println!("TODO: Play all songs with shuffle mode");
+        self.player_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::SetShuffle(true))
+            .expect(EXP_RX);
+        self.library_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::QueueAllSongs)
+            .expect(EXP_RX);
+        self.player_tx
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.view_stack
+            .get()
+            .expect(EXP_INIT)
+            .set_visible_child_name("playing");
+        self.sheet.get().expect(EXP_INIT).set_open(false);
     }
 }
 

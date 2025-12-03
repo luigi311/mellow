@@ -18,6 +18,7 @@ mod settings_page;
 mod song_page;
 mod window;
 
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
@@ -38,10 +39,11 @@ pub enum UpdateUI {
 
 pub fn init(
     app: &Application,
+    library_tx: &mpsc::SyncSender<LibraryRequest>,
     player_tx: &mpsc::SyncSender<PlayerRequest>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
-    let window = Window::new(app, player_tx.clone());
+    let window = Window::new(app, library_tx.clone(), player_tx.clone());
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
     window.present();

@@ -1,10 +1,20 @@
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
+use std::cell::OnceCell;
+use std::sync::mpsc;
+
+use crate::library::LibraryRequest;
+use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_albums_page.ui")]
-pub struct LibraryAlbumsPage {}
+pub struct LibraryAlbumsPage {
+    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
+    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub view_stack: OnceCell<adw::ViewStack>,
+    pub sheet: OnceCell<adw::BottomSheet>,
+}
 
 #[gtk::template_callbacks]
 impl LibraryAlbumsPage {

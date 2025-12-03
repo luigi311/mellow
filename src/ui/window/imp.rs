@@ -2,12 +2,13 @@ use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
-
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -21,8 +22,6 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
-
-use crate::excuses::EXP_INIT;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -60,20 +59,45 @@ pub struct Window {
     pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
+    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 
     song_queue: RefCell<Box<[QueueItem]>>,
     song_queue_index: Cell<usize>,
 }
 
-// #[gtk::template_callbacks]
 impl Window {
     fn init_ui_elements(&self) {
         let player_tx = self.player_tx.get().expect(EXP_INIT).clone();
+        let library_tx = self.library_tx.get().expect(EXP_INIT).clone();
+
+        // Main Player
         self.main_player.init(player_tx.clone());
+
+        // Library
+        self.library_songs_page.init(
+            library_tx.clone(),
+            player_tx.clone(),
+            self.sheet.get(),
+            self.view_stack.get(),
+        );
+        self.library_albums_page.init(
+            library_tx.clone(),
+            player_tx.clone(),
+            self.sheet.get(),
+            self.view_stack.get(),
+        );
+        self.library_artists_page.init(
+            library_tx.clone(),
+            player_tx.clone(),
+            self.sheet.get(),
+            self.view_stack.get(),
+        );
+
+        // Queue Page & Subpages
         self.queue_page.init(
             player_tx.clone(),
-            self.song_page.clone(),
+            self.song_page.get(),
             self.playing_navigation_view.get(),
         );
         self.song_page.init(
@@ -81,6 +105,8 @@ impl Window {
             self.playing_navigation_view.get(),
             self.sheet.get(),
         );
+
+        // Settings Page
         self.settings_page.init(player_tx);
     }
 
@@ -194,7 +220,6 @@ impl ObjectSubclass for Window {
         Rating::static_type();
 
         class.bind_template();
-        // class.bind_template_callbacks();
 
         class.install_action_async("win.add_library", None, async |window, _, _| {
             let filter = gtk::FileFilter::new();
@@ -210,8 +235,14 @@ impl ObjectSubclass for Window {
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
-                println!("TODO: Add library");
-                dbg!(dir.path());
+                let library_tx = window.imp().library_tx.get().expect(EXP_INIT);
+                library_tx
+                    .send(LibraryRequest::AddLibrary(
+                        dir.path().unwrap().to_str().unwrap().to_owned(),
+                    ))
+                    .expect(EXP_RX);
+                // TODO: Update incrementally instead of rebuilding
+                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
             }
         });
     }

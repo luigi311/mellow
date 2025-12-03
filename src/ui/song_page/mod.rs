@@ -3,9 +3,8 @@ use glib::Object;
 use gtk::glib;
 use std::sync::mpsc;
 
-use crate::player::PlayerRequest;
-
 use crate::excuses::INIT_ERR;
+use crate::player::PlayerRequest;
 
 mod imp;
 

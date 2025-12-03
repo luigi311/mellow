@@ -3,11 +3,10 @@ use glib::Object;
 use gtk::{glib, prelude::*};
 use std::sync::mpsc;
 
+use crate::excuses::INIT_ERR;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::song_page::SongPage;
-
-use crate::excuses::INIT_ERR;
 
 mod imp;
 

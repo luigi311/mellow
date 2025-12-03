@@ -6,9 +6,10 @@ use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::visit_dirs;
@@ -75,11 +76,16 @@ impl LibraryConfig {
     }
 
     pub fn add_library(&mut self, dir: String) {
+        if self.directories.iter().any(|existing| dir == *existing) {
+            return;
+        }
         self.directories.push(dir);
+        println!("Added a new library\nLibraries: {:?}", self.directories);
     }
 
     pub fn remove_library(&mut self, index: usize) {
         self.directories.remove(index);
+        println!("Removed a library\nLibraries: {:?}", self.directories);
     }
 }
 
@@ -89,24 +95,43 @@ pub struct Library {
     pub artists: Vec<Artist>,
 
     config: LibraryConfig,
+    player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    rx: mpsc::Receiver<LibraryRequest>,
+}
+
+pub enum LibraryRequest {
+    QueueAllSongs,
+    Rebuild,
+    AddLibrary(String),
+    RemoveLibrary(usize),
 }
 
 impl Library {
     // TODO: Load library to avoid rebuilding each time
     #[must_use]
-    pub fn init(ui_tx: tokio_mpsc::Sender<UpdateUI>) -> Library {
-        Library {
-            songs: vec![],
-            albums: vec![],
-            artists: vec![],
+    pub fn init(
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+        ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    ) -> (Library, mpsc::SyncSender<LibraryRequest>) {
+        let (tx, rx) = mpsc::sync_channel(4);
+        (
+            Library {
+                songs: vec![],
+                albums: vec![],
+                artists: vec![],
 
-            config: LibraryConfig::load(),
-            ui_tx,
-        }
+                config: LibraryConfig::load(),
+                player_tx,
+                ui_tx,
+                rx,
+            },
+            tx,
+        )
     }
 
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
+        println!("Rebuilding the music library");
         let songs = Arc::new(Mutex::new(Some(Vec::new())));
         self.config.directories.iter().for_each(|library_path| {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
@@ -130,7 +155,8 @@ impl Library {
         let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
         for i in 0..songs.len() {
             // TODO: Assign song info, but skip memory-heavy fields (artwork, etc)
-            // let mut info = songs[i].info();
+            // let mut song = songs[i].lock().unwrap();
+            // let mut info = song.info();
             // let song_info = info.basic();
 
             // // TODO: Assign song/album/artist index relations
@@ -158,6 +184,19 @@ impl Library {
 
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
+    }
+
+    pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+        loop {
+            match self.rx.recv()? {
+                LibraryRequest::QueueAllSongs => self
+                    .player_tx
+                    .send(PlayerRequest::LoadQueue(self.queue_all_songs()))?,
+                LibraryRequest::Rebuild => self.rebuild().await?,
+                LibraryRequest::AddLibrary(dir) => self.config.add_library(dir),
+                LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
+            }
+        }
     }
 
     #[inline]

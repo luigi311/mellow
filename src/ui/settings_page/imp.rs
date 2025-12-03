@@ -5,9 +5,8 @@ use std::cell::OnceCell;
 use std::sync::mpsc;
 
 use crate::approx_eq;
-use crate::player::PlayerRequest;
-
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]

@@ -4,10 +4,9 @@ use gtk::glib;
 use std::cell::{Cell, OnceCell};
 use std::sync::mpsc;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
-
-use crate::excuses::{EXP_INIT, EXP_RX};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]

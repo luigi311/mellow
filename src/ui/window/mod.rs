@@ -1,17 +1,16 @@
-mod imp;
-
 use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
 use gio::Settings;
 use glib::{Object, clone};
 use gtk::{Orientation, gio, glib};
-
 use std::sync::mpsc;
 
 use crate::APP_ID;
+use crate::excuses::{EXP_INIT, INIT_ERR};
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 
-use crate::excuses::{EXP_INIT, INIT_ERR};
+mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -23,9 +22,15 @@ glib::wrapper! {
 
 impl Window {
     #[must_use]
-    pub fn new(app: &Application, player_tx: mpsc::SyncSender<PlayerRequest>) -> Self {
+    pub fn new(
+        app: &Application,
+        library_tx: mpsc::SyncSender<LibraryRequest>,
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+    ) -> Self {
         let window: Self = Object::builder().property("application", app).build();
-        window.imp().player_tx.set(player_tx).expect(INIT_ERR);
+        let imp = window.imp();
+        imp.player_tx.set(player_tx).expect(INIT_ERR);
+        imp.library_tx.set(library_tx).expect(INIT_ERR);
         window.load_settings();
         window
     }

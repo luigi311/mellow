@@ -1,5 +1,11 @@
+use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::glib;
+use std::sync::mpsc;
+
+use crate::excuses::INIT_ERR;
+use crate::library::LibraryRequest;
+use crate::player::PlayerRequest;
 
 mod imp;
 
@@ -20,5 +26,19 @@ impl LibraryArtistsPage {
     #[must_use]
     pub fn new() -> Self {
         Object::builder().build()
+    }
+
+    pub fn init(
+        &self,
+        library_tx: mpsc::SyncSender<LibraryRequest>,
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+        bottom_sheet: adw::BottomSheet,
+        view_stack: adw::ViewStack,
+    ) {
+        let artists_page = self.imp();
+        artists_page.library_tx.set(library_tx).expect(INIT_ERR);
+        artists_page.player_tx.set(player_tx).expect(INIT_ERR);
+        artists_page.sheet.set(bottom_sheet).expect(INIT_ERR);
+        artists_page.view_stack.set(view_stack).expect(INIT_ERR);
     }
 }
