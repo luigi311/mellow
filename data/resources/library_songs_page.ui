@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MellowLibrarySongsPage" parent="AdwNavigationPage">
+
+    IDEA: Each listed song could open a subpage, similar to how the queue works,
+    but containing buttons for "Play Now", "Play Next", "Add To Queue", etc. This
+    same page widget could be re-used when accessed from the Album page. To make
+    this work, (for example) the "Play Now" button could have its behavior altered
+    using a `connect_play_now()` function, which would take a closure to run whenever
+    the button is pressed. That way, when pressed from the Album page, it could
+    queue all of the album tracks, and skip to the one that was clicked on.
+    
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">
