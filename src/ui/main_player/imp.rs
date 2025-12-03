@@ -8,6 +8,8 @@ use std::sync::mpsc;
 
 use crate::player::PlayerRequest;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/main_player.ui")]
 pub struct MainPlayer {
@@ -40,25 +42,25 @@ impl MainPlayer {
     pub fn handle_skip_prev(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::SkipPrevious)
-            .unwrap();
+            .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_play_pause(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::TogglePlay(None))
-            .unwrap();
+            .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_skip_next(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::SkipNext)
-            .unwrap();
+            .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_seek(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
@@ -67,9 +69,9 @@ impl MainPlayer {
         }
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::Seek(value))
-            .unwrap();
+            .expect(EXP_RX);
         glib::Propagation::Proceed
     }
 }

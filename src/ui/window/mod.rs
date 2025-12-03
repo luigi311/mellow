@@ -11,6 +11,8 @@ use std::sync::mpsc;
 use crate::APP_ID;
 use crate::player::PlayerRequest;
 
+use crate::excuses::{EXP_INIT, INIT_ERR};
+
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends adw::ApplicationWindow, gtk::ApplicationWindow, gtk::Window, gtk::Widget,
@@ -23,14 +25,14 @@ impl Window {
     #[must_use]
     pub fn new(app: &Application, player_tx: mpsc::SyncSender<PlayerRequest>) -> Self {
         let window: Self = Object::builder().property("application", app).build();
-        window.imp().player_tx.set(player_tx).unwrap();
+        window.imp().player_tx.set(player_tx).expect(INIT_ERR);
         window.load_settings();
         window
     }
 
     fn setup_settings(&self) {
         let settings = Settings::new(APP_ID);
-        self.imp().settings.set(settings).unwrap();
+        self.imp().settings.set(settings).expect(INIT_ERR);
     }
 
     fn setup_actions(&self) {
@@ -40,27 +42,21 @@ impl Window {
                 .activate(clone!(
                     #[weak(rename_to=player)]
                     self.imp().main_player.imp(),
-                    move |_, _, _| {
-                        player.handle_skip_prev();
-                    }
+                    move |_, _, _| player.handle_skip_prev()
                 ))
                 .build(),
             gio::ActionEntry::builder("play_pause")
                 .activate(clone!(
                     #[weak(rename_to=player)]
                     self.imp().main_player.imp(),
-                    move |_, _, _| {
-                        player.handle_play_pause();
-                    }
+                    move |_, _, _| player.handle_play_pause()
                 ))
                 .build(),
             gio::ActionEntry::builder("skip_next")
                 .activate(clone!(
                     #[weak(rename_to=player)]
                     self.imp().main_player.imp(),
-                    move |_, _, _| {
-                        player.handle_skip_next();
-                    }
+                    move |_, _, _| player.handle_skip_next()
                 ))
                 .build(),
         ]);
@@ -68,7 +64,7 @@ impl Window {
     }
 
     fn settings(&self) -> &Settings {
-        self.imp().settings.get().unwrap()
+        self.imp().settings.get().expect(EXP_INIT)
     }
 
     pub fn save_settings(&self) -> Result<(), glib::BoolError> {

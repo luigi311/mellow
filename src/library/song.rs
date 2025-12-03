@@ -7,6 +7,8 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
+use crate::excuses::EXP_SAFE;
+
 #[derive(Clone)]
 pub struct Song {
     pub album: Option<usize>,
@@ -101,13 +103,13 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn basic(&mut self) -> &SongInfo {
         self.load_basic();
-        self.info.as_ref().unwrap()
+        self.info.as_ref().expect(EXP_SAFE)
     }
     /// Loads basic song info if needed, then returns and unloads it
     #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn take_basic(&mut self) -> SongInfo {
         self.load_basic();
-        self.info.take().unwrap()
+        self.info.take().expect(EXP_SAFE)
     }
     /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
@@ -172,14 +174,14 @@ impl SongInfoLoader<'_> {
     /// Loads detailed song info if needed, then returns it
     #[must_use]
     pub fn detailed(&mut self) -> &DetailedSongInfo {
-        let _ = self.load_detailed();
-        self.detailed_info.as_ref().unwrap()
+        self.load_detailed();
+        self.detailed_info.as_ref().expect(EXP_SAFE)
     }
     /// Loads detailed song info if needed, then returns and unloads it
     #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
-        self.detailed_info.take().unwrap()
+        self.detailed_info.take().expect(EXP_SAFE)
     }
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained

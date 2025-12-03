@@ -22,6 +22,8 @@ use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 
+use crate::excuses::EXP_INIT;
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
 pub struct Window {
@@ -67,7 +69,7 @@ pub struct Window {
 // #[gtk::template_callbacks]
 impl Window {
     fn init_ui_elements(&self) {
-        let player_tx = self.player_tx.get().unwrap().clone();
+        let player_tx = self.player_tx.get().expect(EXP_INIT).clone();
         self.main_player.init(player_tx.clone());
         self.queue_page.init(
             player_tx.clone(),
@@ -146,6 +148,9 @@ impl Window {
     fn update_song_index(&self, index: usize) {
         println!("update_song_index({index})");
         self.song_queue_index.set(index);
+        // FIX: Toggling shuffle mode calls `update_song_queue()` twice
+        // NOTE: This call is only needed so the highlighted queue item
+        // is updated, and would not be necessary with a proper list view
         self.update_song_queue(None);
     }
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {

@@ -10,6 +10,8 @@ use crate::player::song_queue::QueueItem;
 use crate::ui::queue_row::QueueRow;
 use crate::ui::song_page::SongPage;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
 pub struct QueuePage {
@@ -36,22 +38,21 @@ impl QueuePage {
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
-            .unwrap();
+            .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
         self.player_tx
             .get()
-            .unwrap()
-            .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
-            .unwrap();
+            .expect(EXP_INIT)
+            .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
+            .expect(EXP_RX);
     }
 
     pub fn update_song_queue(&self, queue: Ref<'_, Box<[QueueItem]>>, index: usize) {
         // TODO: Display the list properly (model/factory/view)
-        // TODO: Support removing stoppers
         // TODO: Support reordering queue items
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
@@ -90,9 +91,9 @@ impl QueuePage {
                     queue_entry.connect_activated({
                         clone!(
                             #[weak(rename_to=song_page)]
-                            self.song_page.get().unwrap(),
+                            self.song_page.get().expect(EXP_INIT),
                             #[weak(rename_to=navigation)]
-                            self.navigation_view.get().unwrap(),
+                            self.navigation_view.get().expect(EXP_INIT),
                             move |_| {
                                 navigation.push_by_tag("info");
                                 song_page.set_info(i, &song_title, &album_title, &artist_name);
@@ -111,10 +112,6 @@ impl QueuePage {
                     // TODO: Open a page for stoppers as well
                     // TODO: Allow removing stoppers
                     // TODO: Allow reordering stoppers
-                    // queue_entry.connect_activated({
-                    //     let player_tx = self.player_tx.get().unwrap().clone();
-                    //     move |_| player_tx.send(PlayerRequest::SkipTo(i)).unwrap()
-                    // });
                 }
             }
             self.song_queue_list_box.append(&queue_entry);

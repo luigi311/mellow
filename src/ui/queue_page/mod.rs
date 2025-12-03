@@ -8,6 +8,8 @@ use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::song_page::SongPage;
 
+use crate::excuses::INIT_ERR;
+
 mod imp;
 
 glib::wrapper! {
@@ -33,12 +35,12 @@ impl QueuePage {
         &self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
         song_page: SongPage,
-        navigation_view: adw::NavigationView,
+        navigation: adw::NavigationView,
     ) {
         let queue_page = self.imp();
-        queue_page.player_tx.set(player_tx).unwrap();
-        queue_page.song_page.set(song_page).unwrap();
-        queue_page.navigation_view.set(navigation_view).unwrap();
+        queue_page.player_tx.set(player_tx).expect(INIT_ERR);
+        queue_page.song_page.set(song_page).expect(INIT_ERR);
+        queue_page.navigation_view.set(navigation).expect(INIT_ERR);
     }
 
     pub fn update_shuffle(&self, shuffle: bool) {

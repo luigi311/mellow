@@ -171,7 +171,7 @@ impl Library {
     pub fn queue_all_songs(&self) -> Vec<QueueItem> {
         self.songs
             .iter()
-            .map(|song| QueueItem::Song(Arc::clone(&song)))
+            .map(|song| QueueItem::Song(Arc::clone(song)))
             .collect()
     }
 
@@ -212,7 +212,7 @@ impl Library {
         });
 
         match queue.lock().unwrap().take() {
-            Some(queue) if queue.len() > 0 => Some(queue),
+            Some(queue) if !queue.is_empty() => Some(queue),
             _ => None,
         }
     }

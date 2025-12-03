@@ -7,6 +7,8 @@ use std::sync::mpsc;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
 pub struct SongPage {
@@ -31,36 +33,36 @@ pub struct SongPage {
 impl SongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
-        let player_tx = self.player_tx.get().unwrap();
+        let player_tx = self.player_tx.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SkipTo(self.index.get()))
-            .unwrap();
+            .expect(EXP_RX);
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
-            .unwrap();
-        self.navigation_view.get().unwrap().pop();
-        self.bottom_sheet.get().unwrap().set_open(false);
+            .expect(EXP_RX);
+        self.navigation_view.get().expect(EXP_INIT).pop();
+        self.bottom_sheet.get().expect(EXP_INIT).set_open(false);
     }
     #[template_callback]
     pub fn handle_stop_after(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::InsertAt(Box::new((
                 self.index.get() + 1,
                 QueueItem::Stopper,
             ))))
-            .unwrap();
-        self.navigation_view.get().unwrap().pop();
+            .expect(EXP_RX);
+        self.navigation_view.get().expect(EXP_INIT).pop();
     }
     #[template_callback]
     pub fn handle_remove_item(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::RemoveAt(self.index.get()))
-            .unwrap();
-        self.navigation_view.get().unwrap().pop();
+            .expect(EXP_RX);
+        self.navigation_view.get().expect(EXP_INIT).pop();
     }
 }
 

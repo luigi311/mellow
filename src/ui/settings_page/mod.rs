@@ -5,6 +5,8 @@ use std::sync::mpsc;
 
 use crate::player::PlayerRequest;
 
+use crate::excuses::INIT_ERR;
+
 mod imp;
 
 glib::wrapper! {
@@ -27,7 +29,7 @@ impl SettingsPage {
     }
 
     pub fn init(&self, player_tx: mpsc::SyncSender<PlayerRequest>) {
-        self.imp().player_tx.set(player_tx).unwrap();
+        self.imp().player_tx.set(player_tx).expect(INIT_ERR);
     }
 
     pub fn volume(&self) -> f64 {

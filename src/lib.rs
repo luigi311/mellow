@@ -1,3 +1,4 @@
+pub mod excuses;
 pub mod library;
 pub mod player;
 pub mod ui;
@@ -26,6 +27,8 @@ use std::time::Duration;
 #[inline]
 #[must_use]
 pub fn format_duration(duration: &Duration) -> String {
+    // TODO: Support hours
+    // IDEA: Support days (for playlists, maybe `format_duration_long()`)
     let duration = duration.as_secs();
     let seconds = duration % 60;
     format!(

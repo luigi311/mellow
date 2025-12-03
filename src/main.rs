@@ -13,7 +13,9 @@ use mellow::player::PlayerRequest;
 use mellow::ui::UpdateUI;
 use mellow::{APP_ID, APP_NAME};
 
-pub fn main() -> gtk::glib::ExitCode {
+use mellow::excuses::INIT_ERR;
+
+pub fn main() -> glib::ExitCode {
     glib::set_application_name(APP_NAME);
     glib::set_program_name(Some(APP_NAME.to_lowercase()));
 
@@ -27,7 +29,7 @@ pub fn main() -> gtk::glib::ExitCode {
 }
 
 fn init(app: &Application) {
-    let (mut player, player_tx, ui_tx, ui_rx) = Player::init().unwrap();
+    let (mut player, player_tx, ui_tx, ui_rx) = Player::init().expect(INIT_ERR);
 
     mellow::ui::init(app, &player_tx, ui_rx);
 
@@ -37,8 +39,8 @@ fn init(app: &Application) {
         .unwrap();
     thread::Builder::new()
         .name("init_player_queue".to_string())
-        .spawn(move || init_player_queue(player_tx, ui_tx).unwrap())
-        .unwrap();
+        .spawn(move || init_player_queue(player_tx, ui_tx).expect(INIT_ERR))
+        .expect(INIT_ERR);
 }
 
 fn init_player_queue(
@@ -55,9 +57,9 @@ fn init_player_queue(
     let mut library = Library::load_or_init(ui_tx);
     let runtime = tokio::runtime::Runtime::new()
         .map_err(|e| e.to_string())
-        .unwrap();
+        .expect(INIT_ERR);
     let library = runtime.block_on(async move {
-        library.rebuild().await.unwrap();
+        library.rebuild().await.expect(INIT_ERR);
         library
     });
 

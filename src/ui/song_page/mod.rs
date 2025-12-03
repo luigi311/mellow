@@ -5,6 +5,8 @@ use std::sync::mpsc;
 
 use crate::player::PlayerRequest;
 
+use crate::excuses::INIT_ERR;
+
 mod imp;
 
 glib::wrapper! {
@@ -37,12 +39,12 @@ impl SongPage {
     pub fn init(
         &self,
         player_tx: mpsc::SyncSender<PlayerRequest>,
-        navigation_view: adw::NavigationView,
+        navigation: adw::NavigationView,
         bottom_sheet: adw::BottomSheet,
     ) {
         let song_page = self.imp();
-        song_page.player_tx.set(player_tx).unwrap();
-        song_page.navigation_view.set(navigation_view).unwrap();
-        song_page.bottom_sheet.set(bottom_sheet).unwrap();
+        song_page.player_tx.set(player_tx).expect(INIT_ERR);
+        song_page.navigation_view.set(navigation).expect(INIT_ERR);
+        song_page.bottom_sheet.set(bottom_sheet).expect(INIT_ERR);
     }
 }

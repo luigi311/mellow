@@ -5,10 +5,11 @@ use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
-use tokio::sync::mpsc::error::SendError;
 
 use crate::player::song_queue::{QueueItem, SongQueue};
 use crate::ui::UpdateUI;
+
+use crate::excuses::{EXP_RX, INIT_ERR};
 
 pub mod song_queue;
 
@@ -118,10 +119,10 @@ impl Player {
     /// Returns a tuple of a new `Player` instance, a sender for player controls,
     /// and a sender and receiver for the UI
     pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
-        gst::init().unwrap();
+        gst::init().expect(INIT_ERR);
 
         let backend = gst::ElementFactory::make("playbin3").build()?;
-        let bus = backend.bus().unwrap();
+        let bus = backend.bus().expect(INIT_ERR);
 
         let tokio_rt = Arc::new(tokio::runtime::Runtime::new().map_err(|e| e.to_string())?);
         let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
@@ -156,13 +157,13 @@ impl Player {
         // Enable gapless playback
         let player_tx = self.player_tx.clone();
         self.backend.connect("about-to-finish", false, move |_| {
-            player_tx.send(PlayerRequest::SongEnd).unwrap();
+            player_tx.send(PlayerRequest::SongEnd).expect(EXP_RX);
             None
         });
 
         loop {
             let Ok(player_request) = self.rx.try_recv() else {
-                self.ui_set_time()?;
+                self.ui_set_time();
 
                 const LOOP_RATE: f64 = 60.2;
                 #[allow(clippy::cast_sign_loss)]
@@ -202,9 +203,9 @@ impl Player {
                 }
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
 
-                PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue)? != (),
-                PlayerRequest::AppendQueue(queue) => self.queue.append(&queue)? != (),
-                PlayerRequest::InsertAt(item) => self.queue.insert(item.0, item.1).map(|_| true)?,
+                PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),
+                PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
+                PlayerRequest::InsertAt(item) => self.queue.insert(item.0, item.1) == (),
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
                         self.backend.set_property("instant-uri", true);
@@ -218,12 +219,12 @@ impl Player {
                 }
 
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
-                PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle)? != (),
-                PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat)? != (),
+                PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle) != (),
+                PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
             } {
                 self.update();
-                self.ui_set_state()?;
+                self.ui_set_state();
             }
         }
     }
@@ -414,7 +415,7 @@ impl Player {
         } else {
             // Skip the current song if the song has ended
             // or the playback time/duration cannot be determined
-            self.player_tx.send(PlayerRequest::SkipNext).unwrap();
+            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
         }
 
         self.request_state(self.current_state);
@@ -444,7 +445,7 @@ impl Player {
     }
 
     /// Sends the current state to the UI receiver
-    fn ui_set_state(&self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_set_state(&self) {
         let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
@@ -455,23 +456,26 @@ impl Player {
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerState(playing, interactive)).await })
+            .expect(EXP_RX);
     }
 
     /// Sends the current song info to the UI receiver
-    fn ui_update_song_info(&self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_update_song_info(&self) {
         let tx = self.ui_tx.clone();
         println!("ui_update_song_info()");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::SongInfo).await })
+            .expect(EXP_RX);
     }
 
     /// Sends the current playback time to the UI receiver
-    fn ui_set_time(&self) -> Result<(), SendError<UpdateUI>> {
+    fn ui_set_time(&self) {
         let tx = self.ui_tx.clone();
         let time = self.current_time();
         // println!("ui_set_time({time:?})");
         self.tokio_rt
             .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
+            .expect(EXP_RX);
     }
 
     /// Handles `GStreamer` events and empties the message queue
@@ -480,8 +484,8 @@ impl Player {
             match message.type_() {
                 gst::MessageType::StreamStart => {
                     println!("Song started");
-                    self.queue.ui_update_queue_index().unwrap();
-                    self.ui_update_song_info().unwrap();
+                    self.queue.ui_update_queue_index();
+                    self.ui_update_song_info();
                     self.next_song_loaded = false;
                 }
                 gst::MessageType::Eos if self.seeking => {
@@ -491,13 +495,13 @@ impl Player {
                     if self.queue.has_next() {
                         println!("Moving to next track due to end of stream");
                         self.request_state(State::Playing);
-                        self.player_tx.send(PlayerRequest::LoadNext).unwrap();
+                        self.player_tx.send(PlayerRequest::LoadNext).expect(EXP_RX);
                     } else {
                         println!("Stopping player due to end of queue");
                         self.request_state(State::Null);
                         self.queue.pending_track = true;
                         self.update();
-                        self.ui_set_state().unwrap();
+                        self.ui_set_state();
                     }
                 }
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
@@ -523,6 +527,6 @@ impl Player {
         self.queue.remove_current();
         // self.move_next();
         self.request_state(new_state);
-        self.player_tx.send(PlayerRequest::Update).unwrap();
+        self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 }

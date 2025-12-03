@@ -7,6 +7,8 @@ use std::sync::mpsc;
 use crate::approx_eq;
 use crate::player::PlayerRequest;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]
 pub struct SettingsPage {
@@ -29,18 +31,18 @@ impl SettingsPage {
         }
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::SetVolume(value * value))
-            .unwrap();
+            .expect(EXP_RX);
         glib::Propagation::Proceed
     }
     #[template_callback]
     pub fn handle_gapless_switch(&self) {
         self.player_tx
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(PlayerRequest::SetGapless(self.gapless.is_active()))
-            .unwrap();
+            .expect(EXP_RX);
     }
 }
 
