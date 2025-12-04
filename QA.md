@@ -21,6 +21,12 @@ Song Queue:
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
 
+Music Library:
+
+- [ ] The 'Songs' page and its subpages do not have performance issues
+- [ ] The 'Albums' page and its subpages do not have performance issues
+- [ ] The 'Artists' page and its subpages do not have performance issues
+
 Interface:
 
 - [x] UI adapts to window size, and looks good at all sizes
