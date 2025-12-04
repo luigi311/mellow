@@ -13,9 +13,9 @@ mod lyrics_page;
 mod main_player;
 mod queue_page;
 mod queue_row;
+mod queue_song_page;
 mod rating;
 mod settings_page;
-mod song_page;
 mod window;
 
 use crate::library::LibraryRequest;

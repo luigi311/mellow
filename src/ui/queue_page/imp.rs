@@ -9,7 +9,7 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::queue_row::QueueRow;
-use crate::ui::song_page::SongPage;
+use crate::ui::queue_song_page::QueueSongPage;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
@@ -25,7 +25,7 @@ pub struct QueuePage {
     #[template_child]
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
-    pub song_page: OnceCell<SongPage>,
+    pub song_page: OnceCell<QueueSongPage>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 }
 

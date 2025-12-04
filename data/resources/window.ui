@@ -135,7 +135,7 @@
                     <property name="child">
                       <object class="AdwNavigationView" id="playing_navigation_view">
 
-                        Song queue page
+                        Queue page
                         <child>
                           <object class="MellowQueuePage" id="queue_page">
                             <property name="title" translatable="yes">Song Queue</property>
@@ -145,7 +145,7 @@
 
                         Song info page
                         <child>
-                          <object class="MellowSongPage" id="song_page">
+                          <object class="MellowQueueSongPage" id="queue_song_page">
                             <property name="title" translatable="yes">Song Info</property>
                             <property name="tag">info</property>
                           </object>

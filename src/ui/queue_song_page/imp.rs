@@ -12,8 +12,8 @@ use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
-pub struct SongPage {
+#[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]
+pub struct QueueSongPage {
     pub index: Cell<usize>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
     pub ui_tx: OnceCell<tokio_mpsc::Sender<UpdateUI>>,
@@ -31,7 +31,7 @@ pub struct SongPage {
 }
 
 #[gtk::template_callbacks]
-impl SongPage {
+impl QueueSongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
         let player_tx = self.player_tx.get().expect(EXP_INIT);
@@ -76,9 +76,9 @@ impl SongPage {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for SongPage {
-    const NAME: &str = "MellowSongPage";
-    type Type = super::SongPage;
+impl ObjectSubclass for QueueSongPage {
+    const NAME: &str = "MellowQueueSongPage";
+    type Type = super::QueueSongPage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -91,6 +91,6 @@ impl ObjectSubclass for SongPage {
     }
 }
 
-impl ObjectImpl for SongPage {}
-impl WidgetImpl for SongPage {}
-impl NavigationPageImpl for SongPage {}
+impl ObjectImpl for QueueSongPage {}
+impl WidgetImpl for QueueSongPage {}
+impl NavigationPageImpl for QueueSongPage {}

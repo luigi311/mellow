@@ -19,9 +19,9 @@ use crate::ui::library_songs_page::LibrarySongsPage;
 use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
+use crate::ui::queue_song_page::QueueSongPage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
-use crate::ui::song_page::SongPage;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -50,7 +50,7 @@ pub struct Window {
     #[template_child]
     queue_page: TemplateChild<QueuePage>,
     #[template_child]
-    song_page: TemplateChild<SongPage>,
+    queue_song_page: TemplateChild<QueueSongPage>,
     #[template_child]
     lyrics_page: TemplateChild<LyricsPage>,
     #[template_child]
@@ -87,8 +87,8 @@ impl Window {
 
         // Queue Page & Subpages
         self.queue_page
-            .init(player_tx.clone(), self.song_page.get());
-        self.song_page.init(player_tx.clone());
+            .init(player_tx.clone(), self.queue_song_page.get());
+        self.queue_song_page.init(player_tx.clone());
 
         // Settings Page
         self.settings_page.init(player_tx);

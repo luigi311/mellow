@@ -9,19 +9,19 @@ use crate::player::PlayerRequest;
 mod imp;
 
 glib::wrapper! {
-    pub struct SongPage(ObjectSubclass<imp::SongPage>)
+    pub struct QueueSongPage(ObjectSubclass<imp::QueueSongPage>)
         @extends adw::NavigationPage, gtk::Widget,
         @implements
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for SongPage {
+impl Default for QueueSongPage {
     fn default() -> Self {
         Object::builder().build()
     }
 }
 
-impl SongPage {
+impl QueueSongPage {
     #[must_use]
     pub fn new() -> Self {
         Object::builder().build()
