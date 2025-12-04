@@ -12,8 +12,6 @@ use crate::player::PlayerRequest;
 pub struct LibraryArtistsPage {
     pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
-    pub view_stack: OnceCell<adw::ViewStack>,
-    pub sheet: OnceCell<adw::BottomSheet>,
 }
 
 #[gtk::template_callbacks]

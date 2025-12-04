@@ -38,6 +38,11 @@
           </object>
         </child>
         <property name="content">
+
+          <!-- TODO: Create a widget to display each song -->
+          <!-- TODO: Display the list of songs -->
+          <!-- TODO: Create a subpage for the song -->
+
           <object class="AdwStatusPage">
             <property name="icon-name">audio-x-generic-symbolic</property>
             <property name="title" translatable="yes">Songs</property>

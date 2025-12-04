@@ -35,15 +35,8 @@ impl SongPage {
         song_page.artist_name.set_label(artist_name);
     }
 
-    pub fn init(
-        &self,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
-        navigation: adw::NavigationView,
-        bottom_sheet: adw::BottomSheet,
-    ) {
+    pub fn init(&self, player_tx: mpsc::SyncSender<PlayerRequest>) {
         let song_page = self.imp();
         song_page.player_tx.set(player_tx).expect(INIT_ERR);
-        song_page.navigation_view.set(navigation).expect(INIT_ERR);
-        song_page.bottom_sheet.set(bottom_sheet).expect(INIT_ERR);
     }
 }

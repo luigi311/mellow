@@ -54,7 +54,7 @@ pub struct Window {
     #[template_child]
     lyrics_page: TemplateChild<LyricsPage>,
     #[template_child]
-    playing_navigation_view: TemplateChild<adw::NavigationView>,
+    pub playing_navigation_view: TemplateChild<adw::NavigationView>,
 
     // View stack "Settings" tab
     #[template_child]
@@ -78,36 +78,17 @@ impl Window {
         self.main_player.init(player_tx.clone());
 
         // Library
-        self.library_songs_page.init(
-            library_tx.clone(),
-            player_tx.clone(),
-            self.sheet.get(),
-            self.view_stack.get(),
-        );
-        self.library_albums_page.init(
-            library_tx.clone(),
-            player_tx.clone(),
-            self.sheet.get(),
-            self.view_stack.get(),
-        );
-        self.library_artists_page.init(
-            library_tx.clone(),
-            player_tx.clone(),
-            self.sheet.get(),
-            self.view_stack.get(),
-        );
+        self.library_songs_page
+            .init(library_tx.clone(), player_tx.clone());
+        self.library_albums_page
+            .init(library_tx.clone(), player_tx.clone());
+        self.library_artists_page
+            .init(library_tx.clone(), player_tx.clone());
 
         // Queue Page & Subpages
-        self.queue_page.init(
-            player_tx.clone(),
-            self.song_page.get(),
-            self.playing_navigation_view.get(),
-        );
-        self.song_page.init(
-            player_tx.clone(),
-            self.playing_navigation_view.get(),
-            self.sheet.get(),
-        );
+        self.queue_page
+            .init(player_tx.clone(), self.song_page.get());
+        self.song_page.init(player_tx.clone());
 
         // Settings Page
         self.settings_page.init(player_tx);
@@ -140,7 +121,10 @@ impl Window {
                 UpdateUI::SongQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
-                UpdateUI::OpenLibrary => self.open_library(),
+                UpdateUI::FocusLibrary => self.focus_library(),
+                UpdateUI::FocusPlaying => self.focus_playing(),
+                UpdateUI::FocusSettings => self.focus_settings(),
+                UpdateUI::OpenSheet(open) => self.open_sheet(open),
             }
         }
     }
@@ -238,9 +222,17 @@ impl Window {
         }
     }
 
-    fn open_library(&self) {
+    fn focus_library(&self) {
         self.view_stack.set_visible_child_name("library");
-        self.sheet.set_open(true);
+    }
+    fn focus_playing(&self) {
+        self.view_stack.set_visible_child_name("playing");
+    }
+    fn focus_settings(&self) {
+        self.view_stack.set_visible_child_name("settings");
+    }
+    pub fn open_sheet(&self, open: bool) {
+        self.sheet.set_open(open);
     }
 }
 

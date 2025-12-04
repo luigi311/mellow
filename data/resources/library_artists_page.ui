@@ -29,6 +29,11 @@
           </object>
         </child>
         <property name="content">
+
+          <!-- TODO: Create a widget to display each artist -->
+          <!-- TODO: Display the list of artists -->
+          <!-- TODO: Create a subpage for the artist -->
+
           <object class="AdwStatusPage">
             <property name="icon-name">avatar-default-symbolic</property>
             <property name="title" translatable="yes">Artists</property>

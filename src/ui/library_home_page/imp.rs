@@ -4,7 +4,7 @@ use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_home_page.ui")]
-pub struct LibraryHomePage {}
+pub struct LibraryHomePage;
 
 #[glib::object_subclass]
 impl ObjectSubclass for LibraryHomePage {

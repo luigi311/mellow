@@ -5,7 +5,7 @@ use gtk::{gdk, glib};
 use std::cell::OnceCell;
 use std::sync::mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::queue_row::QueueRow;
@@ -19,15 +19,13 @@ pub struct QueuePage {
     #[template_child]
     pub repeat_toggle: TemplateChild<gtk::ToggleButton>,
 
-    // #[template_child]
-    // song_queue_list_view: TemplateChild<gtk::ListView>,
     #[template_child]
-    song_queue_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
+    list_box: TemplateChild<gtk::ListBox>,
+    // list_view: TemplateChild<gtk::ListView>,
     #[template_child]
-    song_queue_list_box: TemplateChild<gtk::ListBox>,
+    scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
     pub song_page: OnceCell<SongPage>,
-    pub navigation_view: OnceCell<adw::NavigationView>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 }
 
@@ -57,10 +55,10 @@ impl QueuePage {
         // TODO: Display the entire queue
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
-        self.song_queue_list_box.remove_all();
-        for i in start..end {
-            let queue_entry = QueueRow::default();
-            match &queue[i] {
+        self.list_box.remove_all();
+        for (i, item) in queue.iter().enumerate().skip(start).take(end) {
+            let entry = QueueRow::default();
+            match item {
                 QueueItem::Song(song) => {
                     let is_playing = i == index;
 
@@ -72,38 +70,41 @@ impl QueuePage {
                     let album_title = song_info.album.clone();
                     let artist_name = song_info.artist.clone();
 
-                    queue_entry.set_title(&song_title);
-                    queue_entry.set_subtitle(&artist_name);
+                    entry.set_title(&song_title);
+                    entry.set_subtitle(&artist_name);
                     if is_playing {
-                        queue_entry.add_css_class("heading");
-                        queue_entry.add_css_class("card");
+                        entry.add_css_class("heading");
+                        entry.add_css_class("card");
                     }
 
                     // TODO: Cached low-res album covers
                     let detailed_info = info.detailed();
                     if let Some(artwork) = detailed_info.artwork.as_ref() {
-                        queue_entry.set_prefix_image(artwork);
+                        entry.set_prefix_image(artwork);
                     } else {
-                        queue_entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
+                        entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
                     }
 
-                    queue_entry.connect_activated({
+                    entry.connect_activated({
                         clone!(
                             #[weak(rename_to=song_page)]
                             self.song_page.get().expect(EXP_INIT),
-                            #[weak(rename_to=navigation)]
-                            self.navigation_view.get().expect(EXP_INIT),
                             move |_| {
-                                navigation.push_by_tag("info");
+                                song_page
+                                    .activate_action(
+                                        "ui.playing_nav_push",
+                                        Some(&"info".to_variant()),
+                                    )
+                                    .expect(ACTION_ERR);
                                 song_page.set_info(i, &song_title, &album_title, &artist_name);
                             }
                         )
                     });
                 }
                 QueueItem::Stopper => {
-                    queue_entry.set_title("Pause");
-                    queue_entry.add_css_class("heading");
-                    queue_entry.add_css_class("dimmed");
+                    entry.set_title("Pause");
+                    entry.add_css_class("heading");
+                    entry.add_css_class("dimmed");
 
                     // IDEA: Draw a pause icon in place of the album cover
                     // queue_entry.set_prefix_image();
@@ -113,10 +114,10 @@ impl QueuePage {
                     // TODO: Allow reordering stoppers
                 }
             }
-            self.song_queue_list_box.append(&queue_entry);
+            self.list_box.append(&entry);
         }
         let new_value = (index - start) * 54;
-        self.song_queue_scrolled_window
+        self.scrolled_window
             .vadjustment()
             .set_value(new_value as f64);
 

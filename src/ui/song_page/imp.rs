@@ -1,20 +1,22 @@
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
+use gtk::prelude::WidgetExt;
 use std::cell::{Cell, OnceCell};
 use std::sync::mpsc;
+use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
+use crate::ui::UpdateUI;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
 pub struct SongPage {
     pub index: Cell<usize>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
-    pub navigation_view: OnceCell<adw::NavigationView>,
-    pub bottom_sheet: OnceCell<adw::BottomSheet>,
+    pub ui_tx: OnceCell<tokio_mpsc::Sender<UpdateUI>>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -39,8 +41,12 @@ impl SongPage {
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.navigation_view.get().expect(EXP_INIT).pop();
-        self.bottom_sheet.get().expect(EXP_INIT).set_open(false);
+        self.obj()
+            .activate_action("ui.close_sheet", None)
+            .expect(ACTION_ERR);
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_stop_after(&self) {
@@ -52,7 +58,9 @@ impl SongPage {
                 QueueItem::Stopper,
             ))))
             .expect(EXP_RX);
-        self.navigation_view.get().expect(EXP_INIT).pop();
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_remove_item(&self) {
@@ -61,7 +69,9 @@ impl SongPage {
             .expect(EXP_INIT)
             .send(PlayerRequest::RemoveAt(self.index.get()))
             .expect(EXP_RX);
-        self.navigation_view.get().expect(EXP_INIT).pop();
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
     }
 }
 

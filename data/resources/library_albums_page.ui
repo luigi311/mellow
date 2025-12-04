@@ -29,6 +29,11 @@
           </object>
         </child>
         <property name="content">
+
+          <!-- TODO: Create a widget to display each album -->
+          <!-- TODO: Display the list of albums -->
+          <!-- TODO: Create a subpage for the album -->
+
           <object class="AdwStatusPage">
             <property name="icon-name">media-optical-cd-audio-symbolic</property>
             <property name="title" translatable="yes">Albums</property>

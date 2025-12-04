@@ -32,13 +32,9 @@ impl LibraryArtistsPage {
         &self,
         library_tx: mpsc::SyncSender<LibraryRequest>,
         player_tx: mpsc::SyncSender<PlayerRequest>,
-        bottom_sheet: adw::BottomSheet,
-        view_stack: adw::ViewStack,
     ) {
         let artists_page = self.imp();
         artists_page.library_tx.set(library_tx).expect(INIT_ERR);
         artists_page.player_tx.set(player_tx).expect(INIT_ERR);
-        artists_page.sheet.set(bottom_sheet).expect(INIT_ERR);
-        artists_page.view_stack.set(view_stack).expect(INIT_ERR);
     }
 }

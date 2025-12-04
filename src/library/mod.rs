@@ -189,14 +189,20 @@ impl Library {
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
-                LibraryRequest::QueueAllSongs => self
-                    .player_tx
-                    .send(PlayerRequest::LoadQueue(self.queue_all_songs()))?,
+                LibraryRequest::QueueAllSongs => self.queue_all_songs().await?,
                 LibraryRequest::Rebuild => self.rebuild().await?,
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
             }
         }
+    }
+
+    pub async fn queue_all_songs(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_songs()))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
+        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        Ok(())
     }
 
     #[inline]
@@ -209,7 +215,7 @@ impl Library {
     }
 
     #[must_use]
-    pub fn queue_all_songs(&self) -> Vec<QueueItem> {
+    pub fn all_songs(&self) -> Vec<QueueItem> {
         self.songs
             .iter()
             .map(|song| QueueItem::Song(Arc::clone(song)))
@@ -217,7 +223,7 @@ impl Library {
     }
 
     #[must_use]
-    pub fn queue_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
+    pub fn songs_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
     where
         P: Iterator<Item = String>,
     {

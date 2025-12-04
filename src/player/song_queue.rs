@@ -2,12 +2,11 @@ use rand::random_range;
 use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::excuses::{EXP_RX, EXP_SAFE};
 use crate::library::Song;
 use crate::player::PlayerRequest;
 use crate::reorder_vec;
 use crate::ui::UpdateUI;
-
-use crate::excuses::{EXP_RX, EXP_SAFE};
 
 pub struct SongQueue {
     repeat: bool,
@@ -457,8 +456,9 @@ impl SongQueue {
     /// Requests the UI to open the music library
     fn ui_open_library(&self) {
         let tx = self.ui_tx.clone();
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::OpenLibrary).await })
-            .expect(EXP_RX);
+        self.tokio_rt.block_on(async move {
+            tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
+            tx.send(UpdateUI::OpenSheet(true)).await.expect(EXP_RX);
+        });
     }
 }

@@ -34,7 +34,10 @@ pub enum UpdateUI {
     Shuffle(bool),
     Repeat(bool),
     Progress(Option<f64>),
-    OpenLibrary,
+    FocusLibrary,
+    FocusPlaying,
+    FocusSettings,
+    OpenSheet(bool),
 }
 
 pub fn init(

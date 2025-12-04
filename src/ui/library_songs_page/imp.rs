@@ -13,58 +13,32 @@ use crate::player::PlayerRequest;
 pub struct LibrarySongsPage {
     pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
-    pub view_stack: OnceCell<adw::ViewStack>,
-    pub sheet: OnceCell<adw::BottomSheet>,
 }
 
 #[gtk::template_callbacks]
 impl LibrarySongsPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
-        self.player_tx
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
-        self.library_tx
-            .get()
-            .expect(EXP_INIT)
-            .send(LibraryRequest::QueueAllSongs)
-            .expect(EXP_RX);
-        self.player_tx
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.view_stack
-            .get()
-            .expect(EXP_INIT)
-            .set_visible_child_name("playing");
-        self.sheet.get().expect(EXP_INIT).set_open(false);
+        self.play_now(false);
     }
 
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
-        self.player_tx
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::SetShuffle(true))
+        self.play_now(true);
+    }
+
+    fn play_now(&self, shuffle: bool) {
+        let player_tx = self.player_tx.get().expect(EXP_INIT);
+        let library_tx = self.library_tx.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::SetShuffle(shuffle))
             .expect(EXP_RX);
-        self.library_tx
-            .get()
-            .expect(EXP_INIT)
+        library_tx
             .send(LibraryRequest::QueueAllSongs)
             .expect(EXP_RX);
-        self.player_tx
-            .get()
-            .expect(EXP_INIT)
+        player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.view_stack
-            .get()
-            .expect(EXP_INIT)
-            .set_visible_child_name("playing");
-        self.sheet.get().expect(EXP_INIT).set_open(false);
     }
 }
 

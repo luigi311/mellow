@@ -32,14 +32,10 @@ impl LibrarySongsPage {
         &self,
         library_tx: mpsc::SyncSender<LibraryRequest>,
         player_tx: mpsc::SyncSender<PlayerRequest>,
-        bottom_sheet: adw::BottomSheet,
-        view_stack: adw::ViewStack,
     ) {
         let songs_page = self.imp();
         songs_page.library_tx.set(library_tx).expect(INIT_ERR);
         songs_page.player_tx.set(player_tx).expect(INIT_ERR);
-        songs_page.sheet.set(bottom_sheet).expect(INIT_ERR);
-        songs_page.view_stack.set(view_stack).expect(INIT_ERR);
     }
 
     pub fn load_songs(&self, songs: Box<[Song]>) {

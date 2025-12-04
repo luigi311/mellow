@@ -6,10 +6,9 @@ use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::player::song_queue::{QueueItem, SongQueue};
 use crate::ui::UpdateUI;
-
-use crate::excuses::{EXP_RX, INIT_ERR};
 
 pub mod song_queue;
 

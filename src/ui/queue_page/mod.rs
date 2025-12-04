@@ -29,16 +29,10 @@ impl QueuePage {
         Object::builder().build()
     }
 
-    pub fn init(
-        &self,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
-        song_page: SongPage,
-        navigation: adw::NavigationView,
-    ) {
+    pub fn init(&self, player_tx: mpsc::SyncSender<PlayerRequest>, song_page: SongPage) {
         let queue_page = self.imp();
         queue_page.player_tx.set(player_tx).expect(INIT_ERR);
         queue_page.song_page.set(song_page).expect(INIT_ERR);
-        queue_page.navigation_view.set(navigation).expect(INIT_ERR);
     }
 
     pub fn update_shuffle(&self, shuffle: bool) {

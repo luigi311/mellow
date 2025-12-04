@@ -6,10 +6,9 @@ use gtk::{gdk, glib};
 use gst::ClockTime;
 use std::{sync::mpsc, time::Duration};
 
+use crate::excuses::{EXP_RX, EXP_SAFE, INIT_ERR};
 use crate::format_duration;
 use crate::player::PlayerRequest;
-
-use crate::excuses::{EXP_RX, EXP_SAFE, INIT_ERR};
 
 mod imp;
 
@@ -53,6 +52,15 @@ impl MainPlayer {
             .add_controller(release_seek_bar);
     }
 
+    pub fn set_state(&self, playing: bool, interactive: bool) {
+        let ui = self.imp();
+        ui.pause_button.set_icon_name(match playing {
+            true => "media-playback-pause-symbolic",
+            false => "media-playback-start-symbolic",
+        });
+        ui.media_controls.set_sensitive(interactive);
+    }
+
     pub fn set_info(
         &self,
         song: &str,
@@ -76,20 +84,10 @@ impl MainPlayer {
         ui.album_title.set_label(album);
         ui.artist_name.set_label(artist);
 
-        if !song_duration.is_zero() {
-            ui.time_end_label.set_label(&format_duration(song_duration));
-        } else {
-            ui.time_end_label.set_label("-:--");
+        match song_duration.is_zero() {
+            true => ui.time_end_label.set_label("-:--"),
+            false => ui.time_end_label.set_label(&format_duration(song_duration)),
         }
-    }
-
-    pub fn set_state(&self, playing: bool, interactive: bool) {
-        let ui = self.imp();
-        ui.pause_button.set_icon_name(match playing {
-            true => "media-playback-pause-symbolic",
-            false => "media-playback-start-symbolic",
-        });
-        ui.media_controls.set_sensitive(interactive);
     }
 
     pub fn set_time(&self, time: Option<ClockTime>, duration_ms: f64) {

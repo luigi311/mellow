@@ -32,12 +32,12 @@
         </child>
         <property name="content">
           <!-- TODO: Button to scroll back to the playing song -->
-          <object class="GtkScrolledWindow" id="song_queue_scrolled_window">
+          <object class="GtkScrolledWindow" id="scrolled_window">
             <child>
               <object class="AdwClamp">
                 <child>
-                  <object class="GtkListBox" id="song_queue_list_box">
-                  <!-- <object class="GtkListView" id="song_queue_list_view"> -->
+                  <object class="GtkListBox" id="list_box">
+                  <!-- <object class="GtkListView" id="list_view"> -->
                     <property name="selection_mode">none</property>
                     <property name="margin_top">18</property>
                     <property name="margin_bottom">18</property>

@@ -6,12 +6,10 @@ use gtk::glib;
 use std::sync::mpsc;
 use std::thread;
 
-use mellow::excuses::EXP_RX;
+use mellow::excuses::{EXP_RX, INIT_ERR};
 use mellow::library::{Library, LibraryRequest};
 use mellow::player::{Player, PlayerRequest};
 use mellow::{APP_ID, APP_NAME};
-
-use mellow::excuses::INIT_ERR;
 
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(APP_NAME);
@@ -41,6 +39,8 @@ fn init(app: &Application) {
         .spawn(move || {
             let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
             runtime.block_on(async move {
+                // TODO: Load the library and only rebuild if necessary
+                // This should probably be requested by the UI instead
                 library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
                 init_player_queue(&library_tx, &player_tx).expect(INIT_ERR);
                 library.request_handler().await.unwrap();
@@ -55,7 +55,7 @@ fn init_player_queue(
 ) -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();
     args.next();
-    if let Some(queue) = Library::queue_from_paths(&mut args) {
+    if let Some(queue) = Library::songs_from_paths(&mut args) {
         player_tx.send(PlayerRequest::LoadQueue(queue))?;
         return Ok(());
     }
