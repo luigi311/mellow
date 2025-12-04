@@ -16,10 +16,13 @@ Playback:
 Song Queue:
 
 - [x] Adding items works as expected
-- [x] Removing items works as expected
+- [ ] Removing items works as expected
+  - FIX: Gapless: Removing next song when it is already loaded crashes the player
 - [ ] Reordering the queue works as expected
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
+- [ ] The song queue does not cause performance issues
+  - FIX: UI hangs while the song info for queue items is being loaded
 
 Music Library:
 
