@@ -44,7 +44,7 @@ impl QueuePage {
         self.player_tx
             .get()
             .expect(EXP_INIT)
-            .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
+            .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .expect(EXP_RX);
     }
 
@@ -56,7 +56,7 @@ impl QueuePage {
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
         self.list_box.remove_all();
-        for (i, item) in queue.iter().enumerate().skip(start).take(end) {
+        for (i, item) in queue.iter().enumerate().take(end).skip(start) {
             let entry = QueueRow::default();
             match item {
                 QueueItem::Song(song) => {
