@@ -69,7 +69,7 @@
 
                 <!-- TODO: Visual improvements -->
                 <child>
-                  <object class="AdwActionRow" id="play_now">
+                  <object class="AdwActionRow">
                     <signal name="activated" handler="handle_play_now" swapped="true"/>
                     <property name="title" translatable="yes">Play Now</property>
                     <property name="activatable">True</property>
@@ -81,7 +81,7 @@
                   </object>
                 </child>
                 <child>
-                  <object class="AdwActionRow" id="stop_after">
+                  <object class="AdwActionRow">
                     <signal name="activated" handler="handle_stop_after" swapped="true"/>
                     <property name="title" translatable="yes">Pause After</property>
                     <property name="activatable">True</property>
@@ -98,7 +98,7 @@
             <child>
               <object class="AdwPreferencesGroup">
                 <child>
-                  <object class="AdwActionRow" id="remove_item">
+                  <object class="AdwActionRow">
                     <signal name="activated" handler="handle_remove_item" swapped="true"/>
                     <property name="title" translatable="yes">Remove From Queue</property>
                     <property name="activatable">True</property>
