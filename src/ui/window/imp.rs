@@ -70,7 +70,7 @@ pub struct Window {
 }
 
 impl Window {
-    fn init_ui_elements(&self) {
+    pub fn init_ui_elements(&self) {
         let player_tx = self.player_tx.get().expect(EXP_INIT).clone();
         let library_tx = self.library_tx.get().expect(EXP_INIT).clone();
 
@@ -96,8 +96,6 @@ impl Window {
 
     #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) -> ! {
-        self.init_ui_elements();
-
         let mut song_duration = Duration::default();
         loop {
             let Some(response) = ui_rx.recv().await else {

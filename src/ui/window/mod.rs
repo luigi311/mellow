@@ -41,6 +41,7 @@ impl Window {
                 210,
             );
         }
+        imp.init_ui_elements();
         window.load_settings();
         window
     }
