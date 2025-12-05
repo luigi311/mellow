@@ -24,10 +24,6 @@ pub struct QueueSongPage {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
-    #[template_child]
-    pub play_now: TemplateChild<adw::ActionRow>,
-    #[template_child]
-    pub stop_after: TemplateChild<adw::ActionRow>,
 }
 
 #[gtk::template_callbacks]

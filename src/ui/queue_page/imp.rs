@@ -56,9 +56,9 @@ impl QueuePage {
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
         self.list_box.remove_all();
-        for (i, item) in queue.iter().enumerate().take(end).skip(start) {
+        for i in start..end {
             let entry = QueueRow::default();
-            match item {
+            match &queue[i] {
                 QueueItem::Song(song) => {
                     let is_playing = i == index;
 

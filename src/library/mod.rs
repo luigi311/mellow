@@ -147,15 +147,17 @@ impl Library {
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
 
+        let songs = songs.lock().unwrap().take().unwrap();
+        self.songs = songs;
+
         let albums = Vec::new();
         let artists = Vec::new();
 
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
-        let songs = songs.lock().unwrap().take().unwrap();
-        let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
-        for i in 0..songs.len() {
+        let progress_freq = self.songs.len() / PROGRESS_BAR_STEPS + 1;
+        for (i, song) in self.songs.iter().enumerate() {
             // TODO: Assign song info, but skip memory-heavy fields (artwork, etc)
-            // let mut song = songs[i].lock().unwrap();
+            // let mut song = song.lock().unwrap();
             // let mut info = song.info();
             // let song_info = info.basic();
 
@@ -173,12 +175,11 @@ impl Library {
             // artists.push(artist);
 
             if i % progress_freq == 0 {
-                let progress = Some(i as f64 / songs.len() as f64);
+                let progress = Some(i as f64 / self.songs.len() as f64);
                 self.ui_tx.send(UpdateUI::Progress(progress)).await?;
             }
         }
 
-        self.songs = songs;
         self.albums = albums;
         self.artists = artists;
 

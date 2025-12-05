@@ -63,6 +63,7 @@
                 </child>
               </object>
             </child>
+
             <child>
               <object class="AdwPreferencesGroup">
 
@@ -86,7 +87,6 @@
                     <property name="activatable">True</property>
                     <child type="prefix">
                       <object class="GtkImage">
-                        <!-- <property name="icon_name">stopwatch-symbolic</property> -->
                         <property name="icon_name">alarm-symbolic</property>
                       </object>
                     </child>
@@ -111,8 +111,8 @@
                 </child>
               </object>
             </child>
-          </object>
 
+          </object>
         </property>
       </object>
     </property>

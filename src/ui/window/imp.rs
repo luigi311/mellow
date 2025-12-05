@@ -108,18 +108,15 @@ impl Window {
                 UpdateUI::PlayerState(playing, interactive) => {
                     self.main_player.set_state(playing, interactive);
                 }
-                // TODO: Get rid of `UpdateUI::SongInfo` if possible
-                UpdateUI::SongInfo => {
-                    self.update_song_info(&mut song_duration);
-                }
                 UpdateUI::PlayerTime(time) => {
                     self.main_player
                         .set_time(time, song_duration.as_millis() as f64);
                 }
-                UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
-                UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
+                UpdateUI::SongInfo => self.update_song_info(&mut song_duration),
                 UpdateUI::SongQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
+                UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
+                UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
@@ -199,15 +196,12 @@ impl Window {
         self.update_song_queue(None);
     }
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {
-        println!(
-            "update_song_queue({}",
-            match queue.as_ref() {
-                Some(q) => format!("Some(…)): {} items", q.len()),
-                None => "None)".to_string(),
+        match queue {
+            Some(queue) => {
+                println!("update_song_queue(Some(…)): {} items", queue.len());
+                self.song_queue.replace(queue);
             }
-        );
-        if let Some(queue) = queue {
-            let _ = self.song_queue.replace(queue);
+            None => println!("update_song_queue(None)"),
         }
         self.queue_page
             .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
