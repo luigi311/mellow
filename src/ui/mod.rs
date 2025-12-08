@@ -29,7 +29,7 @@ pub enum UpdateUI {
     PlayerState(bool, bool),
     PlayerTime(Option<ClockTime>),
     SongInfo,
-    SongQueue(Box<[QueueItem]>),
+    NewQueue(Box<[QueueItem]>), // TODO: QueueInsert, QueueRemove, QueueReorder, QueueSwap
     QueueIndex(usize),
     Shuffle(bool),
     Repeat(bool),

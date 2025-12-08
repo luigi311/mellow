@@ -111,7 +111,7 @@ impl Window {
                         .set_time(time, song_duration.as_millis() as f64);
                 }
                 UpdateUI::SongInfo => self.update_song_info(&mut song_duration),
-                UpdateUI::SongQueue(queue) => self.update_song_queue(Some(queue)),
+                UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),

@@ -53,19 +53,13 @@ pub enum PlayerRequest {
     SetGapless(bool),
 }
 
-// Required due to `PlayerRequest::LoadQueue`
+// Required by certain variants
 impl std::fmt::Debug for PlayerRequest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::LoadQueue(queue) => {
-                    format!("LoadQueue(…): {} items", queue.len())
-                }
-                Self::AppendQueue(queue) => {
-                    format!("AppendQueue(…): {} items", queue.len())
-                }
                 Self::Update => "Update".to_string(),
                 Self::TogglePlay(play) => format!("TogglePlay({play:?})",),
                 Self::SkipPrevious => "SkipPrevious".to_string(),
@@ -75,6 +69,12 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
+                Self::LoadQueue(queue) => {
+                    format!("LoadQueue(…): {} items", queue.len())
+                }
+                Self::AppendQueue(queue) => {
+                    format!("AppendQueue(…): {} items", queue.len())
+                }
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),

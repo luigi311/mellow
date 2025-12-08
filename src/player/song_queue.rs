@@ -331,14 +331,13 @@ impl SongQueue {
             self.shuffled.remove(self.shuffled.len() - 1);
             self.songs.remove(target)
         } else {
-            // No need to update the shuffled queue, because
-            // a new one is created when it is enabled
-            // self.shuffled.remove(self.shuffled_index(index).unwrap());
+            // A new shuffled queue is created when shuffle mode is enabled,
+            // so only the regular queue must be updated here
             self.songs.remove(index)
         };
         if index < self.index {
             self.index -= 1;
-            // self.ui_update_queue_index().unwrap();
+            // self.ui_update_queue_index();
         }
         self.ui_update_queue();
         previous
@@ -441,7 +440,7 @@ impl SongQueue {
         println!("ui_update_queue()");
         self.ui_update_queue_index();
         self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::SongQueue(self.ordered_queue())).await })
+            .block_on(async move { tx.send(UpdateUI::NewQueue(self.ordered_queue())).await })
             .expect(EXP_RX);
     }
 

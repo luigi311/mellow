@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::excuses::EXP_INIT;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -142,12 +143,12 @@ impl Library {
 
                 let song = Arc::new(Mutex::new(Song::new(file, None)));
 
-                songs.lock().unwrap().as_mut().unwrap().push(song);
+                songs.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
 
-        let songs = songs.lock().unwrap().take().unwrap();
+        let songs = songs.lock().unwrap().take().expect(EXP_INIT);
         self.songs = songs;
 
         let albums = Vec::new();
@@ -238,7 +239,7 @@ impl Library {
                 }
                 let song = Song::new_from_str(&file, None);
                 let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-                queue.lock().unwrap().as_mut().unwrap().push(song);
+                queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
                 let song_files = Arc::new(Mutex::new(Vec::new()));
@@ -255,7 +256,7 @@ impl Library {
                 song_files.iter().for_each(|file| {
                     let song = Song::new_from_str(file, None);
                     let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-                    queue.lock().unwrap().as_mut().unwrap().push(song);
+                    queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
                 });
             }
         });

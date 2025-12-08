@@ -2,14 +2,14 @@
 //! for why the `Err` or `None` variant is not handled.
 
 /// # Reason
-/// This unwrap is guaranteed to succeed
+/// Must always succeed - you guarantee that the failure state is impossible
 pub const EXP_SAFE: &str = "Unexpected error";
 /// # Reason
-/// This unwrap is guaranteed to succeed because the item is properly initialized
-pub const EXP_INIT: &str = "Not properly initialized";
+/// You guarantee the item was properly initialized and the unwrap will succeed
+pub const EXP_INIT: &str = "Item was not properly initialized";
 /// # Reason
-/// This channel receiver is expected to be open
-pub const EXP_RX: &str = "Could not send player message";
+/// You guarantee that the channel receiver is open and the unwrap will succeed
+pub const EXP_RX: &str = "Channel receiver is unavailable";
 
 /// # Reason
 /// Panic if initialization fails because the failure case cannot be handled
