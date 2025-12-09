@@ -2,7 +2,6 @@ use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{Arc, mpsc};
-use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -161,17 +160,14 @@ impl Player {
         });
 
         loop {
-            let Ok(player_request) = self.rx.try_recv() else {
-                self.ui_set_time();
+            const LOOP_RATE: f64 = 60.2;
+            #[allow(clippy::cast_sign_loss)]
+            #[allow(clippy::cast_possible_truncation)]
+            const UPDATE_INTERVAL: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
 
-                const LOOP_RATE: f64 = 60.2;
-                #[allow(clippy::cast_sign_loss)]
-                #[allow(clippy::cast_possible_truncation)]
-                const LOOP_DELAY: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
-                thread::sleep(LOOP_DELAY);
-
+            let Ok(player_request) = self.rx.recv_timeout(UPDATE_INTERVAL) else {
                 self.handle_gst_events();
-
+                self.ui_set_time();
                 continue;
             };
 
