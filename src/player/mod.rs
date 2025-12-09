@@ -165,8 +165,8 @@ impl Player {
             #[allow(clippy::cast_possible_truncation)]
             const UPDATE_INTERVAL: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
 
+            self.handle_gst_events();
             let Ok(player_request) = self.rx.recv_timeout(UPDATE_INTERVAL) else {
-                self.handle_gst_events();
                 self.ui_set_time();
                 continue;
             };
@@ -343,7 +343,10 @@ impl Player {
             .backend
             .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)
         {
-            Ok(()) => self.backend.state(None).0.map(|_| ())?,
+            Ok(()) => {
+                self.backend.state(None).0?;
+                self.ui_set_time();
+            }
             Err(e) => eprintln!("{e}"),
         }
         Ok(())
