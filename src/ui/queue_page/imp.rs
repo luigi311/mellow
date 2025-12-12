@@ -53,15 +53,18 @@ impl QueuePage {
         // TODO: Support reordering queue items
         // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
+        self.list_box.remove_all();
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
-        self.list_box.remove_all();
-        for i in start..end {
-            let entry = QueueRow::default();
-            match &queue[i] {
+        for (i, item) in queue.iter().enumerate() {
+            match item {
+                item if !(start..end).contains(&i) => {
+                    // Garbage collection
+                    if let QueueItem::Song(song) = item {
+                        song.lock().unwrap().info().unload_detailed();
+                    }
+                }
                 QueueItem::Song(song) => {
-                    let is_playing = i == index;
-
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
 
@@ -69,7 +72,9 @@ impl QueuePage {
                     let song_title = song_info.title.clone();
                     let album_title = song_info.album.clone();
                     let artist_name = song_info.artist.clone();
+                    let is_playing = i == index;
 
+                    let entry = QueueRow::default();
                     entry.set_title(&song_title);
                     entry.set_subtitle(&artist_name);
                     if is_playing {
@@ -100,8 +105,11 @@ impl QueuePage {
                             }
                         )
                     });
+
+                    self.list_box.append(&entry);
                 }
                 QueueItem::Stopper => {
+                    let entry = QueueRow::default();
                     entry.set_title("Pause");
                     entry.add_css_class("heading");
                     entry.add_css_class("dimmed");
@@ -112,26 +120,16 @@ impl QueuePage {
                     // TODO: Open a page for stoppers as well
                     // TODO: Allow removing stoppers
                     // TODO: Allow reordering stoppers
+
+                    self.list_box.append(&entry);
                 }
             }
-            self.list_box.append(&entry);
         }
-        let new_value = (index - start) * 54;
+
+        let scroll_target = (index - start) * 54;
         self.scrolled_window
             .vadjustment()
-            .set_value(new_value as f64);
-
-        // Garbage collection
-        for (index, item) in queue.iter().enumerate() {
-            if (start..end).contains(&index) {
-                continue;
-            }
-            if let QueueItem::Song(song) = item {
-                let _ = song.lock().map(|mut song| {
-                    song.info().unload_detailed();
-                });
-            }
-        }
+            .set_value(scroll_target as f64);
     }
 }
 

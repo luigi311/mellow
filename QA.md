@@ -38,6 +38,11 @@ Interface:
   > Exceptions can be made for things like submenus and tabs,
   as long as they are related
 
+User Experience:
+
+- [ ] All settings load properly (with non-default values)
+  - TODO: Save/load library directories
+
 Performance:
 
 - [x] App loads instantly - if library loading takes a long time, do it progressively

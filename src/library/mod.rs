@@ -77,7 +77,7 @@ impl LibraryConfig {
     }
 
     pub fn add_library(&mut self, dir: String) {
-        if self.directories.iter().any(|existing| dir == *existing) {
+        if self.directories.contains(&dir) {
             return;
         }
         self.directories.push(dir);
