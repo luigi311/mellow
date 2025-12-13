@@ -15,6 +15,8 @@ Playback:
 
 Song Queue:
 
+- [ ] Starting a new queue works as expected
+  - FIX: Starting an empty queue does not unload the currently playing song
 - [x] Adding items works as expected
 - [ ] Removing items works as expected
   - FIX: Gapless: Removing next song when it is already loaded crashes the player

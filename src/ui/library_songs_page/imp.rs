@@ -33,9 +33,7 @@ impl LibrarySongsPage {
         player_tx
             .send(PlayerRequest::SetShuffle(shuffle))
             .expect(EXP_RX);
-        library_tx
-            .send(LibraryRequest::QueueAllSongs)
-            .expect(EXP_RX);
+        library_tx.send(LibraryRequest::PlayAllSongs).expect(EXP_RX);
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -57,7 +55,6 @@ impl ObjectSubclass for LibrarySongsPage {
         obj.init_template();
     }
 }
-
 impl ObjectImpl for LibrarySongsPage {}
 impl WidgetImpl for LibrarySongsPage {}
 impl NavigationPageImpl for LibrarySongsPage {}

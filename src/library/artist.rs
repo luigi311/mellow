@@ -1,4 +1,4 @@
 pub struct Artist {
-    name: String,
-    albums: Box<[usize]>,
+    pub name: String,
+    pub albums: Box<[usize]>,
 }

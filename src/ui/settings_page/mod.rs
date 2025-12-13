@@ -1,4 +1,4 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{glib, prelude::RangeExt};
 use std::sync::mpsc;

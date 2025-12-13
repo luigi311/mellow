@@ -1,6 +1,5 @@
-use adw::subclass::prelude::*;
-use glib::Object;
-use gst::glib::object::IsA;
+use adw::{prelude::*, subclass::prelude::*};
+use glib::{Object, object::IsA};
 use gtk::{gdk, glib};
 
 mod imp;

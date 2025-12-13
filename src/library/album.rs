@@ -1,5 +1,9 @@
+use crate::library::Song;
+
+use std::sync::{Arc, Mutex};
+
 pub struct Album {
-    title: String,
-    songs: Box<[usize]>,
-    artist: usize,
+    pub title: String,
+    pub songs: Vec<Arc<Mutex<Song>>>,
+    pub artist: usize,
 }

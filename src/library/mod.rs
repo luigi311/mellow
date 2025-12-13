@@ -5,6 +5,7 @@
 use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
+use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
@@ -92,8 +93,8 @@ impl LibraryConfig {
 
 pub struct Library {
     pub songs: Vec<Arc<Mutex<Song>>>,
-    pub albums: Vec<Album>,
-    pub artists: Vec<Artist>,
+    pub albums: Vec<Arc<Mutex<Album>>>,
+    pub artists: Vec<Arc<Mutex<Artist>>>,
 
     config: LibraryConfig,
     player_tx: mpsc::SyncSender<PlayerRequest>,
@@ -102,14 +103,15 @@ pub struct Library {
 }
 
 pub enum LibraryRequest {
-    QueueAllSongs,
+    PlayAllSongs,
+    PlayAllAlbums,
+    ShuffleAllAlbums,
     Rebuild,
     AddLibrary(String),
     RemoveLibrary(usize),
 }
 
 impl Library {
-    // TODO: Load library to avoid rebuilding each time
     #[must_use]
     pub fn init(
         player_tx: mpsc::SyncSender<PlayerRequest>,
@@ -147,33 +149,67 @@ impl Library {
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
-
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
+
         self.songs = songs;
 
-        let albums = Vec::new();
-        let artists = Vec::new();
+        // TODO: Load the library to avoid rebuilding each time
+        // return Ok(());
+
+        // TODO: Do the rest in a background thread, if possible
+
+        let mut albums: Vec<Arc<Mutex<Album>>> = Vec::new();
+        let mut artists: Vec<Arc<Mutex<Artist>>> = Vec::new();
 
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
         let progress_freq = self.songs.len() / PROGRESS_BAR_STEPS + 1;
         for (i, song) in self.songs.iter().enumerate() {
-            // TODO: Assign song info, but skip memory-heavy fields (artwork, etc)
-            // let mut song = song.lock().unwrap();
-            // let mut info = song.info();
-            // let song_info = info.basic();
+            let mut song_unwrapped = song.lock().unwrap();
+            let mut info = song_unwrapped.info();
+            let song_info = info.basic();
 
-            // // TODO: Assign song/album/artist index relations
+            let artist_index = artists
+                .binary_search_by(|artist| artist.lock().unwrap().name.cmp(&song_info.artist));
+            let album_index =
+                albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
-            // // TODO: Initialize album/artist
-            // let album = Album {
-            //     // TODO
-            // };
-            // let artist = Artist {
-            //     // TODO
-            // };
-            //
-            // albums.push(album);
-            // artists.push(artist);
+            match artist_index {
+                Ok(artist_index) => match album_index {
+                    Ok(album_index) => {
+                        let album_songs = &mut albums[album_index].lock().unwrap().songs;
+                        let mut song_index = album_songs.len() - 1;
+                        while song_index > 0 {
+                            if album_songs[song_index].lock().unwrap().info().basic().track
+                                < song_info.track
+                            {
+                                song_index -= 1
+                            } else {
+                                break;
+                            }
+                        }
+                        album_songs.insert(song_index, Arc::clone(&song));
+                    }
+                    Err(album_index) => {
+                        albums.insert(
+                            album_index,
+                            Arc::new(Mutex::new(Album {
+                                title: song_info.album.clone(),
+                                songs: vec![Arc::clone(&song)],
+                                artist: 0, // TODO
+                            })),
+                        );
+                    }
+                },
+                Err(artist_index) => {
+                    artists.insert(
+                        artist_index,
+                        Arc::new(Mutex::new(Artist {
+                            name: song_info.artist.clone(),
+                            albums: [].into(), // TODO
+                        })),
+                    );
+                }
+            }
 
             if i % progress_freq == 0 {
                 let progress = Some(i as f64 / self.songs.len() as f64);
@@ -191,7 +227,9 @@ impl Library {
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
-                LibraryRequest::QueueAllSongs => self.queue_all_songs().await?,
+                LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
+                LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
+                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
                 LibraryRequest::Rebuild => self.rebuild().await?,
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
@@ -199,9 +237,25 @@ impl Library {
         }
     }
 
-    pub async fn queue_all_songs(&self) -> Result<(), Box<dyn Error>> {
+    pub async fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_songs()))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
+        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        Ok(())
+    }
+
+    pub async fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_albums()))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
+        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        Ok(())
+    }
+
+    pub async fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -222,6 +276,34 @@ impl Library {
             .iter()
             .map(|song| QueueItem::Song(Arc::clone(song)))
             .collect()
+    }
+
+    #[must_use]
+    pub fn all_albums(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::<QueueItem>::new();
+        for album in &self.albums {
+            for song in &album.lock().unwrap().songs {
+                queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
+    }
+
+    #[must_use]
+    pub fn all_albums_shuffled(&self) -> Vec<QueueItem> {
+        // TODO: Create a queue of albums in a random order
+        let mut queue = Vec::new();
+        let mut shuffled: Vec<usize> = (0..self.albums.len()).collect();
+        for i in 0..shuffled.len() {
+            let rand_index = random_range(0..shuffled.len());
+            shuffled.swap(i, rand_index);
+        }
+        for index in shuffled {
+            for song in &self.albums[index].lock().unwrap().songs {
+                queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
     }
 
     #[must_use]

@@ -64,7 +64,7 @@ fn init_player_queue(
     // the previous session or open the library without loading a queue
     // The library will have to be implemented first
     player_tx.send(PlayerRequest::SetShuffle(true))?;
-    library_tx.send(LibraryRequest::QueueAllSongs)?;
+    library_tx.send(LibraryRequest::PlayAllSongs)?;
 
     Ok(())
 }
