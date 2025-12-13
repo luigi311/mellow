@@ -118,10 +118,9 @@ impl SongInfoLoader<'_> {
         if self.info.is_some() {
             return self;
         }
-        // println!("Loading basic song info for {}...", self.filename());
         *self.info = self
             .load_basic_from_file()
-            .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
+            .inspect_err(|e| eprintln!("Problem loading tags (basic): {:?}: {e}", self.file.path()))
             .unwrap_or_else(|_| {
                 Some(SongInfo {
                     title: self.filename(),
@@ -191,10 +190,14 @@ impl SongInfoLoader<'_> {
         if self.detailed_info.is_some() {
             return self;
         }
-        // println!("Loading detailed song info for {}...", self.filename());
         *self.detailed_info = self
             .load_detailed_from_file()
-            .inspect_err(|e| eprintln!("Could not read song properties:\n{e}"))
+            .inspect_err(|e| {
+                eprintln!(
+                    "Problem loading tags (detailed): {:?}: {e}",
+                    self.file.path()
+                )
+            })
             .unwrap_or_else(|_| {
                 Some(DetailedSongInfo {
                     lyrics: String::new(),
