@@ -179,6 +179,7 @@ impl Library {
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
+                        // Associate the current song with its album
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
                         let song_index = album_songs.binary_search_by(|song| {
                             song.lock()
@@ -195,17 +196,31 @@ impl Library {
                         }
                     }
                     Err(album_index) => {
-                        albums.insert(
-                            album_index,
-                            Arc::new(Mutex::new(Album {
-                                title: song_info.album.clone(),
-                                songs: vec![Arc::clone(&song)],
-                                artist: Arc::clone(&artists[artist_index]),
-                            })),
-                        );
+                        // Create a new album entry for the artist,
+                        // and associate the current song with it
+                        let album = Arc::new(Mutex::new(Album {
+                            title: song_info.album.clone(),
+                            songs: vec![Arc::clone(&song)],
+                            artist: Arc::clone(&artists[artist_index]),
+                        }));
+                        albums.insert(album_index, Arc::clone(&album));
+
+                        // Associate the album with the artist
+                        let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
+                        // TODO: Order the artist's albums by year instead of title
+                        let artist_index = artist_albums.binary_search_by(|album| {
+                            album.lock().unwrap().title.cmp(&song_info.album)
+                        });
+                        match artist_index {
+                            Ok(album_index) | Err(album_index) => {
+                                artist_albums.insert(album_index, Arc::clone(&album))
+                            }
+                        }
                     }
                 },
                 Err(artist_index) => {
+                    // Create a new entry for the artist,
+                    // and associate song/album/artist
                     let artist = Arc::new(Mutex::new(Artist {
                         name: song_info.artist.clone(),
                         albums: vec![],
@@ -359,8 +374,6 @@ impl Library {
         for index in shuffled {
             for album in &self.artists[index].lock().unwrap().albums {
                 for song in &album.lock().unwrap().songs {
-                    // FIX: Only the artists should be shuffled,
-                    // but the queue appears to be completely random
                     queue.push(QueueItem::Song(Arc::clone(song)));
                 }
             }
