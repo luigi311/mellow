@@ -160,6 +160,7 @@ impl Library {
                     Ok(album_index) => {
                         // Associate the current song with its album
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
+                        // TODO: Sort disc 1 before disc 2 (etc)
                         let song_index = album_songs.binary_search_by(|song| {
                             song.lock()
                                 .unwrap()
@@ -179,6 +180,7 @@ impl Library {
                         // and associate the current song with it
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
+                            year: song_info.year.clone(),
                             songs: vec![Arc::clone(song)],
                             artist: Arc::clone(&artists[artist_index]),
                         }));
@@ -186,9 +188,8 @@ impl Library {
 
                         // Associate the album with the artist
                         let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
-                        // TODO: Order the artist's albums by year instead of title
                         let artist_index = artist_albums.binary_search_by(|album| {
-                            album.lock().unwrap().title.cmp(&song_info.album)
+                            album.lock().unwrap().year.cmp(&song_info.year)
                         });
                         match artist_index {
                             Ok(album_index) | Err(album_index) => {
@@ -210,6 +211,7 @@ impl Library {
                         .albums
                         .push(Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
+                            year: song_info.year.clone(),
                             songs: vec![Arc::clone(song)],
                             artist: Arc::clone(&artist),
                         })));
