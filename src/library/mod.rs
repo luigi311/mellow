@@ -1,7 +1,3 @@
-// TODO: Implement a data structure which allows serializing data
-// (such as ratings) for each song/album in the library
-// TODO: Implement song/album/artist search/filtering
-
 use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
@@ -9,12 +5,6 @@ use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
-
-use crate::excuses::EXP_INIT;
-use crate::player::PlayerRequest;
-use crate::player::song_queue::QueueItem;
-use crate::ui::UpdateUI;
-use crate::visit_dirs;
 
 pub mod album;
 pub mod artist;
@@ -24,27 +14,16 @@ pub use album::Album;
 pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
-// I don't know if this is the right approach, but I will try...
-//
-// IDEA: Initialization implementation:
-//
-// - Go through all the files, ignoring directories
-// - Load metadata (title, album, artist, etc)
-//    - Create new entry for each new album/artist
-//    - Assign index of artist to album and vice-versa
-//    - Assign index of album to song and vice-versa
-//    - Assign file path to song
-// - Assign fields and return Library
-// - It would be best if each array could serialize to disk
-//
-// The fields could initially be initialized as BTreeMap and
-// converted using `.into()`, if the performance is better.
-//
-// NOTE: If a song is added/removed, the indices might shift,
-// so the relations need to be tracked somehow between rebuilds
-// (bonus points if it detects renamed/moved files)
-//
-// TODO: Efficient search/filter by tag, rating, etc. Use SQL?
+use crate::excuses::EXP_INIT;
+use crate::player::PlayerRequest;
+use crate::player::song_queue::QueueItem;
+use crate::ui::UpdateUI;
+use crate::visit_dirs;
+
+// TODO: Implement a data structure which allows serializing data
+// (such as ratings) for each song/album in the library
+// TODO: Implement song/album/artist search/filtering
+// TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
 
 const FILE_SUPPORT: &[&str] = &[
     "flac", "m4a", "mp3", "aac", "ac3", "wav",
@@ -191,7 +170,7 @@ impl Library {
                         });
                         match song_index {
                             Ok(song_index) | Err(song_index) => {
-                                album_songs.insert(song_index, Arc::clone(&song))
+                                album_songs.insert(song_index, Arc::clone(song))
                             }
                         }
                     }
@@ -200,7 +179,7 @@ impl Library {
                         // and associate the current song with it
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
-                            songs: vec![Arc::clone(&song)],
+                            songs: vec![Arc::clone(song)],
                             artist: Arc::clone(&artists[artist_index]),
                         }));
                         albums.insert(album_index, Arc::clone(&album));
@@ -231,7 +210,7 @@ impl Library {
                         .albums
                         .push(Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
-                            songs: vec![Arc::clone(&song)],
+                            songs: vec![Arc::clone(song)],
                             artist: Arc::clone(&artist),
                         })));
                     artists.insert(artist_index, artist);
