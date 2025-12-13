@@ -106,6 +106,8 @@ pub enum LibraryRequest {
     PlayAllSongs,
     PlayAllAlbums,
     ShuffleAllAlbums,
+    PlayAllArtists,
+    ShuffleAllArtists,
     Rebuild,
     AddLibrary(String),
     RemoveLibrary(usize),
@@ -173,6 +175,7 @@ impl Library {
             let album_index =
                 albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
+            // TODO: Support compilations? (using `album_artist`)
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
@@ -195,19 +198,26 @@ impl Library {
                             Arc::new(Mutex::new(Album {
                                 title: song_info.album.clone(),
                                 songs: vec![Arc::clone(&song)],
-                                artist: 0, // TODO
+                                artist: Arc::clone(&artists[artist_index]),
                             })),
                         );
                     }
                 },
                 Err(artist_index) => {
-                    artists.insert(
-                        artist_index,
-                        Arc::new(Mutex::new(Artist {
-                            name: song_info.artist.clone(),
-                            albums: [].into(), // TODO
-                        })),
-                    );
+                    let artist = Arc::new(Mutex::new(Artist {
+                        name: song_info.artist.clone(),
+                        albums: vec![],
+                    }));
+                    artist
+                        .lock()
+                        .unwrap()
+                        .albums
+                        .push(Arc::new(Mutex::new(Album {
+                            title: song_info.album.clone(),
+                            songs: vec![Arc::clone(&song)],
+                            artist: Arc::clone(&artist),
+                        })));
+                    artists.insert(artist_index, artist);
                 }
             }
 
@@ -230,6 +240,8 @@ impl Library {
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
+                LibraryRequest::PlayAllArtists => self.play_all_artists().await?,
+                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists().await?,
                 LibraryRequest::Rebuild => self.rebuild().await?,
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
@@ -256,6 +268,22 @@ impl Library {
     pub async fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
+        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        Ok(())
+    }
+
+    pub async fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_artists()))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
+        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        Ok(())
+    }
+
+    pub async fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -291,7 +319,6 @@ impl Library {
 
     #[must_use]
     pub fn all_albums_shuffled(&self) -> Vec<QueueItem> {
-        // TODO: Create a queue of albums in a random order
         let mut queue = Vec::new();
         let mut shuffled: Vec<usize> = (0..self.albums.len()).collect();
         for i in 0..shuffled.len() {
@@ -301,6 +328,39 @@ impl Library {
         for index in shuffled {
             for song in &self.albums[index].lock().unwrap().songs {
                 queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
+    }
+
+    #[must_use]
+    pub fn all_artists(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::<QueueItem>::new();
+        for artist in &self.artists {
+            for album in &artist.lock().unwrap().albums {
+                for song in &album.lock().unwrap().songs {
+                    queue.push(QueueItem::Song(Arc::clone(song)));
+                }
+            }
+        }
+        queue
+    }
+
+    #[must_use]
+    pub fn all_artists_shuffled(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::new();
+        let mut shuffled: Vec<usize> = (0..self.artists.len()).collect();
+        for i in 0..shuffled.len() {
+            let rand_index = random_range(0..shuffled.len());
+            shuffled.swap(i, rand_index);
+        }
+        for index in shuffled {
+            for album in &self.artists[index].lock().unwrap().albums {
+                for song in &album.lock().unwrap().songs {
+                    // FIX: Only the artists should be shuffled,
+                    // but the queue appears to be completely random
+                    queue.push(QueueItem::Song(Arc::clone(song)));
+                }
             }
         }
         queue

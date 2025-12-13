@@ -4,6 +4,7 @@ use gtk::glib;
 use std::cell::OnceCell;
 use std::sync::mpsc;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 
@@ -18,12 +19,31 @@ pub struct LibraryArtistsPage {
 impl LibraryArtistsPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
+        self.play_now(false);
         println!("TODO: Play all albums/songs in sequence");
     }
 
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
+        self.play_now(true);
         println!("TODO: Create a queue with randomly ordered artists but sequential albums/songs");
+    }
+
+    fn play_now(&self, shuffle: bool) {
+        let player_tx = self.player_tx.get().expect(EXP_INIT);
+        let library_tx = self.library_tx.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::SetShuffle(false))
+            .expect(EXP_RX);
+        library_tx
+            .send(match shuffle {
+                false => LibraryRequest::PlayAllArtists,
+                true => LibraryRequest::ShuffleAllArtists,
+            })
+            .expect(EXP_RX);
+        player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
     }
 }
 
