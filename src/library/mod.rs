@@ -180,17 +180,19 @@ impl Library {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
-                        let mut song_index = album_songs.len() - 1;
-                        while song_index > 0 {
-                            if album_songs[song_index].lock().unwrap().info().basic().track
-                                < song_info.track
-                            {
-                                song_index -= 1
-                            } else {
-                                break;
+                        let song_index = album_songs.binary_search_by(|song| {
+                            song.lock()
+                                .unwrap()
+                                .info()
+                                .basic()
+                                .track
+                                .cmp(&song_info.track)
+                        });
+                        match song_index {
+                            Ok(song_index) | Err(song_index) => {
+                                album_songs.insert(song_index, Arc::clone(&song))
                             }
                         }
-                        album_songs.insert(song_index, Arc::clone(&song));
                     }
                     Err(album_index) => {
                         albums.insert(
