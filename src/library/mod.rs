@@ -119,8 +119,6 @@ impl Library {
         println!("Rebuilding the music library");
 
         // TODO: Initialize `songs` using serialized `SongInfo`
-        // TODO: Instead of initializing `songs` from scratch, use the existing
-        // `songs` and only add songs if they aren't already present
         // TODO: Check file modification times and update info/associations
 
         let mut songs = Vec::new();
@@ -134,29 +132,21 @@ impl Library {
                     return;
                 }
 
-                let index = songs
-                    .lock()
-                    .unwrap()
-                    .as_ref()
-                    .expect(EXP_INIT)
-                    .binary_search_by(|song: &Arc<Mutex<Song>>| {
-                        song.lock()
-                            .unwrap()
-                            .info()
-                            .file_uri()
-                            .cmp(&file.uri().to_string())
-                    });
+                let mut songs = songs.lock().unwrap();
+                let songs = songs.as_mut().expect(EXP_INIT);
+                let index = songs.binary_search_by(|song| {
+                    song.lock()
+                        .unwrap()
+                        .info()
+                        .file_uri()
+                        .cmp(&file.uri().to_string())
+                });
                 let Err(index) = index else {
                     return;
                 };
 
                 let song = Arc::new(Mutex::new(Song::new(file, None)));
-                songs
-                    .lock()
-                    .unwrap()
-                    .as_mut()
-                    .expect(EXP_INIT)
-                    .insert(index, song);
+                songs.insert(index, song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
@@ -427,23 +417,22 @@ impl Library {
                     }
 
                     let mut songs = songs.lock().unwrap();
-                    let songs: &mut Vec<QueueItem> = songs.as_mut().expect(EXP_INIT);
+                    let songs = songs.as_mut().expect(EXP_INIT);
 
-                    let song = Song::new_from_str(&file, None);
+                    let song = Song::new_from_str(file, None);
                     let song = QueueItem::Song(Arc::new(Mutex::new(song)));
 
-                    let index = match songs.binary_search_by(|existing: &QueueItem| {
+                    match songs.binary_search_by(|existing: &QueueItem| {
                         existing
                             .as_song()
                             .info()
                             .file_uri()
                             .cmp(&song.as_song().info().file_uri())
                     }) {
-                        Err(index) | Ok(index) => index,
-                    };
-
-                    songs.insert(index, song);
+                        Err(index) | Ok(index) => songs.insert(index, song),
+                    }
                 });
+
                 for song in songs.lock().unwrap().take().expect(EXP_INIT) {
                     queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
                 }
