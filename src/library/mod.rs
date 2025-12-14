@@ -187,10 +187,7 @@ impl Library {
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
                         // TODO: Sort disc 1 before disc 2 (etc)
                         let song_index = album_songs.binary_search_by(|song| {
-                            let mut song = song.lock().unwrap();
-                            let mut info = song.info();
-                            let cmp_info = info.basic();
-                            cmp_info.track.cmp(&song_info.track)
+                            (song.lock().unwrap().info().basic().track).cmp(&song_info.track)
                         });
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
@@ -251,6 +248,7 @@ impl Library {
                     song_unwrapped.album = Some(album);
                 }
             }
+            drop(song_unwrapped);
 
             if i % progress_freq == 0 {
                 let progress = Some(i as f64 / self.songs.len() as f64);
@@ -438,9 +436,8 @@ impl Library {
                     }
                 });
 
-                for song in songs.lock().unwrap().take().expect(EXP_INIT) {
-                    queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
-                }
+                (queue.lock().unwrap().as_mut().expect(EXP_INIT))
+                    .extend(songs.lock().unwrap().take().expect(EXP_INIT));
             }
         });
 
