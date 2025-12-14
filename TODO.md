@@ -40,7 +40,7 @@ Music library:
     - [ ] Ability to set tags
   - [ ] Search/filtering
 - [ ] Albums page
-  - [ ] Buttons to play all albums (shuffled/sequential)
+  - [x] Buttons to play all albums (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all albums
   - [ ] Album subpage, accessed from each item
@@ -50,7 +50,7 @@ Music library:
     - [ ] Ability to set tags
   - [ ] Search/filtering
 - [ ] Artists page
-  - [ ] Buttons play all artists (shuffled/sequential)
+  - [x] Buttons play all artists (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all artists
   - [ ] Artist subpage, accessed from each item

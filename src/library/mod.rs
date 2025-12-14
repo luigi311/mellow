@@ -116,6 +116,12 @@ impl Library {
 
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
         println!("Rebuilding the music library");
+
+        // TODO: Initialize `songs` using serialized `SongInfo`
+        // TODO: Instead of initializing `songs` from scratch, use the existing
+        // `songs` and only add songs if they aren't already present
+        // TODO: Check file modification times and update info/associations
+
         let songs = Arc::new(Mutex::new(Some(Vec::new())));
         self.config.directories.iter().for_each(|library_path| {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
@@ -134,9 +140,7 @@ impl Library {
 
         self.songs = songs;
 
-        // TODO: Load the library to avoid rebuilding each time
         // return Ok(());
-
         // TODO: Do the rest in a background thread, if possible
 
         let mut albums: Vec<Arc<Mutex<Album>>> = Vec::new();
@@ -162,18 +166,17 @@ impl Library {
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
                         // TODO: Sort disc 1 before disc 2 (etc)
                         let song_index = album_songs.binary_search_by(|song| {
-                            song.lock()
-                                .unwrap()
-                                .info()
-                                .basic()
-                                .track
-                                .cmp(&song_info.track)
+                            let mut song = song.lock().unwrap();
+                            let mut info = song.info();
+                            let cmp_info = info.basic();
+                            cmp_info.track.cmp(&song_info.track)
                         });
                         match song_index {
                             Ok(song_index) | Err(song_index) => {
-                                album_songs.insert(song_index, Arc::clone(song))
+                                album_songs.insert(song_index, Arc::clone(song));
                             }
                         }
+                        song.lock().unwrap().album = Some(Arc::clone(&self.albums[album_index]));
                     }
                     Err(album_index) => {
                         // Create a new album entry for the artist,
@@ -185,15 +188,16 @@ impl Library {
                             artist: Arc::clone(&artists[artist_index]),
                         }));
                         albums.insert(album_index, Arc::clone(&album));
+                        song.lock().unwrap().album = Some(Arc::clone(&album));
 
                         // Associate the album with the artist
                         let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
-                        let artist_index = artist_albums.binary_search_by(|album| {
-                            album.lock().unwrap().year.cmp(&song_info.year)
+                        let album_index = artist_albums.binary_search_by(|album| {
+                            album.lock().unwrap().title.cmp(&song_info.title)
                         });
-                        match artist_index {
+                        match album_index {
                             Ok(album_index) | Err(album_index) => {
-                                artist_albums.insert(album_index, Arc::clone(&album))
+                                artist_albums.insert(album_index, Arc::clone(&album));
                             }
                         }
                     }
@@ -205,17 +209,22 @@ impl Library {
                         name: song_info.artist.clone(),
                         albums: vec![],
                     }));
-                    artist
-                        .lock()
-                        .unwrap()
-                        .albums
-                        .push(Arc::new(Mutex::new(Album {
-                            title: song_info.album.clone(),
-                            year: song_info.year.clone(),
-                            songs: vec![Arc::clone(song)],
-                            artist: Arc::clone(&artist),
-                        })));
+                    let album = Arc::new(Mutex::new(Album {
+                        title: song_info.album.clone(),
+                        year: song_info.year.clone(),
+                        songs: vec![Arc::clone(song)],
+                        artist: Arc::clone(&artist),
+                    }));
+                    song.lock().unwrap().album = Some(Arc::clone(&album));
+                    artist.lock().unwrap().albums.push(Arc::clone(&album));
                     artists.insert(artist_index, artist);
+
+                    // Add the album to `albums` as well
+                    match album_index {
+                        Ok(album_index) | Err(album_index) => {
+                            albums.insert(album_index, album);
+                        }
+                    }
                 }
             }
 
@@ -368,6 +377,8 @@ impl Library {
         P: Iterator<Item = String>,
     {
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
+        // IDEA: Queue the song from the library directly if
+        // the file is within one of the configured directories
         paths.for_each(|file| {
             let path = Path::new(&file);
             if path.is_file() {

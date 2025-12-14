@@ -2,16 +2,18 @@ use core::error::Error;
 use gio::prelude::*;
 use gst::ClockTime;
 use gtk::{gdk, gio, glib};
+use std::sync::{Arc, Mutex};
 
 use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
 use crate::excuses::EXP_SAFE;
+use crate::library::Album;
 
 #[derive(Clone)]
 pub struct Song {
-    pub album: Option<usize>,
+    pub album: Option<Arc<Mutex<Album>>>,
     file: gio::File,
     // IDEA: Internal mutability?
     info: Option<SongInfo>,
@@ -45,20 +47,20 @@ pub struct DetailedSongInfo {
 
 impl<'s> Song {
     #[must_use]
-    pub const fn new(file: gio::File, album: Option<usize>) -> Song {
+    pub const fn new(file: gio::File, info: Option<SongInfo>) -> Song {
         Song {
-            album,
+            album: None,
             file,
-            info: None,
+            info,
             detailed_info: None,
         }
     }
     #[must_use]
-    pub fn new_from_str(file: &str, album: Option<usize>) -> Song {
+    pub fn new_from_str(file: &str, info: Option<SongInfo>) -> Song {
         Song {
-            album,
+            album: None,
             file: gio::File::for_path(file),
-            info: None,
+            info,
             detailed_info: None,
         }
     }
