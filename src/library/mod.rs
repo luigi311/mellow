@@ -196,7 +196,7 @@ impl Library {
                             cmp_info.track.cmp(&song_info.track)
                         });
                         match song_index {
-                            Ok(song_index) | Err(song_index) => {
+                            Err(song_index) | Ok(song_index) => {
                                 album_songs.insert(song_index, Arc::clone(song));
                             }
                         }
@@ -220,7 +220,7 @@ impl Library {
                             album.lock().unwrap().title.cmp(&song_info.title)
                         });
                         match album_index {
-                            Ok(album_index) | Err(album_index) => {
+                            Err(album_index) | Ok(album_index) => {
                                 artist_albums.insert(album_index, Arc::clone(&album));
                             }
                         }
@@ -246,7 +246,7 @@ impl Library {
 
                     // Add the album to `albums` as well
                     match album_index {
-                        Ok(album_index) | Err(album_index) => {
+                        Err(album_index) | Ok(album_index) => {
                             albums.insert(album_index, Arc::clone(&album));
                         }
                     }
@@ -418,22 +418,35 @@ impl Library {
                 queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
-                let song_files = Arc::new(Mutex::new(Vec::new()));
+                let songs = Arc::new(Mutex::new(Some(Vec::new())));
                 let _ = visit_dirs(path, &|file| {
                     let file = file.path();
                     let file = file.to_str().unwrap();
                     if !Library::file_supported(file) {
                         return;
                     }
-                    song_files.lock().unwrap().push(file.to_owned());
-                });
-                let mut song_files = song_files.lock().unwrap();
-                song_files.sort();
-                song_files.iter().for_each(|file| {
-                    let song = Song::new_from_str(file, None);
+
+                    let mut songs = songs.lock().unwrap();
+                    let songs: &mut Vec<QueueItem> = songs.as_mut().expect(EXP_INIT);
+
+                    let song = Song::new_from_str(&file, None);
                     let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-                    queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
+
+                    let index = match songs.binary_search_by(|existing: &QueueItem| {
+                        existing
+                            .as_song()
+                            .info()
+                            .file_uri()
+                            .cmp(&song.as_song().info().file_uri())
+                    }) {
+                        Err(index) | Ok(index) => index,
+                    };
+
+                    songs.insert(index, song);
                 });
+                for song in songs.lock().unwrap().take().expect(EXP_INIT) {
+                    queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
+                }
             }
         });
 
