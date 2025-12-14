@@ -2,6 +2,7 @@ use core::error::Error;
 use gtk::gio::{self, prelude::FileExt};
 use gtk::glib;
 use rand::random_range;
+use std::mem;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
@@ -122,7 +123,10 @@ impl Library {
         // `songs` and only add songs if they aren't already present
         // TODO: Check file modification times and update info/associations
 
-        let songs = Arc::new(Mutex::new(Some(Vec::new())));
+        let mut songs = Vec::new();
+        mem::swap(&mut self.songs, &mut songs);
+        let songs = Arc::new(Mutex::new(Some(songs)));
+
         self.config.directories.iter().for_each(|library_path| {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
@@ -130,9 +134,29 @@ impl Library {
                     return;
                 }
 
-                let song = Arc::new(Mutex::new(Song::new(file, None)));
+                let index = songs
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .expect(EXP_INIT)
+                    .binary_search_by(|song: &Arc<Mutex<Song>>| {
+                        song.lock()
+                            .unwrap()
+                            .info()
+                            .file_uri()
+                            .cmp(&file.uri().to_string())
+                    });
+                let Err(index) = index else {
+                    return;
+                };
 
-                songs.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
+                let song = Arc::new(Mutex::new(Song::new(file, None)));
+                songs
+                    .lock()
+                    .unwrap()
+                    .as_mut()
+                    .expect(EXP_INIT)
+                    .insert(index, song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
         });
@@ -176,7 +200,8 @@ impl Library {
                                 album_songs.insert(song_index, Arc::clone(song));
                             }
                         }
-                        song.lock().unwrap().album = Some(Arc::clone(&self.albums[album_index]));
+
+                        song_unwrapped.album = Some(Arc::clone(&albums[album_index]));
                     }
                     Err(album_index) => {
                         // Create a new album entry for the artist,
@@ -188,7 +213,6 @@ impl Library {
                             artist: Arc::clone(&artists[artist_index]),
                         }));
                         albums.insert(album_index, Arc::clone(&album));
-                        song.lock().unwrap().album = Some(Arc::clone(&album));
 
                         // Associate the album with the artist
                         let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
@@ -200,6 +224,8 @@ impl Library {
                                 artist_albums.insert(album_index, Arc::clone(&album));
                             }
                         }
+
+                        song_unwrapped.album = Some(Arc::clone(&album));
                     }
                 },
                 Err(artist_index) => {
@@ -215,16 +241,17 @@ impl Library {
                         songs: vec![Arc::clone(song)],
                         artist: Arc::clone(&artist),
                     }));
-                    song.lock().unwrap().album = Some(Arc::clone(&album));
                     artist.lock().unwrap().albums.push(Arc::clone(&album));
                     artists.insert(artist_index, artist);
 
                     // Add the album to `albums` as well
                     match album_index {
                         Ok(album_index) | Err(album_index) => {
-                            albums.insert(album_index, album);
+                            albums.insert(album_index, Arc::clone(&album));
                         }
                     }
+
+                    song_unwrapped.album = Some(album);
                 }
             }
 
