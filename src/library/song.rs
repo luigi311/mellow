@@ -92,7 +92,12 @@ impl SongInfoLoader<'_> {
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
     }
-    /// Returns the song filename (such as: "01 - Example.mp3")
+    /// Returns the full song file path
+    #[must_use]
+    pub fn file_path(&self) -> String {
+        self.file.path().unwrap().to_str().unwrap().to_string()
+    }
+    /// Returns the song filename, including the file extestion
     #[must_use]
     pub fn filename(&self) -> String {
         self.file.basename().map_or_else(
@@ -198,7 +203,7 @@ impl SongInfoLoader<'_> {
                 eprintln!(
                     "Problem loading tags (detailed): {:?}: {e}",
                     self.file.path()
-                )
+                );
             })
             .unwrap_or_else(|_| {
                 Some(DetailedSongInfo {

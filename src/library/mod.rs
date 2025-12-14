@@ -72,8 +72,12 @@ impl LibraryConfig {
 }
 
 pub struct Library {
+    /// All songs in the library, sorted by the relative part of the URI
+    /// (`file:///path/to/library/Folder/File.mp3` => `Folder/File.mp3`)
     pub songs: Vec<Arc<Mutex<Song>>>,
+    /// All albums in the library, sorted by title
     pub albums: Vec<Arc<Mutex<Album>>>,
+    /// All artists in the library, sorted by name
     pub artists: Vec<Arc<Mutex<Artist>>>,
 
     config: LibraryConfig,
@@ -126,6 +130,7 @@ impl Library {
         let songs = Arc::new(Mutex::new(Some(songs)));
 
         self.config.directories.iter().for_each(|library_path| {
+            let to_relative = gio::File::for_path(library_path).uri().len();
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
                 if !Library::file_supported(&file.parse_name()) {
@@ -135,11 +140,10 @@ impl Library {
                 let mut songs = songs.lock().unwrap();
                 let songs = songs.as_mut().expect(EXP_INIT);
                 let index = songs.binary_search_by(|song| {
-                    song.lock()
-                        .unwrap()
-                        .info()
-                        .file_uri()
-                        .cmp(&file.uri().to_string())
+                    // Shortening the URI makes the lookup faster, however
+                    // files with identical relative paths will be ignored
+                    song.lock().unwrap().info().file_uri()[to_relative..]
+                        .cmp(&file.uri()[to_relative..])
                 });
                 let Err(index) = index else {
                     return;
@@ -166,6 +170,9 @@ impl Library {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
             let song_info = info.basic();
+
+            // TODO: Improve `albums` sorting: artist/year/title or artist/title
+            // TODO: Improve `artists[…].albums` sorting: year/title
 
             let artist_index = artists
                 .binary_search_by(|artist| artist.lock().unwrap().name.cmp(&song_info.artist));
@@ -423,11 +430,9 @@ impl Library {
                     let song = QueueItem::Song(Arc::new(Mutex::new(song)));
 
                     match songs.binary_search_by(|existing: &QueueItem| {
-                        existing
-                            .as_song()
-                            .info()
-                            .file_uri()
-                            .cmp(&song.as_song().info().file_uri())
+                        let to_relative = path.to_str().unwrap().len();
+                        existing.as_song().info().file_path()[to_relative..]
+                            .cmp(&song.as_song().info().file_path()[to_relative..])
                     }) {
                         Err(index) | Ok(index) => songs.insert(index, song),
                     }
