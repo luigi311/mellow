@@ -173,12 +173,13 @@ impl Library {
 
             // TODO: Improve `albums` sorting: artist/year/title or artist/title
             // TODO: Improve `artists[…].albums` sorting: year/title
+            let album_index =
+                albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
+            // FIX: Despite using `album_artist`, compilations still don't work
             let artist_index = artists.binary_search_by(|artist| {
                 artist.lock().unwrap().name.cmp(&song_info.album_artist)
             });
-            let album_index =
-                albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
             // TODO: Support compilations? (using `album_artist`)
             match artist_index {
@@ -186,9 +187,12 @@ impl Library {
                     Ok(album_index) => {
                         // Associate the current song with its album
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
-                        // TODO: Sort disc 1 before disc 2 (etc)
                         let song_index = album_songs.binary_search_by(|song| {
-                            (song.lock().unwrap().info().basic().track).cmp(&song_info.track)
+                            let mut song = song.lock().unwrap();
+                            let mut new_info = song.info();
+                            let new_info = new_info.basic();
+                            format!("{}_{}", new_info.disc, new_info.track)
+                                .cmp(&format!("{}_{}", song_info.disc, song_info.track))
                         });
                         match song_index {
                             Err(song_index) | Ok(song_index) => {

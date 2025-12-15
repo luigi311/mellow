@@ -26,7 +26,8 @@ pub struct SongInfo {
     pub album: String,
     pub artist: String,
     pub album_artist: String,
-    pub track: usize,
+    pub track: String,
+    pub disc: String,
     pub year: String,
     pub duration: ClockTime,
 }
@@ -134,7 +135,8 @@ impl SongInfoLoader<'_> {
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
-                    track: 0,
+                    track: String::from("0"),
+                    disc: String::from("1"),
                     year: String::new(),
                     duration: ClockTime::default(),
                 })
@@ -167,11 +169,12 @@ impl SongInfoLoader<'_> {
             ),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
-            album_artist: tag
-                .get_string(&ItemKey::AlbumArtist)
-                .unwrap_or(&tag.artist().unwrap_or_default())
-                .to_string(),
-            track: tag.track().unwrap_or_default().to_string().parse()?,
+            album_artist: tag.get_string(&ItemKey::AlbumArtist).map_or_else(
+                || tag.artist().unwrap_or_default().to_string(),
+                |album_artist| album_artist.to_string(),
+            ),
+            track: tag.track().unwrap_or_default().to_string(),
+            disc: tag.disk().unwrap_or_default().to_string(),
             year: tag.year().unwrap_or_default().to_string(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
