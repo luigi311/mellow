@@ -1,7 +1,6 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use gtk::prelude::WidgetExt;
 use std::cell::{Cell, OnceCell};
 use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;

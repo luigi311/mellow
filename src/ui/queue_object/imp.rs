@@ -1,7 +1,6 @@
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Properties;
 use gtk::glib;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use std::cell::Cell;
 
 #[derive(Properties, Default)]

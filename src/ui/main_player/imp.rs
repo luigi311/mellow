@@ -1,6 +1,5 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::prelude::*;
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
 use std::sync::mpsc;

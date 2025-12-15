@@ -1,4 +1,4 @@
-use adw::subclass::prelude::ObjectSubclassIsExt;
+use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::glib;
 

@@ -1,6 +1,6 @@
 use core::error::Error;
-use gtk::gio::{self, prelude::FileExt};
-use gtk::glib;
+use gio::prelude::FileExt;
+use gtk::{gio, glib};
 use rand::random_range;
 use std::mem;
 use std::path::Path;

@@ -1,8 +1,6 @@
-use adw::Application;
-use adw::prelude::*;
+use adw::{Application, prelude::*};
 use core::error::Error;
-use gtk::gio;
-use gtk::glib;
+use gtk::{gio, glib};
 use std::sync::mpsc;
 use std::thread;
 

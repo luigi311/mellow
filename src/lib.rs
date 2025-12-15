@@ -1,3 +1,8 @@
+use std::fs::{self, DirEntry};
+use std::io;
+use std::path::Path;
+use std::time::Duration;
+
 pub mod excuses;
 pub mod library;
 pub mod player;
@@ -5,11 +10,6 @@ pub mod ui;
 
 pub const APP_NAME: &str = "Mellow";
 pub const APP_ID: &str = "com.github.userwithaname.Mellow";
-
-use std::fs::{self, DirEntry};
-use std::io;
-use std::path::Path;
-use std::time::Duration;
 
 /// Takes a `&Duration` and returns a nicely formatted `String`
 /// for display
@@ -57,6 +57,15 @@ pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
 }
 
 /// Checks if two float numbers are similar
+///
+/// # Example
+/// ```rust
+/// use mellow::approx_eq;
+///
+/// assert!(approx_eq(0.9995, 1.0));
+/// assert!(approx_eq(1.0005, 1.0));
+/// assert!(!approx_eq(0.9994, 1.0));
+/// ```
 #[inline]
 #[must_use]
 pub fn approx_eq(left: f64, right: f64) -> bool {

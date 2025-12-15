@@ -1,6 +1,6 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
-use gtk::{glib, prelude::*};
+use gtk::glib;
 use std::sync::mpsc;
 
 use crate::excuses::INIT_ERR;
