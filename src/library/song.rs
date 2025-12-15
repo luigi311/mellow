@@ -169,7 +169,7 @@ impl SongInfoLoader<'_> {
             artist: tag.artist().unwrap_or_default().to_string(),
             album_artist: tag
                 .get_string(&ItemKey::AlbumArtist)
-                .unwrap_or_default()
+                .unwrap_or(&tag.artist().unwrap_or_default())
                 .to_string(),
             track: tag.track().unwrap_or_default().to_string().parse()?,
             year: tag.year().unwrap_or_default().to_string(),

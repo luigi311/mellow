@@ -174,8 +174,9 @@ impl Library {
             // TODO: Improve `albums` sorting: artist/year/title or artist/title
             // TODO: Improve `artists[…].albums` sorting: year/title
 
-            let artist_index = artists
-                .binary_search_by(|artist| artist.lock().unwrap().name.cmp(&song_info.artist));
+            let artist_index = artists.binary_search_by(|artist| {
+                artist.lock().unwrap().name.cmp(&song_info.album_artist)
+            });
             let album_index =
                 albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
@@ -226,7 +227,7 @@ impl Library {
                     // Create a new entry for the artist,
                     // and associate song/album/artist
                     let artist = Arc::new(Mutex::new(Artist {
-                        name: song_info.artist.clone(),
+                        name: song_info.album_artist.clone(),
                         albums: vec![],
                     }));
                     let album = Arc::new(Mutex::new(Album {
