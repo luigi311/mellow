@@ -245,15 +245,6 @@ impl SongQueue {
         self.update_shuffled_queue();
     }
 
-    /// Removes all queued songs after the provided index
-    /// Index depends on shuffle mode (use `ordered_queue()` index)
-    pub fn remove_all_after_index(&mut self, index: usize) {
-        while self.len() > index + 1 {
-            self.remove(self.len() - 1);
-        }
-        self.ui_update_queue();
-    }
-
     /// Moves a song in the queue from `index` to `target`
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     pub fn reorder(&mut self, index: usize, target: usize) {
@@ -278,16 +269,11 @@ impl SongQueue {
             return;
         }
 
-        let ordered_index = self.ordered_index(index);
-
-        self.songs.insert(ordered_index, item);
         if self.shuffle {
-            for shuffled in &mut self.shuffled {
-                if *shuffled >= ordered_index {
-                    *shuffled += 1;
-                }
-            }
-            self.shuffled.insert(index, ordered_index);
+            self.songs.push(item);
+            self.shuffled.insert(index, self.len() - 1);
+        } else {
+            self.songs.insert(self.ordered_index(index), item);
         }
 
         if self.index >= index {
@@ -352,10 +338,13 @@ impl SongQueue {
         self.remove(self.index)
     }
 
-    /// Returns the total number of songs in the queue
-    #[must_use]
-    pub const fn len(&self) -> usize {
-        self.songs.len()
+    /// Removes all queued songs after the provided index
+    /// Index depends on shuffle mode (use `ordered_queue()` index)
+    pub fn remove_all_after_index(&mut self, index: usize) {
+        while self.len() > index + 1 {
+            self.remove(self.len() - 1);
+        }
+        self.ui_update_queue();
     }
 
     /// Returns `true` if the current song is first in the queue
@@ -367,7 +356,7 @@ impl SongQueue {
     /// Returns `true` if the current song is last in the queue
     #[must_use]
     pub const fn is_last(&self) -> bool {
-        self.index == self.songs.len() - 1
+        self.index == self.len() - 1
     }
 
     /// Returns `true` if there are more tracks in the queue,
@@ -376,6 +365,14 @@ impl SongQueue {
     #[must_use]
     pub const fn has_next(&self) -> bool {
         self.repeat || !self.is_last()
+    }
+
+    /// Returns the total number of songs in the queue
+    ///
+    /// Note: Do not use to index into `shuffled` when shuffle is disabled
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.songs.len()
     }
 
     /// Returns `true` if the queue contains no songs
