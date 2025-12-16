@@ -119,6 +119,8 @@ impl Library {
         )
     }
 
+    /// Creates connections between library `songs`, `albums`, and `artists`
+    #[allow(clippy::await_holding_lock)] // False-positive warning
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
         println!("Rebuilding the music library");
 
@@ -323,6 +325,8 @@ impl Library {
         Ok(())
     }
 
+    /// Returns `true` if the specified file has a supported extension,
+    /// or `false` if it does not
     #[inline]
     #[must_use]
     pub fn file_supported(file: &str) -> bool {
@@ -332,6 +336,7 @@ impl Library {
         FILE_SUPPORT.iter().any(|&ext| extension == ext)
     }
 
+    /// Returns a queue of all songs in the library
     #[must_use]
     pub fn all_songs(&self) -> Vec<QueueItem> {
         self.songs
@@ -340,9 +345,11 @@ impl Library {
             .collect()
     }
 
+    /// Returns a queue of all albums in the library,
+    /// with sequential order of songs
     #[must_use]
     pub fn all_albums(&self) -> Vec<QueueItem> {
-        let mut queue = Vec::<QueueItem>::new();
+        let mut queue = Vec::<QueueItem>::with_capacity(self.songs.len());
         for album in &self.albums {
             for song in &album.lock().unwrap().songs {
                 queue.push(QueueItem::Song(Arc::clone(song)));
@@ -351,9 +358,12 @@ impl Library {
         queue
     }
 
+    /// Returns a queue of all albums in the library,
+    /// with sequential order of songs, but randomly
+    /// ordered albums
     #[must_use]
     pub fn all_albums_shuffled(&self) -> Vec<QueueItem> {
-        let mut queue = Vec::new();
+        let mut queue = Vec::with_capacity(self.songs.len());
         let mut shuffled: Vec<usize> = (0..self.albums.len()).collect();
         for i in 0..shuffled.len() {
             let rand_index = random_range(0..shuffled.len());
@@ -367,9 +377,11 @@ impl Library {
         queue
     }
 
+    /// Returns a queue of all artists in the library,
+    /// with albums and songs in sequential order
     #[must_use]
     pub fn all_artists(&self) -> Vec<QueueItem> {
-        let mut queue = Vec::<QueueItem>::new();
+        let mut queue = Vec::<QueueItem>::with_capacity(self.songs.len());
         for artist in &self.artists {
             for album in &artist.lock().unwrap().albums {
                 for song in &album.lock().unwrap().songs {
@@ -380,9 +392,12 @@ impl Library {
         queue
     }
 
+    /// Returns a queue of all artists in the library,
+    /// with albums and songs in sequential order, but
+    /// randomly ordered artists
     #[must_use]
     pub fn all_artists_shuffled(&self) -> Vec<QueueItem> {
-        let mut queue = Vec::new();
+        let mut queue = Vec::with_capacity(self.songs.len());
         let mut shuffled: Vec<usize> = (0..self.artists.len()).collect();
         for i in 0..shuffled.len() {
             let rand_index = random_range(0..shuffled.len());
@@ -398,6 +413,8 @@ impl Library {
         queue
     }
 
+    /// Returns a queue of all songs found within the specified `paths`,
+    /// recursively. Returns `None` if no song files were found.
     #[must_use]
     pub fn songs_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
     where
