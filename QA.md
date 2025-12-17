@@ -10,21 +10,24 @@ Playback:
   - [x] Seeking to any point in the song (click or drag)
   - [x] Seeking to the end and releasing the seek bar
   - [x] Seeking to the end and back
-- [x] Gapless/non-gapless playback works as expected
+- [ ] Gapless/non-gapless playback works as expected
+  > FIX: See issues with Song Queue
 - [x] Non-fatal errors are handled gracefully
 
 Song Queue:
 
 - [ ] Starting a new queue works as expected
-  - FIX: Starting an empty queue does not unload the currently playing song
-- [x] Adding items works as expected
+  > FIX: Starting an empty queue does not unload the currently playing song
+- [ ] Adding items works as expected
+  > FIX: Gapless: Stoppers are ignored when inserted after the current song if the
+  > next song is already loaded
 - [ ] Removing items works as expected
-  - FIX: Gapless: Removing next song when it is already loaded crashes the player
+  > FIX: Gapless: Removing next song when it is already loaded crashes the player
 - [ ] Reordering the queue works as expected
 - [ ] Stoppers work and behave as expected
-  - FIX: Stoppers shift when toggling shuffle mode
+  > FIX: Stoppers shift when toggling shuffle mode
 - [ ] The song queue does not cause performance issues
-  - FIX: UI hangs while the song info for queue items is being loaded
+  > FIX: UI hangs while the song info for queue items is being loaded
 
 Music Library:
 
@@ -42,8 +45,8 @@ Interface:
 
 User Experience:
 
-- [ ] All settings load properly (with non-default values)
-  - TODO: Save/load library directories
+- [ ] All settings load properly (test with non-default values)
+  > TODO: Save/load library directories
 
 Performance:
 

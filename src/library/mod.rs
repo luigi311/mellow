@@ -178,7 +178,6 @@ impl Library {
             let album_index =
                 albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
 
-            // FIX: Despite using `album_artist`, compilations still don't work
             let artist_index = artists.binary_search_by(|artist| {
                 artist.lock().unwrap().name.cmp(&song_info.album_artist)
             });

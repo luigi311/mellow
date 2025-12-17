@@ -20,13 +20,11 @@ impl LibraryArtistsPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
         self.play_now(false);
-        println!("TODO: Play all albums/songs in sequence");
     }
 
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
         self.play_now(true);
-        println!("TODO: Create a queue with randomly ordered artists but sequential albums/songs");
     }
 
     fn play_now(&self, shuffle: bool) {
