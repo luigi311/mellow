@@ -4,7 +4,7 @@ use crate::library::{Artist, Song};
 
 pub struct Album {
     pub title: String,
-    pub year: String,
+    pub year: u32,
     pub songs: Vec<Arc<Mutex<Song>>>,
     pub artist: Arc<Mutex<Artist>>,
 }

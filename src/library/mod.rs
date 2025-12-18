@@ -208,7 +208,7 @@ impl Library {
                         // and associate the current song with it
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
-                            year: song_info.year.clone(),
+                            year: song_info.year,
                             songs: vec![Arc::clone(song)],
                             artist: Arc::clone(&artists[artist_index]),
                         }));

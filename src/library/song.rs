@@ -26,9 +26,9 @@ pub struct SongInfo {
     pub album: String,
     pub artist: String,
     pub album_artist: String,
-    pub track: String,
-    pub disc: String,
-    pub year: String,
+    pub track: u32,
+    pub disc: u32,
+    pub year: u32,
     pub duration: ClockTime,
 }
 
@@ -128,16 +128,21 @@ impl SongInfoLoader<'_> {
         }
         *self.info = self
             .load_basic_from_file()
-            .inspect_err(|e| eprintln!("Problem loading tags (basic): {:?}: {e}", self.file.path()))
+            .inspect_err(|e| {
+                eprintln!(
+                    "Problem loading tags (basic): {:?}: {e}",
+                    self.file.path().unwrap_or_default()
+                )
+            })
             .unwrap_or_else(|_| {
                 Some(SongInfo {
                     title: self.filename(),
                     album: String::new(),
                     artist: String::new(),
                     album_artist: String::new(),
-                    track: String::from("0"),
-                    disc: String::from("1"),
-                    year: String::new(),
+                    track: 0,
+                    disc: 0,
+                    year: 0,
                     duration: ClockTime::default(),
                 })
             });
@@ -173,9 +178,9 @@ impl SongInfoLoader<'_> {
                 || tag.artist().unwrap_or_default().to_string(),
                 |album_artist| album_artist.to_string(),
             ),
-            track: tag.track().unwrap_or_default().to_string(),
-            disc: tag.disk().unwrap_or_default().to_string(),
-            year: tag.year().unwrap_or_default().to_string(),
+            track: tag.track().unwrap_or_default(),
+            disc: tag.disk().unwrap_or_default(),
+            year: tag.year().unwrap_or_default(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
         }))
@@ -205,7 +210,7 @@ impl SongInfoLoader<'_> {
             .inspect_err(|e| {
                 eprintln!(
                     "Problem loading tags (detailed): {:?}: {e}",
-                    self.file.path()
+                    self.file.path().unwrap_or_default()
                 );
             })
             .unwrap_or_else(|_| {
