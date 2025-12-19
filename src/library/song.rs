@@ -66,6 +66,81 @@ impl<'s> Song {
         }
     }
 
+    #[must_use]
+    pub fn serlialize(&mut self) -> String {
+        let mut info = self.info();
+        let uri = info.file_uri();
+        let basic = info.basic();
+        format!(
+            "\
+uri: {}
+title: {}
+album: {}
+artist: {}
+album_artist: {}
+track: {}
+disc: {}
+year: {}
+duration: {}\
+",
+            uri,
+            basic.title,
+            basic.album,
+            basic.artist,
+            basic.album_artist,
+            basic.track,
+            basic.disc,
+            basic.year,
+            basic.duration.nseconds(),
+        )
+    }
+
+    #[must_use]
+    pub fn deserialize(data: &str) -> Result<Song, Box<dyn Error>> {
+        let mut uri = "";
+        let mut info = SongInfo {
+            title: String::new(),
+            album: String::new(),
+            artist: String::new(),
+            album_artist: String::new(),
+            track: 0,
+            disc: 0,
+            year: 0,
+            duration: ClockTime::ZERO,
+        };
+        for line in data.lines() {
+            let Some((field, value)) = line.split_once(' ') else {
+                continue;
+            };
+
+            match &field[..] {
+                "uri:" => uri = value,
+                "title:" => info.title = value.to_string(),
+                "album:" => info.album = value.to_string(),
+                "artist:" => info.artist = value.to_string(),
+                "album_artist:" => info.album_artist = value.to_string(),
+                "track:" => info.track = value.parse().map_err(|e| format!("{field} {e}"))?,
+                "disc:" => info.disc = value.parse().map_err(|e| format!("{field} {e}"))?,
+                "year:" => info.year = value.parse().map_err(|e| format!("{field} {e}"))?,
+                "duration:" => {
+                    info.duration =
+                        ClockTime::from_nseconds(value.parse().map_err(|e| format!("{field} {e}"))?)
+                }
+                _ => {
+                    eprintln!("Unknown field: `{field}`");
+                    continue;
+                }
+            }
+        }
+
+        Ok(Song {
+            album: None,
+            file: gio::File::for_uri(uri),
+            info: Some(info),
+            detailed_info: None,
+        })
+    }
+
     /// Returns a `SongInfoLoader`, which can be used to access information
     /// about the file and song. Tags are loaded on-demand, and remain in
     /// memory until the respective `unload` or `take` method is called.

@@ -2,9 +2,9 @@ use core::error::Error;
 use gio::prelude::FileExt;
 use gtk::{gio, glib};
 use rand::random_range;
-use std::mem;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
+use std::{fs, io, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
@@ -21,8 +21,7 @@ use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::visit_dirs;
 
-// TODO: Implement a data structure which allows serializing data
-// (such as ratings) for each song/album in the library
+// TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
 
@@ -35,6 +34,7 @@ const FILE_SUPPORT: &[&str] = &[
 
 pub struct LibraryConfig {
     pub directories: Vec<String>,
+    pub config_dir: String,
 }
 
 impl Default for LibraryConfig {
@@ -47,6 +47,7 @@ impl Default for LibraryConfig {
                 ),
             ]
             .into(),
+            config_dir: glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/",
         }
     }
 }
@@ -119,13 +120,51 @@ impl Library {
         )
     }
 
+    /// Serializes song info and writes the data to disk,
+    /// so the library `songs` can be loaded faster next time
+    ///
+    /// Creates a file called `songs` in `self.config.config_dir`
+    #[must_use]
+    fn serialize_songs(&self) -> io::Result<()> {
+        let serialized = self
+            .songs
+            .iter()
+            .map(|song| song.lock().unwrap().serlialize() + "\n\n")
+            .collect::<String>()
+            .trim()
+            .to_string();
+        fs::create_dir_all(&self.config.config_dir)?;
+        fs::write(self.config.config_dir.clone() + "songs", &serialized)
+    }
+
+    /// Reads the serialized song info from disk and returns them,
+    /// so they can be assigned directly to `self.songs`
+    ///
+    /// Reads from a file called `songs` in `self.config.config_dir`
+    #[must_use]
+    fn deserialize_songs(&self) -> Vec<Arc<Mutex<Song>>> {
+        let data = fs::read_to_string(self.config.config_dir.clone() + "songs").unwrap_or_default();
+        let data = data.split("\n\n");
+        data.map(|data| Song::deserialize(data))
+            .filter_map(|song| match song {
+                Ok(song) => Some(Arc::new(Mutex::new(song))),
+                Err(_) => None,
+            })
+            .collect()
+    }
+
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
         println!("Rebuilding the music library");
 
-        // TODO: Initialize `songs` using serialized `SongInfo`
+        if self.songs.is_empty() {
+            self.songs = self.deserialize_songs();
+        }
+
         // TODO: Check file modification times and update info/associations
+        // TODO: Remove missing songs
+        // IDEA: Find moved songs
 
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);
@@ -263,6 +302,9 @@ impl Library {
 
         self.albums = albums;
         self.artists = artists;
+
+        // TODO: Do this in the background?
+        self.serialize_songs()?;
 
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())

@@ -25,7 +25,7 @@ Song queue:
 Music library:
 
 - [ ] Save/load user settings (such as library directories)
-- [ ] Serialize the library to disk
+- [x] Serialize the library to disk
 - [ ] Incremental library rebuilding
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
