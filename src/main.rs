@@ -31,7 +31,7 @@ fn init(app: &Application) {
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || player.controller().unwrap())
-        .unwrap();
+        .expect(INIT_ERR);
     thread::Builder::new()
         .name("library".to_string())
         .spawn(move || {
@@ -44,7 +44,7 @@ fn init(app: &Application) {
                 library.request_handler().await.unwrap();
             });
         })
-        .unwrap();
+        .expect(INIT_ERR);
 }
 
 fn init_player_queue(

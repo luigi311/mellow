@@ -182,7 +182,6 @@ impl Library {
                 artist.lock().unwrap().name.cmp(&song_info.album_artist)
             });
 
-            // TODO: Support compilations? (using `album_artist`)
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
