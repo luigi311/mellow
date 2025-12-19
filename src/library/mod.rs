@@ -16,6 +16,8 @@ pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
 use crate::excuses::EXP_INIT;
+use crate::library::album::SortedAlbumSongs;
+use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -31,6 +33,21 @@ const FILE_SUPPORT: &[&str] = &[
     // Untested:
     "ape", "mpc", "ogg",
 ];
+
+pub struct Library {
+    /// All songs in the library, sorted by the relative part of the URI
+    /// (`file:///path/to/library/Folder/File.mp3` => `Folder/File.mp3`)
+    pub songs: Songs,
+    /// All albums in the library, sorted by title
+    pub albums: Albums,
+    /// All artists in the library, sorted by name
+    pub artists: Artists,
+
+    config: LibraryConfig,
+    player_tx: mpsc::SyncSender<PlayerRequest>,
+    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    rx: mpsc::Receiver<LibraryRequest>,
+}
 
 pub struct LibraryConfig {
     pub directories: Vec<String>,
@@ -72,19 +89,38 @@ impl LibraryConfig {
     }
 }
 
-pub struct Library {
-    /// All songs in the library, sorted by the relative part of the URI
-    /// (`file:///path/to/library/Folder/File.mp3` => `Folder/File.mp3`)
-    pub songs: Vec<Arc<Mutex<Song>>>,
-    /// All albums in the library, sorted by title
-    pub albums: Vec<Arc<Mutex<Album>>>,
-    /// All artists in the library, sorted by name
-    pub artists: Vec<Arc<Mutex<Artist>>>,
+pub type Songs = Vec<Arc<Mutex<Song>>>;
+pub trait SortedSongs {
+    fn find_song(&self, uri: &str, library_path_len: usize) -> Result<usize, usize>;
+}
+impl SortedSongs for Songs {
+    fn find_song(&self, uri: &str, library_uri_len: usize) -> Result<usize, usize> {
+        self.binary_search_by(|song| {
+            // Shortening the URI makes the lookup faster, however
+            // files with identical relative paths will be ignored
+            song.lock().unwrap().info().file_uri()[library_uri_len..].cmp(&uri[library_uri_len..])
+        })
+    }
+}
 
-    config: LibraryConfig,
-    player_tx: mpsc::SyncSender<PlayerRequest>,
-    ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    rx: mpsc::Receiver<LibraryRequest>,
+pub type Albums = Vec<Arc<Mutex<Album>>>;
+pub trait SortedAlbums {
+    fn find_album(&self, info: &SongInfo) -> Result<usize, usize>;
+}
+impl SortedAlbums for Albums {
+    fn find_album(&self, info: &SongInfo) -> Result<usize, usize> {
+        self.binary_search_by(|album| album.lock().unwrap().title.cmp(&info.album))
+    }
+}
+
+pub type Artists = Vec<Arc<Mutex<Artist>>>;
+pub trait SortedArtists {
+    fn find_artist(&self, info: &SongInfo) -> Result<usize, usize>;
+}
+impl SortedArtists for Artists {
+    fn find_artist(&self, info: &SongInfo) -> Result<usize, usize> {
+        self.binary_search_by(|artist| artist.lock().unwrap().name.cmp(&info.album_artist))
+    }
 }
 
 pub enum LibraryRequest {
@@ -141,7 +177,7 @@ impl Library {
     ///
     /// Reads from a file called `songs` in `self.config.config_dir`
     #[must_use]
-    fn deserialize_songs(&self) -> Vec<Arc<Mutex<Song>>> {
+    fn deserialize_songs(&self) -> Songs {
         let data = fs::read_to_string(self.config.config_dir.clone() + "songs").unwrap_or_default();
         let data = data.split("\n\n");
         data.map(Song::deserialize)
@@ -155,8 +191,6 @@ impl Library {
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
     pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
-        println!("Rebuilding the music library");
-
         if self.songs.is_empty() {
             self.songs = self.deserialize_songs();
         }
@@ -180,12 +214,7 @@ impl Library {
 
                 let mut songs = songs.lock().unwrap();
                 let songs = songs.as_mut().expect(EXP_INIT);
-                let index = songs.binary_search_by(|song| {
-                    // Shortening the URI makes the lookup faster, however
-                    // files with identical relative paths will be ignored
-                    song.lock().unwrap().info().file_uri()[to_relative..]
-                        .cmp(&file.uri()[to_relative..])
-                });
+                let index = songs.find_song(&file.uri(), to_relative);
                 let Err(index) = index else {
                     return;
                 };
@@ -202,8 +231,8 @@ impl Library {
         // return Ok(());
         // TODO: Do the rest in a background thread, if possible
 
-        let mut albums: Vec<Arc<Mutex<Album>>> = Vec::new();
-        let mut artists: Vec<Arc<Mutex<Artist>>> = Vec::new();
+        let mut albums: Albums = Vec::new();
+        let mut artists: Artists = Vec::new();
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
@@ -215,25 +244,15 @@ impl Library {
 
             // TODO: Improve `albums` sorting: artist/year/title or artist/title
             // TODO: Improve `artists[…].albums` sorting: year/title
-            let album_index =
-                albums.binary_search_by(|album| album.lock().unwrap().title.cmp(&song_info.album));
-
-            let artist_index = artists.binary_search_by(|artist| {
-                artist.lock().unwrap().name.cmp(&song_info.album_artist)
-            });
+            let album_index = albums.find_album(&song_info);
+            let artist_index = artists.find_artist(&song_info);
 
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
                         // Associate the current song with its album
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
-                        let song_index = album_songs.binary_search_by(|song| {
-                            let mut song = song.lock().unwrap();
-                            let mut new_info = song.info();
-                            let new_info = new_info.basic();
-                            format!("{}_{}", new_info.disc, new_info.track)
-                                .cmp(&format!("{}_{}", song_info.disc, song_info.track))
-                        });
+                        let song_index = album_songs.find_album_song(&song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
                                 album_songs.insert(song_index, Arc::clone(song));
@@ -255,9 +274,7 @@ impl Library {
 
                         // Associate the album with the artist
                         let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
-                        let album_index = artist_albums.binary_search_by(|album| {
-                            album.lock().unwrap().title.cmp(&song_info.title)
-                        });
+                        let album_index = artist_albums.find_artist_album(&song_info);
                         match album_index {
                             Err(album_index) | Ok(album_index) => {
                                 artist_albums.insert(album_index, Arc::clone(&album));
