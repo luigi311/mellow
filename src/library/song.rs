@@ -47,25 +47,29 @@ pub struct DetailedSongInfo {
 }
 
 impl<'s> Song {
+    /// Constructs a new `Song` from a `gio::File`
     #[must_use]
-    pub const fn new(file: gio::File, info: Option<SongInfo>) -> Song {
+    pub const fn new(file: gio::File) -> Song {
         Song {
             album: None,
             file,
-            info,
+            info: None,
             detailed_info: None,
         }
     }
+    /// Constructs a new `Song` from a file path
     #[must_use]
-    pub fn new_from_str(file: &str, info: Option<SongInfo>) -> Song {
+    pub fn new_from_path(file: &str) -> Song {
         Song {
             album: None,
             file: gio::File::for_path(file),
-            info,
+            info: None,
             detailed_info: None,
         }
     }
 
+    /// Returns a `String` containing serialized `SongInfo` data,
+    /// which can be used with the `deserialize()` method
     #[must_use]
     pub fn serlialize(&mut self) -> String {
         let mut info = self.info();
@@ -95,8 +99,13 @@ duration: {}\
         )
     }
 
-    #[must_use]
-    pub fn deserialize(data: &str) -> Result<Song, Box<dyn Error>> {
+    /// Loads the `data` and constructs a `Song` instance
+    /// with parsed `SongInfo` values
+    ///
+    /// # Errors
+    /// If a value cannot be parsed into the required type,
+    /// the function returns an error
+    pub fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
         let mut info = SongInfo {
             title: String::new(),
@@ -104,7 +113,7 @@ duration: {}\
             artist: String::new(),
             album_artist: String::new(),
             track: 0,
-            disc: 0,
+            disc: 1,
             year: 0,
             duration: ClockTime::ZERO,
         };
@@ -113,7 +122,7 @@ duration: {}\
                 continue;
             };
 
-            match &field[..] {
+            match field {
                 "uri:" => uri = value,
                 "title:" => info.title = value.to_string(),
                 "album:" => info.album = value.to_string(),
@@ -123,13 +132,11 @@ duration: {}\
                 "disc:" => info.disc = value.parse().map_err(|e| format!("{field} {e}"))?,
                 "year:" => info.year = value.parse().map_err(|e| format!("{field} {e}"))?,
                 "duration:" => {
-                    info.duration =
-                        ClockTime::from_nseconds(value.parse().map_err(|e| format!("{field} {e}"))?)
+                    info.duration = ClockTime::from_nseconds(
+                        value.parse().map_err(|e| format!("{field} {e}"))?,
+                    );
                 }
-                _ => {
-                    eprintln!("Unknown field: `{field}`");
-                    continue;
-                }
+                _ => eprintln!("Unknown field: `{field}`"),
             }
         }
 
@@ -218,7 +225,7 @@ impl SongInfoLoader<'_> {
                 eprintln!(
                     "Problem loading tags (basic): {:?}: {e}",
                     self.file.path().unwrap_or_default()
-                )
+                );
             })
             .unwrap_or_else(|_| {
                 Some(SongInfo {

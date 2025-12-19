@@ -26,7 +26,10 @@ Music library:
 
 - [ ] Save/load user settings (such as library directories)
 - [x] Serialize the library to disk
-- [ ] Incremental library rebuilding
+- [-] Incremental library rebuilding
+  - TODO: Remove missing songs
+  - TODO: Detect modifications
+  - TODO: Allow users to initiate a full rebuild
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)

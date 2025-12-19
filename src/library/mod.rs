@@ -124,7 +124,6 @@ impl Library {
     /// so the library `songs` can be loaded faster next time
     ///
     /// Creates a file called `songs` in `self.config.config_dir`
-    #[must_use]
     fn serialize_songs(&self) -> io::Result<()> {
         let serialized = self
             .songs
@@ -145,7 +144,7 @@ impl Library {
     fn deserialize_songs(&self) -> Vec<Arc<Mutex<Song>>> {
         let data = fs::read_to_string(self.config.config_dir.clone() + "songs").unwrap_or_default();
         let data = data.split("\n\n");
-        data.map(|data| Song::deserialize(data))
+        data.map(Song::deserialize)
             .filter_map(|song| match song {
                 Ok(song) => Some(Arc::new(Mutex::new(song))),
                 Err(_) => None,
@@ -191,7 +190,7 @@ impl Library {
                     return;
                 };
 
-                let song = Arc::new(Mutex::new(Song::new(file, None)));
+                let song = Arc::new(Mutex::new(Song::new(file)));
                 songs.insert(index, song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
@@ -206,6 +205,7 @@ impl Library {
         let mut albums: Vec<Arc<Mutex<Album>>> = Vec::new();
         let mut artists: Vec<Arc<Mutex<Artist>>> = Vec::new();
 
+        // TODO: Allow users to cancel, but serialize so it can continue later
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
         let progress_freq = self.songs.len() / PROGRESS_BAR_STEPS + 1;
         for (i, song) in self.songs.iter().enumerate() {
@@ -276,7 +276,7 @@ impl Library {
                     }));
                     let album = Arc::new(Mutex::new(Album {
                         title: song_info.album.clone(),
-                        year: song_info.year.clone(),
+                        year: song_info.year,
                         songs: vec![Arc::clone(song)],
                         artist: Arc::clone(&artist),
                     }));
@@ -473,7 +473,7 @@ impl Library {
                 if !Library::file_supported(&file) {
                     return;
                 }
-                let song = Song::new_from_str(&file, None);
+                let song = Song::new_from_path(&file);
                 let song = QueueItem::Song(Arc::new(Mutex::new(song)));
                 queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             } else if Path::exists(path) {
@@ -489,7 +489,7 @@ impl Library {
                     let mut songs = songs.lock().unwrap();
                     let songs = songs.as_mut().expect(EXP_INIT);
 
-                    let song = Song::new_from_str(file, None);
+                    let song = Song::new_from_path(file);
                     let song = QueueItem::Song(Arc::new(Mutex::new(song)));
 
                     match songs.binary_search_by(|existing: &QueueItem| {
