@@ -166,6 +166,7 @@ impl Library {
         // TODO: Remove missing songs
         // IDEA: Find moved songs
 
+        let mut changed = false;
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);
         let songs = Arc::new(Mutex::new(Some(songs)));
@@ -210,7 +211,7 @@ impl Library {
         for (i, song) in self.songs.iter().enumerate() {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
-            let song_info = info.basic();
+            let song_info = info.basic_and(|| changed = true);
 
             // TODO: Improve `albums` sorting: artist/year/title or artist/title
             // TODO: Improve `artists[…].albums` sorting: year/title
@@ -303,8 +304,10 @@ impl Library {
         self.albums = albums;
         self.artists = artists;
 
-        // TODO: Do this in the background?
-        self.serialize_songs()?;
+        if changed {
+            // TODO: Do this in the background?
+            self.serialize_songs()?;
+        }
 
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())

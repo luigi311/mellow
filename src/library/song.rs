@@ -189,6 +189,17 @@ impl SongInfoLoader<'_> {
         self.load_basic();
         self.info.as_ref().expect(EXP_SAFE)
     }
+    /// Loads basic song info if needed, and runs the provided closure
+    /// if the info had to be loaded
+    /// Returns a reference to the loaded info
+    #[must_use]
+    pub fn basic_and<F: FnOnce()>(&mut self, run_if_not_loaded: F) -> &SongInfo {
+        if self.info.is_none() {
+            self.load_basic();
+            run_if_not_loaded();
+        }
+        self.info.as_ref().expect(EXP_SAFE)
+    }
     /// Loads basic song info if needed, then returns and unloads it
     #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn take_basic(&mut self) -> SongInfo {
