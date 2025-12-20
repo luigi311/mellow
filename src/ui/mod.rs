@@ -1,7 +1,7 @@
 use adw::{self, Application, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
 use gtk::{self, glib};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
 mod library_albums_page;

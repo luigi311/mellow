@@ -234,7 +234,7 @@ impl SongInfoLoader<'_> {
                     artist: String::new(),
                     album_artist: String::new(),
                     track: 0,
-                    disc: 0,
+                    disc: 1,
                     year: 0,
                     duration: ClockTime::default(),
                 })
@@ -272,7 +272,7 @@ impl SongInfoLoader<'_> {
                 |album_artist| album_artist.to_string(),
             ),
             track: tag.track().unwrap_or_default(),
-            disc: tag.disk().unwrap_or_default(),
+            disc: tag.disk().unwrap_or(1),
             year: tag.year().unwrap_or_default(),
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
