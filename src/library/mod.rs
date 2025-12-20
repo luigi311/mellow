@@ -15,7 +15,7 @@ pub use album::Album;
 pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
-use crate::excuses::EXP_INIT;
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
@@ -46,6 +46,7 @@ pub struct Library {
     config: LibraryConfig,
     player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    tx: mpsc::SyncSender<LibraryRequest>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -124,6 +125,8 @@ impl SortedArtists for Artists {
 }
 
 pub enum LibraryRequest {
+    InitQueue,
+    PathsToQueue(Box<[String]>),
     PlayAllSongs,
     PlayAllAlbums,
     ShuffleAllAlbums,
@@ -150,6 +153,7 @@ impl Library {
                 config: LibraryConfig::load(),
                 player_tx,
                 ui_tx,
+                tx: tx.clone(),
                 rx,
             },
             tx,
@@ -333,6 +337,8 @@ impl Library {
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
+                LibraryRequest::InitQueue => self.init_queue(),
+                LibraryRequest::PathsToQueue(paths) => self.play_from_paths(paths),
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
@@ -473,25 +479,50 @@ impl Library {
         queue
     }
 
+    pub fn init_queue(&self) {
+        let mut args = std::env::args();
+        args.next();
+        if let Some(queue) = self.songs_from_paths(args.collect()) {
+            self.player_tx
+                .send(PlayerRequest::LoadQueue(queue))
+                .expect(EXP_RX);
+            return;
+        }
+
+        // TODO: Instead of loading all tracks into the queue, either restore
+        // the previous session or open the library without loading a queue
+        // The library will have to be implemented first
+        self.player_tx
+            .send(PlayerRequest::SetShuffle(true))
+            .expect(EXP_RX);
+        self.tx.send(LibraryRequest::PlayAllSongs).expect(EXP_RX);
+    }
+
+    pub fn play_from_paths(&self, paths: Box<[String]>) {
+        if let Some(queue) = self.songs_from_paths(paths) {
+            self.player_tx
+                .send(PlayerRequest::LoadQueue(queue))
+                .expect(EXP_RX);
+            self.player_tx
+                .send(PlayerRequest::TogglePlay(Some(true)))
+                .expect(EXP_RX);
+        }
+    }
+
     /// Returns a queue of all songs found within the specified `paths`,
     /// recursively. Returns `None` if no song files were found.
     #[must_use]
-    pub fn songs_from_paths<P>(paths: &mut P) -> Option<Vec<QueueItem>>
-    where
-        P: Iterator<Item = String>,
-    {
+    pub fn songs_from_paths(&self, paths: Box<[String]>) -> Option<Vec<QueueItem>> {
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
-        // IDEA: Queue the song from the library directly if
-        // the file is within one of the configured directories
-        paths.for_each(|file| {
+        paths.iter().for_each(|file| {
             let path = Path::new(&file);
             if path.is_file() {
                 // Add files from arguments to queue
                 if !Library::file_supported(&file) {
                     return;
                 }
-                let song = Song::new_from_path(&file);
-                let song = QueueItem::Song(Arc::new(Mutex::new(song)));
+
+                let song = self.queue_from_library_or_new(&file);
                 queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
@@ -503,12 +534,10 @@ impl Library {
                         return;
                     }
 
+                    let song = self.queue_from_library_or_new(&file);
+
                     let mut songs = songs.lock().unwrap();
                     let songs = songs.as_mut().expect(EXP_INIT);
-
-                    let song = Song::new_from_path(file);
-                    let song = QueueItem::Song(Arc::new(Mutex::new(song)));
-
                     match songs.binary_search_by(|existing: &QueueItem| {
                         let to_relative = path.to_str().unwrap().len();
                         existing.as_song().info().file_path()[to_relative..]
@@ -527,5 +556,19 @@ impl Library {
             Some(queue) if !queue.is_empty() => Some(queue),
             _ => None,
         }
+    }
+
+    fn queue_from_library_or_new(&self, file: &str) -> QueueItem {
+        for dir in &self.config.directories {
+            if file.starts_with(dir) {
+                let dir = gio::File::for_path(dir);
+                let file = gio::File::for_path(&file);
+                match self.songs.find_song(&file.uri(), dir.uri().len()) {
+                    Ok(index) => return QueueItem::Song(Arc::clone(&self.songs[index])),
+                    Err(_) => break,
+                }
+            }
+        }
+        QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(&file))))
     }
 }

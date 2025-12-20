@@ -1,12 +1,10 @@
 use adw::{Application, prelude::*};
-use core::error::Error;
 use gtk::{gio, glib};
-use std::sync::mpsc;
 use std::thread;
 
 use mellow::excuses::{EXP_RX, INIT_ERR};
 use mellow::library::{Library, LibraryRequest};
-use mellow::player::{Player, PlayerRequest};
+use mellow::player::Player;
 use mellow::{APP_ID, APP_NAME};
 
 pub fn main() -> glib::ExitCode {
@@ -37,32 +35,10 @@ fn init(app: &Application) {
         .spawn(move || {
             let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
             runtime.block_on(async move {
-                // TODO: Load the library and only rebuild if necessary
-                // This should probably be requested by the UI instead
                 library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-                init_player_queue(&library_tx, &player_tx).expect(INIT_ERR);
+                library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
                 library.request_handler().await.unwrap();
             });
         })
         .expect(INIT_ERR);
-}
-
-fn init_player_queue(
-    library_tx: &mpsc::SyncSender<LibraryRequest>,
-    player_tx: &mpsc::SyncSender<PlayerRequest>,
-) -> Result<(), Box<dyn Error>> {
-    let mut args = std::env::args();
-    args.next();
-    if let Some(queue) = Library::songs_from_paths(&mut args) {
-        player_tx.send(PlayerRequest::LoadQueue(queue))?;
-        return Ok(());
-    }
-
-    // TODO: Instead of loading all tracks into the queue, either restore
-    // the previous session or open the library without loading a queue
-    // The library will have to be implemented first
-    player_tx.send(PlayerRequest::SetShuffle(true))?;
-    library_tx.send(LibraryRequest::PlayAllSongs)?;
-
-    Ok(())
 }
