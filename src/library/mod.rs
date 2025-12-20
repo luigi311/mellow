@@ -90,6 +90,9 @@ impl LibraryConfig {
     }
 }
 
+// IDEA: Options to re-sort using different criteria,
+// with the below functions respecting said option
+
 pub type Songs = Vec<Arc<Mutex<Song>>>;
 pub trait SortedSongs {
     fn find_song(&self, uri: &str, library_path_len: usize) -> Result<usize, usize>;
@@ -127,7 +130,7 @@ impl SortedArtists for Artists {
 
 pub enum LibraryRequest {
     InitQueue,
-    PathsToQueue(Box<[String]>),
+    QueueFromPaths(Box<[String]>),
     PlayAllSongs,
     PlayAllAlbums,
     ShuffleAllAlbums,
@@ -247,15 +250,15 @@ impl Library {
             let mut info = song_unwrapped.info();
             let song_info = info.basic_and(|| changed = true);
 
-            let album_index = albums.find_album(&song_info);
-            let artist_index = artists.find_artist(&song_info);
+            let album_index = albums.find_album(song_info);
+            let artist_index = artists.find_artist(song_info);
 
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
                         // Associate the current song with its album
                         let album_songs = &mut albums[album_index].lock().unwrap().songs;
-                        let song_index = album_songs.find_album_song(&song_info);
+                        let song_index = album_songs.find_album_song(song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
                                 album_songs.insert(song_index, Arc::clone(song));
@@ -277,7 +280,7 @@ impl Library {
 
                         // Associate the album with the artist
                         let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
-                        let album_index = artist_albums.find_artist_album(&song_info);
+                        let album_index = artist_albums.find_artist_album(song_info);
                         match album_index {
                             Err(album_index) | Ok(album_index) => {
                                 artist_albums.insert(album_index, Arc::clone(&album));
@@ -337,7 +340,7 @@ impl Library {
         loop {
             match self.rx.recv()? {
                 LibraryRequest::InitQueue => self.init_queue(),
-                LibraryRequest::PathsToQueue(paths) => self.play_from_paths(paths),
+                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths),
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
@@ -481,7 +484,7 @@ impl Library {
     pub fn init_queue(&self) {
         let mut args = std::env::args();
         args.next();
-        if let Some(queue) = self.songs_from_paths(args.collect()) {
+        if let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>()) {
             self.player_tx
                 .send(PlayerRequest::LoadQueue(queue))
                 .expect(EXP_RX);
@@ -497,7 +500,7 @@ impl Library {
         self.tx.send(LibraryRequest::PlayAllSongs).expect(EXP_RX);
     }
 
-    pub fn play_from_paths(&self, paths: Box<[String]>) {
+    pub fn play_from_paths(&self, paths: &[String]) {
         if let Some(queue) = self.songs_from_paths(paths) {
             self.player_tx
                 .send(PlayerRequest::LoadQueue(queue))
@@ -511,17 +514,17 @@ impl Library {
     /// Returns a queue of all songs found within the specified `paths`,
     /// recursively. Returns `None` if no song files were found.
     #[must_use]
-    pub fn songs_from_paths(&self, paths: Box<[String]>) -> Option<Vec<QueueItem>> {
+    pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
         paths.iter().for_each(|file| {
             let path = Path::new(&file);
             if path.is_file() {
                 // Add files from arguments to queue
-                if !Library::file_supported(&file) {
+                if !Library::file_supported(file) {
                     return;
                 }
 
-                let song = self.queue_from_library_or_new(&file);
+                let song = self.queue_from_library_or_new(file);
                 queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
@@ -533,7 +536,7 @@ impl Library {
                         return;
                     }
 
-                    let song = self.queue_from_library_or_new(&file);
+                    let song = self.queue_from_library_or_new(file);
 
                     let mut songs = songs.lock().unwrap();
                     let songs = songs.as_mut().expect(EXP_INIT);
@@ -561,13 +564,13 @@ impl Library {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
                 let dir = gio::File::for_path(dir);
-                let file = gio::File::for_path(&file);
+                let file = gio::File::for_path(file);
                 match self.songs.find_song(&file.uri(), dir.uri().len()) {
                     Ok(index) => return QueueItem::Song(Arc::clone(&self.songs[index])),
                     Err(_) => break,
                 }
             }
         }
-        QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(&file))))
+        QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
     }
 }

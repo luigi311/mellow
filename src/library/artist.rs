@@ -5,7 +5,7 @@ use crate::library::{Album, SongInfo};
 
 pub struct Artist {
     pub name: String,
-    pub albums: Vec<Arc<Mutex<Album>>>,
+    pub albums: ArtistAlbums,
 }
 
 pub type ArtistAlbums = Vec<Arc<Mutex<Album>>>;
