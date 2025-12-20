@@ -1,19 +1,26 @@
 #![macro_use]
 
-/// Serializes specified values into a `String` which
-/// can be used with `deserialize!()` to retreive the
-/// values
+/// Serializes specified values into a `String`, which
+/// can later be used with `deserialize!()` to retreive
+/// the values
+///
+/// Note: When serializing `ClockTime`, use `[…].nseconds()`
+/// on the left side of the expression to convert it to a
+/// format compatible with `deserialize!()`
 ///
 /// # Example:
 /// ```rust
 /// use mellow::serialize;
+/// use gst::ClockTime;
 ///
 /// let number = 5;
 /// let text = "hello";
+/// let time = ClockTime::from_nseconds(50000);
 ///
 /// let serialized = serialize!(
 ///     number => "number",
 ///     text => "text",
+///     time.nseconds() => "time",
 /// );
 ///
 /// assert_eq!(
@@ -21,6 +28,7 @@
 ///     "\
 /// number: 5
 /// text: hello
+/// time: 50000
 /// "
 /// );
 /// ```
@@ -41,21 +49,26 @@ macro_rules! serialize {
 /// # Example:
 /// ```rust
 /// use mellow::deserialize;
+/// use gst::ClockTime;
 ///
 /// let mut number = 0u32;
 /// let mut text = String::new();
+/// let mut time = ClockTime::default();
 ///
 /// deserialize!(
 ///     "\
 /// number: 5
 /// text: hello
+/// time: 50000
 /// ",
 ///     "number"<"u32"> => number,
 ///     "text"<"String"> => text,
+///     "time"<"ClockTime"> => time,
 /// );
 ///
 /// assert_eq!(number, 5);
 /// assert_eq!(text, "hello".to_string());
+/// assert_eq!(time, ClockTime::from_nseconds(50000));
 ///
 /// Ok::<(), String>(())
 /// ```
