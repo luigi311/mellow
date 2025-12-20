@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
 use crate::library::{Album, SongInfo};
@@ -13,6 +14,12 @@ pub trait SortedArtistAlbums {
 }
 impl SortedArtistAlbums for ArtistAlbums {
     fn find_artist_album(&self, info: &SongInfo) -> Result<usize, usize> {
-        self.binary_search_by(|album| album.lock().unwrap().title.cmp(&info.album))
+        self.binary_search_by(|album| {
+            let album = album.lock().unwrap();
+            match album.year.cmp(&info.year) {
+                Ordering::Equal => album.title.cmp(&info.album),
+                ordering => ordering,
+            }
+        })
     }
 }

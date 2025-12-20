@@ -110,6 +110,7 @@ pub trait SortedAlbums {
 }
 impl SortedAlbums for Albums {
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize> {
+        // IDEA: Improve `albums` sorting: artist/year/title or artist/title
         self.binary_search_by(|album| album.lock().unwrap().title.cmp(&info.album))
     }
 }
@@ -246,8 +247,6 @@ impl Library {
             let mut info = song_unwrapped.info();
             let song_info = info.basic_and(|| changed = true);
 
-            // TODO: Improve `albums` sorting: artist/year/title or artist/title
-            // TODO: Improve `artists[…].albums` sorting: year/title
             let album_index = albums.find_album(&song_info);
             let artist_index = artists.find_artist(&song_info);
 
