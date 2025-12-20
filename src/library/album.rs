@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
 use crate::library::{Artist, Song, SongInfo};
@@ -19,8 +20,11 @@ impl SortedAlbumSongs for AlbumSongs {
             let mut song = song.lock().unwrap();
             let mut new_info = song.info();
             let new_info = new_info.basic();
-            format!("{}_{}", new_info.disc, new_info.track)
-                .cmp(&format!("{}_{}", info.disc, info.track))
+
+            match new_info.disc.cmp(&info.disc) {
+                Ordering::Equal => new_info.track.cmp(&info.track),
+                ordering => ordering,
+            }
         })
     }
 }
