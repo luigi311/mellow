@@ -6,6 +6,7 @@ use std::time::Duration;
 pub mod excuses;
 pub mod library;
 pub mod player;
+pub mod serializer;
 pub mod ui;
 
 pub const APP_NAME: &str = "Mellow";

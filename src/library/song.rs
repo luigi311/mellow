@@ -10,6 +10,7 @@ use lofty::probe::Probe;
 
 use crate::excuses::EXP_SAFE;
 use crate::library::Album;
+use crate::{deserialize, serialize};
 
 #[derive(Clone)]
 pub struct Song {
@@ -30,6 +31,21 @@ pub struct SongInfo {
     pub disc: u32,
     pub year: u32,
     pub duration: ClockTime,
+}
+
+impl Default for SongInfo {
+    fn default() -> Self {
+        SongInfo {
+            title: String::new(),
+            album: String::new(),
+            artist: String::new(),
+            album_artist: String::new(),
+            track: 0,
+            disc: 1,
+            year: 0,
+            duration: ClockTime::ZERO,
+        }
+    }
 }
 
 // IDEA: Make all fields optional, and load or access them on-demand
@@ -75,27 +91,17 @@ impl<'s> Song {
         let mut info = self.info();
         let uri = info.file_uri();
         let basic = info.basic();
-        format!(
-            "\
-uri: {}
-title: {}
-album: {}
-artist: {}
-album_artist: {}
-track: {}
-disc: {}
-year: {}
-duration: {}\
-",
-            uri,
-            basic.title,
-            basic.album,
-            basic.artist,
-            basic.album_artist,
-            basic.track,
-            basic.disc,
-            basic.year,
-            basic.duration.nseconds(),
+
+        serialize!(
+            uri => "uri",
+            basic.title => "title",
+            basic.album => "album",
+            basic.artist => "artist",
+            basic.album_artist => "album_artist",
+            basic.track => "track",
+            basic.disc => "disc",
+            basic.year => "year",
+            basic.duration.nseconds() => "duration",
         )
     }
 
@@ -107,38 +113,20 @@ duration: {}\
     /// the function returns an error
     pub fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
-        let mut info = SongInfo {
-            title: String::new(),
-            album: String::new(),
-            artist: String::new(),
-            album_artist: String::new(),
-            track: 0,
-            disc: 1,
-            year: 0,
-            duration: ClockTime::ZERO,
-        };
-        for line in data.lines() {
-            let Some((field, value)) = line.split_once(' ') else {
-                continue;
-            };
+        let mut info = SongInfo::default();
 
-            match field {
-                "uri:" => uri = value,
-                "title:" => info.title = value.to_string(),
-                "album:" => info.album = value.to_string(),
-                "artist:" => info.artist = value.to_string(),
-                "album_artist:" => info.album_artist = value.to_string(),
-                "track:" => info.track = value.parse().map_err(|e| format!("{field} {e}"))?,
-                "disc:" => info.disc = value.parse().map_err(|e| format!("{field} {e}"))?,
-                "year:" => info.year = value.parse().map_err(|e| format!("{field} {e}"))?,
-                "duration:" => {
-                    info.duration = ClockTime::from_nseconds(
-                        value.parse().map_err(|e| format!("{field} {e}"))?,
-                    );
-                }
-                _ => eprintln!("Unknown field: `{field}`"),
-            }
-        }
+        deserialize!(
+            data,
+            "uri"<"&str"> => uri,
+            "title"<"String"> => info.title,
+            "album"<"String"> => info.album,
+            "artist"<"String"> => info.artist,
+            "album_artist"<"String"> => info.album_artist,
+            "track"<"u32"> => info.track,
+            "disc"<"u32"> => info.disc,
+            "year"<"u32"> => info.year,
+            "duration"<"ClockTime"> => info.duration,
+        );
 
         Ok(Song {
             album: None,
@@ -230,13 +218,7 @@ impl SongInfoLoader<'_> {
             .unwrap_or_else(|_| {
                 Some(SongInfo {
                     title: self.filename(),
-                    album: String::new(),
-                    artist: String::new(),
-                    album_artist: String::new(),
-                    track: 0,
-                    disc: 1,
-                    year: 0,
-                    duration: ClockTime::default(),
+                    ..SongInfo::default()
                 })
             });
         self

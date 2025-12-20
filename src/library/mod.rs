@@ -172,7 +172,7 @@ impl Library {
         let serialized = self
             .songs
             .iter()
-            .map(|song| song.lock().unwrap().serlialize() + "\n\n")
+            .map(|song| song.lock().unwrap().serlialize() + "\n")
             .collect::<String>()
             .trim()
             .to_string();
