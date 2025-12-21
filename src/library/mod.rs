@@ -192,12 +192,11 @@ impl Library {
     fn deserialize_songs(&self) -> Songs {
         let data = fs::read_to_string(self.config.config_dir.clone() + "songs").unwrap_or_default();
         let data = data.split("\n\n");
-        data.map(Song::deserialize)
-            .filter_map(|song| match song {
-                Ok(song) => Some(Arc::new(Mutex::new(song))),
-                Err(_) => None,
-            })
-            .collect()
+        data.filter_map(|data| match Song::deserialize(data) {
+            Ok(song) => Some(Arc::new(Mutex::new(song))),
+            Err(_) => None,
+        })
+        .collect()
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
