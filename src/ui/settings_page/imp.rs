@@ -49,14 +49,23 @@ impl SettingsPage {
     pub fn set_directories(&self, directories: &[String]) {
         self.directory_list.remove_all();
         for (i, directory) in directories.iter().enumerate() {
+            let prefix_icon = gtk::Image::builder()
+                .icon_name("folder-symbolic")
+                .margin_top(8)
+                .margin_bottom(8)
+                .css_classes(["flat", "image-button"])
+                .build();
             let directory_row = adw::ActionRow::builder()
                 .title(directory)
                 .selectable(true)
                 .build();
+            directory_row.add_prefix(&prefix_icon);
             let remove_button = gtk::Button::builder()
                 .icon_name("window-close-symbolic")
                 .margin_top(8)
                 .margin_bottom(8)
+                .has_tooltip(true)
+                .tooltip_text("Remove") // TODO: Support translations
                 .css_classes(["flat", "image-button"])
                 .build();
             remove_button.connect_clicked({
