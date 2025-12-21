@@ -116,7 +116,7 @@ impl Window {
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
-                UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(dirs),
+                UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(&dirs),
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),
@@ -215,7 +215,7 @@ impl Window {
         }
     }
 
-    fn set_library_dirs(&self, dirs: Box<[String]>) {
+    fn set_library_dirs(&self, dirs: &[String]) {
         self.settings_page.set_directories(dirs);
     }
 

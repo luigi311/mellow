@@ -46,7 +46,7 @@ impl SettingsPage {
             .expect(EXP_RX);
     }
 
-    pub fn set_directories(&self, directories: Box<[String]>) {
+    pub fn set_directories(&self, directories: &[String]) {
         self.directory_list.remove_all();
         for (i, directory) in directories.iter().enumerate() {
             let directory_row = adw::ActionRow::builder()
@@ -64,7 +64,7 @@ impl SettingsPage {
                 move |_| {
                     library_tx
                         .send(LibraryRequest::RemoveLibrary(i))
-                        .expect(EXP_RX)
+                        .expect(EXP_RX);
                 }
             });
             directory_row.add_suffix(&remove_button);

@@ -561,12 +561,12 @@ impl Library {
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
-        paths.iter().for_each(|file| {
+        for file in paths {
             let path = Path::new(&file);
             if path.is_file() {
                 // Add files from arguments to queue
                 if !Library::file_supported(file) {
-                    return;
+                    continue;
                 }
 
                 let song = self.queue_from_library_or_new(file);
@@ -597,7 +597,7 @@ impl Library {
                 (queue.lock().unwrap().as_mut().expect(EXP_INIT))
                     .extend(songs.lock().unwrap().take().expect(EXP_INIT));
             }
-        });
+        }
 
         match queue.lock().unwrap().take() {
             Some(queue) if !queue.is_empty() => Some(queue),

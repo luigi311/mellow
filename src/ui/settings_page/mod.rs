@@ -51,7 +51,7 @@ impl SettingsPage {
         self.imp().gapless.set_active(gapless);
     }
 
-    pub fn set_directories(&self, directories: Box<[String]>) {
+    pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
     }
 }
