@@ -117,6 +117,11 @@ impl Window {
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
                 UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(&dirs),
+                UpdateUI::LibrarySongs(songs) => self.library_songs_page.load_songs(&songs),
+                UpdateUI::LibraryAlbums(albums) => self.library_albums_page.load_albums(&albums),
+                UpdateUI::LibraryArtists(artists) => {
+                    self.library_artists_page.load_artists(&artists);
+                }
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),

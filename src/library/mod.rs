@@ -271,6 +271,9 @@ impl Library {
         });
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
+        self.ui_tx
+            .send(UpdateUI::LibrarySongs(songs.clone()))
+            .await?;
         self.songs = songs;
 
         // return Ok(());
@@ -361,7 +364,14 @@ impl Library {
             }
         }
 
+        self.ui_tx
+            .send(UpdateUI::LibraryAlbums(albums.clone()))
+            .await?;
         self.albums = albums;
+
+        self.ui_tx
+            .send(UpdateUI::LibraryArtists(artists.clone()))
+            .await?;
         self.artists = artists;
 
         if changed {

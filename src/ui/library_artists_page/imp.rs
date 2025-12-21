@@ -5,7 +5,7 @@ use std::cell::OnceCell;
 use std::sync::mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LibraryRequest;
+use crate::library::{Artists, LibraryRequest};
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
@@ -51,6 +51,10 @@ impl LibraryArtistsPage {
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
+    }
+
+    pub fn load_artists(&self, artists: &Artists) {
+        println!("TODO: Create a list of library artists in the UI");
     }
 }
 

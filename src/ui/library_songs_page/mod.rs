@@ -4,7 +4,7 @@ use gtk::glib;
 use std::sync::mpsc;
 
 use crate::excuses::INIT_ERR;
-use crate::library::{LibraryRequest, Song};
+use crate::library::{LibraryRequest, Songs};
 use crate::player::PlayerRequest;
 
 mod imp;
@@ -38,7 +38,8 @@ impl LibrarySongsPage {
         songs_page.player_tx.set(player_tx).expect(INIT_ERR);
     }
 
-    pub fn load_songs(&self, songs: Box<[Song]>) {
-        todo!()
+    pub fn load_songs(&self, songs: &Songs) {
+        println!("load_songs()");
+        self.imp().load_songs(songs);
     }
 }

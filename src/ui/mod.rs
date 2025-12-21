@@ -18,6 +18,7 @@ mod settings_page;
 mod window;
 
 use crate::library::LibraryRequest;
+use crate::library::{Albums, Artists, Songs};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
@@ -34,6 +35,9 @@ pub enum UpdateUI {
     Repeat(bool),
     Progress(Option<f64>),
     LibraryDirs(Box<[String]>),
+    LibrarySongs(Songs),
+    LibraryAlbums(Albums),
+    LibraryArtists(Artists),
     FocusLibrary,
     FocusPlaying,
     FocusSettings,

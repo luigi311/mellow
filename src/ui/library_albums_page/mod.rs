@@ -4,7 +4,7 @@ use gtk::glib;
 use std::sync::mpsc;
 
 use crate::excuses::INIT_ERR;
-use crate::library::LibraryRequest;
+use crate::library::{Albums, LibraryRequest};
 use crate::player::PlayerRequest;
 
 mod imp;
@@ -36,5 +36,10 @@ impl LibraryAlbumsPage {
         let albums_page = self.imp();
         albums_page.library_tx.set(library_tx).expect(INIT_ERR);
         albums_page.player_tx.set(player_tx).expect(INIT_ERR);
+    }
+
+    pub fn load_albums(&self, albums: &Albums) {
+        println!("load_albums()");
+        self.imp().load_albums(albums);
     }
 }
