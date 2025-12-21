@@ -8,7 +8,6 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
-use crate::excuses::EXP_SAFE;
 use crate::library::Album;
 use crate::{deserialize, serialize};
 
@@ -185,10 +184,10 @@ impl SongInfoLoader<'_> {
 
     /// Loads basic song info if needed, then returns it
     #[must_use]
-    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn basic(&mut self) -> &SongInfo {
         self.load_basic();
-        self.info.as_ref().expect(EXP_SAFE)
+        // SAFETY: `load_basic()` ensures the value is `Some`
+        unsafe { self.info.as_ref().unwrap_unchecked() }
     }
     /// Loads basic song info if needed, and runs the provided closure
     /// if the info had to be loaded
@@ -199,13 +198,14 @@ impl SongInfoLoader<'_> {
             self.load_basic();
             run_if_not_loaded();
         }
-        self.info.as_ref().expect(EXP_SAFE)
+        // SAFETY: `load_basic()` ensures the value is `Some`
+        unsafe { self.info.as_ref().unwrap_unchecked() }
     }
     /// Loads basic song info if needed, then returns and unloads it
-    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn take_basic(&mut self) -> SongInfo {
         self.load_basic();
-        self.info.take().expect(EXP_SAFE)
+        // SAFETY: `load_basic()` ensures the value is `Some`
+        unsafe { self.info.take().unwrap_unchecked() }
     }
     /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
@@ -269,16 +269,16 @@ impl SongInfoLoader<'_> {
 
     /// Loads detailed song info if needed, then returns it
     #[must_use]
-    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn detailed(&mut self) -> &DetailedSongInfo {
         self.load_detailed();
-        self.detailed_info.as_ref().expect(EXP_SAFE)
+        // SAFETY: `load_detailed()` ensures the value is `Some`
+        unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
     }
     /// Loads detailed song info if needed, then returns and unloads it
-    #[allow(clippy::missing_panics_doc)] // Cannot panic
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
-        self.detailed_info.take().expect(EXP_SAFE)
+        // SAFETY: `load_detailed()` ensures the value is `Some`
+        unsafe { self.detailed_info.take().unwrap_unchecked() }
     }
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained
