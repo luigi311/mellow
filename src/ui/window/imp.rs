@@ -91,7 +91,7 @@ impl Window {
         self.queue_song_page.init(player_tx.clone());
 
         // Settings Page
-        self.settings_page.init(player_tx);
+        self.settings_page.init(player_tx, library_tx);
     }
 
     #[allow(clippy::future_not_send)]
@@ -116,6 +116,7 @@ impl Window {
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
+                UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(dirs),
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),
@@ -214,6 +215,10 @@ impl Window {
         }
     }
 
+    fn set_library_dirs(&self, dirs: Box<[String]>) {
+        self.settings_page.set_directories(dirs);
+    }
+
     fn focus_library(&self) {
         self.view_stack.set_visible_child_name("library");
     }
@@ -257,7 +262,7 @@ impl ObjectSubclass for Window {
                 let library_tx = window.imp().library_tx.get().expect(EXP_INIT);
                 library_tx
                     .send(LibraryRequest::AddLibrary(
-                        dir.path().unwrap().to_str().unwrap().to_owned(),
+                        dir.path().unwrap().to_str().unwrap().into(),
                     ))
                     .expect(EXP_RX);
                 // TODO: Update incrementally instead of rebuilding

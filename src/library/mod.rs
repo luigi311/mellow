@@ -75,19 +75,6 @@ impl LibraryConfig {
         // TODO: Load config from disk
         Self::default()
     }
-
-    pub fn add_library(&mut self, dir: String) {
-        if self.directories.contains(&dir) {
-            return;
-        }
-        self.directories.push(dir);
-        println!("Added a new library\nLibraries: {:?}", self.directories);
-    }
-
-    pub fn remove_library(&mut self, index: usize) {
-        self.directories.remove(index);
-        println!("Removed a library\nLibraries: {:?}", self.directories);
-    }
 }
 
 // IDEA: Options to re-sort using different criteria,
@@ -140,7 +127,8 @@ pub enum LibraryRequest {
     PlayAllArtists,
     ShuffleAllArtists,
     Rebuild,
-    AddLibrary(String),
+    AddLibrary(Box<str>),
+    EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
 }
 
@@ -151,20 +139,66 @@ impl Library {
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
     ) -> (Library, mpsc::SyncSender<LibraryRequest>) {
         let (tx, rx) = mpsc::sync_channel(4);
-        (
-            Library {
-                songs: vec![],
-                albums: vec![],
-                artists: vec![],
+        let library = Library {
+            songs: vec![],
+            albums: vec![],
+            artists: vec![],
 
-                config: LibraryConfig::load(),
-                player_tx,
-                ui_tx,
-                tx: tx.clone(),
-                rx,
-            },
-            tx,
-        )
+            config: LibraryConfig::load(),
+            player_tx,
+            ui_tx,
+            tx: tx.clone(),
+            rx,
+        };
+
+        (library, tx)
+    }
+
+    pub async fn add_library(&mut self, dir: String) {
+        if self.config.directories.contains(&dir) || dir.is_empty() {
+            return;
+        }
+        self.config.directories.push(dir);
+        self.config.directories.sort();
+        println!(
+            "Added a new library\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .await
+            .expect(EXP_RX);
+    }
+
+    pub async fn edit_library(&mut self, index: usize, dir: String) {
+        if self.config.directories.contains(&dir) {
+            return self.remove_library(index).await;
+        }
+        self.config.directories[index] = dir;
+        self.config.directories.sort();
+        println!("Edited a library\nLibraries: {:?}", self.config.directories);
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .await
+            .expect(EXP_RX);
+    }
+
+    pub async fn remove_library(&mut self, index: usize) {
+        self.config.directories.remove(index);
+        println!(
+            "Removed a library\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .await
+            .expect(EXP_RX);
     }
 
     /// Serializes `songs` and writes the data to disk,
@@ -340,6 +374,13 @@ impl Library {
     }
 
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .await
+            .expect(EXP_RX);
+
         loop {
             match self.rx.recv()? {
                 LibraryRequest::InitQueue => self.init_queue(),
@@ -350,8 +391,9 @@ impl Library {
                 LibraryRequest::PlayAllArtists => self.play_all_artists().await?,
                 LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists().await?,
                 LibraryRequest::Rebuild => self.rebuild().await?,
-                LibraryRequest::AddLibrary(dir) => self.config.add_library(dir),
-                LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
+                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()).await,
+                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
+                LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
             }
         }
     }

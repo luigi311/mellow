@@ -1,9 +1,10 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::{glib, prelude::RangeExt};
 use std::sync::mpsc;
 
 use crate::excuses::INIT_ERR;
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 
 mod imp;
@@ -27,8 +28,13 @@ impl SettingsPage {
         Object::builder().build()
     }
 
-    pub fn init(&self, player_tx: mpsc::SyncSender<PlayerRequest>) {
+    pub fn init(
+        &self,
+        player_tx: mpsc::SyncSender<PlayerRequest>,
+        library_tx: mpsc::SyncSender<LibraryRequest>,
+    ) {
         self.imp().player_tx.set(player_tx).expect(INIT_ERR);
+        self.imp().library_tx.set(library_tx).expect(INIT_ERR);
     }
 
     pub fn volume(&self) -> f64 {
@@ -43,5 +49,9 @@ impl SettingsPage {
     }
     pub fn set_gapless(&self, gapless: bool) {
         self.imp().gapless.set_active(gapless);
+    }
+
+    pub fn set_directories(&self, directories: Box<[String]>) {
+        self.imp().set_directories(directories);
     }
 }

@@ -57,22 +57,22 @@
     <child>
       <object class="AdwPreferencesGroup">
         <property name="hexpand">True</property>
-        <property name="title" translatable="yes">Library</property>
+        <property name="title" translatable="yes">Directories</property>
+        <child type="header-suffix">
+          <object class="GtkButton">
+            <property name="icon-name">list-add-symbolic</property>
+            <property name="action-name">win.add_library</property>
+            <style>
+              <class name="flat"/>
+            </style>
+          </object>
+        </child>
         <child>
-          <object class="AdwExpanderRow" id="directories">
-            <property name="title" translatable="yes">Directories</property>
-            <property name="expanded">True</property>
-            <child>
-              <!-- TODO: Allow adding/removing directories -->
-              <object class="AdwButtonRow">
-                <property name="action-name">win.add_library</property>
-                <property name="title" translatable="yes">Add Directory</property>
-                <property name="start_icon_name">list-add-symbolic</property>
-                <!-- <style> -->
-                  <!-- <class name="suggested-action"/> -->
-                <!-- </style> -->
-              </object>
-            </child>
+          <object class="GtkListBox" id="directory_list">
+            <property name="selection-mode">none</property>
+            <style>
+              <class name="boxed-list"/>
+            </style>
           </object>
         </child>
       </object>

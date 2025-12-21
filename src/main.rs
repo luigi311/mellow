@@ -27,10 +27,6 @@ fn init(app: &Application) {
     mellow::ui::init(app, &library_tx, &player_tx, ui_rx);
 
     thread::Builder::new()
-        .name("player".to_string())
-        .spawn(move || player.controller().unwrap())
-        .expect(INIT_ERR);
-    thread::Builder::new()
         .name("library".to_string())
         .spawn(move || {
             let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
@@ -40,5 +36,9 @@ fn init(app: &Application) {
                 library.request_handler().await.unwrap();
             });
         })
+        .expect(INIT_ERR);
+    thread::Builder::new()
+        .name("player".to_string())
+        .spawn(move || player.controller().unwrap())
         .expect(INIT_ERR);
 }

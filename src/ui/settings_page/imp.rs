@@ -6,6 +6,7 @@ use std::sync::mpsc;
 
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
@@ -16,9 +17,10 @@ pub struct SettingsPage {
     #[template_child]
     pub gapless: TemplateChild<adw::SwitchRow>,
     #[template_child]
-    pub directories: TemplateChild<adw::ExpanderRow>,
+    pub directory_list: TemplateChild<gtk::ListBox>,
 
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
 }
 
 #[gtk::template_callbacks]
@@ -42,6 +44,41 @@ impl SettingsPage {
             .expect(EXP_INIT)
             .send(PlayerRequest::SetGapless(self.gapless.is_active()))
             .expect(EXP_RX);
+    }
+
+    pub fn set_directories(&self, directories: Box<[String]>) {
+        self.directory_list.remove_all();
+        for (i, directory) in directories.iter().enumerate() {
+            let directory_row = adw::ActionRow::builder()
+                .title(directory)
+                .selectable(true)
+                .build();
+            let remove_button = gtk::Button::builder()
+                .icon_name("window-close-symbolic")
+                .margin_top(8)
+                .margin_bottom(8)
+                .css_classes(["flat", "image-button"])
+                .build();
+            remove_button.connect_clicked({
+                let library_tx = self.library_tx.get().unwrap().clone();
+                move |_| {
+                    library_tx
+                        .send(LibraryRequest::RemoveLibrary(i))
+                        .expect(EXP_RX)
+                }
+            });
+            directory_row.add_suffix(&remove_button);
+            self.directory_list.append(&directory_row);
+        }
+        if directories.is_empty() {
+            let add_directory_button = adw::ButtonRow::builder()
+                .title("Add Directory")
+                .start_icon_name("list-add-symbolic")
+                .action_name("win.add_library")
+                .build();
+            add_directory_button.add_css_class("suggested-action");
+            self.directory_list.append(&add_directory_button);
+        }
     }
 }
 

@@ -33,6 +33,7 @@ pub enum UpdateUI {
     Shuffle(bool),
     Repeat(bool),
     Progress(Option<f64>),
+    LibraryDirs(Box<[String]>),
     FocusLibrary,
     FocusPlaying,
     FocusSettings,
