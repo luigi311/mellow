@@ -40,11 +40,11 @@ pub struct Window {
 
     // View stack "Library" tab
     #[template_child]
-    library_songs_page: TemplateChild<LibrarySongsPage>,
+    pub library_songs_page: TemplateChild<LibrarySongsPage>,
     #[template_child]
-    library_albums_page: TemplateChild<LibraryAlbumsPage>,
+    pub library_albums_page: TemplateChild<LibraryAlbumsPage>,
     #[template_child]
-    library_artists_page: TemplateChild<LibraryArtistsPage>,
+    pub library_artists_page: TemplateChild<LibraryArtistsPage>,
 
     // View stack "Playing" tab
     #[template_child]

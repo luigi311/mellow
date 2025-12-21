@@ -75,6 +75,48 @@ impl Window {
                     move |_, _, _| player.handle_skip_next()
                 ))
                 .build(),
+            gio::ActionEntry::builder("play_all_songs")
+                .activate(clone!(
+                    #[weak(rename_to=songs_page)]
+                    self.imp().library_songs_page.imp(),
+                    move |_, _, _| songs_page.handle_play_sequential()
+                ))
+                .build(),
+            gio::ActionEntry::builder("shuffle_all_songs")
+                .activate(clone!(
+                    #[weak(rename_to=songs_page)]
+                    self.imp().library_songs_page.imp(),
+                    move |_, _, _| songs_page.handle_play_shuffled()
+                ))
+                .build(),
+            gio::ActionEntry::builder("play_all_albums")
+                .activate(clone!(
+                    #[weak(rename_to=albums_page)]
+                    self.imp().library_albums_page.imp(),
+                    move |_, _, _| albums_page.handle_play_sequential()
+                ))
+                .build(),
+            gio::ActionEntry::builder("shuffle_all_albums")
+                .activate(clone!(
+                    #[weak(rename_to=albums_page)]
+                    self.imp().library_albums_page.imp(),
+                    move |_, _, _| albums_page.handle_play_shuffled()
+                ))
+                .build(),
+            gio::ActionEntry::builder("play_all_artists")
+                .activate(clone!(
+                    #[weak(rename_to=artists_page)]
+                    self.imp().library_artists_page.imp(),
+                    move |_, _, _| artists_page.handle_play_sequential()
+                ))
+                .build(),
+            gio::ActionEntry::builder("shuffle_all_artists")
+                .activate(clone!(
+                    #[weak(rename_to=artists_page)]
+                    self.imp().library_artists_page.imp(),
+                    move |_, _, _| artists_page.handle_play_shuffled()
+                ))
+                .build(),
         ]);
         self.insert_action_group("player", Some(&player_actions));
 

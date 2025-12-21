@@ -61,7 +61,6 @@
         <property name="title" translatable="yes">Directories</property>
         <child type="header-suffix">
           <object class="GtkButton">
-            <!-- <property name="icon-name">list-add-symbolic</property> -->
             <property name="icon-name">folder-new-symbolic</property>
             <property name="action-name">win.add_library</property>
             <property name="tooltip-text" translatable="yes">Add Directory</property>

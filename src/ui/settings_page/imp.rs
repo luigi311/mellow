@@ -53,7 +53,6 @@ impl SettingsPage {
                 .icon_name("folder-symbolic")
                 .margin_top(8)
                 .margin_bottom(8)
-                .css_classes(["flat", "image-button"])
                 .build();
             let directory_row = adw::ActionRow::builder()
                 .title(directory)
@@ -66,7 +65,7 @@ impl SettingsPage {
                 .margin_bottom(8)
                 .has_tooltip(true)
                 .tooltip_text("Remove") // TODO: Support translations
-                .css_classes(["flat", "image-button"])
+                .css_classes(["flat", "circular"])
                 .build();
             remove_button.connect_clicked({
                 let library_tx = self.library_tx.get().unwrap().clone();
@@ -82,7 +81,7 @@ impl SettingsPage {
         if directories.is_empty() {
             let add_directory_button = adw::ButtonRow::builder()
                 .title("Add Directory")
-                .start_icon_name("list-add-symbolic")
+                .start_icon_name("folder-new-symbolic")
                 .action_name("win.add_library")
                 .build();
             add_directory_button.add_css_class("suggested-action");
