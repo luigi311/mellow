@@ -130,6 +130,10 @@ impl<'s> Song {
             "duration"<"ClockTime"> => info.duration,
         );
 
+        if uri.is_empty() {
+            return Err("Could not initialize `uri`".to_string());
+        }
+
         Ok(Song {
             album: None,
             file: gio::File::for_uri(uri),

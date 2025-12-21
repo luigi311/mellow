@@ -42,6 +42,9 @@ macro_rules! serialize {
 /// Retreives serialized `data` field values and assigns them
 /// to the variables on the right side of each expression
 ///
+/// Note: Assignment may fail silently for individual fields
+/// if they are not present within the provided `data`
+///
 /// # Errors:
 /// This function causes the caller to propagate an `Err`
 /// value of type `String` in the event of an error
