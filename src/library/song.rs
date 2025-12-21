@@ -164,16 +164,19 @@ pub struct SongInfoLoader<'i> {
 
 impl SongInfoLoader<'_> {
     /// Retruns the song file URI, which can be used by `GStreamer`
+    #[inline]
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
     }
     /// Returns the full song file path
+    #[inline]
     #[must_use]
     pub fn file_path(&self) -> String {
         self.file.path().unwrap().to_str().unwrap().to_string()
     }
     /// Returns the song filename, including the file extestion
+    #[inline]
     #[must_use]
     pub fn filename(&self) -> String {
         self.file.basename().map_or_else(
@@ -183,6 +186,7 @@ impl SongInfoLoader<'_> {
     }
 
     /// Loads basic song info if needed, then returns it
+    #[inline]
     #[must_use]
     pub fn basic(&mut self) -> &SongInfo {
         self.load_basic();
@@ -192,6 +196,7 @@ impl SongInfoLoader<'_> {
     /// Loads basic song info if needed, and runs the provided closure
     /// if the info had to be loaded
     /// Returns a reference to the loaded info
+    #[inline]
     #[must_use]
     pub fn basic_and<F: FnOnce()>(&mut self, run_if_not_loaded: F) -> &SongInfo {
         if self.info.is_none() {
@@ -202,6 +207,7 @@ impl SongInfoLoader<'_> {
         unsafe { self.info.as_ref().unwrap_unchecked() }
     }
     /// Loads basic song info if needed, then returns and unloads it
+    #[inline]
     pub fn take_basic(&mut self) -> SongInfo {
         self.load_basic();
         // SAFETY: `load_basic()` ensures the value is `Some`
@@ -209,6 +215,7 @@ impl SongInfoLoader<'_> {
     }
     /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
+    #[inline]
     pub fn load_basic(&mut self) -> &mut Self {
         if self.info.is_some() {
             return self;
@@ -230,10 +237,12 @@ impl SongInfoLoader<'_> {
         self
     }
     /// Unloads basic song info
+    #[inline]
     pub fn unload_basic(&mut self) -> &mut Self {
         *self.info = None;
         self
     }
+    #[inline]
     fn load_basic_from_file(&mut self) -> Result<Option<SongInfo>, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
@@ -268,6 +277,7 @@ impl SongInfoLoader<'_> {
     }
 
     /// Loads detailed song info if needed, then returns it
+    #[inline]
     #[must_use]
     pub fn detailed(&mut self) -> &DetailedSongInfo {
         self.load_detailed();
@@ -275,6 +285,7 @@ impl SongInfoLoader<'_> {
         unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
     }
     /// Loads detailed song info if needed, then returns and unloads it
+    #[inline]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
         // SAFETY: `load_detailed()` ensures the value is `Some`
@@ -282,6 +293,7 @@ impl SongInfoLoader<'_> {
     }
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained
+    #[inline]
     pub fn load_detailed(&mut self) -> &mut Self {
         if self.detailed_info.is_some() {
             return self;
@@ -303,10 +315,12 @@ impl SongInfoLoader<'_> {
         self
     }
     /// Unloads detailed song info
+    #[inline]
     pub fn unload_detailed(&mut self) -> &mut Self {
         *self.detailed_info = None;
         self
     }
+    #[inline]
     fn load_detailed_from_file(&mut self) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
