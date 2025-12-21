@@ -54,7 +54,7 @@ macro_rules! serialize {
 /// use mellow::deserialize;
 /// use gst::ClockTime;
 ///
-/// let mut number = 0u32;
+/// let mut number = 0;
 /// let mut text = String::new();
 /// let mut time = ClockTime::default();
 ///
@@ -66,7 +66,7 @@ macro_rules! serialize {
 ///
 /// deserialize!(
 ///     data,
-///     "number"<"u32"> => number,
+///     "number"<"parse"> => number,
 ///     "text"<"String"> => text,
 ///     "time"<"ClockTime"> => time,
 /// );
@@ -98,7 +98,7 @@ macro_rules! deserialize {
         }
     };
 
-    (@to_value "u32", $value:expr, $field:expr) => {
+    (@to_value "parse", $value:expr, $field:expr) => {
         $value.parse().map_err(|e| format!("{} {e}", $field))?
     };
     (@to_value "&str", $value:expr, $field:expr) => {

@@ -124,9 +124,9 @@ impl<'s> Song {
             "album"<"String"> => info.album,
             "artist"<"String"> => info.artist,
             "album_artist"<"String"> => info.album_artist,
-            "track"<"u32"> => info.track,
-            "disc"<"u32"> => info.disc,
-            "year"<"u32"> => info.year,
+            "track"<"parse"> => info.track,
+            "disc"<"parse"> => info.disc,
+            "year"<"parse"> => info.year,
             "duration"<"ClockTime"> => info.duration,
         );
 
