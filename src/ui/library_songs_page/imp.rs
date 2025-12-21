@@ -1,4 +1,4 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
 use std::cell::OnceCell;
@@ -11,6 +11,13 @@ use crate::player::PlayerRequest;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_songs_page.ui")]
 pub struct LibrarySongsPage {
+    // TODO: Remember last play mode between sessions
+    // (and maybe reuse the same widget?)
+    #[template_child]
+    play_button: TemplateChild<adw::SplitButton>,
+    #[template_child]
+    shuffle_button: TemplateChild<adw::SplitButton>,
+
     pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
 }
@@ -19,11 +26,15 @@ pub struct LibrarySongsPage {
 impl LibrarySongsPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
+        self.play_button.set_visible(true);
+        self.shuffle_button.set_visible(false);
         self.play_now(false);
     }
 
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
+        self.play_button.set_visible(false);
+        self.shuffle_button.set_visible(true);
         self.play_now(true);
     }
 

@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
+  <menu id="play_menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Play</attribute>
+        <attribute name='action'>player.play_all_albums</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Shuffle</attribute>
+        <attribute name='action'>player.shuffle_all_albums</attribute>
+      </item>
+    </section>
+  </menu>
   <template class="MellowLibraryAlbumsPage" parent="AdwNavigationPage">
     <property name="child">
       <object class="AdwToolbarView">
@@ -13,17 +25,20 @@
               </object>
             </child>
             <child type="end">
-              <object class="GtkButton">
-                <signal name="clicked" handler="handle_play_shuffled" swapped="true"/>
-                <property name="icon_name">media-playlist-shuffle-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Play Shuffled</property>
+              <object class="AdwSplitButton" id="play_button">
+                <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
+                <property name="menu-model">play_menu</property>
+                <property name="icon-name">media-playback-start-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play All</property>
               </object>
             </child>
             <child type="end">
-              <object class="GtkToggleButton">
-                <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
-                <property name="icon_name">media-playback-start-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Play All</property>
+              <object class="AdwSplitButton" id="shuffle_button">
+                <property name="visible">false</property>
+                <signal name="clicked" handler="handle_play_shuffled" swapped="true"/>
+                <property name="menu-model">play_menu</property>
+                <property name="icon-name">media-playlist-shuffle-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play Shuffled</property>
               </object>
             </child>
           </object>
