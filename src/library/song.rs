@@ -33,6 +33,7 @@ pub struct SongInfo {
 }
 
 impl Default for SongInfo {
+    #[inline]
     fn default() -> Self {
         SongInfo {
             title: String::new(),
@@ -63,6 +64,7 @@ pub struct DetailedSongInfo {
 
 impl<'s> Song {
     /// Constructs a new `Song` from a `gio::File`
+    #[inline]
     #[must_use]
     pub const fn new(file: gio::File) -> Song {
         Song {
@@ -73,6 +75,7 @@ impl<'s> Song {
         }
     }
     /// Constructs a new `Song` from a file path
+    #[inline]
     #[must_use]
     pub fn new_from_path(file: &str) -> Song {
         Song {
@@ -144,6 +147,7 @@ impl<'s> Song {
     /// Returns a `SongInfoLoader`, which can be used to access information
     /// about the file and song. Tags are loaded on-demand, and remain in
     /// memory until the respective `unload` or `take` method is called.
+    #[inline]
     #[must_use]
     pub const fn info(&'s mut self) -> SongInfoLoader<'s> {
         SongInfoLoader {
