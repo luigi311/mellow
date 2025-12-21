@@ -15,6 +15,7 @@ pub trait SortedAlbumSongs {
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbumSongs for AlbumSongs {
+    #[inline]
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize> {
         self.binary_search_by(|song| {
             let mut song = song.lock().unwrap();

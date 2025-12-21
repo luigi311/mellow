@@ -1,8 +1,8 @@
 #![macro_use]
 
-/// Serializes specified values into a `String`, which
-/// can later be used with `deserialize!()` to retreive
-/// the values
+/// Serializes the given value/field pairs into a `String`,
+/// which can be used with `deserialize!()` to retreive the
+/// values afterwards
 ///
 /// Note: When serializing `ClockTime`, use `[…].nseconds()`
 /// on the left side of the expression to convert it to a
@@ -34,13 +34,13 @@
 /// ```
 #[macro_export]
 macro_rules! serialize {
-    ($($value:expr => $field: tt,)+) => {
-        [$(($field.to_owned() + ": " + &$value.to_string()) + "\n",)+].concat()
+    ($($value:expr => $field:tt,)+) => {
+        [$($field.to_owned() + ": " + &$value.to_string() + "\n",)+].concat()
     };
 }
 
-/// Takes serialized `data` and deserializes it into the
-/// into specified fields
+/// Retreives serialized `data` field values and assigns them
+/// to the variables on the right side of each expression
 ///
 /// # Errors:
 /// This function causes the caller to propagate an `Err`
@@ -55,12 +55,14 @@ macro_rules! serialize {
 /// let mut text = String::new();
 /// let mut time = ClockTime::default();
 ///
-/// deserialize!(
-///     "\
+/// let data = "\
 /// number: 5
 /// text: hello
 /// time: 50000
-/// ",
+/// ";
+///
+/// deserialize!(
+///     data,
 ///     "number"<"u32"> => number,
 ///     "text"<"String"> => text,
 ///     "time"<"ClockTime"> => time,
@@ -74,7 +76,7 @@ macro_rules! serialize {
 /// ```
 #[macro_export]
 macro_rules! deserialize {
-    ($data: tt, $($field: tt<$type:tt> => $target:expr,)+) => {
+    ($data:tt, $($field:tt<$type:tt> => $target:expr,)+) => {
         if $data.is_empty() {
             Err("No data provided".to_string())?
         }

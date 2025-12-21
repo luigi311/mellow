@@ -39,24 +39,6 @@ pub fn format_duration(duration: &Duration) -> String {
     )
 }
 
-// Taken from Rust documentation:
-// https://doc.rust-lang.org/beta/std/fs/fn.read_dir.html#examples
-// one possible implementation of walking a directory only visiting files
-pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path, cb)?;
-            } else {
-                cb(&entry);
-            }
-        }
-    }
-    Ok(())
-}
-
 /// Checks if two float numbers are similar
 ///
 /// # Example
@@ -105,4 +87,23 @@ pub fn reorder_vec<T>(vec: &mut [T], index: usize, target: usize) {
             vec.swap(i, i - 1);
         }
     }
+}
+
+/// Runs a closure for every file found within `dir` (recursive)
+///
+/// Taken from the official Rust documentation:
+/// https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples
+pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                visit_dirs(&path, cb)?;
+            } else {
+                cb(&entry);
+            }
+        }
+    }
+    Ok(())
 }

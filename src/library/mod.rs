@@ -98,6 +98,7 @@ pub trait SortedSongs {
     fn find_song(&self, uri: &str, library_path_len: usize) -> Result<usize, usize>;
 }
 impl SortedSongs for Songs {
+    #[inline]
     fn find_song(&self, uri: &str, library_uri_len: usize) -> Result<usize, usize> {
         self.binary_search_by(|song| {
             // Shortening the URI makes the lookup faster, however
@@ -112,6 +113,7 @@ pub trait SortedAlbums {
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbums for Albums {
+    #[inline]
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize> {
         // IDEA: Improve `albums` sorting: artist/year/title or artist/title
         self.binary_search_by(|album| album.lock().unwrap().title.cmp(&info.album))
@@ -123,6 +125,7 @@ pub trait SortedArtists {
     fn find_artist(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedArtists for Artists {
+    #[inline]
     fn find_artist(&self, info: &SongInfo) -> Result<usize, usize> {
         self.binary_search_by(|artist| artist.lock().unwrap().name.cmp(&info.album_artist))
     }
@@ -164,10 +167,11 @@ impl Library {
         )
     }
 
-    /// Serializes song info and writes the data to disk,
-    /// so the library `songs` can be loaded faster next time
+    /// Serializes `songs` and writes the data to disk,
+    /// so the library can be loaded faster next time
     ///
     /// Creates a file called `songs` in `self.config.config_dir`
+    #[inline]
     fn serialize_songs(&self) -> io::Result<()> {
         let serialized = self
             .songs

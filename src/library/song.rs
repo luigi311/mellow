@@ -86,22 +86,23 @@ impl<'s> Song {
 
     /// Returns a `String` containing serialized `SongInfo` data,
     /// which can be used with the `deserialize()` method
+    #[inline]
     #[must_use]
     pub fn serlialize(&mut self) -> String {
         let mut info = self.info();
         let uri = info.file_uri();
-        let basic = info.basic();
+        let info = info.basic();
 
         serialize!(
             uri => "uri",
-            basic.title => "title",
-            basic.album => "album",
-            basic.artist => "artist",
-            basic.album_artist => "album_artist",
-            basic.track => "track",
-            basic.disc => "disc",
-            basic.year => "year",
-            basic.duration.nseconds() => "duration",
+            info.title => "title",
+            info.album => "album",
+            info.artist => "artist",
+            info.album_artist => "album_artist",
+            info.track => "track",
+            info.disc => "disc",
+            info.year => "year",
+            info.duration.nseconds() => "duration",
         )
     }
 
@@ -111,6 +112,7 @@ impl<'s> Song {
     /// # Errors
     /// If a value cannot be parsed into the required type,
     /// the function returns an error
+    #[inline]
     pub fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
         let mut info = SongInfo::default();
