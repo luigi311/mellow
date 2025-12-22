@@ -39,6 +39,27 @@ macro_rules! serialize {
     };
 }
 
+/// Combines a list of `String`s into a single `String` which
+/// can be used with the `serialize!()` macro
+///
+/// # Example:
+/// ```rust
+/// use mellow::serializer::serialize_list;
+///
+/// assert_eq!(
+///     serialize_list(&vec![
+///         "one".to_string(),
+///         "two".to_string(),
+///         "three, four".to_string(),
+///     ]),
+///     "one, two, three\\, four, "
+/// );
+/// ```
+#[inline]
+pub fn serialize_list(list: &[String]) -> String {
+    list.iter().map(|s| s.replace(",", "\\,") + ", ").collect()
+}
+
 /// Retreives serialized `data` field values and assigns them
 /// to the variables on the right side of each expression
 ///
@@ -57,11 +78,13 @@ macro_rules! serialize {
 /// let mut number = 0;
 /// let mut text = String::new();
 /// let mut time = ClockTime::default();
+/// let mut list = Vec::new();
 ///
 /// let data = "\
 /// number: 5
 /// text: hello
 /// time: 50000
+/// list: one, two, three\\, four,
 /// ";
 ///
 /// deserialize!(
@@ -69,11 +92,20 @@ macro_rules! serialize {
 ///     "number"<"parse"> => number,
 ///     "text"<"String"> => text,
 ///     "time"<"ClockTime"> => time,
+///     "list"<"[String]"> => list,
 /// );
 ///
 /// assert_eq!(number, 5);
 /// assert_eq!(text, "hello".to_string());
 /// assert_eq!(time, ClockTime::from_nseconds(50000));
+/// assert_eq!(
+///     list,
+///     vec![
+///         "one".to_string(),
+///         "two".to_string(),
+///         "three, four".to_string()
+///     ],
+/// );
 ///
 /// Ok::<(), String>(())
 /// ```
@@ -106,6 +138,9 @@ macro_rules! deserialize {
     };
     (@to_value "String", $value:expr, $field:expr) => {
         $value.to_owned()
+    };
+    (@to_value "[String]", $value:expr, $field:expr) => {
+        mellow::unescaped_split($value, ',')
     };
     (@to_value "ClockTime", $value:expr, $field:expr) => {
         ClockTime::from_nseconds(
