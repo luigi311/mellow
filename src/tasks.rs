@@ -46,13 +46,11 @@ impl Runner {
     }
     /// Runs a new task in the thread pool. If all available
     /// threads are busy, the task will wait in a queue.
-    pub fn run<F: FnOnce() + Send + 'static>(&self, task: F) {
-        self.request.send(Box::new(task)).expect(EXP_INIT);
-    }
-    /// Runs a new task in the thread pool. If all available
-    /// threads are busy, the task will wait in a queue.
-    pub fn run_boxed(&self, task: BoxedTask) {
-        self.request.send(task).expect(EXP_INIT);
+    pub fn run<T>(&self, task: T)
+    where
+        T: FnOnce() + Into<Box<T>> + Send + 'static,
+    {
+        self.request.send(task.into()).expect(EXP_INIT);
     }
 }
 
