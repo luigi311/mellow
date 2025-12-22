@@ -7,7 +7,7 @@ use std::sync::mpsc;
 
 use crate::APP_ID;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::LibraryRequest;
+use crate::library::{LibraryRequest, MUSIC_DIR};
 use crate::player::PlayerRequest;
 use crate::serializer::serialize_list;
 use crate::unescaped_split;
@@ -198,12 +198,7 @@ impl Window {
         let remember_queue = self.settings().boolean("remember-queue");
         let mut directories = unescaped_split(&self.settings().string("directories"), ',');
         if directories.is_empty() {
-            directories.push(
-                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
-                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
-                    |dir| dir.to_str().unwrap().to_string(),
-                ),
-            );
+            directories.push(MUSIC_DIR.get().unwrap().to_string());
         }
 
         // Slider callback `change_value` doesn't work for `set_value()`,

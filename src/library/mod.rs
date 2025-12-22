@@ -29,6 +29,7 @@ use crate::visit_dirs;
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
 
 pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
+pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 
 const FILE_SUPPORT: &[&str] = &[
     "flac", "m4a", "mp3", "aac", "ac3", "wav",
@@ -121,15 +122,24 @@ pub enum LibraryRequest {
 }
 
 impl Library {
+    pub fn init_globals() {
+        CONFIG_DIR
+            .set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")
+            .expect(INIT_ERR);
+        MUSIC_DIR
+            .set(
+                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
+                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
+                    |dir| dir.to_str().unwrap().to_string(),
+                ),
+            )
+            .expect(INIT_ERR);
+    }
     #[must_use]
     pub fn init(
         player_tx: mpsc::SyncSender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
     ) -> (Library, mpsc::SyncSender<LibraryRequest>) {
-        CONFIG_DIR
-            .set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")
-            .expect(INIT_ERR);
-
         let (tx, rx) = mpsc::sync_channel(4);
         let library = Library {
             songs: vec![],

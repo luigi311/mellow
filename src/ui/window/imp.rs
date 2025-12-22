@@ -9,7 +9,7 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{CONFIG_DIR, LibraryRequest};
+use crate::library::{CONFIG_DIR, Library, LibraryRequest, MUSIC_DIR};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -289,10 +289,7 @@ impl ObjectSubclass for Window {
                 .modal(true)
                 .default_filter(&filter)
                 .accept_label("Add Library")
-                .initial_folder(&gio::File::for_path(
-                    glib::user_special_dir(glib::UserDirectory::Music)
-                        .unwrap_or_else(glib::current_dir),
-                ))
+                .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
