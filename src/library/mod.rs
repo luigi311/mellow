@@ -163,17 +163,15 @@ impl Library {
         (library, tx)
     }
 
-    pub async fn init_queue(&self) {
+    pub async fn init_queue(&self) -> Result<(), Box<dyn Error>> {
         let mut args = std::env::args();
         args.next();
 
         // Start a queue from arguments, if they contain any supported files
         if let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>()) {
-            self.player_tx
-                .send(PlayerRequest::LoadQueue(queue))
-                .expect(EXP_RX);
-            self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
-            return;
+            self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
+            self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            return Ok(());
         }
 
         // Load the previous queue if file exists
@@ -188,30 +186,22 @@ impl Library {
                 else {
                     break 'queue;
                 };
-                self.player_tx
-                    .send(PlayerRequest::LoadQueue(queue.into()))
-                    .expect(EXP_RX);
-                self.player_tx
-                    .send(PlayerRequest::SkipTo(track))
-                    .expect(EXP_RX);
-                return;
+
+                self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
+                self.player_tx.send(PlayerRequest::SkipTo(track))?;
+                return Ok(());
             }
         }
 
-        // self.ui_tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
-        // self.ui_tx
-        //     .send(UpdateUI::OpenSheet(true))
-        //     .await
-        //     .expect(EXP_RX);
+        // self.ui_tx.send(UpdateUI::FocusLibrary).await?;
+        // self.ui_tx.send(UpdateUI::OpenSheet(true)).await?;
 
         // TODO: Once the library pages work, uncomment the above instead
+        self.player_tx.send(PlayerRequest::SetShuffle(true))?;
+        self.play_all_songs().await?;
         self.player_tx
-            .send(PlayerRequest::SetShuffle(true))
-            .expect(EXP_RX);
-        self.play_all_songs().await.expect(INIT_ERR);
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(false)))
-            .expect(EXP_RX);
+            .send(PlayerRequest::TogglePlay(Some(false)))?;
+        Ok(())
     }
 
     pub async fn add_library(&mut self, dir: String) {
@@ -453,7 +443,7 @@ impl Library {
 
         loop {
             match self.rx.recv()? {
-                LibraryRequest::InitQueue => self.init_queue().await,
+                LibraryRequest::InitQueue => self.init_queue().await?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths),
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
