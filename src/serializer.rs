@@ -140,7 +140,7 @@ macro_rules! deserialize {
         $value.to_owned()
     };
     (@to_value "[String]", $value:expr, $field:expr) => {
-        mellow::unescaped_split($value, ',')
+        unescaped_split($value, ',')
     };
     (@to_value "ClockTime", $value:expr, $field:expr) => {
         ClockTime::from_nseconds(
