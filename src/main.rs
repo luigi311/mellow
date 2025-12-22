@@ -21,6 +21,7 @@ pub fn main() -> glib::ExitCode {
 }
 
 fn init(app: &Application) {
+    Library::init_globals();
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init().expect(INIT_ERR);
     let (mut library, library_tx) = Library::init(player_tx.clone(), ui_tx.clone());
 
