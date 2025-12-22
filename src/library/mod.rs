@@ -20,6 +20,7 @@ use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
+use crate::tasks::Runner;
 use crate::ui::UpdateUI;
 use crate::visit_dirs;
 
@@ -37,16 +38,14 @@ const FILE_SUPPORT: &[&str] = &[
 ];
 
 pub struct Library {
-    /// All songs in the library, sorted by the relative part of the URI
-    /// (`file:///path/to/library/Folder/File.mp3` => `Folder/File.mp3`)
     pub songs: Songs,
-    /// All albums in the library, sorted by title
     pub albums: Albums,
-    /// All artists in the library, sorted by name
     pub artists: Artists,
 
     config: LibraryConfig,
     config_dir: String,
+
+    tasks: Runner,
     player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
     // tx: mpsc::SyncSender<LibraryRequest>,
@@ -151,6 +150,8 @@ impl Library {
 
             config: LibraryConfig::load(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
+
+            tasks: Runner::new_thread_pool(4),
             player_tx,
             ui_tx,
             // tx: tx.clone(),
@@ -256,16 +257,18 @@ impl Library {
     ///
     /// Creates a file called `songs` in `self.config.config_dir`
     #[inline]
-    fn serialize_songs(&self) -> io::Result<()> {
-        let serialized = self
-            .songs
+    fn serialize_songs(songs: &Songs) -> io::Result<()> {
+        let serialized = songs
             .iter()
             .map(|song| song.lock().unwrap().serlialize() + "\n")
             .collect::<String>()
             .trim()
             .to_string();
-        fs::create_dir_all(&self.config_dir)?;
-        fs::write(self.config_dir.clone() + "songs", &serialized)
+        fs::create_dir_all(&CONFIG_DIR.get().expect(EXP_INIT))?;
+        fs::write(
+            CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
+            &serialized,
+        )
     }
 
     /// Reads the serialized song info from disk and returns them,
@@ -285,7 +288,7 @@ impl Library {
 
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
-    pub async fn rebuild(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
         if self.songs.is_empty() {
             self.songs = self.deserialize_songs();
         }
@@ -294,7 +297,6 @@ impl Library {
         // TODO: Remove missing songs
         // IDEA: Find moved songs
 
-        let mut changed = false;
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);
         let songs = Arc::new(Mutex::new(Some(songs)));
@@ -326,9 +328,16 @@ impl Library {
             .await?;
         self.songs = songs;
 
-        // return Ok(());
-        // TODO: Do the rest in a background thread, if possible
+        self.create_associations().await
+    }
 
+    pub async fn create_associations(&mut self) -> Result<(), Box<dyn Error>> {
+        // IDEA: Do the rest in a background thread
+        // Add three new `LibraryRequest`s: `SetProgress`/`SetAlbums`/`SetArtists`,
+        // then all it would take would be to clone the `songs` again and pass them
+        // to the worker thread
+
+        let mut changed = false;
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
 
@@ -425,8 +434,12 @@ impl Library {
         self.artists = artists;
 
         if changed {
-            // TODO: Do this in the background?
-            self.serialize_songs()?;
+            // self.serialize_songs().unwrap();
+            // This is pretty fast anyway, so maybe not worth it...
+            self.tasks.run({
+                let songs = self.songs.clone();
+                move || Library::serialize_songs(&songs).unwrap()
+            });
         }
 
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
@@ -438,19 +451,18 @@ impl Library {
             .send(UpdateUI::LibraryDirs(
                 self.config.directories.clone().into(),
             ))
-            .await
-            .expect(EXP_RX);
+            .await?;
 
         loop {
             match self.rx.recv()? {
                 LibraryRequest::InitQueue => self.init_queue().await?,
-                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths),
+                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
                 LibraryRequest::PlayAllArtists => self.play_all_artists().await?,
                 LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists().await?,
-                LibraryRequest::Rebuild => self.rebuild().await?,
+                LibraryRequest::Rebuild => self.discover_files().await?,
                 LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()).await,
                 LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
@@ -606,16 +618,13 @@ impl Library {
         queue
     }
 
-    pub fn play_from_paths(&self, paths: &[String]) {
+    pub fn play_from_paths(&self, paths: &[String]) -> Result<(), mpsc::SendError<PlayerRequest>> {
         if let Some(queue) = self.songs_from_paths(paths) {
-            self.player_tx
-                .send(PlayerRequest::LoadQueue(queue))
-                .expect(EXP_RX);
-            self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
-            self.player_tx
-                .send(PlayerRequest::TogglePlay(Some(true)))
-                .expect(EXP_RX);
+            self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
+            self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         }
+        Ok(())
     }
 
     /// Returns a queue of all songs found within the specified `paths`,

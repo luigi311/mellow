@@ -7,6 +7,7 @@ pub mod excuses;
 pub mod library;
 pub mod player;
 pub mod serializer;
+pub mod tasks;
 pub mod ui;
 
 pub const APP_NAME: &str = "Mellow";
@@ -92,7 +93,7 @@ pub fn reorder_vec<T>(vec: &mut [T], index: usize, target: usize) {
 /// Runs a closure for every file found within `dir` (recursive)
 ///
 /// Taken from the official Rust documentation:
-/// https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples
+/// <https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples>
 pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {

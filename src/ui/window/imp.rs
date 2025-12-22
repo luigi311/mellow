@@ -266,7 +266,7 @@ impl Window {
         } else {
             let _ = fs::remove_file(&queue_file);
             let _ = fs::remove_file(&shuffled_file);
-        };
+        }
     }
 }
 
