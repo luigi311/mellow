@@ -17,5 +17,9 @@
       <default>true</default>
       <summary>When enabled, the next song starts loading before the current one ends, to ensure uninterrupted playback</summary>
     </key>
+    <key name="remember-queue" type="b">
+      <default>true</default>
+      <summary>When enabled, the song queue is preserved between sessions</summary>
+    </key>
   </schema>
 </schemalist>

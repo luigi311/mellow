@@ -35,6 +35,9 @@ impl QueuePage {
         queue_page.song_page.set(song_page).expect(INIT_ERR);
     }
 
+    pub fn get_shuffle(&self) -> bool {
+        self.imp().shuffle_toggle.is_active()
+    }
     pub fn update_shuffle(&self, shuffle: bool) {
         let ui = self.imp();
         ui.shuffle_toggle.set_icon_name(match shuffle {
@@ -44,6 +47,9 @@ impl QueuePage {
         ui.shuffle_toggle.set_active(shuffle);
     }
 
+    pub fn get_repeat(&self) -> bool {
+        self.imp().repeat_toggle.is_active()
+    }
     pub fn update_repeat(&self, repeat: bool) {
         self.imp().repeat_toggle.set_active(repeat);
     }

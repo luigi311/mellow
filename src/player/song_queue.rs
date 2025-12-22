@@ -189,7 +189,6 @@ impl SongQueue {
     pub fn load_new(&mut self, queue: Vec<QueueItem>) {
         self.songs = queue;
         self.new_shuffled_queue();
-        self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
 
         if self.is_empty() {
             self.ui_open_library();
@@ -293,7 +292,8 @@ impl SongQueue {
     /// Appends multiple items to the end of the current queue
     /// UI queue must be manually updated
     pub fn append(&mut self, items: &[QueueItem]) {
-        self.songs = [self.songs.as_slice(), items].concat();
+        self.songs.extend_from_slice(items);
+        // self.songs = [self.songs.as_slice(), items].concat();
         self.ui_update_queue();
     }
 

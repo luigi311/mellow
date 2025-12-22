@@ -51,6 +51,13 @@ impl SettingsPage {
         self.imp().gapless.set_active(gapless);
     }
 
+    pub fn remembers_queue(&self) -> bool {
+        self.imp().remember_queue.is_active()
+    }
+    pub fn set_remember_queue(&self, remember_queue: bool) {
+        self.imp().remember_queue.set_active(remember_queue);
+    }
+
     pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
     }

@@ -51,6 +51,15 @@
             <property name="active">True</property>
           </object>
         </child>
+
+        <child>
+          <object class="AdwSwitchRow" id="remember_queue">
+            <property name="title" translatable="yes">Remember Queue</property>
+            <property name="tooltip-text" translatable="yes">When enabled, the song queue is preserved between sessions</property>
+            <property name="active">True</property>
+          </object>
+        </child>
+
       </object>
     </child>
 

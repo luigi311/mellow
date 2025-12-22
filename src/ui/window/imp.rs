@@ -3,12 +3,13 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
+use std::fs;
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LibraryRequest;
+use crate::library::{CONFIG_DIR, LibraryRequest};
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -236,6 +237,37 @@ impl Window {
     pub fn open_sheet(&self, open: bool) {
         self.sheet.set_open(open);
     }
+
+    fn save_queue(&self) {
+        let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
+        // TODO: Also save the shuffled queue and shuffle setting (new file)
+        // the file contents could look something like this:
+        // /------------------\
+        // | True             | <- Whether shuffle mode is on
+        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
+        // \------------------/
+        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
+        if self.settings_page.remembers_queue() {
+            let _ = fs::write(
+                &queue_file,
+                self.song_queue_index.get().to_string()
+                    + "\n"
+                    + self
+                        .song_queue
+                        .borrow()
+                        .iter()
+                        .map(|item| match item {
+                            QueueItem::Song(song) => song.lock().unwrap().info().file_path() + "\n",
+                            QueueItem::Stopper => "Stopper\n".to_string(),
+                        })
+                        .collect::<String>()
+                        .trim(),
+            );
+        } else {
+            let _ = fs::remove_file(&queue_file);
+            let _ = fs::remove_file(&shuffled_file);
+        };
+    }
 }
 
 #[glib::object_subclass]
@@ -294,6 +326,9 @@ impl WindowImpl for Window {
         self.obj()
             .save_settings()
             .expect("Failed to save window state");
+
+        self.save_queue();
+
         glib::Propagation::Proceed
     }
 }

@@ -3,7 +3,7 @@ use gio::prelude::FileExt;
 use gtk::{gio, glib};
 use rand::random_range;
 use std::path::Path;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::{fs, io, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -15,7 +15,7 @@ pub use album::Album;
 pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
@@ -26,6 +26,8 @@ use crate::visit_dirs;
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
+
+pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
 
 const FILE_SUPPORT: &[&str] = &[
     "flac", "m4a", "mp3", "aac", "ac3", "wav",
@@ -44,15 +46,15 @@ pub struct Library {
     pub artists: Artists,
 
     config: LibraryConfig,
+    config_dir: String,
     player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    tx: mpsc::SyncSender<LibraryRequest>,
+    // tx: mpsc::SyncSender<LibraryRequest>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
 pub struct LibraryConfig {
     pub directories: Vec<String>,
-    pub config_dir: String,
 }
 
 impl Default for LibraryConfig {
@@ -65,7 +67,6 @@ impl Default for LibraryConfig {
                 ),
             ]
             .into(),
-            config_dir: glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/",
         }
     }
 }
@@ -138,6 +139,10 @@ impl Library {
         player_tx: mpsc::SyncSender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
     ) -> (Library, mpsc::SyncSender<LibraryRequest>) {
+        CONFIG_DIR
+            .set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")
+            .expect(INIT_ERR);
+
         let (tx, rx) = mpsc::sync_channel(4);
         let library = Library {
             songs: vec![],
@@ -145,13 +150,77 @@ impl Library {
             artists: vec![],
 
             config: LibraryConfig::load(),
+            config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
             player_tx,
             ui_tx,
-            tx: tx.clone(),
+            // tx: tx.clone(),
             rx,
         };
 
+        tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+        tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
+
         (library, tx)
+    }
+
+    pub async fn init_queue(&self) {
+        let mut args = std::env::args();
+        args.next();
+
+        // Start a queue from arguments, if they contain any supported files
+        if let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>()) {
+            self.player_tx
+                .send(PlayerRequest::LoadQueue(queue))
+                .expect(EXP_RX);
+            self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
+            return;
+        }
+
+        // Load the previous queue if file exists
+        match fs::read_to_string(self.config_dir.clone() + "queue") {
+            Ok(queue) => 'queue: {
+                let mut lines = queue.lines();
+                let Some(Ok(track)) = lines.next().map(|line| line.parse()) else {
+                    break 'queue;
+                };
+                // match self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>()) {
+                match self.songs_from_paths(
+                    &lines
+                        .filter_map(|file| match Library::file_supported(file) {
+                            true => Some(file.to_string()),
+                            false => None,
+                        })
+                        .collect::<Vec<_>>(),
+                ) {
+                    Some(queue) => {
+                        self.player_tx
+                            .send(PlayerRequest::LoadQueue(queue.into()))
+                            .expect(EXP_RX);
+                        self.player_tx
+                            .send(PlayerRequest::SkipTo(track))
+                            .expect(EXP_RX);
+                        return;
+                    }
+                    None => (),
+                }
+            }
+            Err(_) => (),
+        }
+
+        // self.ui_tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
+        // self.ui_tx
+        //     .send(UpdateUI::OpenSheet(true))
+        //     .await
+        //     .expect(EXP_RX);
+
+        // TODO: Once the library pages work, uncomment the above instead
+        self.player_tx
+            .send(PlayerRequest::SetShuffle(true))
+            .expect(EXP_RX);
+        self.play_all_songs().await.expect(INIT_ERR);
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(false)))
+            .expect(EXP_RX);
     }
 
     pub async fn add_library(&mut self, dir: String) {
@@ -214,8 +283,8 @@ impl Library {
             .collect::<String>()
             .trim()
             .to_string();
-        fs::create_dir_all(&self.config.config_dir)?;
-        fs::write(self.config.config_dir.clone() + "songs", &serialized)
+        fs::create_dir_all(&self.config_dir)?;
+        fs::write(self.config_dir.clone() + "songs", &serialized)
     }
 
     /// Reads the serialized song info from disk and returns them,
@@ -224,7 +293,7 @@ impl Library {
     /// Reads from a file called `songs` in `self.config.config_dir`
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
-        let data = fs::read_to_string(self.config.config_dir.clone() + "songs").unwrap_or_default();
+        let data = fs::read_to_string(self.config_dir.clone() + "songs").unwrap_or_default();
         let data = data.split("\n\n");
         data.filter_map(|data| match Song::deserialize(data) {
             Ok(song) => Some(Arc::new(Mutex::new(song))),
@@ -393,7 +462,7 @@ impl Library {
 
         loop {
             match self.rx.recv()? {
-                LibraryRequest::InitQueue => self.init_queue(),
+                LibraryRequest::InitQueue => self.init_queue().await,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths),
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
@@ -411,6 +480,10 @@ impl Library {
     pub async fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_songs()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -419,6 +492,10 @@ impl Library {
     pub async fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -427,6 +504,10 @@ impl Library {
     pub async fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -435,6 +516,10 @@ impl Library {
     pub async fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -443,6 +528,10 @@ impl Library {
     pub async fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
         self.ui_tx.send(UpdateUI::FocusPlaying).await?;
         Ok(())
@@ -536,30 +625,12 @@ impl Library {
         queue
     }
 
-    pub fn init_queue(&self) {
-        let mut args = std::env::args();
-        args.next();
-        if let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>()) {
-            self.player_tx
-                .send(PlayerRequest::LoadQueue(queue))
-                .expect(EXP_RX);
-            return;
-        }
-
-        // TODO: Instead of loading all tracks into the queue, either restore
-        // the previous session or open the library without loading a queue
-        // The library will have to be implemented first
-        self.player_tx
-            .send(PlayerRequest::SetShuffle(true))
-            .expect(EXP_RX);
-        self.tx.send(LibraryRequest::PlayAllSongs).expect(EXP_RX);
-    }
-
     pub fn play_from_paths(&self, paths: &[String]) {
         if let Some(queue) = self.songs_from_paths(paths) {
             self.player_tx
                 .send(PlayerRequest::LoadQueue(queue))
                 .expect(EXP_RX);
+            self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
             self.player_tx
                 .send(PlayerRequest::TogglePlay(Some(true)))
                 .expect(EXP_RX);

@@ -45,9 +45,6 @@ impl LibrarySongsPage {
             .send(PlayerRequest::SetShuffle(shuffle))
             .expect(EXP_RX);
         library_tx.send(LibraryRequest::PlayAllSongs).expect(EXP_RX);
-        player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
     }
 
     pub fn load_songs(&self, songs: &Songs) {

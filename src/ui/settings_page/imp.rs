@@ -12,10 +12,15 @@ use crate::player::PlayerRequest;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]
 pub struct SettingsPage {
+    // Playback Settings
     #[template_child]
     pub volume: TemplateChild<gtk::Scale>,
     #[template_child]
     pub gapless: TemplateChild<adw::SwitchRow>,
+    #[template_child]
+    pub remember_queue: TemplateChild<adw::SwitchRow>,
+
+    // Directory Settings
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
 

@@ -170,11 +170,14 @@ impl Window {
         let settings_page = &self.imp().settings_page;
         let volume = settings_page.volume();
         let gapless = settings_page.gapless();
+        let remember_queue = settings_page.remembers_queue();
 
         self.settings().set_int("window-width", width)?;
         self.settings().set_int("window-height", height)?;
         self.settings().set_double("volume", volume)?;
         self.settings().set_boolean("gapless", gapless)?;
+        self.settings()
+            .set_boolean("remember-queue", remember_queue)?;
 
         Ok(())
     }
@@ -187,6 +190,7 @@ impl Window {
 
         let volume = self.settings().double("volume");
         let gapless = self.settings().boolean("gapless");
+        let remember_queue = self.settings().boolean("remember-queue");
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be manually updated before the slider
@@ -197,5 +201,6 @@ impl Window {
 
         settings_page.set_volume(volume);
         settings_page.set_gapless(gapless);
+        settings_page.set_remember_queue(remember_queue);
     }
 }

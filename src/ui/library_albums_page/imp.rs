@@ -48,9 +48,6 @@ impl LibraryAlbumsPage {
                 true => LibraryRequest::ShuffleAllAlbums,
             })
             .expect(EXP_RX);
-        player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
     }
 
     pub fn load_albums(&self, albums: &Albums) {

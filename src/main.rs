@@ -2,8 +2,8 @@ use adw::{Application, prelude::*};
 use gtk::{gio, glib};
 use std::thread;
 
-use mellow::excuses::{EXP_RX, INIT_ERR};
-use mellow::library::{Library, LibraryRequest};
+use mellow::excuses::INIT_ERR;
+use mellow::library::Library;
 use mellow::player::Player;
 use mellow::{APP_ID, APP_NAME};
 
@@ -30,11 +30,7 @@ fn init(app: &Application) {
         .name("library".to_string())
         .spawn(move || {
             let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
-            runtime.block_on(async move {
-                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-                library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
-                library.request_handler().await.unwrap();
-            });
+            runtime.block_on(async move { library.request_handler().await.unwrap() });
         })
         .expect(INIT_ERR);
     thread::Builder::new()
