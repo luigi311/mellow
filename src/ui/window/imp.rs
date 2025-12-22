@@ -258,7 +258,7 @@ impl Window {
                         .iter()
                         .map(|item| match item {
                             QueueItem::Song(song) => song.lock().unwrap().info().file_path() + "\n",
-                            QueueItem::Stopper => "Stopper\n".to_string(),
+                            QueueItem::Stopper => "".to_string(), // Ignore stoppers
                         })
                         .collect::<String>()
                         .trim(),

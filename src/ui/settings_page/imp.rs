@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::OnceCell;
+use std::cell::{OnceCell, RefCell};
 use std::sync::mpsc;
 
 use crate::approx_eq;
@@ -26,6 +26,7 @@ pub struct SettingsPage {
 
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
     pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
+    pub directories: RefCell<Vec<String>>,
 }
 
 #[gtk::template_callbacks]
@@ -92,6 +93,7 @@ impl SettingsPage {
             add_directory_button.add_css_class("suggested-action");
             self.directory_list.append(&add_directory_button);
         }
+        self.directories.replace(directories.into());
     }
 }
 

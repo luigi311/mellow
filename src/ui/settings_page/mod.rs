@@ -58,6 +58,9 @@ impl SettingsPage {
         self.imp().remember_queue.set_active(remember_queue);
     }
 
+    pub fn directories(&self) -> Vec<String> {
+        self.imp().directories.borrow().clone()
+    }
     pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
     }

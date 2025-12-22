@@ -6,9 +6,11 @@ use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 
 use crate::APP_ID;
-use crate::excuses::{EXP_INIT, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
+use crate::serializer::serialize_list;
+use crate::unescaped_split;
 
 mod imp;
 
@@ -171,6 +173,7 @@ impl Window {
         let volume = settings_page.volume();
         let gapless = settings_page.gapless();
         let remember_queue = settings_page.remembers_queue();
+        let directories = settings_page.directories();
 
         self.settings().set_int("window-width", width)?;
         self.settings().set_int("window-height", height)?;
@@ -178,6 +181,8 @@ impl Window {
         self.settings().set_boolean("gapless", gapless)?;
         self.settings()
             .set_boolean("remember-queue", remember_queue)?;
+        self.settings()
+            .set_string("directories", &serialize_list(&directories))?;
 
         Ok(())
     }
@@ -191,6 +196,15 @@ impl Window {
         let volume = self.settings().double("volume");
         let gapless = self.settings().boolean("gapless");
         let remember_queue = self.settings().boolean("remember-queue");
+        let mut directories = unescaped_split(&self.settings().string("directories"), ',');
+        if directories.is_empty() {
+            directories.push(
+                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
+                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
+                    |dir| dir.to_str().unwrap().to_string(),
+                ),
+            );
+        }
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be manually updated before the slider
@@ -202,5 +216,10 @@ impl Window {
         settings_page.set_volume(volume);
         settings_page.set_gapless(gapless);
         settings_page.set_remember_queue(remember_queue);
+
+        let library_tx = self.imp().library_tx.get().expect(EXP_INIT);
+        library_tx
+            .send(LibraryRequest::SetLibraries(directories.into()))
+            .expect(EXP_RX);
     }
 }

@@ -52,22 +52,9 @@ pub struct Library {
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
+#[derive(Default)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
-}
-
-impl Default for LibraryConfig {
-    fn default() -> Self {
-        LibraryConfig {
-            directories: [
-                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
-                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
-                    |dir| dir.to_str().unwrap().to_string(),
-                ),
-            ]
-            .into(),
-        }
-    }
 }
 
 impl LibraryConfig {
@@ -130,6 +117,7 @@ pub enum LibraryRequest {
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
+    SetLibraries(Box<[String]>),
 }
 
 impl Library {
@@ -203,6 +191,21 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(false)))?;
         Ok(())
+    }
+
+    pub async fn set_libraries(&mut self, dirs: &[String]) {
+        self.config.directories = dirs.into();
+        self.config.directories.sort();
+        println!(
+            "Added a new library\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .await
+            .expect(EXP_RX);
     }
 
     pub async fn add_library(&mut self, dir: String) {
@@ -447,12 +450,6 @@ impl Library {
     }
 
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .await?;
-
         loop {
             match self.rx.recv()? {
                 LibraryRequest::InitQueue => self.init_queue().await?,
@@ -465,6 +462,7 @@ impl Library {
                 LibraryRequest::Rebuild => self.discover_files().await?,
                 LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()).await,
                 LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
+                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
             }
         }

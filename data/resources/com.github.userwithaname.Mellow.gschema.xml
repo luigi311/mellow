@@ -21,5 +21,9 @@
       <default>true</default>
       <summary>When enabled, the song queue is preserved between sessions</summary>
     </key>
+    <key name="directories" type="s">
+      <default>""</default>
+      <summary>Directories within which the player will look for music files</summary>
+    </key>
   </schema>
 </schemalist>
