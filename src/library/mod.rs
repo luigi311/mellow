@@ -183,15 +183,7 @@ impl Library {
                 let Some(Ok(track)) = lines.next().map(|line| line.parse()) else {
                     break 'queue;
                 };
-                // match self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>()) {
-                match self.songs_from_paths(
-                    &lines
-                        .filter_map(|file| match Library::file_supported(file) {
-                            true => Some(file.to_string()),
-                            false => None,
-                        })
-                        .collect::<Vec<_>>(),
-                ) {
+                match self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>()) {
                     Some(queue) => {
                         self.player_tx
                             .send(PlayerRequest::LoadQueue(queue.into()))
