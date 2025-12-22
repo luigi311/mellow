@@ -177,26 +177,25 @@ impl Library {
         }
 
         // Load the previous queue if file exists
-        match fs::read_to_string(self.config_dir.clone() + "queue") {
-            Ok(queue) => 'queue: {
+        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue") {
+            'queue: {
                 let mut lines = queue.lines();
                 let Some(Ok(track)) = lines.next().map(|line| line.parse()) else {
                     break 'queue;
                 };
-                match self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>()) {
-                    Some(queue) => {
-                        self.player_tx
-                            .send(PlayerRequest::LoadQueue(queue.into()))
-                            .expect(EXP_RX);
-                        self.player_tx
-                            .send(PlayerRequest::SkipTo(track))
-                            .expect(EXP_RX);
-                        return;
-                    }
-                    None => (),
-                }
+                let Some(queue) =
+                    self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
+                else {
+                    break 'queue;
+                };
+                self.player_tx
+                    .send(PlayerRequest::LoadQueue(queue.into()))
+                    .expect(EXP_RX);
+                self.player_tx
+                    .send(PlayerRequest::SkipTo(track))
+                    .expect(EXP_RX);
+                return;
             }
-            Err(_) => (),
         }
 
         // self.ui_tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
