@@ -5,12 +5,12 @@ use glib::{Object, clone};
 use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 
-use crate::APP_ID;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::{LibraryRequest, MUSIC_DIR};
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 use crate::serializer::serialize_list;
 use crate::unescaped_split;
+use crate::{APP_ID, MUSIC_DIR};
 
 mod imp;
 

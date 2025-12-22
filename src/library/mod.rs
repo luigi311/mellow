@@ -1,9 +1,9 @@
 use core::error::Error;
 use gio::prelude::FileExt;
-use gtk::{gio, glib};
+use gtk::gio;
 use rand::random_range;
 use std::path::Path;
-use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, mpsc};
 use std::{fs, io, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -15,21 +15,18 @@ pub use album::Album;
 pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
-use crate::tasks::Runner;
+use crate::tasks::{BoxedTask, Runner};
 use crate::ui::UpdateUI;
-use crate::visit_dirs;
+use crate::{CONFIG_DIR, visit_dirs};
 
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
-
-pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
-pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 
 const FILE_SUPPORT: &[&str] = &[
     "flac", "m4a", "mp3", "aac", "ac3", "wav",
@@ -119,22 +116,10 @@ pub enum LibraryRequest {
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
     SetLibraries(Box<[String]>),
+    RunTask(BoxedTask),
 }
 
 impl Library {
-    pub fn init_globals() {
-        CONFIG_DIR
-            .set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")
-            .expect(INIT_ERR);
-        MUSIC_DIR
-            .set(
-                glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
-                    || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
-                    |dir| dir.to_str().unwrap().to_string(),
-                ),
-            )
-            .expect(INIT_ERR);
-    }
     #[must_use]
     pub fn init(
         player_tx: mpsc::SyncSender<PlayerRequest>,
@@ -149,7 +134,7 @@ impl Library {
             config: LibraryConfig::load(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
 
-            tasks: Runner::new_thread_pool(4),
+            tasks: Runner::new(4),
             player_tx,
             ui_tx,
             // tx: tx.clone(),
@@ -277,7 +262,7 @@ impl Library {
             .collect::<String>()
             .trim()
             .to_string();
-        fs::create_dir_all(&CONFIG_DIR.get().expect(EXP_INIT))?;
+        fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT))?;
         fs::write(
             CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
             &serialized,
@@ -324,8 +309,7 @@ impl Library {
 
                 let mut songs = songs.lock().unwrap();
                 let songs = songs.as_mut().expect(EXP_INIT);
-                let index = songs.find_song(&file.uri(), to_relative);
-                let Err(index) = index else {
+                let Err(index) = songs.find_song(&file.uri(), to_relative) else {
                     return;
                 };
 
@@ -474,6 +458,7 @@ impl Library {
                 LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
                 LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
+                LibraryRequest::RunTask(task) => self.tasks.run_boxed(task),
             }
         }
     }

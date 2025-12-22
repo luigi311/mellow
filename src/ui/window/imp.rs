@@ -9,7 +9,7 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{CONFIG_DIR, Library, LibraryRequest, MUSIC_DIR};
+use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
@@ -23,6 +23,7 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::queue_song_page::QueueSongPage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
+use crate::{CONFIG_DIR, MUSIC_DIR};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]

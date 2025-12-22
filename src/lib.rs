@@ -1,6 +1,9 @@
+use gtk::glib;
+use std::error::Error;
 use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 pub mod excuses;
@@ -12,6 +15,20 @@ pub mod ui;
 
 pub const APP_NAME: &str = "Mellow";
 pub const APP_ID: &str = "com.github.userwithaname.Mellow";
+
+pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
+pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
+
+pub fn init_globals() -> Result<(), Box<dyn Error>> {
+    CONFIG_DIR.set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")?;
+    MUSIC_DIR.set(
+        glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
+            || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
+            |dir| dir.to_str().unwrap().to_string(),
+        ),
+    )?;
+    Ok(())
+}
 
 /// Takes a `&Duration` and returns a nicely formatted `String`
 /// for display

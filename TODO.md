@@ -21,6 +21,10 @@ Song queue:
 > Needs UI for removing stoppers
 - [x] Allow inserting stoppers (scheduled pause)
 - [x] Access song lyrics using a header-bar icon
+- [ ] Ability to select/remove multiple items at once
+- [ ] Drag file/folder onto player to start a queue with them
+> The bottom sheet could open automatically and focus the song
+queue, then show a "Drop here to start playing" message
 
 Music library:
 

@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 
+use crate::excuses::{EXP_INIT, INIT_ERR};
+
 pub type BoxedTask = Box<dyn FnOnce() + Send + 'static>;
 
 /// A very simple thread pool implementation inspired by the Rust book:
@@ -11,28 +13,46 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn new_thread_pool(count: usize) -> Self {
+    /// Creates a new instance of with a specified number
+    /// of worker threads (must be at least 1)
+    ///
+    /// # Panics:
+    /// This function panics if the thread count is 0
+    pub fn new(count: usize) -> Self {
+        if count == 0 {
+            panic!("Cannot create a thread pool with no threads");
+        }
         let (tx, rx) = mpsc::channel::<BoxedTask>();
         let rx = Arc::new(Mutex::new(rx));
         let threads = (0..count).map(|i| {
             let rx = Arc::clone(&rx);
-            thread::spawn(move || {
-                loop {
-                    let Ok(task) = rx.lock().unwrap().recv() else {
-                        break println!("Worker #{i} has quit"); // Breaking news!!
-                    };
-                    println!("Running task on worker #{i}");
-                    task();
-                }
-            })
+            thread::Builder::new()
+                .name(format!("worker_{i}"))
+                .spawn(move || {
+                    loop {
+                        let Ok(task) = rx.lock().unwrap().recv() else {
+                            break println!("Worker #{i} has quit"); // Breaking news!!
+                        };
+                        println!("Running task on worker #{i}");
+                        task();
+                    }
+                })
+                .expect(INIT_ERR)
         });
         Self {
             request: tx,
             threads: threads.collect(),
         }
     }
+    /// Runs a new task in the thread pool. If all available
+    /// threads are busy, the task will wait in a queue.
     pub fn run<F: FnOnce() + Send + 'static>(&self, task: F) {
-        self.request.send(Box::new(task)).unwrap();
+        self.request.send(Box::new(task)).expect(EXP_INIT);
+    }
+    /// Runs a new task in the thread pool. If all available
+    /// threads are busy, the task will wait in a queue.
+    pub fn run_boxed(&self, task: BoxedTask) {
+        self.request.send(task).expect(EXP_INIT);
     }
 }
 
