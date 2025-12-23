@@ -28,8 +28,8 @@ impl Window {
     #[must_use]
     pub fn new(
         app: &Application,
-        library_tx: mpsc::SyncSender<LibraryRequest>,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
+        library_tx: mpsc::Sender<LibraryRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
     ) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();

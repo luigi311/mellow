@@ -19,7 +19,7 @@ pub struct SongQueue {
     songs: Vec<QueueItem>,
     shuffled: Vec<usize>,
 
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
     tokio_rt: Arc<tokio::runtime::Runtime>,
 }
@@ -60,7 +60,7 @@ impl QueueItem {
 impl SongQueue {
     #[must_use]
     pub const fn new(
-        player_tx: mpsc::SyncSender<PlayerRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
         tokio_rt: Arc<tokio::runtime::Runtime>,
     ) -> Self {

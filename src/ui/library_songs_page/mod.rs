@@ -30,8 +30,8 @@ impl LibrarySongsPage {
 
     pub fn init(
         &self,
-        library_tx: mpsc::SyncSender<LibraryRequest>,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
+        library_tx: mpsc::Sender<LibraryRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
     ) {
         let songs_page = self.imp();
         songs_page.library_tx.set(library_tx).expect(INIT_ERR);

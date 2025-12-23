@@ -26,7 +26,7 @@ pub struct QueuePage {
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
     pub song_page: OnceCell<QueueSongPage>,
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]

@@ -16,8 +16,8 @@ pub struct LibraryAlbumsPage {
     #[template_child]
     shuffle_button: TemplateChild<adw::SplitButton>,
 
-    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]

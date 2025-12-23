@@ -45,9 +45,9 @@ pub struct Library {
     config_dir: String,
 
     tasks: Runner,
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    tx: mpsc::SyncSender<LibraryRequest>,
+    tx: mpsc::Sender<LibraryRequest>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -132,10 +132,10 @@ pub enum LibraryRequest {
 impl Library {
     #[must_use]
     pub fn init(
-        player_tx: mpsc::SyncSender<PlayerRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    ) -> (Library, mpsc::SyncSender<LibraryRequest>) {
-        let (tx, rx) = mpsc::sync_channel(4);
+    ) -> (Library, mpsc::Sender<LibraryRequest>) {
+        let (tx, rx) = mpsc::channel();
         let library = Library {
             songs: vec![],
             albums: vec![],
@@ -356,7 +356,7 @@ impl Library {
     #[allow(clippy::await_holding_lock)] // False-positive warning
     pub fn create_associations(
         songs: Songs,
-        library_tx: mpsc::SyncSender<LibraryRequest>,
+        library_tx: mpsc::Sender<LibraryRequest>,
     ) -> Result<(), mpsc::SendError<LibraryRequest>> {
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();

@@ -30,7 +30,7 @@ pub struct MainPlayer {
     #[template_child]
     pub time_end_label: TemplateChild<gtk::Label>,
 
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]

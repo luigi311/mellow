@@ -62,8 +62,8 @@ pub struct Window {
     pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
-    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
     pub css_provider: OnceCell<gtk::CssProvider>,
 
     pub song_queue: RefCell<Box<[QueueItem]>>,

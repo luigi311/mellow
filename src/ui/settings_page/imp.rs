@@ -24,8 +24,8 @@ pub struct SettingsPage {
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
 
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
-    pub library_tx: OnceCell<mpsc::SyncSender<LibraryRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
+    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
     pub directories: RefCell<Vec<String>>,
 }
 

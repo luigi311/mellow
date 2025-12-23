@@ -99,7 +99,7 @@ pub struct Player {
     bus: gst::Bus,
     tokio_rt: Arc<tokio::runtime::Runtime>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    player_tx: mpsc::SyncSender<PlayerRequest>,
+    player_tx: mpsc::Sender<PlayerRequest>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
 
@@ -108,9 +108,9 @@ pub struct Player {
 
 type PlayerInit = (
     Player,
-    mpsc::SyncSender<PlayerRequest>, // Player sender
-    tokio_mpsc::Sender<UpdateUI>,    // UI sender
-    tokio_mpsc::Receiver<UpdateUI>,  // UI receiver
+    mpsc::Sender<PlayerRequest>,    // Player sender
+    tokio_mpsc::Sender<UpdateUI>,   // UI sender
+    tokio_mpsc::Receiver<UpdateUI>, // UI receiver
 );
 
 impl Player {
@@ -123,7 +123,7 @@ impl Player {
         let bus = backend.bus().expect(INIT_ERR);
 
         let tokio_rt = Arc::new(tokio::runtime::Runtime::new()?);
-        let (player_tx, rx) = mpsc::sync_channel::<PlayerRequest>(4);
+        let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
 
         Ok((

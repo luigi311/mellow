@@ -14,7 +14,7 @@ use crate::ui::UpdateUI;
 #[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]
 pub struct QueueSongPage {
     pub index: Cell<usize>,
-    pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
+    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
     pub ui_tx: OnceCell<tokio_mpsc::Sender<UpdateUI>>,
 
     #[template_child]

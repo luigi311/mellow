@@ -30,8 +30,8 @@ impl SettingsPage {
 
     pub fn init(
         &self,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
-        library_tx: mpsc::SyncSender<LibraryRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
+        library_tx: mpsc::Sender<LibraryRequest>,
     ) {
         self.imp().player_tx.set(player_tx).expect(INIT_ERR);
         self.imp().library_tx.set(library_tx).expect(INIT_ERR);

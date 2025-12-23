@@ -31,7 +31,7 @@ impl MainPlayer {
         Self::default()
     }
 
-    pub fn init(&self, player_tx: mpsc::SyncSender<PlayerRequest>) {
+    pub fn init(&self, player_tx: mpsc::Sender<PlayerRequest>) {
         let ui = self.imp();
         ui.player_tx.set(player_tx.clone()).expect(INIT_ERR);
 

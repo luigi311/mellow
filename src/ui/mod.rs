@@ -46,8 +46,8 @@ pub enum UpdateUI {
 
 pub fn init(
     app: &Application,
-    library_tx: &mpsc::SyncSender<LibraryRequest>,
-    player_tx: &mpsc::SyncSender<PlayerRequest>,
+    library_tx: &mpsc::Sender<LibraryRequest>,
+    player_tx: &mpsc::Sender<PlayerRequest>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
     let window = Window::new(app, library_tx.clone(), player_tx.clone());

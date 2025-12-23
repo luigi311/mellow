@@ -30,8 +30,8 @@ impl LibraryAlbumsPage {
 
     pub fn init(
         &self,
-        library_tx: mpsc::SyncSender<LibraryRequest>,
-        player_tx: mpsc::SyncSender<PlayerRequest>,
+        library_tx: mpsc::Sender<LibraryRequest>,
+        player_tx: mpsc::Sender<PlayerRequest>,
     ) {
         let albums_page = self.imp();
         albums_page.library_tx.set(library_tx).expect(INIT_ERR);
