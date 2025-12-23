@@ -188,7 +188,6 @@ impl Window {
         self.settings()
             .set_string("directories", &serialize_list(&directories))?;
 
-        let (tx, rx) = mpsc::channel();
         let library_tx = self.imp().library_tx.get().expect(EXP_INIT);
         let remember = imp.settings_page.remembers_queue();
         let song_queue = imp.song_queue.take();
@@ -198,8 +197,10 @@ impl Window {
                 SongQueue::save_queue(remember, &song_queue, playing_index);
             })))
             .expect(EXP_RX);
+
+        let (tx, rx) = mpsc::channel();
         library_tx.send(LibraryRequest::Shutdown(tx)).expect(EXP_RX);
-        let _ = rx.recv(); // Wait until all processes finish
+        let _ = rx.recv_timeout(Duration::from_millis(1500));
 
         Ok(())
     }
