@@ -28,7 +28,7 @@ queue, then show a "Drop here to start playing" message
 
 Music library:
 
-- [ ] Save/load user settings (such as library directories)
+- [x] Save/load user settings (such as library directories)
 - [x] Serialize the library to disk
 - [-] Incremental library rebuilding
   - TODO: Remove missing songs
@@ -64,7 +64,8 @@ Music library:
     - [ ] Display artist info (name/number of albums/average rating)
     - [ ] Display all albums by the artist, each opening an Album subpage
   - [ ] Search/filtering
-- [ ] Play counting
+- [x] Play counting
+> Works, but the counting logic could be improved
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc

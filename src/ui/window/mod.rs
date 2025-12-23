@@ -8,6 +8,7 @@ use std::sync::mpsc;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
+use crate::player::song_queue::SongQueue;
 use crate::serializer::serialize_list;
 use crate::unescaped_split;
 use crate::{APP_ID, MUSIC_DIR};
@@ -44,7 +45,7 @@ impl Window {
             );
         }
         imp.init_ui_elements();
-        window.load_settings();
+        window.load_state();
         window
     }
 
@@ -166,10 +167,13 @@ impl Window {
         self.imp().settings.get().expect(EXP_INIT)
     }
 
-    pub fn save_settings(&self) -> Result<(), glib::BoolError> {
+    /// Saves all settings and the player state
+    /// Note that `song_queue` will be uninitialized
+    pub fn save_state(&self) -> Result<(), glib::BoolError> {
+        let imp = self.imp();
         let width = self.size(Orientation::Horizontal);
         let height = self.size(Orientation::Vertical);
-        let settings_page = &self.imp().settings_page;
+        let settings_page = &imp.settings_page;
         let volume = settings_page.volume();
         let gapless = settings_page.gapless();
         let remember_queue = settings_page.remembers_queue();
@@ -184,10 +188,23 @@ impl Window {
         self.settings()
             .set_string("directories", &serialize_list(&directories))?;
 
+        let (tx, rx) = mpsc::channel();
+        let library_tx = self.imp().library_tx.get().expect(EXP_INIT);
+        let remember = imp.settings_page.remembers_queue();
+        let song_queue = imp.song_queue.take();
+        let playing_index = imp.song_queue_index.get();
+        library_tx
+            .send(LibraryRequest::RunTask(Box::new(move || {
+                SongQueue::save_queue(remember, &song_queue, playing_index);
+            })))
+            .expect(EXP_RX);
+        library_tx.send(LibraryRequest::Shutdown(tx)).expect(EXP_RX);
+        let _ = rx.recv(); // Wait until all processes finish
+
         Ok(())
     }
 
-    pub fn load_settings(&self) {
+    pub fn load_state(&self) {
         let width = self.settings().int("window-width");
         let height = self.settings().int("window-height");
 

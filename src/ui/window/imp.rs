@@ -3,11 +3,11 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
-use std::fs;
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::MUSIC_DIR;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LibraryRequest;
 use crate::player::PlayerRequest;
@@ -23,7 +23,6 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::queue_song_page::QueueSongPage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
-use crate::{CONFIG_DIR, MUSIC_DIR};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -67,8 +66,8 @@ pub struct Window {
     pub player_tx: OnceCell<mpsc::SyncSender<PlayerRequest>>,
     pub css_provider: OnceCell<gtk::CssProvider>,
 
-    song_queue: RefCell<Box<[QueueItem]>>,
-    song_queue_index: Cell<usize>,
+    pub song_queue: RefCell<Box<[QueueItem]>>,
+    pub song_queue_index: Cell<usize>,
 }
 
 impl Window {
@@ -238,37 +237,6 @@ impl Window {
     pub fn open_sheet(&self, open: bool) {
         self.sheet.set_open(open);
     }
-
-    fn save_queue(&self) {
-        let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
-        // TODO: Also save the shuffled queue and shuffle setting (new file)
-        // the file contents could look something like this:
-        // /------------------\
-        // | True             | <- Whether shuffle mode is on
-        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
-        // \------------------/
-        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
-        if self.settings_page.remembers_queue() {
-            let _ = fs::write(
-                &queue_file,
-                self.song_queue_index.get().to_string()
-                    + "\n"
-                    + self
-                        .song_queue
-                        .borrow()
-                        .iter()
-                        .map(|item| match item {
-                            QueueItem::Song(song) => song.lock().unwrap().info().file_path() + "\n",
-                            QueueItem::Stopper => "".to_string(), // Ignore stoppers
-                        })
-                        .collect::<String>()
-                        .trim(),
-            );
-        } else {
-            let _ = fs::remove_file(&queue_file);
-            let _ = fs::remove_file(&shuffled_file);
-        }
-    }
 }
 
 #[glib::object_subclass]
@@ -322,10 +290,8 @@ impl ObjectImpl for Window {
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
         self.obj()
-            .save_settings()
+            .save_state()
             .expect("Failed to save window state");
-
-        self.save_queue();
 
         glib::Propagation::Proceed
     }

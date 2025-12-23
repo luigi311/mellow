@@ -45,8 +45,7 @@ Interface:
 
 User Experience:
 
-- [ ] All settings load properly (test with non-default values)
-  - TODO: Save/load library directories
+- [x] All settings load properly (test with non-default values)
 
 Performance:
 

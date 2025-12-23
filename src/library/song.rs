@@ -15,8 +15,8 @@ use crate::{deserialize, serialize};
 pub struct Song {
     pub album: Option<Arc<Mutex<Album>>>,
     file: gio::File,
-    // IDEA: Internal mutability?
     info: Option<SongInfo>,
+    user_info: UserSongInfo,
     detailed_info: Option<DetailedSongInfo>,
 }
 
@@ -48,6 +48,30 @@ impl Default for SongInfo {
     }
 }
 
+#[derive(Clone)]
+pub struct UserSongInfo {
+    pub play_count: u8,
+    pub rating: u8,
+}
+
+impl UserSongInfo {
+    const fn default() -> Self {
+        Self {
+            play_count: 0,
+            rating: 0,
+        }
+    }
+}
+
+impl PartialEq for SongInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.title == other.title
+            && self.album == other.album
+            && self.artist == other.artist
+            && self.track == other.track
+    }
+}
+
 // IDEA: Make all fields optional, and load or access them on-demand
 // using dedicated loader functions (e.g. `song.info().artwork()`)
 // This might be useful once downscaled thumbnails are implemented
@@ -71,6 +95,7 @@ impl<'s> Song {
             album: None,
             file,
             info: None,
+            user_info: UserSongInfo::default(),
             detailed_info: None,
         }
     }
@@ -82,6 +107,7 @@ impl<'s> Song {
             album: None,
             file: gio::File::for_path(file),
             info: None,
+            user_info: UserSongInfo::default(),
             detailed_info: None,
         }
     }
@@ -93,6 +119,7 @@ impl<'s> Song {
     pub fn serlialize(&mut self) -> String {
         let mut info = self.info();
         let uri = info.file_uri();
+        let user_info = info.user().clone();
         let info = info.basic();
 
         serialize!(
@@ -105,6 +132,8 @@ impl<'s> Song {
             info.disc => "disc",
             info.year => "year",
             info.duration.nseconds() => "duration",
+            user_info.play_count => "play_count",
+            user_info.rating => "rating",
         )
     }
 
@@ -118,6 +147,7 @@ impl<'s> Song {
     pub fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
         let mut info = SongInfo::default();
+        let mut user_info = UserSongInfo::default();
 
         deserialize!(
             data,
@@ -130,6 +160,8 @@ impl<'s> Song {
             "disc"<"parse"> => info.disc,
             "year"<"parse"> => info.year,
             "duration"<"ClockTime"> => info.duration,
+            "play_count"<"parse"> => user_info.play_count,
+            "rating"<"parse"> => user_info.rating,
         );
 
         if uri.is_empty() {
@@ -140,6 +172,7 @@ impl<'s> Song {
             album: None,
             file: gio::File::for_uri(uri),
             info: Some(info),
+            user_info,
             detailed_info: None,
         })
     }
@@ -153,6 +186,7 @@ impl<'s> Song {
         SongInfoLoader {
             file: &self.file,
             info: &mut self.info,
+            user_info: &mut self.user_info,
             detailed_info: &mut self.detailed_info,
             tagged: None,
         }
@@ -162,6 +196,7 @@ impl<'s> Song {
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
     info: &'i mut Option<SongInfo>,
+    user_info: &'i mut UserSongInfo,
     detailed_info: &'i mut Option<DetailedSongInfo>,
     tagged: Option<TaggedFile>,
 }
@@ -187,6 +222,24 @@ impl SongInfoLoader<'_> {
             || "Unknown".to_string(),
             |f| f.to_str().unwrap().to_string(),
         )
+    }
+
+    pub fn user(&mut self) -> &UserSongInfo {
+        &self.user_info
+    }
+
+    pub fn user_mut(&mut self) -> &mut UserSongInfo {
+        &mut self.user_info
+    }
+
+    /// Increases the play count by 1
+    pub fn played(&mut self) {
+        self.user_info.play_count += 1;
+    }
+
+    /// Sets the song rating
+    pub fn set_rating(&mut self, rating: u8) {
+        self.user_info.rating = rating;
     }
 
     /// Loads basic song info if needed, then returns it

@@ -192,7 +192,7 @@ impl Player {
                     true => println!("Ignoring SongEnd while seeking") != (),
                     false => self.request_state(self.current_state) == (),
                 },
-                PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next() == (),
+                PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
@@ -268,7 +268,11 @@ impl Player {
     }
 
     /// Moves to the next track in the queue without flushing the stream
-    const fn move_next(&mut self) {
+    fn move_next(&mut self, count_played: bool) {
+        if count_played {
+            // TODO: More advanced play counting (seeking to the end should not count)
+            self.queue.current().as_song().info().played();
+        }
         self.queue.pending_track = true;
         self.queue.move_next();
     }
@@ -283,7 +287,7 @@ impl Player {
             self.request_state(State::Ready);
             return Ok(());
         }
-        self.move_next();
+        self.move_next(false);
         Ok(())
     }
 

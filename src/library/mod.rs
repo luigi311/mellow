@@ -4,7 +4,7 @@ use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
-use std::{fs, io, mem};
+use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
@@ -117,6 +117,7 @@ pub enum LibraryRequest {
     RemoveLibrary(usize),
     SetLibraries(Box<[String]>),
     RunTask(BoxedTask),
+    Shutdown(mpsc::Sender<()>),
 }
 
 impl Library {
@@ -252,18 +253,22 @@ impl Library {
     ///
     /// Creates a file called `songs` in `self.config.config_dir`
     #[inline]
-    fn serialize_songs(songs: &Songs) -> io::Result<()> {
+    fn serialize_songs(songs: &Songs) {
         let serialized = songs
             .iter()
             .map(|song| song.lock().unwrap().serlialize() + "\n")
             .collect::<String>()
             .trim()
             .to_string();
-        fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT))?;
-        fs::write(
-            CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
-            &serialized,
-        )
+        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|_| {
+            fs::write(
+                CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
+                &serialized,
+            )
+        }) {
+            Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
+            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: {e}"),
+        }
     }
 
     /// Reads the serialized song info from disk and returns them,
@@ -281,21 +286,18 @@ impl Library {
         .collect()
     }
 
-    /// Creates connections between library `songs`, `albums`, and `artists`
-    #[allow(clippy::await_holding_lock)] // False-positive warning
+    // Assigns `self.songs` by loading the serialized data (if any), then
+    // inserting any new audio files found within the configured libraries
     pub async fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
         if self.songs.is_empty() {
             self.songs = self.deserialize_songs();
         }
 
-        // TODO: Check file modification times and update info/associations
-        // TODO: Remove missing songs
-        // IDEA: Find moved songs
-
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);
         let songs = Arc::new(Mutex::new(Some(songs)));
 
+        // TODO: Check file modification times and update info/associations
         self.config.directories.iter().for_each(|library_path| {
             let to_relative = gio::File::for_path(library_path).uri().len();
             let _ = visit_dirs(Path::new(&library_path), &|f| {
@@ -317,6 +319,14 @@ impl Library {
         });
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
+        // TODO: Check all files if they still exist, and detect if they were moved
+        // 1: Go through all songs and check if they still exist on disk
+        // 2: Create a list of missing songs (referred to as `old` from now on)
+        // 3: Compare each old info against all songs in the library
+        //   3.1: If a match is found, copy `….info().user()` to the new one
+        //   Idea: Expand outwards from the old index when searching
+        // 4: Remove the old songs from the library (on the main library thread)
+
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
             .await?;
@@ -325,13 +335,20 @@ impl Library {
         self.create_associations().await
     }
 
+    /// Creates connections between library `songs`, `albums`, and `artists`
+    #[allow(clippy::await_holding_lock)] // False-positive warning
     pub async fn create_associations(&mut self) -> Result<(), Box<dyn Error>> {
-        // IDEA: Do the rest in a background thread
+        // IDEA: Do this in a background thread instead
         // Add three new `LibraryRequest`s: `SetProgress`/`SetAlbums`/`SetArtists`,
         // then all it would take would be to clone the `songs` again and pass them
-        // to the worker thread
+        // to a worker thread (`self.tasks.run(…)`)
+        // IDEA: Spawn multiple worker threads
+        // Divide the `songs` into multiple lists, then collect them in the proper
+        // order afterwards. For example, 1: songs[..50], 2: songs[51..100], etc.
+        // Another thread would store an Arc<Mutex<usize>> which is incremented
+        // whenever a song is done loading, and that thread would also be used
+        // for notifying the UI of the current progress
 
-        let mut changed = false;
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
 
@@ -341,7 +358,7 @@ impl Library {
         for (i, song) in self.songs.iter().enumerate() {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
-            let song_info = info.basic_and(|| changed = true);
+            let song_info = info.basic();
 
             let album_index = albums.find_album(song_info);
             let artist_index = artists.find_artist(song_info);
@@ -427,15 +444,6 @@ impl Library {
             .await?;
         self.artists = artists;
 
-        if changed {
-            // self.serialize_songs().unwrap();
-            // This is pretty fast anyway, so maybe not worth it...
-            self.tasks.run({
-                let songs = self.songs.clone();
-                move || Library::serialize_songs(&songs).unwrap()
-            });
-        }
-
         self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
     }
@@ -456,8 +464,18 @@ impl Library {
                 LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
+                LibraryRequest::Shutdown(tx) => self.shutdown(tx)?,
             }
         }
+    }
+
+    pub fn shutdown(&mut self, tx: mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
+        let mut songs = Vec::new();
+        mem::swap(&mut self.songs, &mut songs);
+        self.tasks.run(move || Library::serialize_songs(&songs));
+        self.tasks.shutdown();
+        tx.send(()).expect(EXP_RX);
+        Ok(())
     }
 
     pub async fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {

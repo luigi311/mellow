@@ -17,11 +17,11 @@ impl Runner {
     /// of worker threads (must be at least 1)
     ///
     /// # Panics:
-    /// This function panics if the thread count is 0
+    /// If the thread count is 0, the `Runner` panics
+    /// at runtime when receiving a task
     pub fn new(count: usize) -> Self {
-        if count == 0 {
-            panic!("Cannot create a thread pool with no threads");
-        }
+        debug_assert!(count > 0, "Cannot create a thread pool with no threads");
+
         let (tx, rx) = mpsc::channel::<BoxedTask>();
         let rx = Arc::new(Mutex::new(rx));
         let threads = (0..count).map(|i| {
@@ -52,13 +52,19 @@ impl Runner {
     {
         self.request.send(task.into()).expect(EXP_INIT);
     }
-}
 
-impl Drop for Runner {
-    fn drop(&mut self) {
+    /// Blocks until all tasks are done then shuts down its worker
+    /// threads, leaving the `Runner` in an unusable state
+    pub fn shutdown(&mut self) {
         self.request = mpsc::channel().0;
         for thread in self.threads.drain(..) {
             let _ = thread.join();
         }
+    }
+}
+
+impl Drop for Runner {
+    fn drop(&mut self) {
+        self.shutdown();
     }
 }

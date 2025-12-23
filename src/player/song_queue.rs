@@ -1,12 +1,13 @@
 use rand::random_range;
+use std::fs;
 use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_RX, EXP_SAFE};
+use crate::excuses::{EXP_INIT, EXP_RX, EXP_SAFE};
 use crate::library::Song;
 use crate::player::PlayerRequest;
-use crate::reorder_vec;
 use crate::ui::UpdateUI;
+use crate::{CONFIG_DIR, reorder_vec};
 
 pub struct SongQueue {
     repeat: bool,
@@ -456,5 +457,37 @@ impl SongQueue {
             tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
             tx.send(UpdateUI::OpenSheet(true)).await.expect(EXP_RX);
         });
+    }
+
+    /// Saves the provided queue to a file on disk, or removes
+    /// the file if `remember` is `false`
+    pub fn save_queue(remember: bool, song_queue: &[QueueItem], playing_index: usize) {
+        let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
+        // TODO: Also save the shuffled queue and shuffle setting (new file)
+        // the file contents could look something like this:
+        // /------------------\
+        // | True             | <- Whether shuffle mode is on
+        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
+        // \------------------/
+        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
+        if !remember {
+            let _ = fs::remove_file(&queue_file);
+            let _ = fs::remove_file(&shuffled_file);
+            return;
+        }
+        let contents = playing_index.to_string()
+            + "\n"
+            + song_queue
+                .iter()
+                .map(|item| match item {
+                    QueueItem::Song(song) => song.lock().unwrap().info().file_path() + "\n",
+                    QueueItem::Stopper => "".to_string(), // Ignore stoppers
+                })
+                .collect::<String>()
+                .trim();
+        match fs::write(&queue_file, contents) {
+            Ok(()) => println!("Song queue state successfully written to disk"),
+            Err(e) => eprintln!("Problems writing queue state: {e}"),
+        }
     }
 }

@@ -29,7 +29,7 @@ bringing music to the center of your focus.
 |  4  | Song queue interface & management         | ⚠️ WIP  |
 |  5  | Music library                             | ⚠️ WIP, no UI yet |
 |  6  | Music library search/filters              | ❌ TODO |
-|  7  | Play counts and ratings                   | ❌ TODO |
+|  7  | Play counts and ratings                   | ⚠️ WIP: Basic play counting, no UI yet |
 |  8  | Tag-like playlists                        | ❌ TODO |
 |  9  | Media controller support (MPRIS)          | ❌ TODO |
 | 10  | Adaptive background/colors                | ❌ TODO |
