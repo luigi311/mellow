@@ -443,7 +443,6 @@ impl Library {
             }
         }
 
-        library_tx.send(LibraryRequest::SetSongs(songs))?;
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
 
