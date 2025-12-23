@@ -216,5 +216,7 @@ impl Window {
         library_tx
             .send(LibraryRequest::SetLibraries(directories.into()))
             .expect(EXP_RX);
+        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+        library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
     }
 }

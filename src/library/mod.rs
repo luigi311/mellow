@@ -141,9 +141,6 @@ impl Library {
             rx,
         };
 
-        tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-        tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
-
         (library, tx)
     }
 
@@ -458,7 +455,7 @@ impl Library {
                 LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
                 LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
-                LibraryRequest::RunTask(task) => self.tasks.run_boxed(task),
+                LibraryRequest::RunTask(task) => self.tasks.run(task),
             }
         }
     }
