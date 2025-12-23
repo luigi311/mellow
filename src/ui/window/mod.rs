@@ -4,6 +4,7 @@ use gio::Settings;
 use glib::{Object, clone};
 use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
+use std::time::Duration;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::LibraryRequest;

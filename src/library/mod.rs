@@ -4,6 +4,7 @@ use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
+use std::thread;
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -46,7 +47,7 @@ pub struct Library {
     tasks: Runner,
     player_tx: mpsc::SyncSender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    // tx: mpsc::SyncSender<LibraryRequest>,
+    tx: mpsc::SyncSender<LibraryRequest>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -104,6 +105,8 @@ impl SortedArtists for Artists {
 }
 
 pub enum LibraryRequest {
+    Rebuild,
+
     InitQueue,
     QueueFromPaths(Box<[String]>),
     PlayAllSongs,
@@ -111,11 +114,17 @@ pub enum LibraryRequest {
     ShuffleAllAlbums,
     PlayAllArtists,
     ShuffleAllArtists,
-    Rebuild,
+
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
     SetLibraries(Box<[String]>),
+
+    SetSongs(Songs),
+    SetAlbums(Albums),
+    SetArtists(Artists),
+
+    SetProgress(Option<f64>),
     RunTask(BoxedTask),
     Shutdown(mpsc::Sender<()>),
 }
@@ -138,7 +147,7 @@ impl Library {
             tasks: Runner::new(4),
             player_tx,
             ui_tx,
-            // tx: tx.clone(),
+            tx: tx.clone(),
             rx,
         };
 
@@ -331,24 +340,31 @@ impl Library {
         //   Idea: Expand outwards from the old index when searching
         // 4: Remove the old songs from the library (on the main library thread)
 
-        self.ui_tx
-            .send(UpdateUI::LibrarySongs(songs.clone()))
-            .await?;
-        self.songs = songs;
+        let task_handle = thread::spawn({
+            let songs = songs.clone();
+            let tx = self.tx.clone();
+            || Library::create_associations(songs, tx).expect(EXP_RX)
+        });
+        self.tasks.run(move || task_handle.join().unwrap());
 
-        self.create_associations().await
+        self.set_songs(songs).await;
+
+        Ok(())
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
-    pub async fn create_associations(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn create_associations(
+        songs: Songs,
+        library_tx: mpsc::SyncSender<LibraryRequest>,
+    ) -> Result<(), mpsc::SendError<LibraryRequest>> {
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
-        let progress_freq = self.songs.len() / PROGRESS_BAR_STEPS + 1;
-        for (i, song) in self.songs.iter().enumerate() {
+        let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
+        for (i, song) in songs.iter().enumerate() {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
             let song_info = info.basic();
@@ -422,28 +438,29 @@ impl Library {
             drop(song_unwrapped);
 
             if i % progress_freq == 0 {
-                let progress = Some(i as f64 / self.songs.len() as f64);
-                self.ui_tx.send(UpdateUI::Progress(progress)).await?;
+                let progress = Some(i as f64 / songs.len() as f64);
+                library_tx.send(LibraryRequest::SetProgress(progress))?;
             }
         }
 
-        self.ui_tx
-            .send(UpdateUI::LibraryAlbums(albums.clone()))
-            .await?;
-        self.albums = albums;
+        library_tx.send(LibraryRequest::SetSongs(songs))?;
+        library_tx.send(LibraryRequest::SetAlbums(albums))?;
+        library_tx.send(LibraryRequest::SetArtists(artists))?;
 
-        self.ui_tx
-            .send(UpdateUI::LibraryArtists(artists.clone()))
-            .await?;
-        self.artists = artists;
+        library_tx.send(LibraryRequest::SetProgress(None))?;
 
-        self.ui_tx.send(UpdateUI::Progress(None)).await?;
         Ok(())
     }
 
     pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
+                LibraryRequest::Rebuild => self.discover_files().await?,
+
+                LibraryRequest::SetSongs(songs) => self.set_songs(songs).await,
+                LibraryRequest::SetAlbums(albums) => self.set_albums(albums).await,
+                LibraryRequest::SetArtists(artists) => self.set_artists(artists).await,
+
                 LibraryRequest::InitQueue => self.init_queue().await?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
                 LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
@@ -451,15 +468,41 @@ impl Library {
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
                 LibraryRequest::PlayAllArtists => self.play_all_artists().await?,
                 LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists().await?,
-                LibraryRequest::Rebuild => self.discover_files().await?,
+
                 LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()).await,
                 LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
                 LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
+
+                LibraryRequest::SetProgress(progress) => {
+                    self.ui_tx.send(UpdateUI::Progress(progress)).await?;
+                }
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(tx) => self.shutdown(tx)?,
             }
         }
+    }
+
+    async fn set_songs(&mut self, songs: Songs) {
+        self.ui_tx
+            .send(UpdateUI::LibrarySongs(songs.clone()))
+            .await
+            .expect(EXP_RX);
+        self.songs = songs;
+    }
+    async fn set_albums(&mut self, albums: Albums) {
+        self.ui_tx
+            .send(UpdateUI::LibraryAlbums(albums.clone()))
+            .await
+            .expect(EXP_RX);
+        self.albums = albums;
+    }
+    async fn set_artists(&mut self, artists: Artists) {
+        self.ui_tx
+            .send(UpdateUI::LibraryArtists(artists.clone()))
+            .await
+            .expect(EXP_RX);
+        self.artists = artists;
     }
 
     pub fn shutdown(&mut self, tx: mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
