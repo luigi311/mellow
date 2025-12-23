@@ -4,11 +4,11 @@ use gtk::Orientation;
 use gtk::{gdk, glib};
 
 use gst::ClockTime;
-use std::{sync::mpsc, time::Duration};
+use std::time::Duration;
 
-use crate::excuses::{EXP_RX, EXP_SAFE, INIT_ERR};
+use crate::excuses::{EXP_RX, EXP_SAFE};
 use crate::format_duration;
-use crate::player::PlayerRequest;
+use crate::player::{PLAYER_TX, PlayerRequest};
 
 mod imp;
 
@@ -31,10 +31,7 @@ impl MainPlayer {
         Self::default()
     }
 
-    pub fn init(&self, player_tx: mpsc::Sender<PlayerRequest>) {
-        let ui = self.imp();
-        ui.player_tx.set(player_tx.clone()).expect(INIT_ERR);
-
+    pub fn init(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
         // As a workaround for `release` not being signaled by `GtkScale`,
         // set propagation phase to `Capture` and add controller to parent
@@ -43,10 +40,11 @@ impl MainPlayer {
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
         release_seek_bar.connect_released({
-            // let player_tx = player_tx.clone();
+            let player_tx = PLAYER_TX.get().unwrap().clone();
             move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).expect(EXP_RX)
         });
-        ui.seek_bar
+        self.imp()
+            .seek_bar
             .parent()
             .expect(EXP_SAFE)
             .add_controller(release_seek_bar);

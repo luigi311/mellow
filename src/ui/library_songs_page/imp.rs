@@ -1,11 +1,11 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::OnceCell;
-use std::sync::mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::LIBRARY_TX;
 use crate::library::{LibraryRequest, Songs};
+use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
@@ -17,9 +17,6 @@ pub struct LibrarySongsPage {
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
     shuffle_button: TemplateChild<adw::SplitButton>,
-
-    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]
@@ -39,8 +36,8 @@ impl LibrarySongsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let player_tx = self.player_tx.get().expect(EXP_INIT);
-        let library_tx = self.library_tx.get().expect(EXP_INIT);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SetShuffle(shuffle))
             .expect(EXP_RX);

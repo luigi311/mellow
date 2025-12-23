@@ -3,11 +3,10 @@ use glib::clone;
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
-use std::sync::mpsc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::queue_row::QueueRow;
 use crate::ui::queue_song_page::QueueSongPage;
 
@@ -26,14 +25,13 @@ pub struct QueuePage {
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
     pub song_page: OnceCell<QueueSongPage>,
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]
 impl QueuePage {
     #[template_callback]
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
@@ -41,7 +39,7 @@ impl QueuePage {
     }
     #[template_callback]
     pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SetShuffle(toggle_button.is_active()))

@@ -1,11 +1,11 @@
 use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, OnceLock, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::player::song_queue::{QueueItem, SongQueue};
 use crate::ui::UpdateUI;
 
@@ -13,6 +13,7 @@ pub mod song_queue;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
+pub static PLAYER_TX: OnceLock<mpsc::Sender<PlayerRequest>> = OnceLock::new();
 pub enum PlayerRequest {
     /// Refresh local player state
     Update,
@@ -125,6 +126,7 @@ impl Player {
         let tokio_rt = Arc::new(tokio::runtime::Runtime::new()?);
         let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
         let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
+        PLAYER_TX.set(player_tx.clone()).map_err(|_| EXP_INIT)?;
 
         Ok((
             Player {

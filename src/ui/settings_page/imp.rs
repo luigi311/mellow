@@ -1,12 +1,13 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::{OnceCell, RefCell};
-use std::sync::mpsc;
+use std::cell::RefCell;
 
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::LIBRARY_TX;
 use crate::library::LibraryRequest;
+use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
@@ -24,8 +25,6 @@ pub struct SettingsPage {
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
 
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
-    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
     pub directories: RefCell<Vec<String>>,
 }
 
@@ -36,7 +35,7 @@ impl SettingsPage {
         if approx_eq(value, self.volume.value()) {
             return glib::Propagation::Stop;
         }
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SetVolume(value * value))
@@ -45,7 +44,7 @@ impl SettingsPage {
     }
     #[template_callback]
     pub fn handle_gapless_switch(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SetGapless(self.gapless.is_active()))
@@ -73,13 +72,11 @@ impl SettingsPage {
                 .tooltip_text("Remove") // TODO: Support translations
                 .css_classes(["flat", "circular"])
                 .build();
-            remove_button.connect_clicked({
-                let library_tx = self.library_tx.get().unwrap().clone();
-                move |_| {
-                    library_tx
-                        .send(LibraryRequest::RemoveLibrary(i))
-                        .expect(EXP_RX);
-                }
+            let library_tx = LIBRARY_TX.get().unwrap().clone();
+            remove_button.connect_clicked(move |_| {
+                library_tx
+                    .send(LibraryRequest::RemoveLibrary(i))
+                    .expect(EXP_RX);
             });
             directory_row.add_suffix(&remove_button);
             self.directory_list.append(&directory_row);

@@ -1,11 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
-use std::cell::OnceCell;
-use std::sync::mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::player::PlayerRequest;
+use crate::player::{PLAYER_TX, PlayerRequest};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/main_player.ui")]
@@ -29,15 +27,13 @@ pub struct MainPlayer {
     pub time_cur_label: TemplateChild<gtk::Label>,
     #[template_child]
     pub time_end_label: TemplateChild<gtk::Label>,
-
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
 }
 
 #[gtk::template_callbacks]
 impl MainPlayer {
     #[template_callback]
     pub fn handle_skip_prev(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SkipPrevious)
@@ -45,7 +41,7 @@ impl MainPlayer {
     }
     #[template_callback]
     pub fn handle_play_pause(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::TogglePlay(None))
@@ -53,7 +49,7 @@ impl MainPlayer {
     }
     #[template_callback]
     pub fn handle_skip_next(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::SkipNext)
@@ -64,7 +60,7 @@ impl MainPlayer {
         if crate::approx_eq(value, self.seek_bar.value()) {
             return glib::Propagation::Stop;
         }
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::Seek(value))

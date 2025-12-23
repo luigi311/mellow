@@ -1,7 +1,7 @@
 use adw::{self, Application, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
 use gtk::{self, glib};
-use std::sync::mpsc;
+use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
 mod library_albums_page;
@@ -17,13 +17,13 @@ mod rating;
 mod settings_page;
 mod window;
 
-use crate::library::LibraryRequest;
+use crate::excuses::EXP_INIT;
 use crate::library::{Albums, Artists, Songs};
-use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
 use crate::{APP_ID, APP_NAME};
 
+pub static UI_TX: OnceLock<tokio_mpsc::Sender<UpdateUI>> = OnceLock::new();
 pub enum UpdateUI {
     /// (playing: bool, interactive: bool)
     PlayerState(bool, bool),
@@ -46,14 +46,14 @@ pub enum UpdateUI {
 
 pub fn init(
     app: &Application,
-    library_tx: &mpsc::Sender<LibraryRequest>,
-    player_tx: &mpsc::Sender<PlayerRequest>,
+    ui_tx: &tokio_mpsc::Sender<UpdateUI>,
     ui_rx: tokio_mpsc::Receiver<UpdateUI>,
 ) {
-    let window = Window::new(app, library_tx.clone(), player_tx.clone());
+    let window = Window::new(app);
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
     window.present();
 
+    UI_TX.set(ui_tx.clone()).map_err(|_| EXP_INIT).unwrap();
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
 }

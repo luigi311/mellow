@@ -1,11 +1,6 @@
 use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::{glib, prelude::RangeExt};
-use std::sync::mpsc;
-
-use crate::excuses::INIT_ERR;
-use crate::library::LibraryRequest;
-use crate::player::PlayerRequest;
 
 mod imp;
 
@@ -26,15 +21,6 @@ impl SettingsPage {
     #[must_use]
     pub fn new() -> Self {
         Object::builder().build()
-    }
-
-    pub fn init(
-        &self,
-        player_tx: mpsc::Sender<PlayerRequest>,
-        library_tx: mpsc::Sender<LibraryRequest>,
-    ) {
-        self.imp().player_tx.set(player_tx).expect(INIT_ERR);
-        self.imp().library_tx.set(library_tx).expect(INIT_ERR);
     }
 
     pub fn volume(&self) -> f64 {

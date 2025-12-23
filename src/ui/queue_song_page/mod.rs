@@ -1,10 +1,6 @@
 use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::glib;
-use std::sync::mpsc;
-
-use crate::excuses::INIT_ERR;
-use crate::player::PlayerRequest;
 
 mod imp;
 
@@ -33,10 +29,5 @@ impl QueueSongPage {
         song_page.song_title.set_label(song_title);
         song_page.album_title.set_label(album_title);
         song_page.artist_name.set_label(artist_name);
-    }
-
-    pub fn init(&self, player_tx: mpsc::Sender<PlayerRequest>) {
-        let song_page = self.imp();
-        song_page.player_tx.set(player_tx).expect(INIT_ERR);
     }
 }

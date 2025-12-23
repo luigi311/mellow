@@ -3,7 +3,7 @@ use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
 use std::path::Path;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::thread;
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
@@ -104,6 +104,7 @@ impl SortedArtists for Artists {
     }
 }
 
+pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
 pub enum LibraryRequest {
     Rebuild,
 
@@ -134,7 +135,7 @@ impl Library {
     pub fn init(
         player_tx: mpsc::Sender<PlayerRequest>,
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    ) -> (Library, mpsc::Sender<LibraryRequest>) {
+    ) -> Library {
         let (tx, rx) = mpsc::channel();
         let library = Library {
             songs: vec![],
@@ -150,8 +151,9 @@ impl Library {
             tx: tx.clone(),
             rx,
         };
+        LIBRARY_TX.set(tx.clone()).map_err(|_| EXP_INIT).unwrap();
 
-        (library, tx)
+        library
     }
 
     pub async fn init_queue(&self) -> Result<(), Box<dyn Error>> {

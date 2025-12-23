@@ -225,11 +225,11 @@ impl SongInfoLoader<'_> {
     }
 
     pub fn user(&mut self) -> &UserSongInfo {
-        &self.user_info
+        self.user_info
     }
 
     pub fn user_mut(&mut self) -> &mut UserSongInfo {
-        &mut self.user_info
+        self.user_info
     }
 
     /// Increases the play count by 1

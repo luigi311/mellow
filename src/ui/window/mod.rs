@@ -7,8 +7,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::LibraryRequest;
-use crate::player::PlayerRequest;
+use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::SongQueue;
 use crate::serializer::serialize_list;
 use crate::unescaped_split;
@@ -26,15 +25,9 @@ glib::wrapper! {
 
 impl Window {
     #[must_use]
-    pub fn new(
-        app: &Application,
-        library_tx: mpsc::Sender<LibraryRequest>,
-        player_tx: mpsc::Sender<PlayerRequest>,
-    ) -> Self {
+    pub fn new(app: &Application) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
-        imp.player_tx.set(player_tx).expect(INIT_ERR);
-        imp.library_tx.set(library_tx).expect(INIT_ERR);
         imp.css_provider
             .set(gtk::CssProvider::new())
             .expect(INIT_ERR);
@@ -189,7 +182,7 @@ impl Window {
         self.settings()
             .set_string("directories", &serialize_list(&directories))?;
 
-        let library_tx = self.imp().library_tx.get().expect(EXP_INIT);
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let remember = imp.settings_page.remembers_queue();
         let song_queue = imp.song_queue.take();
         let playing_index = imp.song_queue_index.get();
@@ -231,7 +224,7 @@ impl Window {
         settings_page.set_gapless(gapless);
         settings_page.set_remember_queue(remember_queue);
 
-        let library_tx = self.imp().library_tx.get().expect(EXP_INIT);
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         library_tx
             .send(LibraryRequest::SetLibraries(directories.into()))
             .expect(EXP_RX);

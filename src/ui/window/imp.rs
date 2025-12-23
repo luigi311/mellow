@@ -3,14 +3,12 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
-use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LibraryRequest;
-use crate::player::PlayerRequest;
+use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::ui::UpdateUI;
 use crate::ui::library_albums_page::LibraryAlbumsPage;
@@ -62,8 +60,6 @@ pub struct Window {
     pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
-    pub library_tx: OnceCell<mpsc::Sender<LibraryRequest>>,
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
     pub css_provider: OnceCell<gtk::CssProvider>,
 
     pub song_queue: RefCell<Box<[QueueItem]>>,
@@ -72,27 +68,8 @@ pub struct Window {
 
 impl Window {
     pub fn init_ui_elements(&self) {
-        let player_tx = self.player_tx.get().expect(EXP_INIT).clone();
-        let library_tx = self.library_tx.get().expect(EXP_INIT).clone();
-
-        // Main Player
-        self.main_player.init(player_tx.clone());
-
-        // Library
-        self.library_songs_page
-            .init(library_tx.clone(), player_tx.clone());
-        self.library_albums_page
-            .init(library_tx.clone(), player_tx.clone());
-        self.library_artists_page
-            .init(library_tx.clone(), player_tx.clone());
-
-        // Queue Page & Subpages
-        self.queue_page
-            .init(player_tx.clone(), self.queue_song_page.get());
-        self.queue_song_page.init(player_tx.clone());
-
-        // Settings Page
-        self.settings_page.init(player_tx, library_tx);
+        self.main_player.init();
+        self.queue_page.init(self.queue_song_page.get());
     }
 
     #[allow(clippy::future_not_send)]
@@ -262,7 +239,7 @@ impl ObjectSubclass for Window {
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
-                let library_tx = window.imp().library_tx.get().expect(EXP_INIT);
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
                 library_tx
                     .send(LibraryRequest::AddLibrary(
                         dir.path().unwrap().to_str().unwrap().into(),

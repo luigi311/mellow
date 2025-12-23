@@ -1,21 +1,17 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::{Cell, OnceCell};
-use std::sync::mpsc;
-use tokio::sync::mpsc as tokio_mpsc;
+use std::cell::Cell;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
-use crate::ui::UpdateUI;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]
 pub struct QueueSongPage {
     pub index: Cell<usize>,
-    pub player_tx: OnceCell<mpsc::Sender<PlayerRequest>>,
-    pub ui_tx: OnceCell<tokio_mpsc::Sender<UpdateUI>>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -29,7 +25,7 @@ pub struct QueueSongPage {
 impl QueueSongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
-        let player_tx = self.player_tx.get().expect(EXP_INIT);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SkipTo(self.index.get()))
             .expect(EXP_RX);
@@ -45,7 +41,7 @@ impl QueueSongPage {
     }
     #[template_callback]
     pub fn handle_stop_after(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::InsertAt(Box::new((
@@ -59,7 +55,7 @@ impl QueueSongPage {
     }
     #[template_callback]
     pub fn handle_remove_item(&self) {
-        self.player_tx
+        PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::RemoveAt(self.index.get()))

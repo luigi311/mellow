@@ -1,10 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
-use std::sync::mpsc;
 
 use crate::excuses::INIT_ERR;
-use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::ui::queue_song_page::QueueSongPage;
 
@@ -29,9 +27,8 @@ impl QueuePage {
         Object::builder().build()
     }
 
-    pub fn init(&self, player_tx: mpsc::Sender<PlayerRequest>, song_page: QueueSongPage) {
+    pub fn init(&self, song_page: QueueSongPage) {
         let queue_page = self.imp();
-        queue_page.player_tx.set(player_tx).expect(INIT_ERR);
         queue_page.song_page.set(song_page).expect(INIT_ERR);
     }
 
