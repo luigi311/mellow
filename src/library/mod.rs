@@ -313,6 +313,10 @@ impl Library {
                 };
 
                 let song = Arc::new(Mutex::new(Song::new(file)));
+                self.tasks.run({
+                    let song = Arc::clone(&song);
+                    move || song.lock().unwrap().info().load_basic()
+                });
                 songs.insert(index, song);
             })
             .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
@@ -338,17 +342,6 @@ impl Library {
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
     pub async fn create_associations(&mut self) -> Result<(), Box<dyn Error>> {
-        // IDEA: Do this in a background thread instead
-        // Add three new `LibraryRequest`s: `SetProgress`/`SetAlbums`/`SetArtists`,
-        // then all it would take would be to clone the `songs` again and pass them
-        // to a worker thread (`self.tasks.run(…)`)
-        // IDEA: Spawn multiple worker threads
-        // Divide the `songs` into multiple lists, then collect them in the proper
-        // order afterwards. For example, 1: songs[..50], 2: songs[51..100], etc.
-        // Another thread would store an Arc<Mutex<usize>> which is incremented
-        // whenever a song is done loading, and that thread would also be used
-        // for notifying the UI of the current progress
-
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
 

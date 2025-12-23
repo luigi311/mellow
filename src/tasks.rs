@@ -33,7 +33,7 @@ impl Runner {
                         let Ok(task) = rx.lock().unwrap().recv() else {
                             break println!("Worker #{i} has quit"); // Breaking news!!
                         };
-                        println!("Running task on worker #{i}");
+                        // println!("Running task on worker #{i}");
                         task();
                     }
                 })

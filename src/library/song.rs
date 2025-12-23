@@ -273,9 +273,9 @@ impl SongInfoLoader<'_> {
     /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
     #[inline]
-    pub fn load_basic(&mut self) -> &mut Self {
+    pub fn load_basic(&mut self) {
         if self.info.is_some() {
-            return self;
+            return;
         }
         *self.info = self
             .load_basic_from_file()
@@ -291,13 +291,11 @@ impl SongInfoLoader<'_> {
                     ..SongInfo::default()
                 })
             });
-        self
     }
     /// Unloads basic song info
     #[inline]
-    pub fn unload_basic(&mut self) -> &mut Self {
+    pub fn unload_basic(&mut self) {
         *self.info = None;
-        self
     }
     #[inline]
     fn load_basic_from_file(&mut self) -> Result<Option<SongInfo>, Box<dyn Error>> {
@@ -351,9 +349,9 @@ impl SongInfoLoader<'_> {
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained
     #[inline]
-    pub fn load_detailed(&mut self) -> &mut Self {
+    pub fn load_detailed(&mut self) {
         if self.detailed_info.is_some() {
-            return self;
+            return;
         }
         *self.detailed_info = self
             .load_detailed_from_file()
@@ -369,13 +367,11 @@ impl SongInfoLoader<'_> {
                     artwork: None,
                 })
             });
-        self
     }
     /// Unloads detailed song info
     #[inline]
-    pub fn unload_detailed(&mut self) -> &mut Self {
+    pub fn unload_detailed(&mut self) {
         *self.detailed_info = None;
-        self
     }
     #[inline]
     fn load_detailed_from_file(&mut self) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
