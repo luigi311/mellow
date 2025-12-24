@@ -22,6 +22,8 @@ Song Queue:
 - [ ] Reordering the queue works as expected
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
+- [ ] Scrolling works without issues
+  - FIX: Scroll position resets whenever the queue changes
 
 Music Library:
 
@@ -29,28 +31,13 @@ Music Library:
 - [ ] The 'Albums' page and its subpages do not have performance issues
 - [ ] The 'Artists' page and its subpages do not have performance issues
 - [x] The player works while the library is building in the background
+- [ ] Search results show up quickly and progressively
 
 User Experience:
 
-- [x] All settings load properly (test with non-default values)
-- [x] App loads instantly
-- [x] All actions instantly respond to user input
+- [x] The interface is responsive as soon as launched, without delays
+  - [x] With existing library
+  - [x] On fresh launch
+- [x] All actions respond to user input without delay
 - [x] Lengthy tasks display a progress bar without blocking the interface
-
-Performance:
-
-- [ ] Sensible memory usage and performance for item lists (library, queue)
-  - [ ] Artwork downscaling/caching, dynamic loading/unloading
-- [ ] Responsive UI - all actions respond instantly with no stutters or freezes
-  - [ ] Search results show up quickly and progressively
-  - [ ] Actions which require time display a progress bar and do not block the UI
-  - [ ] Scrolling through long lists of items is always smooth, even if images don't
-  load right away
-
-Interface:
-
-- [x] UI adapts to window size, and looks good at all sizes
-- [x] Positional awareness for off-screen elements
-  - [x] Different elements do not share the same off-screen position
-  > Exceptions can be made for things like submenus and tabs,
-  as long as they are related
+- [x] All settings load properly (test with non-default values)
