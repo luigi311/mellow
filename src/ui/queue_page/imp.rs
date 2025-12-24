@@ -9,9 +9,9 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::UI_TX;
 use crate::ui::queue_row::QueueRow;
 use crate::ui::queue_song_page::QueueSongPage;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
@@ -155,7 +155,7 @@ impl QueuePage {
                 UI_TX
                     .get()
                     .expect(EXP_INIT)
-                    .send(crate::ui::UpdateUI::QueueIndex(index))
+                    .send(UpdateUI::RedrawQueue)
                     .expect(EXP_RX);
             }
         });

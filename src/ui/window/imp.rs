@@ -93,6 +93,7 @@ impl Window {
                 UpdateUI::SongInfo => self.update_song_info(&mut song_duration),
                 UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
+                UpdateUI::RedrawQueue => self.update_song_index(self.song_queue_index.get()),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),

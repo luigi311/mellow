@@ -31,6 +31,7 @@ pub enum UpdateUI {
     SongInfo,
     NewQueue(Box<[QueueItem]>), // TODO: QueueInsert, QueueRemove, QueueReorder, QueueSwap
     QueueIndex(usize),
+    RedrawQueue,
     Shuffle(bool),
     Repeat(bool),
     Progress(Option<f64>),
