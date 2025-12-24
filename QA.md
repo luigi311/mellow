@@ -26,14 +26,31 @@ Song Queue:
 - [ ] Reordering the queue works as expected
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
-- [ ] The song queue does not cause performance issues
-  - FIX: UI hangs while the song info for queue items is being loaded
 
 Music Library:
 
 - [ ] The 'Songs' page and its subpages do not have performance issues
 - [ ] The 'Albums' page and its subpages do not have performance issues
 - [ ] The 'Artists' page and its subpages do not have performance issues
+- [x] The player works while the library is building in the background
+
+User Experience:
+
+- [x] All settings load properly (test with non-default values)
+- [x] App loads instantly
+- [ ] All actions instantly respond to user input
+  - FIX: Queue page blocks the UI while loading album covers
+- [x] Lengthy tasks display a progress bar without blocking the interface
+
+Performance:
+
+- [ ] Sensible memory usage and performance for item lists (library, queue)
+  - [ ] Artwork downscaling/caching, dynamic loading/unloading
+- [ ] Responsive UI - all actions respond instantly with no stutters or freezes
+  - [ ] Search results show up quickly and progressively
+  - [ ] Actions which require time display a progress bar and do not block the UI
+  - [ ] Scrolling through long lists of items is always smooth, even if images don't
+  load right away
 
 Interface:
 
@@ -42,18 +59,3 @@ Interface:
   - [x] Different elements do not share the same off-screen position
   > Exceptions can be made for things like submenus and tabs,
   as long as they are related
-
-User Experience:
-
-- [x] All settings load properly (test with non-default values)
-
-Performance:
-
-- [x] App loads instantly - if library loading takes a long time, do it progressively
-- [ ] Sensible memory usage and performance for item lists (library, queue)
-  - [ ] Artwork downscaling/caching, dynamic loading/unloading
-- [ ] Responsive UI - all actions respond instantly with no stutters or freezes
-  - [ ] Search results show up quickly and progressively
-  - [ ] Actions which require time display a progress bar and do not block the UI
-  - [ ] Scrolling through long lists of items is always smooth, even if images don't
-  load right away
