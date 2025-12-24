@@ -38,8 +38,7 @@ User Experience:
 
 - [x] All settings load properly (test with non-default values)
 - [x] App loads instantly
-- [ ] All actions instantly respond to user input
-  - FIX: Queue page blocks the UI while loading album covers
+- [x] All actions instantly respond to user input
 - [x] Lengthy tasks display a progress bar without blocking the interface
 
 Performance:

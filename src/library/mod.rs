@@ -197,7 +197,7 @@ impl Library {
         self.config.directories = dirs.into();
         self.config.directories.sort();
         println!(
-            "Added a new library\nLibraries: {:?}",
+            "Library directories updated\nLibraries: {:?}",
             self.config.directories
         );
         self.ui_tx
@@ -318,7 +318,9 @@ impl Library {
                 let song = Arc::new(Mutex::new(Song::new(file)));
                 self.tasks.run({
                     let song = Arc::clone(&song);
-                    move || song.lock().unwrap().info().load_basic()
+                    move || {
+                        let _ = song.try_lock().map(|mut song| song.info().load_basic());
+                    }
                 });
                 songs.insert(index, song);
             })
@@ -424,14 +426,13 @@ impl Library {
                     song_unwrapped.album = Some(album);
                 }
             }
-            drop(song_unwrapped);
 
-            let progress = Some(i as f64 / songs.len() as f64);
-            ui_tx.send(UpdateUI::Progress(progress))?;
+            ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))?;
         }
 
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
+
         ui_tx.send(UpdateUI::Progress(None))?;
 
         Ok(())

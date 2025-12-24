@@ -9,6 +9,7 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::ui::UI_TX;
 use crate::ui::queue_row::QueueRow;
 use crate::ui::queue_song_page::QueueSongPage;
 
@@ -51,7 +52,6 @@ impl QueuePage {
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support reordering queue items
-        // TODO: Support rating/tagging songs (AdwExpanderRow/subpage/context menu)
         // TODO: Display the entire queue
         self.list_box.remove_all();
         let start = index.saturating_sub(10);
@@ -99,8 +99,9 @@ impl QueuePage {
                     }
 
                     // TODO: Cached low-res album covers
-                    let detailed_info = info.detailed();
-                    if let Some(artwork) = detailed_info.artwork.as_ref() {
+                    if let Some(detailed_info) = info.inspect_detailed()
+                        && let Some(artwork) = detailed_info.artwork.as_ref()
+                    {
                         entry.set_prefix_image(artwork);
                     } else {
                         entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
@@ -141,6 +142,33 @@ impl QueuePage {
                 }
             }
         }
+        LIBRARY_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::RunTask(Box::new({
+                let songs = queue[start..end].to_vec();
+                move || {
+                    let mut updated = false;
+                    for song in songs {
+                        match song {
+                            QueueItem::Song(song) => {
+                                let _ = song.try_lock().map(|mut song| {
+                                    let _ = song.info().detailed_and(|| updated = true);
+                                });
+                            }
+                            QueueItem::Stopper => (),
+                        }
+                    }
+                    if updated {
+                        UI_TX
+                            .get()
+                            .expect(EXP_INIT)
+                            .send(crate::ui::UpdateUI::QueueIndex(index))
+                            .expect(EXP_RX);
+                    }
+                }
+            })))
+            .expect(EXP_RX);
 
         let scroll_target = (index - start) * 54;
         self.scrolled_window
