@@ -73,7 +73,7 @@ impl Window {
     }
 
     #[allow(clippy::future_not_send)]
-    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::Receiver<UpdateUI>) -> ! {
+    pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) -> ! {
         let mut song_duration = Duration::default();
         loop {
             let Some(response) = ui_rx.recv().await else {

@@ -98,8 +98,7 @@ pub struct Player {
 
     backend: gst::Element,
     bus: gst::Bus,
-    tokio_rt: Arc<tokio::runtime::Runtime>,
-    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     player_tx: mpsc::Sender<PlayerRequest>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
@@ -109,9 +108,9 @@ pub struct Player {
 
 type PlayerInit = (
     Player,
-    mpsc::Sender<PlayerRequest>,    // Player sender
-    tokio_mpsc::Sender<UpdateUI>,   // UI sender
-    tokio_mpsc::Receiver<UpdateUI>, // UI receiver
+    mpsc::Sender<PlayerRequest>,             // Player sender
+    tokio_mpsc::UnboundedSender<UpdateUI>,   // UI sender
+    tokio_mpsc::UnboundedReceiver<UpdateUI>, // UI receiver
 );
 
 impl Player {
@@ -123,14 +122,13 @@ impl Player {
         let backend = gst::ElementFactory::make("playbin3").build()?;
         let bus = backend.bus().expect(INIT_ERR);
 
-        let tokio_rt = Arc::new(tokio::runtime::Runtime::new()?);
         let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
-        let (ui_tx, ui_rx) = tokio_mpsc::channel::<UpdateUI>(4);
+        let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
         PLAYER_TX.set(player_tx.clone()).map_err(|_| EXP_INIT)?;
 
         Ok((
             Player {
-                queue: SongQueue::new(player_tx.clone(), ui_tx.clone(), Arc::clone(&tokio_rt)),
+                queue: SongQueue::new(player_tx.clone(), ui_tx.clone()),
 
                 gapless: true,
 
@@ -141,7 +139,6 @@ impl Player {
 
                 backend,
                 bus,
-                tokio_rt,
                 ui_tx: ui_tx.clone(),
                 player_tx: player_tx.clone(),
                 rx,
@@ -446,7 +443,6 @@ impl Player {
 
     /// Sends the current state to the UI receiver
     fn ui_set_state(&self) {
-        let tx = self.ui_tx.clone();
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
         let playing = matches!(
@@ -454,28 +450,22 @@ impl Player {
             State::Playing
         );
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::PlayerState(playing, interactive)).await })
+        self.ui_tx
+            .send(UpdateUI::PlayerState(playing, interactive))
             .expect(EXP_RX);
     }
 
     /// Sends the current song info to the UI receiver
     fn ui_update_song_info(&self) {
-        let tx = self.ui_tx.clone();
         println!("ui_update_song_info()");
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::SongInfo).await })
-            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
     }
 
     /// Sends the current playback time to the UI receiver
     fn ui_set_time(&self) {
-        let tx = self.ui_tx.clone();
         let time = self.current_time();
         // println!("ui_set_time({time:?})");
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::PlayerTime(time)).await })
-            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::PlayerTime(time)).expect(EXP_RX);
     }
 
     /// Handles `GStreamer` events and empties the message queue

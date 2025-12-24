@@ -20,8 +20,7 @@ pub struct SongQueue {
     shuffled: Vec<usize>,
 
     player_tx: mpsc::Sender<PlayerRequest>,
-    ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    tokio_rt: Arc<tokio::runtime::Runtime>,
+    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
 }
 
 #[derive(Clone)]
@@ -61,8 +60,7 @@ impl SongQueue {
     #[must_use]
     pub const fn new(
         player_tx: mpsc::Sender<PlayerRequest>,
-        ui_tx: tokio_mpsc::Sender<UpdateUI>,
-        tokio_rt: Arc<tokio::runtime::Runtime>,
+        ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Self {
         Self {
             repeat: false,
@@ -76,7 +74,6 @@ impl SongQueue {
 
             player_tx,
             ui_tx,
-            tokio_rt,
         }
     }
 
@@ -418,45 +415,38 @@ impl SongQueue {
     }
 
     fn ui_update_shuffle(&self) {
-        let tx = self.ui_tx.clone();
         println!("ui_update_shuffle({})", self.shuffle);
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::Shuffle(self.shuffle)).await })
+        self.ui_tx
+            .send(UpdateUI::Shuffle(self.shuffle))
             .expect(EXP_RX);
     }
 
     fn ui_update_repeat(&self) {
-        let tx = self.ui_tx.clone();
         println!("ui_update_repeat({})", self.repeat);
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::Repeat(self.repeat)).await })
+        self.ui_tx
+            .send(UpdateUI::Repeat(self.repeat))
             .expect(EXP_RX);
     }
 
     fn ui_update_queue(&self) {
-        let tx = self.ui_tx.clone();
         println!("ui_update_queue()");
         self.ui_update_queue_index();
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::NewQueue(self.ordered_queue())).await })
+        self.ui_tx
+            .send(UpdateUI::NewQueue(self.ordered_queue()))
             .expect(EXP_RX);
     }
 
     pub fn ui_update_queue_index(&self) {
-        let tx = self.ui_tx.clone();
         println!("ui_update_queue_index({})", self.index);
-        self.tokio_rt
-            .block_on(async move { tx.send(UpdateUI::QueueIndex(self.index)).await })
+        self.ui_tx
+            .send(UpdateUI::QueueIndex(self.index))
             .expect(EXP_RX);
     }
 
     /// Requests the UI to open the music library
     fn ui_open_library(&self) {
-        let tx = self.ui_tx.clone();
-        self.tokio_rt.block_on(async move {
-            tx.send(UpdateUI::FocusLibrary).await.expect(EXP_RX);
-            tx.send(UpdateUI::OpenSheet(true)).await.expect(EXP_RX);
-        });
+        self.ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 
     /// Saves the provided queue to a file on disk, or removes

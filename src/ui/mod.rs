@@ -23,7 +23,7 @@ use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
 use crate::{APP_ID, APP_NAME};
 
-pub static UI_TX: OnceLock<tokio_mpsc::Sender<UpdateUI>> = OnceLock::new();
+pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
 pub enum UpdateUI {
     /// (playing: bool, interactive: bool)
     PlayerState(bool, bool),
@@ -46,8 +46,8 @@ pub enum UpdateUI {
 
 pub fn init(
     app: &Application,
-    ui_tx: &tokio_mpsc::Sender<UpdateUI>,
-    ui_rx: tokio_mpsc::Receiver<UpdateUI>,
+    ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,
+    ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
 ) {
     let window = Window::new(app);
     window.set_title(Some(APP_NAME));

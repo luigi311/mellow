@@ -22,9 +22,10 @@ use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::tasks::{BoxedTask, Runner};
-use crate::ui::UpdateUI;
+use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
 
+// TODO: Now that UI_TX no longer requires it, should this still be async?
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
@@ -46,7 +47,7 @@ pub struct Library {
 
     tasks: Runner,
     player_tx: mpsc::Sender<PlayerRequest>,
-    ui_tx: tokio_mpsc::Sender<UpdateUI>,
+    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -124,7 +125,6 @@ pub enum LibraryRequest {
     SetAlbums(Albums),
     SetArtists(Artists),
 
-    SetProgress(Option<f64>),
     RunTask(BoxedTask),
     Shutdown(mpsc::Sender<()>),
 }
@@ -133,7 +133,7 @@ impl Library {
     #[must_use]
     pub fn init(
         player_tx: mpsc::Sender<PlayerRequest>,
-        ui_tx: tokio_mpsc::Sender<UpdateUI>,
+        ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
         LIBRARY_TX.set(tx.clone()).map_err(|_| EXP_INIT).unwrap();
@@ -205,7 +205,6 @@ impl Library {
             .send(UpdateUI::LibraryDirs(
                 self.config.directories.clone().into(),
             ))
-            .await
             .expect(EXP_RX);
     }
 
@@ -223,7 +222,6 @@ impl Library {
             .send(UpdateUI::LibraryDirs(
                 self.config.directories.clone().into(),
             ))
-            .await
             .expect(EXP_RX);
     }
 
@@ -238,7 +236,6 @@ impl Library {
             .send(UpdateUI::LibraryDirs(
                 self.config.directories.clone().into(),
             ))
-            .await
             .expect(EXP_RX);
     }
 
@@ -252,7 +249,6 @@ impl Library {
             .send(UpdateUI::LibraryDirs(
                 self.config.directories.clone().into(),
             ))
-            .await
             .expect(EXP_RX);
     }
 
@@ -352,14 +348,13 @@ impl Library {
 
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
-    pub fn create_associations(songs: &Songs) -> Result<(), mpsc::SendError<LibraryRequest>> {
+    pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
 
         // TODO: Allow users to cancel, but serialize so it can continue later
-        const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
-        let progress_freq = songs.len() / PROGRESS_BAR_STEPS + 1;
         for (i, song) in songs.iter().enumerate() {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
@@ -433,16 +428,13 @@ impl Library {
             }
             drop(song_unwrapped);
 
-            if i % progress_freq == 0 {
-                let progress = Some(i as f64 / songs.len() as f64);
-                library_tx.send(LibraryRequest::SetProgress(progress))?;
-            }
+            let progress = Some(i as f64 / songs.len() as f64);
+            ui_tx.send(UpdateUI::Progress(progress))?;
         }
 
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
-
-        library_tx.send(LibraryRequest::SetProgress(None))?;
+        ui_tx.send(UpdateUI::Progress(None))?;
 
         Ok(())
     }
@@ -469,9 +461,6 @@ impl Library {
                 LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
                 LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
 
-                LibraryRequest::SetProgress(progress) => {
-                    self.ui_tx.send(UpdateUI::Progress(progress)).await?;
-                }
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
             }
@@ -481,21 +470,18 @@ impl Library {
     async fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
-            .await
             .expect(EXP_RX);
         self.songs = songs;
     }
     async fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::LibraryAlbums(albums.clone()))
-            .await
             .expect(EXP_RX);
         self.albums = albums;
     }
     async fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::LibraryArtists(artists.clone()))
-            .await
             .expect(EXP_RX);
         self.artists = artists;
     }
@@ -516,8 +502,8 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
-        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -528,8 +514,8 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
-        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -540,8 +526,8 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
-        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -552,8 +538,8 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
-        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -564,8 +550,8 @@ impl Library {
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false)).await?;
-        self.ui_tx.send(UpdateUI::FocusPlaying).await?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
