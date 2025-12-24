@@ -4,6 +4,7 @@ use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -162,16 +163,19 @@ impl Window {
                 detailed.artwork.as_ref()
             }
             None => {
+                let load_artwork_handle = thread::spawn({
+                    let song = Arc::clone(&song_mutex);
+                    let ui_tx = UI_TX.get().expect(EXP_INIT);
+                    move || {
+                        song.lock().unwrap().info().load_detailed();
+                        ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+                    }
+                });
                 LIBRARY_TX
                     .get()
                     .expect(EXP_INIT)
-                    .send(LibraryRequest::RunTask(Box::new({
-                        let song = Arc::clone(&song_mutex);
-                        let ui_tx = UI_TX.get().expect(EXP_INIT);
-                        move || {
-                            song.lock().unwrap().info().load_detailed();
-                            ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
-                        }
+                    .send(LibraryRequest::RunTask(Box::new(move || {
+                        let _ = load_artwork_handle.join();
                     })))
                     .expect(EXP_RX);
                 None

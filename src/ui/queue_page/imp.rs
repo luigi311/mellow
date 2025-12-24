@@ -3,7 +3,7 @@ use glib::clone;
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
-use std::sync::Arc;
+use std::thread;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
@@ -60,22 +60,6 @@ impl QueuePage {
             match item {
                 item if !(start..end).contains(&i) => {
                     // Garbage collection
-                    if i < end + 15 && i > start.saturating_sub(10) {
-                        // WORKAROUND: Load more items than needed in the
-                        // background (and keep them loaded), so the UI
-                        // doesn't stutter when switching songs
-                        if let QueueItem::Song(song) = item {
-                            LIBRARY_TX
-                                .get()
-                                .expect(EXP_INIT)
-                                .send(LibraryRequest::RunTask(Box::new({
-                                    let song = Arc::clone(song);
-                                    move || song.lock().unwrap().info().load_detailed()
-                                })))
-                                .expect(EXP_RX);
-                        }
-                        continue;
-                    }
                     if let QueueItem::Song(song) = item {
                         song.lock().unwrap().info().unload_detailed();
                     }
@@ -142,31 +126,36 @@ impl QueuePage {
                 }
             }
         }
+        let load_artworks_handle = thread::spawn({
+            let songs = queue[start..end].to_vec();
+            move || {
+                let mut updated = false;
+                for song in songs.iter().rev() {
+                    match song {
+                        QueueItem::Song(song) => {
+                            if let Ok(mut song) = song.try_lock() {
+                                let mut info = song.info();
+                                info.load_basic();
+                                let _ = info.detailed_and(|| updated = true);
+                            };
+                        }
+                        QueueItem::Stopper => (),
+                    }
+                }
+                if updated {
+                    UI_TX
+                        .get()
+                        .expect(EXP_INIT)
+                        .send(crate::ui::UpdateUI::QueueIndex(index))
+                        .expect(EXP_RX);
+                }
+            }
+        });
         LIBRARY_TX
             .get()
             .expect(EXP_INIT)
-            .send(LibraryRequest::RunTask(Box::new({
-                let songs = queue[start..end].to_vec();
-                move || {
-                    let mut updated = false;
-                    for song in songs.iter().rev() {
-                        match song {
-                            QueueItem::Song(song) => {
-                                let _ = song.try_lock().map(|mut song| {
-                                    let _ = song.info().detailed_and(|| updated = true);
-                                });
-                            }
-                            QueueItem::Stopper => (),
-                        }
-                    }
-                    if updated {
-                        UI_TX
-                            .get()
-                            .expect(EXP_INIT)
-                            .send(crate::ui::UpdateUI::QueueIndex(index))
-                            .expect(EXP_RX);
-                    }
-                }
+            .send(LibraryRequest::RunTask(Box::new(move || {
+                let _ = load_artworks_handle.join();
             })))
             .expect(EXP_RX);
 
