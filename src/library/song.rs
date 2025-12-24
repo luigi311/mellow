@@ -339,12 +339,30 @@ impl SongInfoLoader<'_> {
         // SAFETY: `load_detailed()` ensures the value is `Some`
         unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
     }
+    /// Loads detailed song info if needed, and runs the provided closure
+    /// if the info had to be loaded
+    /// Returns a reference to the loaded info
+    #[inline]
+    #[must_use]
+    pub fn detailed_and<F: FnOnce()>(&mut self, run_if_not_loaded: F) -> &DetailedSongInfo {
+        if self.detailed_info.is_none() {
+            self.load_detailed();
+            run_if_not_loaded();
+        }
+        // SAFETY: `load_basic()` ensures the value is `Some`
+        unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
+    }
     /// Loads detailed song info if needed, then returns and unloads it
     #[inline]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
         // SAFETY: `load_detailed()` ensures the value is `Some`
         unsafe { self.detailed_info.take().unwrap_unchecked() }
+    }
+    /// Returns the detailed song info if loaded, but does not load it
+    #[inline]
+    pub const fn inspect_detailed(&mut self) -> Option<&DetailedSongInfo> {
+        self.detailed_info.as_ref()
     }
     /// Loads detailed song info so it is ready to be used later
     /// This method call can be chained
