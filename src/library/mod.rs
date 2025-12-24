@@ -25,7 +25,6 @@ use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
 
-// TODO: Now that UI_TX no longer requires it, should this still be async?
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
@@ -153,7 +152,7 @@ impl Library {
         }
     }
 
-    pub async fn init_queue(&self) -> Result<(), Box<dyn Error>> {
+    pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
         let mut args = std::env::args();
         args.next();
 
@@ -183,18 +182,18 @@ impl Library {
             }
         }
 
-        // self.ui_tx.send(UpdateUI::FocusLibrary).await?;
-        // self.ui_tx.send(UpdateUI::OpenSheet(true)).await?;
+        // self.ui_tx.send(UpdateUI::FocusLibrary)?;
+        // self.ui_tx.send(UpdateUI::OpenSheet(true))?;
 
         // TODO: Once the library pages work, uncomment the above instead
         self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        self.play_all_songs().await?;
+        self.play_all_songs()?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(false)))?;
         Ok(())
     }
 
-    pub async fn set_libraries(&mut self, dirs: &[String]) {
+    pub fn set_libraries(&mut self, dirs: &[String]) {
         self.config.directories = dirs.into();
         self.config.directories.sort();
         println!(
@@ -208,7 +207,7 @@ impl Library {
             .expect(EXP_RX);
     }
 
-    pub async fn add_library(&mut self, dir: String) {
+    pub fn add_library(&mut self, dir: String) {
         if self.config.directories.contains(&dir) || dir.is_empty() {
             return;
         }
@@ -225,9 +224,9 @@ impl Library {
             .expect(EXP_RX);
     }
 
-    pub async fn edit_library(&mut self, index: usize, dir: String) {
+    pub fn edit_library(&mut self, index: usize, dir: String) {
         if self.config.directories.contains(&dir) {
-            return self.remove_library(index).await;
+            return self.remove_library(index);
         }
         self.config.directories[index] = dir;
         self.config.directories.sort();
@@ -239,7 +238,7 @@ impl Library {
             .expect(EXP_RX);
     }
 
-    pub async fn remove_library(&mut self, index: usize) {
+    pub fn remove_library(&mut self, index: usize) {
         self.config.directories.remove(index);
         println!(
             "Removed a library\nLibraries: {:?}",
@@ -292,7 +291,7 @@ impl Library {
 
     // Assigns `self.songs` by loading the serialized data (if any), then
     // inserting any new audio files found within the configured libraries
-    pub async fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
         if self.songs.is_empty() {
             self.songs = self.deserialize_songs();
         }
@@ -341,13 +340,12 @@ impl Library {
         //   Idea: Expand outwards from the old index when searching
         // 4: Remove the old songs from the library (on the main library thread)
 
-        self.set_songs(songs).await;
+        self.set_songs(songs);
 
         Ok(())
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
-    #[allow(clippy::await_holding_lock)] // False-positive warning
     pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
@@ -439,27 +437,27 @@ impl Library {
         Ok(())
     }
 
-    pub async fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
-                LibraryRequest::Rebuild => self.discover_files().await?,
+                LibraryRequest::Rebuild => self.discover_files()?,
 
-                LibraryRequest::SetSongs(songs) => self.set_songs(songs).await,
-                LibraryRequest::SetAlbums(albums) => self.set_albums(albums).await,
-                LibraryRequest::SetArtists(artists) => self.set_artists(artists).await,
+                LibraryRequest::SetSongs(songs) => self.set_songs(songs),
+                LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
+                LibraryRequest::SetArtists(artists) => self.set_artists(artists),
 
-                LibraryRequest::InitQueue => self.init_queue().await?,
+                LibraryRequest::InitQueue => self.init_queue()?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
-                LibraryRequest::PlayAllSongs => self.play_all_songs().await?,
-                LibraryRequest::PlayAllAlbums => self.play_all_albums().await?,
-                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums().await?,
-                LibraryRequest::PlayAllArtists => self.play_all_artists().await?,
-                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists().await?,
+                LibraryRequest::PlayAllSongs => self.play_all_songs()?,
+                LibraryRequest::PlayAllAlbums => self.play_all_albums()?,
+                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums()?,
+                LibraryRequest::PlayAllArtists => self.play_all_artists()?,
+                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists()?,
 
-                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()).await,
-                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1).await,
-                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs).await,
-                LibraryRequest::RemoveLibrary(index) => self.remove_library(index).await,
+                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()),
+                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1),
+                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs),
+                LibraryRequest::RemoveLibrary(index) => self.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
@@ -467,19 +465,19 @@ impl Library {
         }
     }
 
-    async fn set_songs(&mut self, songs: Songs) {
+    fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
             .expect(EXP_RX);
         self.songs = songs;
     }
-    async fn set_albums(&mut self, albums: Albums) {
+    fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::LibraryAlbums(albums.clone()))
             .expect(EXP_RX);
         self.albums = albums;
     }
-    async fn set_artists(&mut self, artists: Artists) {
+    fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::LibraryArtists(artists.clone()))
             .expect(EXP_RX);
@@ -495,7 +493,7 @@ impl Library {
         Ok(())
     }
 
-    pub async fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_songs()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
@@ -507,7 +505,7 @@ impl Library {
         Ok(())
     }
 
-    pub async fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
@@ -519,7 +517,7 @@ impl Library {
         Ok(())
     }
 
-    pub async fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
@@ -531,7 +529,7 @@ impl Library {
         Ok(())
     }
 
-    pub async fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
@@ -543,7 +541,7 @@ impl Library {
         Ok(())
     }
 
-    pub async fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;

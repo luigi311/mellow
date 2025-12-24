@@ -29,10 +29,7 @@ fn init(app: &Application) {
 
     thread::Builder::new()
         .name("library".to_string())
-        .spawn(move || {
-            let runtime = tokio::runtime::Runtime::new().expect(INIT_ERR);
-            runtime.block_on(async move { library.request_handler().await.unwrap() });
-        })
+        .spawn(move || library.request_handler().unwrap())
         .expect(INIT_ERR);
     thread::Builder::new()
         .name("player".to_string())
