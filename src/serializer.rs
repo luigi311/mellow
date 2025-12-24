@@ -74,6 +74,7 @@ pub fn serialize_list(list: &[String]) -> String {
 /// # Example:
 /// ```rust
 /// use mellow::deserialize;
+/// use mellow::unescaped_split;
 /// use gst::ClockTime;
 ///
 /// let mut number = 0;
