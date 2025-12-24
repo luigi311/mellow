@@ -56,6 +56,7 @@ impl QueuePage {
         self.list_box.remove_all();
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
+        let mut needs_loading = false;
         for (i, item) in queue.iter().enumerate() {
             match item {
                 item if !(start..end).contains(&i) => {
@@ -75,21 +76,22 @@ impl QueuePage {
                     let is_playing = i == index;
 
                     let entry = QueueRow::default();
-                    entry.set_title(&song_title);
-                    entry.set_subtitle(&artist_name);
+                    entry.set_titles(&song_title, &artist_name);
                     if is_playing {
                         entry.add_css_class("heading");
                         entry.add_css_class("card");
                     }
 
                     // TODO: Cached low-res album covers
-                    if let Some(detailed_info) = info.inspect_detailed()
+                    let detailed_info = info.inspect_detailed();
+                    if let Some(detailed_info) = detailed_info
                         && let Some(artwork) = detailed_info.artwork.as_ref()
                     {
                         entry.set_prefix_image(artwork);
                     } else {
                         entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
                     }
+                    needs_loading |= i == start && detailed_info.is_none();
 
                     entry.connect_activated({
                         clone!(
@@ -126,29 +128,35 @@ impl QueuePage {
                 }
             }
         }
+
+        let scroll_target = (index - start) * 54;
+        self.scrolled_window
+            .vadjustment()
+            .set_value(scroll_target as f64);
+
+        if !needs_loading {
+            return;
+        }
         let load_artworks_handle = thread::spawn({
             let songs = queue[start..end].to_vec();
             move || {
-                let mut updated = false;
                 for song in songs.iter().rev() {
                     match song {
                         QueueItem::Song(song) => {
                             if let Ok(mut song) = song.try_lock() {
                                 let mut info = song.info();
                                 info.load_basic();
-                                let _ = info.detailed_and(|| updated = true);
+                                info.load_detailed();
                             };
                         }
                         QueueItem::Stopper => (),
                     }
                 }
-                if updated {
-                    UI_TX
-                        .get()
-                        .expect(EXP_INIT)
-                        .send(crate::ui::UpdateUI::QueueIndex(index))
-                        .expect(EXP_RX);
-                }
+                UI_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(crate::ui::UpdateUI::QueueIndex(index))
+                    .expect(EXP_RX);
             }
         });
         LIBRARY_TX
@@ -158,11 +166,6 @@ impl QueuePage {
                 let _ = load_artworks_handle.join();
             })))
             .expect(EXP_RX);
-
-        let scroll_target = (index - start) * 54;
-        self.scrolled_window
-            .vadjustment()
-            .set_value(scroll_target as f64);
     }
 }
 
