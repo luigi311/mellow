@@ -76,7 +76,8 @@ impl QueuePage {
                     let is_playing = i == index;
 
                     let entry = QueueRow::default();
-                    entry.set_titles(&song_title, &artist_name);
+                    entry.set_title(&song_title);
+                    entry.set_subtitle(&artist_name);
                     if is_playing {
                         entry.add_css_class("heading");
                         entry.add_css_class("card");
@@ -91,7 +92,7 @@ impl QueuePage {
                     } else {
                         entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
                     }
-                    needs_loading |= i == start && detailed_info.is_none();
+                    needs_loading |= detailed_info.is_none();
 
                     entry.connect_activated({
                         clone!(
