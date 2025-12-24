@@ -237,6 +237,11 @@ impl SongInfoLoader<'_> {
         self.user_info.play_count += 1;
     }
 
+    /// Decreases the play count by 1
+    pub const fn deduct_played(&mut self) {
+        self.user_info.play_count -= 1;
+    }
+
     /// Sets the song rating
     pub const fn set_rating(&mut self, rating: u8) {
         self.user_info.rating = rating;
