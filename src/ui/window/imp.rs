@@ -3,6 +3,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -10,7 +11,6 @@ use crate::MUSIC_DIR;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
-use crate::ui::UpdateUI;
 use crate::ui::library_albums_page::LibraryAlbumsPage;
 use crate::ui::library_artists_page::LibraryArtistsPage;
 use crate::ui::library_home_page::LibraryHomePage;
@@ -21,6 +21,7 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::queue_song_page::QueueSongPage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -144,10 +145,38 @@ impl Window {
         if song.is_stopper() {
             return;
         }
-        let mut song = song.as_song();
+
+        let song_mutex = match song {
+            QueueItem::Song(song) => song,
+            QueueItem::Stopper => unreachable!(),
+        };
+        let mut song = song_mutex.lock().unwrap();
+
         let mut info = song.info();
         let song_info = info.basic().clone();
-        let detailed_info = info.detailed();
+        let detailed_info = info.inspect_detailed();
+        let artwork = match detailed_info {
+            Some(detailed) => {
+                self.lyrics_page
+                    .set_content(&song_info.title, &detailed.lyrics);
+                detailed.artwork.as_ref()
+            }
+            None => {
+                LIBRARY_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(LibraryRequest::RunTask(Box::new({
+                        let song = Arc::clone(&song_mutex);
+                        let ui_tx = UI_TX.get().expect(EXP_INIT);
+                        move || {
+                            song.lock().unwrap().info().load_detailed();
+                            ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+                        }
+                    })))
+                    .expect(EXP_RX);
+                None
+            }
+        };
 
         let duration_ms = song_info.duration.mseconds();
         *song_duration = Duration::from_millis(duration_ms);
@@ -155,13 +184,11 @@ impl Window {
             &song_info.title,
             &song_info.album,
             &song_info.artist,
-            detailed_info.artwork.as_ref(),
+            artwork,
             song_duration,
         );
-        self.lyrics_page
-            .set_content(&song_info.title, &detailed_info.lyrics);
 
-        if let Some(artwork) = &detailed_info.artwork {
+        if let Some(artwork) = &artwork {
             // TODO: Set window background to match artwork colors
             self.set_background_color(16, 16, 16);
         } else {

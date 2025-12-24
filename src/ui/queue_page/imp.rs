@@ -149,7 +149,7 @@ impl QueuePage {
                 let songs = queue[start..end].to_vec();
                 move || {
                     let mut updated = false;
-                    for song in songs {
+                    for song in songs.iter().rev() {
                         match song {
                             QueueItem::Song(song) => {
                                 let _ = song.try_lock().map(|mut song| {
