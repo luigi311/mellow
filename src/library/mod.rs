@@ -331,6 +331,12 @@ impl Library {
         });
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
+        let task_handle = thread::spawn({
+            let songs = songs.clone();
+            move || Library::create_associations(&songs).expect(EXP_RX)
+        });
+        self.tasks.run(move || task_handle.join().unwrap());
+
         // TODO: Check all files if they still exist, and detect if they were moved
         // 1: Go through all songs and check if they still exist on disk
         // 2: Create a list of missing songs (referred to as `old` from now on)
@@ -338,13 +344,6 @@ impl Library {
         //   3.1: If a match is found, copy `….info().user()` to the new one
         //   Idea: Expand outwards from the old index when searching
         // 4: Remove the old songs from the library (on the main library thread)
-
-        let task_handle = thread::spawn({
-            let songs = songs.clone();
-            let tx = self.tx.clone();
-            || Library::create_associations(songs, tx).expect(EXP_RX)
-        });
-        self.tasks.run(move || task_handle.join().unwrap());
 
         self.set_songs(songs).await;
 
