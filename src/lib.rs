@@ -129,6 +129,7 @@ pub fn reorder_vec<T>(vec: &mut [T], index: usize, target: usize) {
 /// );
 /// ```
 #[inline]
+#[must_use]
 pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
     let chars: Vec<u8> = input.bytes().collect();
     let mut start = 0;

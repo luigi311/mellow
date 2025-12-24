@@ -146,8 +146,8 @@ impl Window {
         }
         let mut song = song.as_song();
         let mut info = song.info();
-        let detailed_info = info.take_detailed();
-        let song_info = info.basic();
+        let song_info = info.basic().clone();
+        let detailed_info = info.detailed();
 
         let duration_ms = song_info.duration.mseconds();
         *song_duration = Duration::from_millis(duration_ms);
@@ -161,7 +161,7 @@ impl Window {
         self.lyrics_page
             .set_content(&song_info.title, &detailed_info.lyrics);
 
-        if let Some(artwork) = detailed_info.artwork {
+        if let Some(artwork) = &detailed_info.artwork {
             // TODO: Set window background to match artwork colors
             self.set_background_color(16, 16, 16);
         } else {

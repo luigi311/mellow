@@ -19,6 +19,7 @@ impl Runner {
     /// # Panics:
     /// If the thread count is 0, the `Runner` panics
     /// at runtime when receiving a task
+    #[must_use]
     pub fn new(count: usize) -> Self {
         debug_assert!(count > 0, "Cannot create a thread pool with no threads");
 

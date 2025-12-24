@@ -224,21 +224,21 @@ impl SongInfoLoader<'_> {
         )
     }
 
-    pub fn user(&mut self) -> &UserSongInfo {
+    pub const fn user(&mut self) -> &UserSongInfo {
         self.user_info
     }
 
-    pub fn user_mut(&mut self) -> &mut UserSongInfo {
+    pub const fn user_mut(&mut self) -> &mut UserSongInfo {
         self.user_info
     }
 
     /// Increases the play count by 1
-    pub fn played(&mut self) {
+    pub const fn played(&mut self) {
         self.user_info.play_count += 1;
     }
 
     /// Sets the song rating
-    pub fn set_rating(&mut self, rating: u8) {
+    pub const fn set_rating(&mut self, rating: u8) {
         self.user_info.rating = rating;
     }
 

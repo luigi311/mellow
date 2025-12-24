@@ -56,8 +56,9 @@ macro_rules! serialize {
 /// );
 /// ```
 #[inline]
+#[must_use]
 pub fn serialize_list(list: &[String]) -> String {
-    list.iter().map(|s| s.replace(",", "\\,") + ", ").collect()
+    list.iter().map(|s| s.replace(',', "\\,") + ", ").collect()
 }
 
 /// Retreives serialized `data` field values and assigns them

@@ -210,7 +210,7 @@ impl Window {
         let remember_queue = self.settings().boolean("remember-queue");
         let mut directories = unescaped_split(&self.settings().string("directories"), ',');
         if directories.is_empty() {
-            directories.push(MUSIC_DIR.get().unwrap().to_string());
+            directories.push(MUSIC_DIR.get().unwrap().clone());
         }
 
         // Slider callback `change_value` doesn't work for `set_value()`,

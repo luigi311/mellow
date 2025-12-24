@@ -47,7 +47,6 @@ pub struct Library {
     tasks: Runner,
     player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::Sender<UpdateUI>,
-    tx: mpsc::Sender<LibraryRequest>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -137,7 +136,9 @@ impl Library {
         ui_tx: tokio_mpsc::Sender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
-        let library = Library {
+        LIBRARY_TX.set(tx.clone()).map_err(|_| EXP_INIT).unwrap();
+
+        Library {
             songs: vec![],
             albums: vec![],
             artists: vec![],
@@ -148,12 +149,8 @@ impl Library {
             tasks: Runner::new(4),
             player_tx,
             ui_tx,
-            tx: tx.clone(),
             rx,
-        };
-        LIBRARY_TX.set(tx.clone()).map_err(|_| EXP_INIT).unwrap();
-
-        library
+        }
     }
 
     pub async fn init_queue(&self) -> Result<(), Box<dyn Error>> {
@@ -171,7 +168,7 @@ impl Library {
         if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue") {
             'queue: {
                 let mut lines = queue.lines();
-                let Some(Ok(track)) = lines.next().map(|line| line.parse()) else {
+                let Some(Ok(track)) = lines.next().map(str::parse) else {
                     break 'queue;
                 };
                 let Some(queue) =
@@ -271,7 +268,7 @@ impl Library {
             .collect::<String>()
             .trim()
             .to_string();
-        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|_| {
+        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
             fs::write(
                 CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
                 &serialized,
@@ -356,12 +353,10 @@ impl Library {
 
     /// Creates connections between library `songs`, `albums`, and `artists`
     #[allow(clippy::await_holding_lock)] // False-positive warning
-    pub fn create_associations(
-        songs: Songs,
-        library_tx: mpsc::Sender<LibraryRequest>,
-    ) -> Result<(), mpsc::SendError<LibraryRequest>> {
+    pub fn create_associations(songs: &Songs) -> Result<(), mpsc::SendError<LibraryRequest>> {
         let mut albums: Albums = Vec::new();
         let mut artists: Artists = Vec::new();
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         const PROGRESS_BAR_STEPS: usize = 270; // IDEA: Use window width?
@@ -479,7 +474,7 @@ impl Library {
                     self.ui_tx.send(UpdateUI::Progress(progress)).await?;
                 }
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
-                LibraryRequest::Shutdown(tx) => self.shutdown(tx)?,
+                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
             }
         }
     }
@@ -506,12 +501,12 @@ impl Library {
         self.artists = artists;
     }
 
-    pub fn shutdown(&mut self, tx: mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
+    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
-        tx.send(()).expect(EXP_RX);
+        notify_done.send(()).expect(EXP_RX);
         Ok(())
     }
 
