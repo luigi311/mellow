@@ -143,11 +143,7 @@ impl QueuePage {
                 for song in songs.iter().rev() {
                     match song {
                         QueueItem::Song(song) => {
-                            if let Ok(mut song) = song.try_lock() {
-                                let mut info = song.info();
-                                info.load_basic();
-                                info.load_detailed();
-                            };
+                            let _ = song.try_lock().map(|mut song| song.info().load_detailed());
                         }
                         QueueItem::Stopper => (),
                     }
