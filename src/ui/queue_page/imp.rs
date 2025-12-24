@@ -3,8 +3,10 @@ use glib::clone;
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
+use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::queue_row::QueueRow;
@@ -58,6 +60,22 @@ impl QueuePage {
             match item {
                 item if !(start..end).contains(&i) => {
                     // Garbage collection
+                    if i < end + 15 && i > start.saturating_sub(10) {
+                        // WORKAROUND: Load more items than needed in the
+                        // background (and keep them loaded), so the UI
+                        // doesn't stutter when switching songs
+                        if let QueueItem::Song(song) = item {
+                            LIBRARY_TX
+                                .get()
+                                .expect(EXP_INIT)
+                                .send(LibraryRequest::RunTask(Box::new({
+                                    let song = Arc::clone(song);
+                                    move || song.lock().unwrap().info().load_detailed()
+                                })))
+                                .expect(EXP_RX);
+                        }
+                        continue;
+                    }
                     if let QueueItem::Song(song) = item {
                         song.lock().unwrap().info().unload_detailed();
                     }
