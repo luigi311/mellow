@@ -3,7 +3,7 @@ use std::fs;
 use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX, EXP_SAFE};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::Song;
 use crate::player::PlayerRequest;
 use crate::ui::UpdateUI;
@@ -40,7 +40,7 @@ impl QueueItem {
     /// this method is safe when chained with `Song::current()`
     pub fn as_song(&self) -> MutexGuard<'_, Song> {
         match self {
-            Self::Song(song) => song.lock().expect(EXP_SAFE),
+            Self::Song(song) => song.lock().unwrap(),
             Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
         }
     }
@@ -53,6 +53,19 @@ impl QueueItem {
     #[must_use]
     pub const fn is_stopper(&self) -> bool {
         matches!(self, Self::Stopper)
+    }
+
+    /// Runs a closure on the `QueueItem` if it is a `Song`,
+    /// and returns the output of the closure inside an `Option`.
+    /// If the `QueueItem` is not a `Song`, `None` is returned.
+    pub fn map<F, T>(&self, f: F) -> Option<T>
+    where
+        F: FnOnce(MutexGuard<'_, Song>) -> T,
+    {
+        match self {
+            QueueItem::Song(song) => Some(f(song.lock().unwrap())),
+            _ => None,
+        }
     }
 }
 

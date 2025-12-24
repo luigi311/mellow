@@ -429,12 +429,11 @@ impl Player {
     pub fn unload_gapless(&mut self) {
         let Some(pos) = self.backend.query_position::<ClockTime>() else {
             println!("Could not determine playback time, skipping...");
-            // Skip the current song if the song has ended
-            // or the playback time/duration cannot be determined
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
             return;
         };
 
+        self.queue.current().as_song().info().deduct_played();
         let _ = self.backend.set_state(State::Null);
         self.request_state(self.current_state);
         let _ = self.backend.state(None); // Wait for backend state
@@ -444,7 +443,8 @@ impl Player {
         let _ = self.backend.state(None); // Wait for backend state
 
         // Seek to the same time the player was at before
-        if let Err(_) = self.seek_to_time(pos) {
+        if self.seek_to_time(pos).is_err() {
+            self.queue.current().map(|mut song| song.info().played());
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
         };
     }
@@ -457,7 +457,7 @@ impl Player {
     /// Inserts a `QueueItem` into the current queue at the specified `index`
     fn insert_to_queue(&mut self, index: usize, item: QueueItem) {
         if self.next_song_loaded && index == self.queue.index() {
-            let _ = self.unload_gapless();
+            self.unload_gapless();
         }
         self.queue.insert(index, item);
     }
