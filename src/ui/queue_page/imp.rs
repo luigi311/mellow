@@ -62,7 +62,9 @@ impl QueuePage {
                 item if !(start..end).contains(&i) => {
                     // Garbage collection
                     if let QueueItem::Song(song) = item {
-                        song.lock().unwrap().info().unload_detailed();
+                        if let Ok(mut song) = song.try_lock() {
+                            song.info().unload_detailed();
+                        }
                     }
                 }
                 QueueItem::Song(song) => {
@@ -141,6 +143,7 @@ impl QueuePage {
         let load_artworks_handle = thread::spawn({
             let songs = queue[start..end].to_vec();
             move || {
+                println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {
                     match song {
                         QueueItem::Song(song) => {
