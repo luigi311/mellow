@@ -10,19 +10,15 @@ Playback:
   - [x] Seeking to any point in the song (click or drag)
   - [x] Seeking to the end and releasing the seek bar
   - [x] Seeking to the end and back
-- [ ] Gapless/non-gapless playback works as expected
-  - FIX: See issues with Song Queue
+- [x] Gapless/non-gapless playback works as expected
 - [x] Non-fatal errors are handled gracefully
 
 Song Queue:
 
 - [ ] Starting a new queue works as expected
   - FIX: Starting an empty queue does not unload the currently playing song
-- [ ] Adding items works as expected
-  - FIX: Gapless: Stoppers are ignored when inserted after the current song if the
-    next song is already loaded
-- [ ] Removing items works as expected
-  - FIX: Gapless: Removing next song when it is already loaded crashes the player
+- [x] Adding items works as expected
+- [x] Removing items works as expected
 - [ ] Reordering the queue works as expected
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode

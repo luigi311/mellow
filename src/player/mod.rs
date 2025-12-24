@@ -1,7 +1,7 @@
 use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
-use std::sync::{Arc, OnceLock, mpsc};
+use std::sync::{OnceLock, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -195,9 +195,15 @@ impl Player {
 
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
-                PlayerRequest::InsertAt(item) => self.queue.insert(item.0, item.1) == (),
+                PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
+                        if self.next_song_loaded {
+                            println!("Removing song which is already loaded");
+                            self.unload_gapless()?;
+                            self.queue.remove(index);
+                            continue;
+                        }
                         self.backend.set_property("instant-uri", true);
                         self.queue.pending_track = true;
                         self.queue.remove(index);
@@ -418,8 +424,48 @@ impl Player {
         self.request_state(self.current_state);
     }
 
+    /// Unloads the gaplessly loaded track by restarting the stream
+    /// Note that this might cause an audible stutter, so use it sparingly
+    pub fn unload_gapless(&mut self) -> Result<(), gst::StateChangeError> {
+        let (pos, dur) = (
+            self.backend.query_position::<ClockTime>(),
+            (self.backend.query_duration::<ClockTime>()).map(ClockTime::mseconds),
+        );
+
+        self.skip_prev();
+        self.update();
+
+        if let (Some(pos), Some(dur)) = (pos, dur)
+            && dur.saturating_sub(pos.mseconds()) != 0
+        {
+            let _ = self.backend.set_state(State::Null);
+            let _ = self.backend.state(None); // Wait for backend state
+            self.backend.set_state(self.current_state)?;
+            let _ = self.backend.state(None); // Wait for backend state
+
+            // Seek to the same time the player was at before
+            if let Err(_) = self.seek_to_time(pos) {
+                self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+            };
+        } else {
+            // Skip the current song if the song has ended
+            // or the playback time/duration cannot be determined
+            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+        }
+        Ok(())
+    }
+
+    /// Sets the playback volume
     fn set_volume(&self, volume: f64) {
         self.backend.set_property("volume", volume);
+    }
+
+    /// Inserts a `QueueItem` into the current queue at the specified `index`
+    fn insert_to_queue(&mut self, index: usize, item: QueueItem) {
+        if self.next_song_loaded && index == self.queue.index() {
+            let _ = self.unload_gapless();
+        }
+        self.queue.insert(index, item);
     }
 
     /// Sets player state the next time `update()` is called
