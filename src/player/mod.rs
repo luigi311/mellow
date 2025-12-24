@@ -200,8 +200,9 @@ impl Player {
                     if index == self.queue.index() {
                         if self.next_song_loaded {
                             println!("Removing song which is already loaded");
-                            self.unload_gapless()?;
+                            self.unload_gapless();
                             self.queue.remove(index);
+                            self.ui_set_state();
                             continue;
                         }
                         self.backend.set_property("instant-uri", true);
@@ -376,11 +377,11 @@ impl Player {
             println!("Gapless transition interrupted by seek request");
             self.backend.set_state(State::Null)?;
             self.request_state(self.current_state);
-            let _ = self.backend.state(None).0; // Wait for backend state
+            let _ = self.backend.state(None); // Wait for backend state
             self.next_song_loaded = false;
             self.skip_prev();
             self.update();
-            let _ = self.backend.state(None).0; // Wait for backend state
+            let _ = self.backend.state(None); // Wait for backend state
         }
 
         match self.backend.current_state() {
@@ -390,7 +391,7 @@ impl Player {
         }
 
         self.seeking = true;
-        let _ = self.backend.state(None).0; // Wait for backend state
+        let _ = self.backend.state(None); // Wait for backend state
         Ok(())
     }
 
@@ -399,9 +400,7 @@ impl Player {
         self.seeking = false;
         let (pos, dur) = (
             self.backend.query_position::<ClockTime>(),
-            self.backend
-                .query_duration::<ClockTime>()
-                .map(ClockTime::mseconds),
+            (self.backend.query_duration::<ClockTime>()).map(ClockTime::mseconds),
         );
 
         if let (Some(pos), Some(dur)) = (pos, dur)
@@ -425,34 +424,29 @@ impl Player {
     }
 
     /// Unloads the gaplessly loaded track by restarting the stream
+    ///
     /// Note that this might cause an audible stutter, so use it sparingly
-    pub fn unload_gapless(&mut self) -> Result<(), gst::StateChangeError> {
-        let (pos, dur) = (
-            self.backend.query_position::<ClockTime>(),
-            (self.backend.query_duration::<ClockTime>()).map(ClockTime::mseconds),
-        );
-
-        self.skip_prev();
-        self.update();
-
-        if let (Some(pos), Some(dur)) = (pos, dur)
-            && dur.saturating_sub(pos.mseconds()) != 0
-        {
-            let _ = self.backend.set_state(State::Null);
-            let _ = self.backend.state(None); // Wait for backend state
-            self.backend.set_state(self.current_state)?;
-            let _ = self.backend.state(None); // Wait for backend state
-
-            // Seek to the same time the player was at before
-            if let Err(_) = self.seek_to_time(pos) {
-                self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
-            };
-        } else {
+    pub fn unload_gapless(&mut self) {
+        let Some(pos) = self.backend.query_position::<ClockTime>() else {
+            println!("Could not determine playback time, skipping...");
             // Skip the current song if the song has ended
             // or the playback time/duration cannot be determined
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
-        }
-        Ok(())
+            return;
+        };
+
+        let _ = self.backend.set_state(State::Null);
+        self.request_state(self.current_state);
+        let _ = self.backend.state(None); // Wait for backend state
+        self.next_song_loaded = false;
+        self.skip_prev();
+        self.update();
+        let _ = self.backend.state(None); // Wait for backend state
+
+        // Seek to the same time the player was at before
+        if let Err(_) = self.seek_to_time(pos) {
+            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+        };
     }
 
     /// Sets the playback volume
