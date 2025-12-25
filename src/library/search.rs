@@ -138,5 +138,5 @@ where
             (Arc::clone(item), score),
         );
     }
-    matches.iter().map(|song| Arc::clone(&song.0)).collect()
+    matches.drain(..).map(|song| song.0).collect()
 }
