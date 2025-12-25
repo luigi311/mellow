@@ -136,6 +136,7 @@ pub enum LibraryRequest {
 }
 
 impl Library {
+    /// Returns a new `Library` instance and initializes `LIBRARY_tx`
     #[must_use]
     pub fn init(
         player_tx: mpsc::Sender<PlayerRequest>,
@@ -159,6 +160,7 @@ impl Library {
         }
     }
 
+    /// Main loop for handling library requests
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
@@ -187,6 +189,7 @@ impl Library {
         }
     }
 
+    /// Starts the initial player queue
     pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
         let mut args = std::env::args();
         args.next();
@@ -377,18 +380,21 @@ impl Library {
         Ok(())
     }
 
+    /// Replaces `self.songs` with `songs`
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
             .expect(EXP_RX);
         self.songs = songs;
     }
+    /// Replaces `self.albums` with `albums`
     fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::LibraryAlbums(albums.clone()))
             .expect(EXP_RX);
         self.albums = albums;
     }
+    /// Replaces `self.artists` with `artists`
     fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::LibraryArtists(artists.clone()))
@@ -405,6 +411,7 @@ impl Library {
             .collect()
     }
 
+    /// Starts a queue of all songs in the library
     pub fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_songs()))?;
@@ -430,6 +437,7 @@ impl Library {
         queue
     }
 
+    /// Starts a queue of all albums in the library
     pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums()))?;
@@ -461,6 +469,7 @@ impl Library {
         queue
     }
 
+    /// Starts a randomly ordered queue of all albums in the library
     pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
@@ -488,6 +497,7 @@ impl Library {
         queue
     }
 
+    /// Starts a queue of all albums in the library
     pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists()))?;
@@ -521,6 +531,7 @@ impl Library {
         queue
     }
 
+    /// Starts a randomly ordered queue of all artists in the library
     pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
@@ -533,6 +544,8 @@ impl Library {
         Ok(())
     }
 
+    /// Starts a queue of all songs found within the specified `paths`,
+    /// recursively. Does nothing if no song files were found.
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), mpsc::SendError<PlayerRequest>> {
         if let Some(queue) = self.songs_from_paths(paths) {
             self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
@@ -591,6 +604,8 @@ impl Library {
         }
     }
 
+    /// Attempts to locate the given `file` within the library and
+    /// returns it, otherwise a new instance of `Song` is returned
     fn queue_from_library_or_new(&self, file: &str) -> QueueItem {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
@@ -605,6 +620,7 @@ impl Library {
         QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
     }
 
+    /// Replaces the configured directories with `dirs`
     pub fn set_libraries(&mut self, dirs: &[String]) {
         self.config.directories = dirs.into();
         self.config.directories.sort();
@@ -619,6 +635,7 @@ impl Library {
             .expect(EXP_RX);
     }
 
+    /// Adds `dir` to the configured directories
     pub fn add_library(&mut self, dir: String) {
         if self.config.directories.contains(&dir) || dir.is_empty() {
             return;
@@ -636,6 +653,7 @@ impl Library {
             .expect(EXP_RX);
     }
 
+    /// Replaces configured directory at `index` with `dir`
     pub fn edit_library(&mut self, index: usize, dir: String) {
         if self.config.directories.contains(&dir) {
             return self.remove_library(index);
@@ -650,6 +668,7 @@ impl Library {
             .expect(EXP_RX);
     }
 
+    /// Removes the configured directory at `index`
     pub fn remove_library(&mut self, index: usize) {
         self.config.directories.remove(index);
         println!(
@@ -701,6 +720,8 @@ impl Library {
         .collect()
     }
 
+    /// Writes the configuration to disk and shuts down gracefully.
+    /// Notifies the caller over the `notify_done` channel when done.
     pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
         let mut songs = Vec::new();
         mem::swap(&mut self.songs, &mut songs);

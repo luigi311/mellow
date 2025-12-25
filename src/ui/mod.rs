@@ -45,6 +45,7 @@ pub enum UpdateUI {
     OpenSheet(bool),
 }
 
+/// Starts the application and initializes `UI_TX`
 pub fn init(
     app: &Application,
     ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,

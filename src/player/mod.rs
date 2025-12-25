@@ -114,8 +114,7 @@ type PlayerInit = (
 );
 
 impl Player {
-    /// Returns a tuple of a new `Player` instance, a sender for player controls,
-    /// and a sender and receiver for the UI
+    /// Returns a new `Player` instance and initializes `PLAYER_TX`
     pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
         gst::init()?;
 
@@ -442,7 +441,7 @@ impl Player {
         self.update();
         let _ = self.backend.state(None); // Wait for backend state
 
-        // Seek to the same time the player was at before
+        // Seek to the same time the player was at before, or skip the song
         if self.seek_to_time(pos).is_err() {
             self.queue.current().map(|mut song| song.info().played());
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
