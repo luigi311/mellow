@@ -64,7 +64,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 
     let query_len = query_bytes.len() as f64;
     let item_len = item_bytes.len() as f64;
-    let result = (match_len - ((item_len - query_len).max(0.0) * (1.0 / (item_len * item_len))))
+    let result = (match_len - ((item_len - query_len).max(0.0) / (item_len * item_len)))
         / (query_len + (offset as f64 / item_len));
 
     // dbg!(result);
@@ -79,7 +79,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 }
 
 /// Returns a filtered `Vec<Arc<Mutex<T>>>`, ordered by the
-/// scoring criteria returned by the closure, where the highest
+/// scoring criteria returned by the closure. The highest
 /// scoring item is at index 0, and lowest is at the end
 ///
 /// # Example:

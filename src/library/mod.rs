@@ -21,7 +21,6 @@ pub use song::{Song, SongInfo};
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
-use crate::library::search::query_score;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::tasks::{BoxedTask, Runner};
@@ -160,6 +159,34 @@ impl Library {
         }
     }
 
+    pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+        loop {
+            match self.rx.recv()? {
+                LibraryRequest::Rebuild => self.discover_files()?,
+
+                LibraryRequest::SetSongs(songs) => self.set_songs(songs),
+                LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
+                LibraryRequest::SetArtists(artists) => self.set_artists(artists),
+
+                LibraryRequest::InitQueue => self.init_queue()?,
+                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
+                LibraryRequest::PlayAllSongs => self.play_all_songs()?,
+                LibraryRequest::PlayAllAlbums => self.play_all_albums()?,
+                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums()?,
+                LibraryRequest::PlayAllArtists => self.play_all_artists()?,
+                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists()?,
+
+                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()),
+                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1),
+                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs),
+                LibraryRequest::RemoveLibrary(index) => self.remove_library(index),
+
+                LibraryRequest::RunTask(task) => self.tasks.run(task),
+                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
+            }
+        }
+    }
+
     pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
         let mut args = std::env::args();
         args.next();
@@ -201,102 +228,6 @@ impl Library {
         Ok(())
     }
 
-    pub fn set_libraries(&mut self, dirs: &[String]) {
-        self.config.directories = dirs.into();
-        self.config.directories.sort();
-        println!(
-            "Library directories updated\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    pub fn add_library(&mut self, dir: String) {
-        if self.config.directories.contains(&dir) || dir.is_empty() {
-            return;
-        }
-        self.config.directories.push(dir);
-        self.config.directories.sort();
-        println!(
-            "Added a new library\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    pub fn edit_library(&mut self, index: usize, dir: String) {
-        if self.config.directories.contains(&dir) {
-            return self.remove_library(index);
-        }
-        self.config.directories[index] = dir;
-        self.config.directories.sort();
-        println!("Edited a library\nLibraries: {:?}", self.config.directories);
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    pub fn remove_library(&mut self, index: usize) {
-        self.config.directories.remove(index);
-        println!(
-            "Removed a library\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    /// Serializes `songs` and writes the data to disk,
-    /// so the library can be loaded faster next time
-    ///
-    /// Creates a file called `songs` in `self.config.config_dir`
-    #[inline]
-    fn serialize_songs(songs: &Songs) {
-        let serialized = songs
-            .iter()
-            .map(|song| song.lock().unwrap().serlialize() + "\n")
-            .collect::<String>()
-            .trim()
-            .to_string();
-        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
-            fs::write(
-                CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
-                &serialized,
-            )
-        }) {
-            Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
-            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: {e}"),
-        }
-    }
-
-    /// Reads the serialized song info from disk and returns them,
-    /// so they can be assigned directly to `self.songs`
-    ///
-    /// Reads from a file called `songs` in `self.config.config_dir`
-    #[must_use]
-    fn deserialize_songs(&self) -> Songs {
-        let data = fs::read_to_string(self.config_dir.clone() + "songs").unwrap_or_default();
-        let data = data.split("\n\n");
-        data.filter_map(|data| match Song::deserialize(data) {
-            Ok(song) => Some(Arc::new(Mutex::new(song))),
-            Err(_) => None,
-        })
-        .collect()
-    }
-
     // Assigns `self.songs` by loading the serialized data (if any), then
     // inserting any new audio files found within the configured libraries
     pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
@@ -313,7 +244,7 @@ impl Library {
             let to_relative = gio::File::for_path(library_path).uri().len();
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
-                if !Library::file_supported(&file.parse_name()) {
+                if !file_supported(&file.parse_name()) {
                     return;
                 }
 
@@ -446,34 +377,6 @@ impl Library {
         Ok(())
     }
 
-    pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
-        loop {
-            match self.rx.recv()? {
-                LibraryRequest::Rebuild => self.discover_files()?,
-
-                LibraryRequest::SetSongs(songs) => self.set_songs(songs),
-                LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
-                LibraryRequest::SetArtists(artists) => self.set_artists(artists),
-
-                LibraryRequest::InitQueue => self.init_queue()?,
-                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
-                LibraryRequest::PlayAllSongs => self.play_all_songs()?,
-                LibraryRequest::PlayAllAlbums => self.play_all_albums()?,
-                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums()?,
-                LibraryRequest::PlayAllArtists => self.play_all_artists()?,
-                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists()?,
-
-                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()),
-                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1),
-                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs),
-                LibraryRequest::RemoveLibrary(index) => self.remove_library(index),
-
-                LibraryRequest::RunTask(task) => self.tasks.run(task),
-                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
-            }
-        }
-    }
-
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
@@ -493,13 +396,13 @@ impl Library {
         self.artists = artists;
     }
 
-    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
-        let mut songs = Vec::new();
-        mem::swap(&mut self.songs, &mut songs);
-        self.tasks.run(move || Library::serialize_songs(&songs));
-        self.tasks.shutdown();
-        notify_done.send(()).expect(EXP_RX);
-        Ok(())
+    /// Returns a queue of all songs in the library
+    #[must_use]
+    pub fn all_songs(&self) -> Vec<QueueItem> {
+        self.songs
+            .iter()
+            .map(|song| QueueItem::Song(Arc::clone(song)))
+            .collect()
     }
 
     pub fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
@@ -514,74 +417,6 @@ impl Library {
         Ok(())
     }
 
-    pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    /// Returns `true` if the specified file has a supported extension,
-    /// or `false` if it does not
-    #[inline]
-    #[must_use]
-    pub fn file_supported(file: &str) -> bool {
-        let Some(extension) = file.rsplit_once('.').map(|s| s.1.to_lowercase()) else {
-            return false;
-        };
-        FILE_SUPPORT.iter().any(|&ext| extension == ext)
-    }
-
-    /// Returns a queue of all songs in the library
-    #[must_use]
-    pub fn all_songs(&self) -> Vec<QueueItem> {
-        self.songs
-            .iter()
-            .map(|song| QueueItem::Song(Arc::clone(song)))
-            .collect()
-    }
-
     /// Returns a queue of all albums in the library,
     /// with sequential order of songs
     #[must_use]
@@ -593,6 +428,18 @@ impl Library {
             }
         }
         queue
+    }
+
+    pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_albums()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
     }
 
     /// Returns a queue of all albums in the library,
@@ -614,6 +461,18 @@ impl Library {
         queue
     }
 
+    pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
     /// Returns a queue of all artists in the library,
     /// with albums and songs in sequential order
     #[must_use]
@@ -627,6 +486,18 @@ impl Library {
             }
         }
         queue
+    }
+
+    pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_artists()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
     }
 
     /// Returns a queue of all artists in the library,
@@ -650,6 +521,18 @@ impl Library {
         queue
     }
 
+    pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), mpsc::SendError<PlayerRequest>> {
         if let Some(queue) = self.songs_from_paths(paths) {
             self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
@@ -668,7 +551,7 @@ impl Library {
             let path = Path::new(&file);
             if path.is_file() {
                 // Add files from arguments to queue
-                if !Library::file_supported(file) {
+                if !file_supported(file) {
                     continue;
                 }
 
@@ -680,7 +563,7 @@ impl Library {
                 let _ = visit_dirs(path, &|file| {
                     let file = file.path();
                     let file = file.to_str().unwrap();
-                    if !Library::file_supported(file) {
+                    if !file_supported(file) {
                         return;
                     }
 
@@ -721,4 +604,120 @@ impl Library {
         }
         QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
     }
+
+    pub fn set_libraries(&mut self, dirs: &[String]) {
+        self.config.directories = dirs.into();
+        self.config.directories.sort();
+        println!(
+            "Library directories updated\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .expect(EXP_RX);
+    }
+
+    pub fn add_library(&mut self, dir: String) {
+        if self.config.directories.contains(&dir) || dir.is_empty() {
+            return;
+        }
+        self.config.directories.push(dir);
+        self.config.directories.sort();
+        println!(
+            "Added a new library\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .expect(EXP_RX);
+    }
+
+    pub fn edit_library(&mut self, index: usize, dir: String) {
+        if self.config.directories.contains(&dir) {
+            return self.remove_library(index);
+        }
+        self.config.directories[index] = dir;
+        self.config.directories.sort();
+        println!("Edited a library\nLibraries: {:?}", self.config.directories);
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .expect(EXP_RX);
+    }
+
+    pub fn remove_library(&mut self, index: usize) {
+        self.config.directories.remove(index);
+        println!(
+            "Removed a library\nLibraries: {:?}",
+            self.config.directories
+        );
+        self.ui_tx
+            .send(UpdateUI::LibraryDirs(
+                self.config.directories.clone().into(),
+            ))
+            .expect(EXP_RX);
+    }
+
+    /// Serializes `songs` and writes the data to disk,
+    /// so the library can be loaded faster next time
+    ///
+    /// Creates a file called `songs` in `self.config.config_dir`
+    #[inline]
+    fn serialize_songs(songs: &Songs) {
+        let serialized = songs
+            .iter()
+            .map(|song| song.lock().unwrap().serlialize() + "\n")
+            .collect::<String>()
+            .trim()
+            .to_string();
+        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
+            fs::write(
+                CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
+                &serialized,
+            )
+        }) {
+            Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
+            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: {e}"),
+        }
+    }
+
+    /// Reads the serialized song info from disk and returns them,
+    /// so they can be assigned directly to `self.songs`
+    ///
+    /// Reads from a file called `songs` in `self.config.config_dir`
+    #[must_use]
+    fn deserialize_songs(&self) -> Songs {
+        let data = fs::read_to_string(self.config_dir.clone() + "songs").unwrap_or_default();
+        let data = data.split("\n\n");
+        data.filter_map(|data| match Song::deserialize(data) {
+            Ok(song) => Some(Arc::new(Mutex::new(song))),
+            Err(_) => None,
+        })
+        .collect()
+    }
+
+    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
+        let mut songs = Vec::new();
+        mem::swap(&mut self.songs, &mut songs);
+        self.tasks.run(move || Library::serialize_songs(&songs));
+        self.tasks.shutdown();
+        notify_done.send(()).expect(EXP_RX);
+        Ok(())
+    }
+}
+
+/// Returns `true` if the specified file has a supported extension,
+/// or `false` if it does not
+#[inline]
+#[must_use]
+pub fn file_supported(file: &str) -> bool {
+    let Some(extension) = file.rsplit_once('.').map(|s| s.1.to_lowercase()) else {
+        return false;
+    };
+    FILE_SUPPORT.iter().any(|&ext| extension == ext)
 }
