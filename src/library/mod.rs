@@ -4,7 +4,7 @@ use gtk::gio;
 use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
-use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
 use std::thread;
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
@@ -722,18 +722,65 @@ impl Library {
         QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
     }
 
-    /// Returns a list of songs matching the given `query`,
-    /// ordered by how well the query matches the song title
-    fn query_song_titles(&self, query: &str) -> Songs {
-        let mut matches = Vec::<(Arc<Mutex<Song>>, f64)>::new();
-        for song in &self.songs {
-            let score = query_score(query, &song.lock().unwrap().info().basic().title);
+    /// Returns a filtered `Vec<Arc<Mutex<T>>>`, ordered by the
+    /// scoring criteria returned by the closure, where the highest
+    /// scoring item is at index 0, and lowest is at the end
+    ///
+    /// # Example:
+    /// ```rust
+    /// use mellow::library::{Library, search::query_score};
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// let items = vec![
+    ///     "Sing the Song",
+    ///     "Hit Single",
+    ///     "Track 3",
+    ///     "Song 4",
+    ///     "Violin Solo",
+    ///     "Song of the Singing Birds",
+    /// ].into_iter().map(|item| Arc::new(Mutex::new(item))).collect();
+    ///
+    /// let results = Library::query_items(&items, "sing", |item, query| {
+    ///     query_score(query, &item)
+    /// });
+    ///
+    /// let mut results = results.iter();
+    ///
+    /// assert_eq!(
+    ///     results.next().unwrap().lock().unwrap().to_string(),
+    ///     String::from("Song of the Singing Birds")
+    /// );
+    /// assert_eq!(
+    ///     results.next().unwrap().lock().unwrap().to_string(),
+    ///     String::from("Sing the Song")
+    /// );
+    /// assert_eq!(
+    ///     results.next().unwrap().lock().unwrap().to_string(),
+    ///     String::from("Hit Single")
+    /// );
+    /// assert_eq!(
+    ///     results.next().unwrap().lock().unwrap().to_string(),
+    ///     String::from("Song 4"),
+    /// );
+    /// assert!(results.next().is_none());
+    /// ```
+    pub fn query_items<T, S>(
+        items: &Vec<Arc<Mutex<T>>>,
+        query: &str,
+        score: S,
+    ) -> Vec<Arc<Mutex<T>>>
+    where
+        S: Fn(MutexGuard<T>, &str) -> f64,
+    {
+        let mut matches = Vec::<(Arc<Mutex<T>>, f64)>::new();
+        for item in items {
+            let score = score(item.lock().unwrap(), query);
             let index = matches.binary_search_by(|item| score.total_cmp(&item.1));
             matches.insert(
                 match index {
                     Err(index) | Ok(index) => index,
                 },
-                (Arc::clone(song), score),
+                (Arc::clone(item), score),
             );
         }
         matches
