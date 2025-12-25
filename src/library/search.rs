@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex, MutexGuard};
+
 /// Fuzzy query result scoring function, which returns a score number
 /// between `0` and `1`, where `1` is a complete match, `0` or below
 /// is a non-match, and anything in-between `0` and `1` is a partial
@@ -74,4 +76,70 @@ pub fn query_score(query: &str, item: &str) -> f64 {
     }
 
     result
+}
+
+/// Returns a filtered `Vec<Arc<Mutex<T>>>`, ordered by the
+/// scoring criteria returned by the closure, where the highest
+/// scoring item is at index 0, and lowest is at the end
+///
+/// # Example:
+/// ```rust
+/// use mellow::library::{Library, search::query_score};
+/// use std::sync::{Arc, Mutex};
+///
+/// let items = vec![
+///     "Sing the Song",
+///     "Hit Single",
+///     "Track 3",
+///     "Song 4",
+///     "Violin Solo",
+///     "Song of the Singing Birds",
+/// ].into_iter().map(|item| Arc::new(Mutex::new(item))).collect();
+///
+/// let results = Library::query_items(&items, "sing", |item, query| {
+///     query_score(query, &item)
+/// });
+///
+/// let mut results = results.iter();
+///
+/// assert_eq!(
+///     results.next().unwrap().lock().unwrap().to_string(),
+///     String::from("Song of the Singing Birds")
+/// );
+/// assert_eq!(
+///     results.next().unwrap().lock().unwrap().to_string(),
+///     String::from("Sing the Song")
+/// );
+/// assert_eq!(
+///     results.next().unwrap().lock().unwrap().to_string(),
+///     String::from("Hit Single")
+/// );
+/// assert_eq!(
+///     results.next().unwrap().lock().unwrap().to_string(),
+///     String::from("Song 4"),
+/// );
+/// assert!(results.next().is_none());
+/// ```
+pub fn query_items<T, S>(items: &Vec<Arc<Mutex<T>>>, query: &str, score: S) -> Vec<Arc<Mutex<T>>>
+where
+    S: Fn(MutexGuard<T>, &str) -> f64,
+{
+    let mut matches = Vec::<(Arc<Mutex<T>>, f64)>::new();
+    for item in items {
+        let score = score(item.lock().unwrap(), query);
+        let index = matches.binary_search_by(|item| score.total_cmp(&item.1));
+        matches.insert(
+            match index {
+                Err(index) | Ok(index) => index,
+            },
+            (Arc::clone(item), score),
+        );
+    }
+    matches
+        .iter()
+        .filter_map(|song| match song.1 > 0.5 {
+            true => Some(Arc::clone(&song.0)),
+            false => None,
+        })
+        .collect()
 }
