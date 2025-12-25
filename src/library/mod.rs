@@ -252,7 +252,8 @@ impl Library {
                 }
 
                 let mut songs = songs.lock().unwrap();
-                let songs = songs.as_mut().expect(EXP_INIT);
+                // SAFETY: `songs` is initialized as `Some`
+                let songs = unsafe { songs.as_mut().unwrap_unchecked() };
                 let Err(index) = songs.find_song(&file.uri(), to_relative) else {
                     return;
                 };
@@ -569,7 +570,8 @@ impl Library {
                 }
 
                 let song = self.queue_from_library_or_new(file);
-                queue.lock().unwrap().as_mut().expect(EXP_INIT).push(song);
+                // SAFETY: `queue` is initialized as `Some`
+                unsafe { queue.lock().unwrap().as_mut().unwrap_unchecked().push(song) };
             } else if Path::exists(path) {
                 // Add all files within directory arguments to queue
                 let songs = Arc::new(Mutex::new(Some(Vec::new())));
@@ -583,7 +585,8 @@ impl Library {
                     let song = self.queue_from_library_or_new(file);
 
                     let mut songs = songs.lock().unwrap();
-                    let songs = songs.as_mut().expect(EXP_INIT);
+                    // SAFETY: `songs` is initialized as `Some`
+                    let songs = unsafe { songs.as_mut().unwrap_unchecked() };
                     match songs.binary_search_by(|existing: &QueueItem| {
                         let to_relative = path.to_str().unwrap().len();
                         existing.as_song().info().file_path()[to_relative..]
@@ -593,8 +596,11 @@ impl Library {
                     }
                 });
 
-                (queue.lock().unwrap().as_mut().expect(EXP_INIT))
-                    .extend(songs.lock().unwrap().take().expect(EXP_INIT));
+                // SAFETY: `queue` and `songs` are initalized as `Some`
+                unsafe {
+                    (queue.lock().unwrap().as_mut().unwrap_unchecked())
+                        .extend(songs.lock().unwrap().take().unwrap_unchecked())
+                };
             }
         }
 
