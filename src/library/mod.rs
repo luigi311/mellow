@@ -10,6 +10,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
 pub mod artist;
+pub mod search;
 pub mod song;
 
 pub use album::Album;
@@ -19,6 +20,7 @@ pub use song::{Song, SongInfo};
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
+use crate::library::search::query_score;
 use crate::player::PlayerRequest;
 use crate::player::song_queue::QueueItem;
 use crate::tasks::{BoxedTask, Runner};
@@ -712,5 +714,28 @@ impl Library {
             }
         }
         QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
+    }
+
+    /// Returns a list of songs matching the given `query`,
+    /// ordered by how well the query matches the song title
+    fn query_song_titles(&self, query: &str) -> Songs {
+        let mut matches = Vec::<(Arc<Mutex<Song>>, f64)>::new();
+        for song in &self.songs {
+            let score = query_score(query, &song.lock().unwrap().info().basic().title);
+            let index = matches.binary_search_by(|item| score.total_cmp(&item.1));
+            matches.insert(
+                match index {
+                    Err(index) | Ok(index) => index,
+                },
+                (Arc::clone(song), score),
+            );
+        }
+        matches
+            .iter()
+            .filter_map(|song| match song.1 > 0.5 {
+                true => Some(Arc::clone(&song.0)),
+                false => None,
+            })
+            .collect()
     }
 }

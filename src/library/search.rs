@@ -1,39 +1,40 @@
 /// Fuzzy query result scoring function, which returns a score number
-/// between `0` and `1`, where `1` is a complete match, `0` a non-match,
-/// and partial matches anywhere in-between. Note that this function has
-/// no preference between query/result length; the query "test" will
-/// match results "test" and "testing" with the same score of `1.0`.
+/// between `0` and `1`, where `1` is a complete match, `0` or below
+/// is a non-match, and anything in-between `0` and `1` is a partial
+/// match.
 ///
 /// # Example:
 /// ```rust
 /// use mellow::library::search::query_score;
 ///
+/// assert_eq!(query_score("world", "Hello world!"), 0.9944444444444445);
+/// assert_eq!(query_score("Hello world!", "world"), 0.3787878787878788);
 /// assert_eq!(query_score("test", "test"), 1.0);
 /// assert_eq!(query_score("test", "TEST"), 1.0);
-/// assert_eq!(query_score("test", "testing"), 1.0);
+/// assert_eq!(query_score("test", "testing"), 0.9846938775510204);
 /// assert_eq!(query_score("testing", "test"), 0.5714285714285714);
 /// assert_eq!(query_score("testang", "testing"), 0.8571428571428571);
-/// assert_eq!(query_score("itesting", "testing"), 0.7777777777777778);
-/// assert_eq!(query_score("ttesting", "testing"), 0.8888888888888888);
+/// assert_eq!(query_score("itesting", "testing"), 0.8596491228070176);
+/// assert_eq!(query_score("ttesting", "testing"), 0.9824561403508772);
 /// assert_eq!(query_score("testingg", "testing"), 0.875);
-/// assert_eq!(query_score("fever", "forever"), 0.2857142857142857);
-/// assert_eq!(query_score("apple", "pineapple"), 0.25);
-/// assert_eq!(query_score("banana", "pineapple"), 0.0);
+/// assert_eq!(query_score("fever", "forever"), 0.37065637065637064);
+/// assert_eq!(query_score("apple", "pineapple"), 0.36574074074074076);
+/// assert_eq!(query_score("apples", "oranges"), -0.002976190476190476);
 /// ```
 #[must_use]
 pub fn query_score(query: &str, item: &str) -> f64 {
     // dbg!(&query);
     // dbg!(&item);
-    let query: Vec<u8> = query.to_lowercase().bytes().collect();
-    let item: Vec<u8> = item.to_lowercase().bytes().collect();
+    let query_bytes: Vec<u8> = query.to_lowercase().bytes().collect();
+    let item_bytes: Vec<u8> = item.to_lowercase().bytes().collect();
     let (mut start, mut end) = (0, 0);
     let mut offset = 0;
     let mut match_len = 0.0;
-    for q in 0..query.len() {
-        if q - offset >= item.len() {
+    for q in 0..query_bytes.len() {
+        if q - offset >= item_bytes.len() {
             break;
         }
-        if query[q] == item[q - offset] {
+        if query_bytes[q] == item_bytes[q - offset] {
             end += 1;
         } else {
             if start == end {
@@ -42,7 +43,10 @@ pub fn query_score(query: &str, item: &str) -> f64 {
                 offset += 1;
                 continue;
             }
-            if q > 0 && query[q] == query[q - 1] && query[q] == item[q - offset - 1] {
+            if q - offset > 0
+                && query_bytes[q] == query_bytes[q - 1]
+                && query_bytes[q] == item_bytes[q - offset - 1]
+            {
                 offset += 1;
                 end += 1;
                 continue;
@@ -55,5 +59,19 @@ pub fn query_score(query: &str, item: &str) -> f64 {
     if start != end {
         match_len += (end - start) as f64;
     }
-    match_len / (query.len() + offset) as f64
+
+    let query_len = query_bytes.len() as f64;
+    let item_len = item_bytes.len() as f64;
+    let result = (match_len - ((item_len - query_len).max(0.0) * (1.0 / (item_len * item_len))))
+        / (query_len + (offset as f64 / item_len));
+
+    // dbg!(result);
+    if item.len() > 2 {
+        let Some((_, item)) = item.split_once(' ') else {
+            return result;
+        };
+        return result.max(query_score(query, item));
+    }
+
+    result
 }
