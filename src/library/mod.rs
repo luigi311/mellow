@@ -18,7 +18,7 @@ pub use album::Album;
 pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
 use crate::player::PlayerRequest;
@@ -136,14 +136,15 @@ pub enum LibraryRequest {
 }
 
 impl Library {
-    /// Returns a new `Library` instance and initializes `LIBRARY_tx`
+    /// Returns a new `Library` instance and initializes `LIBRARY_TX`
+    #[inline]
     #[must_use]
     pub fn init(
         player_tx: mpsc::Sender<PlayerRequest>,
         ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
-        LIBRARY_TX.set(tx.clone()).map_err(|_| EXP_INIT).unwrap();
+        LIBRARY_TX.set(tx.clone()).map_err(|_| INIT_ERR).unwrap();
 
         Library {
             songs: vec![],

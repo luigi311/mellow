@@ -200,22 +200,25 @@ impl Window {
     }
 
     pub fn load_state(&self) {
-        let width = self.settings().int("window-width");
-        let height = self.settings().int("window-height");
-
-        self.set_default_size(width, height);
-
-        let volume = self.settings().double("volume");
-        let gapless = self.settings().boolean("gapless");
-        let remember_queue = self.settings().boolean("remember-queue");
-        let mut directories = unescaped_split(&self.settings().string("directories"), ',');
+        let settings = self.settings();
+        let mut directories = unescaped_split(&settings.string("directories"), ',');
         if directories.is_empty() {
             directories.push(MUSIC_DIR.get().unwrap().clone());
         }
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        library_tx
+            .send(LibraryRequest::SetLibraries(directories.into()))
+            .expect(EXP_RX);
+        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+        library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
+
+        let settings_page = &self.imp().settings_page;
+        let volume = settings.double("volume");
+        let gapless = settings.boolean("gapless");
+        let remember_queue = settings.boolean("remember-queue");
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be manually updated before the slider
-        let settings_page = &self.imp().settings_page;
         settings_page
             .imp()
             .handle_set_volume(gtk::ScrollType::Jump, volume);
@@ -224,11 +227,8 @@ impl Window {
         settings_page.set_gapless(gapless);
         settings_page.set_remember_queue(remember_queue);
 
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx
-            .send(LibraryRequest::SetLibraries(directories.into()))
-            .expect(EXP_RX);
-        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-        library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
+        let width = settings.int("window-width");
+        let height = settings.int("window-height");
+        self.set_default_size(width, height);
     }
 }

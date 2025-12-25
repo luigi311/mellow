@@ -17,7 +17,7 @@ mod rating;
 mod settings_page;
 mod window;
 
-use crate::excuses::EXP_INIT;
+use crate::excuses::INIT_ERR;
 use crate::library::{Albums, Artists, Songs};
 use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
@@ -46,6 +46,7 @@ pub enum UpdateUI {
 }
 
 /// Starts the application and initializes `UI_TX`
+#[inline]
 pub fn init(
     app: &Application,
     ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,
@@ -56,6 +57,6 @@ pub fn init(
     window.set_icon_name(Some(APP_ID));
     window.present();
 
-    UI_TX.set(ui_tx.clone()).map_err(|_| EXP_INIT).unwrap();
+    UI_TX.set(ui_tx.clone()).map_err(|_| INIT_ERR).unwrap();
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
 }
