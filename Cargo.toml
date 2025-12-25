@@ -13,3 +13,24 @@ tokio = { version = "1.47.1", features = ["rt-multi-thread", "sync"]            
 
 [build-dependencies]
 glib-build-tools = "0.21.0"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true
+
+[profile.release.package."*"]
+codegen-units = 1
+debug = false
+strip = true
