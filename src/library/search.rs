@@ -127,6 +127,9 @@ where
     let mut matches = Vec::<(Arc<Mutex<T>>, f64)>::new();
     for item in items {
         let score = score(item.lock().unwrap(), query);
+        if score < 0.5 {
+            continue;
+        }
         let index = matches.binary_search_by(|item| score.total_cmp(&item.1));
         matches.insert(
             match index {
@@ -135,11 +138,5 @@ where
             (Arc::clone(item), score),
         );
     }
-    matches
-        .iter()
-        .filter_map(|song| match song.1 > 0.5 {
-            true => Some(Arc::clone(&song.0)),
-            false => None,
-        })
-        .collect()
+    matches.iter().map(|song| Arc::clone(&song.0)).collect()
 }
