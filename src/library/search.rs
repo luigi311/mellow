@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex, MutexGuard};
-
 /// Fuzzy query result scoring function, which returns a score number
 /// between `0` and `1`, where `1` is a complete match, `0` or below
 /// is a non-match, and anything in-between `0` and `1` is a partial
@@ -78,9 +76,9 @@ pub fn query_score(query: &str, item: &str) -> f64 {
     result
 }
 
-/// Returns a filtered `Vec<Arc<Mutex<T>>>`, ordered by the
-/// scoring criteria returned by the closure. The highest
-/// scoring item is at index 0, and lowest is at the end
+/// Returns a filtered `Vec<T>`, ordered by the scoring
+/// criteria returned by the closure. The item with the
+/// highest score is at index 0, and lowest is at the end
 ///
 /// # Example:
 /// ```rust
@@ -94,39 +92,27 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 ///     "Song 4",
 ///     "Violin Solo",
 ///     "Song of the Singing Birds",
-/// ].into_iter().map(|item| Arc::new(Mutex::new(item))).collect();
+/// ];
 ///
 /// let results = query_items(&items, "sing", |item, query| {
 ///     query_score(query, &item)
 /// });
-///
 /// let mut results = results.iter();
 ///
-/// assert_eq!(
-///     results.next().unwrap().lock().unwrap().to_string(),
-///     String::from("Song of the Singing Birds")
-/// );
-/// assert_eq!(
-///     results.next().unwrap().lock().unwrap().to_string(),
-///     String::from("Sing the Song")
-/// );
-/// assert_eq!(
-///     results.next().unwrap().lock().unwrap().to_string(),
-///     String::from("Hit Single")
-/// );
-/// assert_eq!(
-///     results.next().unwrap().lock().unwrap().to_string(),
-///     String::from("Song 4"),
-/// );
-/// assert!(results.next().is_none());
+/// assert_eq!(results.next(), Some(&"Song of the Singing Birds"));
+/// assert_eq!(results.next(), Some(&"Sing the Song"));
+/// assert_eq!(results.next(), Some(&"Hit Single"));
+/// assert_eq!(results.next(), Some(&"Song 4"));
+/// assert_eq!(results.next(), None);
 /// ```
-pub fn query_items<T, S>(items: &Vec<Arc<Mutex<T>>>, query: &str, score: S) -> Vec<Arc<Mutex<T>>>
+pub fn query_items<T, S>(items: &Vec<T>, query: &str, score: S) -> Vec<T>
 where
-    S: Fn(MutexGuard<T>, &str) -> f64,
+    S: Fn(&T, &str) -> f64,
+    T: Clone,
 {
-    let mut matches = Vec::<(Arc<Mutex<T>>, f64)>::new();
+    let mut matches = Vec::<(T, f64)>::new();
     for item in items {
-        let score = score(item.lock().unwrap(), query);
+        let score = score(&item, query);
         if score < 0.5 {
             continue;
         }
@@ -135,8 +121,8 @@ where
             match index {
                 Err(index) | Ok(index) => index,
             },
-            (Arc::clone(item), score),
+            (item.clone(), score),
         );
     }
-    matches.drain(..).map(|song| song.0).collect()
+    matches.drain(..).map(|item| item.0).collect()
 }
