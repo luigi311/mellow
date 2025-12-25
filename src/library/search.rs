@@ -84,7 +84,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 ///
 /// # Example:
 /// ```rust
-/// use mellow::library::{Library, search::query_score};
+/// use mellow::library::search::{query_score, query_items};
 /// use std::sync::{Arc, Mutex};
 ///
 /// let items = vec![
@@ -96,7 +96,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 ///     "Song of the Singing Birds",
 /// ].into_iter().map(|item| Arc::new(Mutex::new(item))).collect();
 ///
-/// let results = Library::query_items(&items, "sing", |item, query| {
+/// let results = query_items(&items, "sing", |item, query| {
 ///     query_score(query, &item)
 /// });
 ///
