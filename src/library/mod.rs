@@ -563,16 +563,12 @@ impl Library {
         let queue = Arc::new(Mutex::new(Some(Vec::new())));
         for file in paths {
             let path = Path::new(&file);
-            if path.is_file() {
+            if file_supported(file) {
                 // Add files from arguments to queue
-                if !file_supported(file) {
-                    continue;
-                }
-
                 let song = self.queue_from_library_or_new(file);
                 // SAFETY: `queue` is initialized as `Some`
                 unsafe { queue.lock().unwrap().as_mut().unwrap_unchecked().push(song) };
-            } else if Path::exists(path) {
+            } else if path.is_dir() && Path::exists(path) {
                 // Add all files within directory arguments to queue
                 let songs = Arc::new(Mutex::new(Some(Vec::new())));
                 let _ = visit_dirs(path, &|file| {
