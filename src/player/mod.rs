@@ -383,6 +383,7 @@ impl Player {
             self.skip_prev();
             self.update();
             let _ = self.backend.state(None); // Wait for backend state
+            self.queue.current().as_song().info().deduct_played();
         }
 
         match self.backend.current_state() {
@@ -429,12 +430,11 @@ impl Player {
     /// Note that this might cause an audible stutter, so use it sparingly
     pub fn unload_gapless(&mut self) {
         let Some(pos) = self.backend.query_position::<ClockTime>() else {
-            println!("Could not determine playback time, skipping...");
+            eprintln!("Could not determine playback time, skipping...");
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
             return;
         };
 
-        self.queue.current().as_song().info().deduct_played();
         let _ = self.backend.set_state(State::Null);
         self.request_state(self.current_state);
         let _ = self.backend.state(None); // Wait for backend state
@@ -442,6 +442,7 @@ impl Player {
         self.skip_prev();
         self.update();
         let _ = self.backend.state(None); // Wait for backend state
+        self.queue.current().as_song().info().deduct_played();
 
         // Seek to the same time the player was at before, or skip the song
         if self.seek_to_time(pos).is_err() {
