@@ -199,8 +199,10 @@ impl SongQueue {
     /// Replaces the current queue with the provided one
     pub fn load_new(&mut self, queue: Vec<QueueItem>) {
         self.songs = queue;
-        self.new_shuffled_queue();
-
+        match self.shuffle {
+            true => self.new_shuffled_queue(),
+            false => self.ui_update_queue(),
+        }
         if self.is_empty() {
             self.ui_open_library();
         }

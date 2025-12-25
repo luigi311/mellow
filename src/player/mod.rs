@@ -486,10 +486,7 @@ impl Player {
     fn ui_set_state(&self) {
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
-        let playing = matches!(
-            state.0.map_or_else(|_| State::Null, |_| state.1),
-            State::Playing
-        );
+        let playing = state.0.is_ok_and(|_| matches!(state.1, State::Playing));
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
         self.ui_tx
             .send(UpdateUI::PlayerState(playing, interactive))
