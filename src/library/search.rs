@@ -1,7 +1,6 @@
-/// Fuzzy query result scoring function, which returns a score number
-/// between `0` and `1`, where `1` is a complete match, `0` or below
-/// is a non-match, and anything in-between `0` and `1` is a partial
-/// match.
+/// Fuzzy query result scoring function which returns a
+/// score number between 0 and 1, depending on how well
+/// the `query` matches the `item`
 ///
 /// # Example:
 /// ```rust
@@ -112,7 +111,7 @@ where
 {
     let mut matches = Vec::<(T, f64)>::new();
     for item in items {
-        let score = score(&item, query);
+        let score = score(item, query);
         if score < 0.5 {
             continue;
         }
@@ -124,5 +123,5 @@ where
             (item.clone(), score),
         );
     }
-    matches.drain(..).map(|item| item.0).collect()
+    matches.into_iter().map(|item| item.0).collect()
 }

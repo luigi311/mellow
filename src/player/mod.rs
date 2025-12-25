@@ -447,7 +447,7 @@ impl Player {
         if self.seek_to_time(pos).is_err() {
             self.queue.current().map(|mut song| song.info().played());
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
-        };
+        }
     }
 
     /// Sets the playback volume
@@ -486,7 +486,7 @@ impl Player {
     fn ui_set_state(&self) {
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
-        let playing = state.0.is_ok_and(|_| matches!(state.1, State::Playing));
+        let playing = state.0.is_ok() && matches!(state.1, State::Playing);
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
         self.ui_tx
             .send(UpdateUI::PlayerState(playing, interactive))

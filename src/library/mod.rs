@@ -144,7 +144,7 @@ impl Library {
         ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
-        LIBRARY_TX.set(tx.clone()).map_err(|_| INIT_ERR).unwrap();
+        LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
 
         Library {
             songs: vec![],

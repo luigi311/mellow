@@ -45,6 +45,8 @@ Music library:
       - IDEA: Use a closure so the page can be reused in different contexts
     - [ ] Play Next: Insert the song to the next position in the queue
     - [ ] Ability to set tags
+    - [ ] Go to album button
+    - [ ] Go to artist button
   - [ ] Search/filtering
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
@@ -55,9 +57,10 @@ Music library:
     - [ ] Interactive rating widget (or non-interactive average?)
     - [ ] Display a track list, each opening a Song subpage
     - [ ] Ability to set tags
+    - [ ] Go to artist button
   - [ ] Search/filtering
 - [ ] Artists page
-  - [x] Buttons play all artists (shuffled/sequential)
+  - [x] Buttons to play all artists (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all artists
   - [ ] Artist subpage, accessed from each item
