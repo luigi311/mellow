@@ -2,6 +2,7 @@ use core::error::Error;
 use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
+use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::thread;
@@ -89,8 +90,13 @@ pub trait SortedAlbums {
 impl SortedAlbums for Albums {
     #[inline]
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize> {
-        // IDEA: Improve `albums` sorting: artist/year/title or artist/title
-        self.binary_search_by(|album| album.lock().unwrap().title.cmp(&info.album))
+        self.binary_search_by(|album| {
+            let album = album.lock().unwrap();
+            match album.artist.lock().unwrap().name.cmp(&info.album_artist) {
+                Ordering::Equal => album.title.cmp(&info.album),
+                ordering => ordering,
+            }
+        })
     }
 }
 
@@ -337,8 +343,8 @@ impl Library {
         self.tasks.run(move || task_handle.join().unwrap());
 
         // TODO: Check all files if they still exist, and detect if they were moved
-        // 1: Go through all songs and check if they still exist on disk
-        // 2: Create a list of missing songs (referred to as `old` from now on)
+        // 1: Go through all songs and check if they no longer exist on disk
+        // 2: Move those to a list of missing songs (referred to as `old` from now on)
         // 3: Compare each old info against all songs in the library
         //   3.1: If a match is found, copy `….info().user()` to the new one
         //   Idea: Expand outwards from the old index when searching

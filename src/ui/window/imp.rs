@@ -78,11 +78,7 @@ impl Window {
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) -> ! {
         let mut song_duration = Duration::default();
         loop {
-            let Some(response) = ui_rx.recv().await else {
-                continue;
-            };
-
-            match response {
+            match ui_rx.recv().await.unwrap() {
                 UpdateUI::PlayerState(playing, interactive) => {
                     self.main_player.set_state(playing, interactive);
                 }
@@ -164,13 +160,11 @@ impl Window {
                 detailed.artwork.as_ref()
             }
             None => {
-                let load_artwork_handle = thread::spawn({
-                    let song = Arc::clone(&song_mutex);
-                    let ui_tx = UI_TX.get().expect(EXP_INIT);
-                    move || {
-                        song.lock().unwrap().info().load_detailed();
-                        ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
-                    }
+                let song = Arc::clone(song_mutex);
+                let ui_tx = UI_TX.get().expect(EXP_INIT);
+                let load_artwork_handle = thread::spawn(move || {
+                    song.lock().unwrap().info().load_detailed();
+                    ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
                 });
                 LIBRARY_TX
                     .get()
