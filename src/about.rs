@@ -6,7 +6,7 @@ pub const VERSION: &str = "0.1.0";
 pub const APP_ID: &str = "com.github.userwithaname.Mellow";
 
 const COPYRIGHT: &str = "© 2025 Iva Kotar";
-const LICENSE_TYPE: License = License::MitX11;
+const LICENSE_TYPE: License = License::Gpl30;
 const DEVELOPERS: &[&str] = &["Iva Kotar"];
 const DESIGNERS: &[&str] = &["Iva Kotar"];
 

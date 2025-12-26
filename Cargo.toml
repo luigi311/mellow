@@ -2,7 +2,7 @@
 name = "mellow"
 version = "0.1.0"
 edition = "2024"
-license = "mit"
+license = "gpl3"
 
 [dependencies]
 adw   = { version = "0.8.0",  package = "libadwaita",   features = ["v1_8"]       }
