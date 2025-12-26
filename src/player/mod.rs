@@ -527,6 +527,7 @@ impl Player {
                         self.player_tx.send(PlayerRequest::LoadNext).expect(EXP_RX);
                     } else {
                         println!("Stopping player due to end of queue");
+                        self.queue.current().as_song().info().played();
                         self.request_state(State::Null);
                         self.queue.pending_track = true;
                         self.update();
