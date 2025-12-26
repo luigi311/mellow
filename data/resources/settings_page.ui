@@ -89,5 +89,31 @@
       </object>
     </child>
 
+    About
+    <child>
+      <object class="AdwPreferencesGroup">
+        <property name="hexpand">True</property>
+        <property name="title" translatable="yes">Info</property>
+
+        <child>
+          <object class="AdwActionRow">
+            <property name="activatable">True</property>
+            <property name="action-name">win.show_about_dialog</property>
+            <property name="title">About</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="icon_name">help-about-symbolic</property>
+              </object>
+            </child>
+            <child type="suffix">
+              <object class="GtkImage">
+                <property name="icon_name">go-next-symbolic</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+
   </template>
 </interface>

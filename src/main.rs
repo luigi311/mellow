@@ -2,10 +2,10 @@ use adw::{Application, prelude::*};
 use gtk::{gio, glib};
 use std::thread;
 
+use mellow::about::{APP_ID, APP_NAME};
 use mellow::excuses::INIT_ERR;
 use mellow::library::Library;
 use mellow::player::Player;
-use mellow::{APP_ID, APP_NAME};
 
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(APP_NAME);

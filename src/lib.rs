@@ -6,15 +6,13 @@ use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+pub mod about;
 pub mod excuses;
 pub mod library;
 pub mod player;
 pub mod serializer;
 pub mod tasks;
 pub mod ui;
-
-pub const APP_NAME: &str = "Mellow";
-pub const APP_ID: &str = "com.github.userwithaname.Mellow";
 
 pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
 pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();

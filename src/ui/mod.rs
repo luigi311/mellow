@@ -17,11 +17,11 @@ mod rating;
 mod settings_page;
 mod window;
 
+use crate::about::{APP_ID, APP_NAME};
 use crate::excuses::INIT_ERR;
 use crate::library::{Albums, Artists, Songs};
 use crate::player::song_queue::QueueItem;
 use crate::ui::window::Window;
-use crate::{APP_ID, APP_NAME};
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
 pub enum UpdateUI {

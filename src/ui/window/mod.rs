@@ -6,12 +6,12 @@ use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 use std::time::Duration;
 
+use crate::about::{self, APP_ID};
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::SongQueue;
 use crate::serializer::serialize_list;
-use crate::unescaped_split;
-use crate::{APP_ID, MUSIC_DIR};
+use crate::{MUSIC_DIR, unescaped_split};
 
 mod imp;
 
@@ -46,6 +46,10 @@ impl Window {
     fn setup_settings(&self) {
         let settings = Settings::new(APP_ID);
         self.imp().settings.set(settings).expect(INIT_ERR);
+    }
+
+    fn settings(&self) -> &Settings {
+        self.imp().settings.get().expect(EXP_INIT)
     }
 
     fn setup_actions(&self) {
@@ -155,10 +159,12 @@ impl Window {
                 .build(),
         ]);
         self.insert_action_group("ui", Some(&ui_actions));
-    }
 
-    fn settings(&self) -> &Settings {
-        self.imp().settings.get().expect(EXP_INIT)
+        self.add_action_entries([gio::ActionEntry::builder("show_about_dialog")
+            .activate(clone!(move |window: &Window, _, _| {
+                about::show_about_dialog(window)
+            }))
+            .build()]);
     }
 
     /// Saves all settings and the player state
