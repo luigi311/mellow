@@ -56,16 +56,8 @@ impl QueuePage {
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
         let mut needs_loading = false;
-        for (i, item) in queue.iter().enumerate() {
-            match item {
-                item if !(start..end).contains(&i) => {
-                    // Garbage collection
-                    if let QueueItem::Song(song) = item {
-                        if let Ok(mut song) = song.try_lock() {
-                            song.info().unload_detailed();
-                        }
-                    }
-                }
+        for i in start..end {
+            match &queue[i] {
                 QueueItem::Song(song) => {
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
@@ -128,19 +120,33 @@ impl QueuePage {
             .vadjustment()
             .set_value(scroll_target as f64);
 
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         if !needs_loading {
-            return;
+            let songs = queue.to_owned();
+            library_tx
+                .send(LibraryRequest::RunTask(Box::new(move || {
+                    // Garbage collection
+                    for (index, song) in songs.iter().enumerate() {
+                        if !(start..end).contains(&index)
+                            && let QueueItem::Song(song) = song
+                            && let Ok(mut song) = song.try_lock()
+                        {
+                            song.info().unload_detailed();
+                        }
+                    }
+                })))
+                .expect(EXP_RX);
+
+            return; // Skip loading artworks
         }
+
         let load_artworks_handle = thread::spawn({
-            let songs = queue[start..end].to_vec();
+            let songs = queue[start..end].to_owned();
             move || {
                 println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {
-                    match song {
-                        QueueItem::Song(song) => {
-                            let _ = song.try_lock().map(|mut song| song.info().load_detailed());
-                        }
-                        QueueItem::Stopper => (),
+                    if let QueueItem::Song(song) = song {
+                        let _ = song.try_lock().map(|mut song| song.info().load_detailed());
                     }
                 }
                 UI_TX
@@ -150,9 +156,7 @@ impl QueuePage {
                     .expect(EXP_RX);
             }
         });
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
+        library_tx
             .send(LibraryRequest::RunTask(Box::new(move || {
                 let _ = load_artworks_handle.join();
             })))
