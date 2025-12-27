@@ -56,8 +56,8 @@ impl QueuePage {
         let start = index.saturating_sub(10);
         let end = (index + 15).min(queue.len());
         let mut needs_loading = false;
-        for i in start..end {
-            match &queue[i] {
+        for (i, item) in queue.iter().enumerate().take(end).skip(start) {
+            match item {
                 QueueItem::Song(song) => {
                     let mut song = song.lock().unwrap();
                     let mut info = song.info();
@@ -67,7 +67,7 @@ impl QueuePage {
 
                     let entry = QueueRow::default();
                     entry.set_title(&song_info.title);
-                    entry.set_subtitle(&song_info.album);
+                    entry.set_subtitle(&song_info.artist);
                     if is_playing {
                         entry.add_css_class("heading");
                         entry.add_css_class("card");
@@ -84,7 +84,6 @@ impl QueuePage {
                         needs_loading |= detailed_info.is_none();
                     }
 
-                    drop(info);
                     drop(song);
 
                     entry.connect_activated(move |_| {
@@ -122,7 +121,7 @@ impl QueuePage {
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         if !needs_loading {
-            let songs = queue.to_owned();
+            let songs = queue.to_vec();
             library_tx
                 .send(LibraryRequest::RunTask(Box::new(move || {
                     // Garbage collection
@@ -141,7 +140,7 @@ impl QueuePage {
         }
 
         let load_artworks_handle = thread::spawn({
-            let songs = queue[start..end].to_owned();
+            let songs = queue[start..end].to_vec();
             move || {
                 println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {

@@ -162,7 +162,7 @@ impl Window {
 
         self.add_action_entries([gio::ActionEntry::builder("show_about_dialog")
             .activate(clone!(move |window: &Window, _, _| {
-                about::show_about_dialog(window)
+                about::show_about_dialog(window);
             }))
             .build()]);
     }

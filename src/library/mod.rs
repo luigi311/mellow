@@ -323,7 +323,9 @@ impl Library {
                             }
                         }
 
-                        song_unwrapped.album = Some(Arc::clone(&albums[album_index]));
+                        // SAFETY: `album_index` is guaranteed to be within bounds
+                        song_unwrapped.album =
+                            Some(Arc::clone(unsafe { albums.get_unchecked(album_index) }));
                     }
                     Err(album_index) => {
                         // Create a new album entry for the artist,
@@ -333,7 +335,7 @@ impl Library {
                             year: song_info.year,
                             songs: vec![Arc::clone(song)],
                             // SAFETY: `artist_index` is guaranteed to be within bounds
-                            artist: Arc::clone(unsafe { &artists.get_unchecked(artist_index) }),
+                            artist: Arc::clone(unsafe { artists.get_unchecked(artist_index) }),
                         }));
                         albums.insert(album_index, Arc::clone(&album));
 
