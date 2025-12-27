@@ -31,7 +31,7 @@ fn init(app: &Application) {
         .spawn(move || library.request_handler().unwrap())
         .expect(INIT_ERR);
 
-    mellow::ui::init(app, &ui_tx, ui_rx);
+    mellow::ui::init(app, ui_rx);
 
     thread::Builder::new()
         .name("player".to_string())

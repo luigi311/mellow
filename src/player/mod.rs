@@ -7,7 +7,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::player::song_queue::{QueueItem, SongQueue};
-use crate::ui::UpdateUI;
+use crate::ui::{UI_TX, UpdateUI};
 
 pub mod song_queue;
 
@@ -115,7 +115,7 @@ type PlayerInit = (
 
 impl Player {
     /// Returns a tuple of `Player`/`player_tx`/`ui_tx`/`ui_rx`
-    /// and initializes `PLAYER_TX`
+    /// and initializes `PLAYER_TX`/`UI_TX`
     #[inline]
     pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
         gst::init()?;
@@ -126,6 +126,7 @@ impl Player {
         let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
         let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
         PLAYER_TX.set(player_tx.clone()).map_err(|_| INIT_ERR)?;
+        UI_TX.set(ui_tx.clone()).map_err(|_| INIT_ERR).unwrap();
 
         Ok((
             Player {

@@ -5,7 +5,6 @@ use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
-use std::thread;
 use std::{fs, mem};
 use tokio::sync::mpsc::{self as tokio_mpsc, UnboundedSender};
 
@@ -371,15 +370,14 @@ impl Library {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
+        // Spawning more tasks than there are workers,
+        // in case some finish sooner than others
         let chunk_size = songs.len() / 64;
         for i in 0..64 {
-            if chunk_size * (i + 1) > songs.len() {
-                break;
-            }
-            let chunk = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
+            let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
             library_tx
                 .send(LibraryRequest::RunTask(Box::new(move || {
-                    for song in chunk {
+                    for song in songs {
                         let _ = song.try_lock().map(|mut song| song.info().load_basic());
                     }
                 })))

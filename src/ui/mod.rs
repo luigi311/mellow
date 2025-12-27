@@ -48,16 +48,11 @@ pub enum UpdateUI {
 
 /// Starts the application and initializes `UI_TX`
 #[inline]
-pub fn init(
-    app: &Application,
-    ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,
-    ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
-) {
+pub fn init(app: &Application, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
     let window = Window::new(app);
     window.set_title(Some(APP_NAME));
     window.set_icon_name(Some(APP_ID));
     window.present();
 
-    UI_TX.set(ui_tx.clone()).map_err(|_| INIT_ERR).unwrap();
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
 }
