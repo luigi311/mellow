@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::thread;
 use std::{fs, mem};
-use tokio::sync::mpsc as tokio_mpsc;
+use tokio::sync::mpsc::{self as tokio_mpsc, UnboundedSender};
 
 pub mod album;
 pub mod artist;
@@ -55,12 +55,91 @@ pub struct Library {
 #[derive(Default)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
+    trim_uri: usize,
 }
 
 impl LibraryConfig {
-    fn load() -> Self {
-        // TODO: Load config from disk
-        Self::default()
+    /// Replaces the configured directories with `dirs`
+    pub fn set_libraries(&mut self, dirs: &[String], ui_tx: &UnboundedSender<UpdateUI>) {
+        self.directories = dirs.into();
+        self.directories.sort();
+        println!(
+            "Library directories updated\nLibraries: {:?}",
+            self.directories
+        );
+        ui_tx
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Adds `dir` to the configured directories
+    pub fn add_library(&mut self, dir: String) {
+        if self.directories.contains(&dir) || dir.is_empty() {
+            return;
+        }
+        self.directories.push(dir);
+        self.directories.sort();
+        println!("Added a new library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Replaces configured directory at `index` with `dir`
+    pub fn edit_library(&mut self, index: usize, dir: String) {
+        if self.directories.contains(&dir) {
+            return self.remove_library(index);
+        }
+        self.directories[index] = dir;
+        self.directories.sort();
+        println!("Edited a library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Removes the configured directory at `index`
+    pub fn remove_library(&mut self, index: usize) {
+        self.directories.remove(index);
+        println!("Removed a library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Updates the `trim_uri` property, used to optimize song index lookups
+    /// Note that this currently only checks if the paths are differ by length
+    pub fn update_trim_uri(&mut self) {
+        if self.directories.is_empty() {
+            return;
+        }
+        self.trim_uri = usize::MAX;
+        let mut last_dir = self.directories[0].chars();
+        for dir in &self.directories {
+            let mut new_chars = dir.chars().take(self.trim_uri);
+            let mut old_chars = last_dir.clone().take(self.trim_uri);
+            last_dir = dir.chars();
+            let mut len = 0;
+            while let (Some(new), Some(old)) = (new_chars.next(), old_chars.next()) {
+                if old != new {
+                    break;
+                }
+                len += new.len_utf8();
+            }
+            self.trim_uri = self
+                .trim_uri
+                .min(gio::File::for_path(&dir[0..len]).uri().len());
+        }
     }
 }
 
@@ -69,15 +148,13 @@ impl LibraryConfig {
 
 pub type Songs = Vec<Arc<Mutex<Song>>>;
 pub trait SortedSongs {
-    fn find_song(&self, uri: &str, library_path_len: usize) -> Result<usize, usize>;
+    fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize>;
 }
 impl SortedSongs for Songs {
     #[inline]
-    fn find_song(&self, uri: &str, library_uri_len: usize) -> Result<usize, usize> {
+    fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize> {
         self.binary_search_by(|song| {
-            // Shortening the URI makes the lookup faster, however
-            // files with identical relative paths will be ignored
-            song.lock().unwrap().info().file_uri()[library_uri_len..].cmp(&uri[library_uri_len..])
+            song.lock().unwrap().info().file_uri()[trim_start..].cmp(&uri[trim_start..])
         })
     }
 }
@@ -151,7 +228,7 @@ impl Library {
             albums: vec![],
             artists: vec![],
 
-            config: LibraryConfig::load(),
+            config: LibraryConfig::default(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
 
             tasks: Runner::new(4),
@@ -180,10 +257,10 @@ impl Library {
                 LibraryRequest::PlayAllArtists => self.play_all_artists()?,
                 LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists()?,
 
-                LibraryRequest::AddLibrary(dir) => self.add_library(dir.to_string()),
-                LibraryRequest::EditLibrary(args) => self.edit_library(args.0, args.1),
-                LibraryRequest::SetLibraries(dirs) => self.set_libraries(&dirs),
-                LibraryRequest::RemoveLibrary(index) => self.remove_library(index),
+                LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
+                LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
+                LibraryRequest::SetLibraries(dirs) => self.config.set_libraries(&dirs, &self.ui_tx),
+                LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
@@ -246,8 +323,7 @@ impl Library {
         let songs = Arc::new(Mutex::new(Some(songs)));
 
         // TODO: Check file modification times and update info/associations
-        self.config.directories.iter().for_each(|library_path| {
-            let to_relative = gio::File::for_path(library_path).uri().len();
+        for library_path in &self.config.directories {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
                 if !file_supported(&file.parse_name()) {
@@ -257,7 +333,7 @@ impl Library {
                 let mut songs = songs.lock().unwrap();
                 // SAFETY: `songs` is initialized as `Some`
                 let songs = unsafe { songs.as_mut().unwrap_unchecked() };
-                let Err(index) = songs.find_song(&file.uri(), to_relative) else {
+                let Err(index) = songs.find_song(&file.uri(), self.config.trim_uri) else {
                     return;
                 };
 
@@ -271,7 +347,7 @@ impl Library {
                 songs.insert(index, song);
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
-        });
+        }
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
         let task_handle = thread::spawn({
@@ -611,9 +687,8 @@ impl Library {
                     // SAFETY: `songs` is initialized as `Some`
                     let songs = unsafe { songs.as_mut().unwrap_unchecked() };
                     match songs.binary_search_by(|existing: &QueueItem| {
-                        let to_relative = path.to_str().unwrap().len();
-                        existing.as_song().info().file_path()[to_relative..]
-                            .cmp(&song.as_song().info().file_path()[to_relative..])
+                        (existing.as_song().info().file_path())
+                            .cmp(&song.as_song().info().file_path())
                     }) {
                         Err(index) | Ok(index) => songs.insert(index, song),
                     }
@@ -638,77 +713,19 @@ impl Library {
     fn queue_from_library_or_new(&self, file: &str) -> QueueItem {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
-                let dir = gio::File::for_path(dir);
                 let file = gio::File::for_path(file);
-                match self.songs.find_song(&file.uri(), dir.uri().len()) {
-                    Ok(index) => return QueueItem::Song(Arc::clone(&self.songs[index])),
+                match self.songs.find_song(&file.uri(), self.config.trim_uri) {
+                    Ok(index) => {
+                        // SAFETY: `index` is always within bounds
+                        return QueueItem::Song(Arc::clone(unsafe {
+                            self.songs.get_unchecked(index)
+                        }));
+                    }
                     Err(_) => break,
                 }
             }
         }
         QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
-    }
-
-    /// Replaces the configured directories with `dirs`
-    pub fn set_libraries(&mut self, dirs: &[String]) {
-        self.config.directories = dirs.into();
-        self.config.directories.sort();
-        println!(
-            "Library directories updated\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    /// Adds `dir` to the configured directories
-    pub fn add_library(&mut self, dir: String) {
-        if self.config.directories.contains(&dir) || dir.is_empty() {
-            return;
-        }
-        self.config.directories.push(dir);
-        self.config.directories.sort();
-        println!(
-            "Added a new library\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    /// Replaces configured directory at `index` with `dir`
-    pub fn edit_library(&mut self, index: usize, dir: String) {
-        if self.config.directories.contains(&dir) {
-            return self.remove_library(index);
-        }
-        self.config.directories[index] = dir;
-        self.config.directories.sort();
-        println!("Edited a library\nLibraries: {:?}", self.config.directories);
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
-    }
-
-    /// Removes the configured directory at `index`
-    pub fn remove_library(&mut self, index: usize) {
-        self.config.directories.remove(index);
-        println!(
-            "Removed a library\nLibraries: {:?}",
-            self.config.directories
-        );
-        self.ui_tx
-            .send(UpdateUI::LibraryDirs(
-                self.config.directories.clone().into(),
-            ))
-            .expect(EXP_RX);
     }
 
     /// Serializes `songs` and writes the data to disk,
