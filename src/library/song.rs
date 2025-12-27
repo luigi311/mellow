@@ -224,7 +224,7 @@ impl SongInfoLoader<'_> {
         )
     }
 
-    pub const fn user(&mut self) -> &UserSongInfo {
+    pub const fn user(&self) -> &UserSongInfo {
         self.user_info
     }
 

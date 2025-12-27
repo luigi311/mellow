@@ -1,6 +1,7 @@
 Misc:
 
-- [ ] Load song info without blocking the UI
+- [-] Load song info without blocking the UI
+  - TODO: Library songs/albums/artists
 
 Main Player:
 
@@ -11,7 +12,6 @@ Main Player:
 Song queue:
 
 - [-] Display the song queue
-  - TODO: Optimize memory usage/artwork loading performance
   - TODO: Draw the entire queue (using a more performant approach)
 - [-] Allow reordering the queue
 > Untested, needs UI

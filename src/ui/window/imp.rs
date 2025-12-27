@@ -9,7 +9,7 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::ui::library_albums_page::LibraryAlbumsPage;
@@ -90,6 +90,7 @@ impl Window {
                 UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::RedrawQueue => self.update_song_index(self.song_queue_index.get()),
+                UpdateUI::QueueSupbage(index) => self.open_queue_subpage(index),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
@@ -213,6 +214,17 @@ impl Window {
         }
         self.queue_page
             .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
+    }
+    fn open_queue_subpage(&self, index: usize) {
+        let song = &self.song_queue.borrow()[index];
+        let mut song = song.as_song();
+        let mut info = song.info();
+        let info = info.basic();
+        self.queue_song_page
+            .activate_action("ui.playing_nav_push", Some(&"info".to_variant()))
+            .expect(ACTION_ERR);
+        self.queue_song_page
+            .set_info(index, &info.title, &info.album, &info.artist);
     }
 
     fn update_progress(&self, progress: Option<f64>) {

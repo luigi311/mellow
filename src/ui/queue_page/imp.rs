@@ -1,11 +1,10 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::clone;
 use gtk::CompositeTemplate;
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
 use std::thread;
 
-use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -72,14 +71,11 @@ impl QueuePage {
                     let mut info = song.info();
 
                     let song_info = info.basic();
-                    let song_title = song_info.title.clone();
-                    let album_title = song_info.album.clone();
-                    let artist_name = song_info.artist.clone();
                     let is_playing = i == index;
 
                     let entry = QueueRow::default();
-                    entry.set_title(&song_title);
-                    entry.set_subtitle(&artist_name);
+                    entry.set_title(&song_info.title);
+                    entry.set_subtitle(&song_info.album);
                     if is_playing {
                         entry.add_css_class("heading");
                         entry.add_css_class("card");
@@ -93,23 +89,18 @@ impl QueuePage {
                         entry.set_prefix_image(artwork);
                     } else {
                         entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
+                        needs_loading |= detailed_info.is_none();
                     }
-                    needs_loading |= detailed_info.is_none();
 
-                    entry.connect_activated({
-                        clone!(
-                            #[weak(rename_to=song_page)]
-                            self.song_page.get().expect(EXP_INIT),
-                            move |_| {
-                                song_page
-                                    .activate_action(
-                                        "ui.playing_nav_push",
-                                        Some(&"info".to_variant()),
-                                    )
-                                    .expect(ACTION_ERR);
-                                song_page.set_info(i, &song_title, &album_title, &artist_name);
-                            }
-                        )
+                    drop(info);
+                    drop(song);
+
+                    entry.connect_activated(move |_| {
+                        UI_TX
+                            .get()
+                            .unwrap()
+                            .send(UpdateUI::QueueSupbage(i))
+                            .expect(EXP_RX);
                     });
 
                     self.list_box.append(&entry);

@@ -162,6 +162,7 @@ impl Library {
     }
 
     /// Main loop for handling library requests
+    #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
@@ -268,7 +269,7 @@ impl Library {
                 });
                 songs.insert(index, song);
             })
-            .inspect_err(|e| println!("Error reading '{library_path}': {e}"));
+            .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         });
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
@@ -311,7 +312,9 @@ impl Library {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
                         // Associate the current song with its album
-                        let album_songs = &mut albums[album_index].lock().unwrap().songs;
+                        // SAFETY: `album_index` is guaranteed to be within bounds
+                        let album_songs =
+                            unsafe { &mut albums.get_unchecked(album_index).lock().unwrap().songs };
                         let song_index = album_songs.find_album_song(song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
@@ -328,12 +331,16 @@ impl Library {
                             title: song_info.album.clone(),
                             year: song_info.year,
                             songs: vec![Arc::clone(song)],
-                            artist: Arc::clone(&artists[artist_index]),
+                            // SAFETY: `artist_index` is guaranteed to be within bounds
+                            artist: Arc::clone(unsafe { &artists.get_unchecked(artist_index) }),
                         }));
                         albums.insert(album_index, Arc::clone(&album));
 
                         // Associate the album with the artist
-                        let artist_albums = &mut artists[artist_index].lock().unwrap().albums;
+                        // SAFETY: `artist_index` is guaranteed to be within bounds
+                        let artist_albums = unsafe {
+                            &mut artists.get_unchecked(artist_index).lock().unwrap().albums
+                        };
                         let album_index = artist_albums.find_artist_album(song_info);
                         match album_index {
                             Err(album_index) | Ok(album_index) => {
@@ -370,6 +377,7 @@ impl Library {
                     song_unwrapped.album = Some(album);
                 }
             }
+            drop(song_unwrapped);
 
             ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))?;
         }
@@ -407,10 +415,25 @@ impl Library {
     /// Returns a queue of all songs in the library
     #[must_use]
     pub fn all_songs(&self) -> Vec<QueueItem> {
+        // if query.is_empty() {
         self.songs
             .iter()
             .map(|song| QueueItem::Song(Arc::clone(song)))
             .collect()
+        // } else {
+        // TODO: Accept a `query` argument to filter the playlist?
+        // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
+        // let song_results = search::query_items(&self.songs, query, |song, query| {
+        //     search::query_score(query, &song.lock().unwrap().info().basic().title)
+        // });
+        // for result in song_results.iter().rev() {
+        //     println!("{}", &result.lock().unwrap().info().basic().title);
+        // }
+        // song_results
+        //     .iter()
+        //     .map(|song| QueueItem::Song(Arc::clone(song)))
+        //     .collect()
+        // }
     }
 
     /// Starts a queue of all songs in the library

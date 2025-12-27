@@ -29,6 +29,8 @@
             </child>
           </object>
         </child>
+        <!-- TODO: Landing page when nothing is playing -->
+        <!-- with buttons for "Open Library" and "Open From Disk" -->
         <property name="content">
           <!-- TODO: Button to scroll back to the playing song -->
           <object class="GtkScrolledWindow" id="scrolled_window">

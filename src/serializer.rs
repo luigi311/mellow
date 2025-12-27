@@ -114,6 +114,7 @@ pub fn serialize_list(list: &[String]) -> String {
 #[macro_export]
 macro_rules! deserialize {
     ($data:tt, $($field:tt<$type:tt> => $target:expr,)+) => {
+        #[cfg(debug_assertions)]
         if $data.is_empty() {
             Err("No data provided".to_string())?
         }
