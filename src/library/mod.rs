@@ -241,6 +241,8 @@ impl Library {
     /// Main loop for handling library requests
     #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+        // FIX: Library requests blocked while building the library?
+        // `AddLibrary` worked, but `RemoveLibrary` did not...
         loop {
             match self.rx.recv()? {
                 LibraryRequest::Rebuild => self.discover_files()?,
@@ -338,23 +340,16 @@ impl Library {
                 };
 
                 let song = Arc::new(Mutex::new(Song::new(file)));
-                self.tasks.run({
-                    let song = Arc::clone(&song);
-                    move || {
-                        let _ = song.try_lock().map(|mut song| song.info().load_basic());
-                    }
-                });
                 songs.insert(index, song);
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
-        let task_handle = thread::spawn({
+        self.tasks.run({
             let songs = songs.clone();
             move || Library::create_associations(&songs).expect(EXP_RX)
         });
-        self.tasks.run(move || task_handle.join().unwrap());
 
         // TODO: Check all files if they still exist, and detect if they were moved
         // 1: Go through all songs and check if they no longer exist on disk
@@ -375,6 +370,21 @@ impl Library {
         let mut artists: Artists = Vec::new();
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
+
+        let chunk_size = songs.len() / 64;
+        for i in 0..64 {
+            if chunk_size * (i + 1) > songs.len() {
+                break;
+            }
+            let chunk = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
+            library_tx
+                .send(LibraryRequest::RunTask(Box::new(move || {
+                    for song in chunk {
+                        let _ = song.try_lock().map(|mut song| song.info().load_basic());
+                    }
+                })))
+                .expect(EXP_RX);
+        }
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         for (i, song) in songs.iter().enumerate() {
@@ -758,12 +768,12 @@ impl Library {
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
         let data = fs::read_to_string(self.config_dir.clone() + "songs").unwrap_or_default();
-        let data = data.split("\n\n");
-        data.filter_map(|data| match Song::deserialize(data) {
-            Ok(song) => Some(Arc::new(Mutex::new(song))),
-            Err(_) => None,
-        })
-        .collect()
+        data.split("\n\n")
+            .filter_map(|data| match Song::deserialize(data) {
+                Ok(song) => Some(Arc::new(Mutex::new(song))),
+                Err(_) => None,
+            })
+            .collect()
     }
 
     /// Writes the configuration to disk and shuts down gracefully.
