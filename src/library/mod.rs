@@ -222,11 +222,12 @@ impl Library {
             }
         }
 
-        // self.ui_tx.send(UpdateUI::FocusLibrary)?;
-        // self.ui_tx.send(UpdateUI::OpenSheet(true))?;
+        if self.songs.is_empty() {
+            self.ui_tx.send(UpdateUI::FocusLibrary)?;
+            self.ui_tx.send(UpdateUI::OpenSheet(true))?;
+        }
 
-        // TODO: Once the library pages work, uncomment the above instead
-        self.player_tx.send(PlayerRequest::SetShuffle(true))?;
+        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
         self.play_all_songs()?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(false)))?;

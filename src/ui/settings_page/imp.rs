@@ -62,6 +62,7 @@ impl SettingsPage {
             let directory_row = adw::ActionRow::builder()
                 .title(directory)
                 .selectable(true)
+                // .activatable(true)
                 .build();
             directory_row.add_prefix(&prefix_icon);
             let remove_button = gtk::Button::builder()

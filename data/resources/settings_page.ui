@@ -46,7 +46,7 @@
         <child>
           <object class="AdwSwitchRow" id="gapless">
             <signal name="notify::active" handler="handle_gapless_switch" swapped="true"/>
-            <property name="title" translatable="yes">Gapless</property>
+            <property name="title" translatable="yes">Gapless Mode</property>
             <property name="tooltip-text" translatable="yes">When enabled, the next track is loaded early to ensure a continuous playback stream with no audible gaps between tracks</property>
             <property name="active">True</property>
           </object>
