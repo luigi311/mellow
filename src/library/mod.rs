@@ -223,9 +223,9 @@ impl Library {
         LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
 
         Library {
-            songs: vec![],
-            albums: vec![],
-            artists: vec![],
+            songs: Vec::new(),               // Capacity determined by `deserialize_songs()`
+            albums: Vec::with_capacity(128), // Estimate to reduce reallocations
+            artists: Vec::with_capacity(64), // Estimate to reduce reallocations
 
             config: LibraryConfig::default(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
@@ -745,13 +745,11 @@ impl Library {
         let serialized = songs
             .iter()
             .map(|song| song.lock().unwrap().serlialize() + "\n")
-            .collect::<String>()
-            .trim()
-            .to_string();
+            .collect::<String>();
         match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
             fs::write(
                 CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
-                &serialized,
+                serialized.trim(),
             )
         }) {
             Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
@@ -765,7 +763,9 @@ impl Library {
     /// Reads from a file called `songs` in `self.config.config_dir`
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
-        let data = fs::read_to_string(self.config_dir.clone() + "songs").unwrap_or_default();
+        let Ok(data) = fs::read_to_string(self.config_dir.clone() + "songs") else {
+            return Vec::with_capacity(1024); // Estimate to reduce reallocations
+        };
         data.split("\n\n")
             .filter_map(|data| match Song::deserialize(data) {
                 Ok(song) => Some(Arc::new(Mutex::new(song))),
