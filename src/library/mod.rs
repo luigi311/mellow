@@ -223,9 +223,9 @@ impl Library {
         LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
 
         Library {
-            songs: Vec::new(),               // Capacity determined by `deserialize_songs()`
-            albums: Vec::with_capacity(128), // Estimate to reduce reallocations
-            artists: Vec::with_capacity(64), // Estimate to reduce reallocations
+            songs: Vec::new(),
+            albums: Vec::new(),
+            artists: Vec::new(),
 
             config: LibraryConfig::default(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
@@ -365,8 +365,9 @@ impl Library {
 
     /// Creates connections between library `songs`, `albums`, and `artists`
     pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
-        let mut albums: Albums = Vec::new();
-        let mut artists: Artists = Vec::new();
+        // Estimate minimum capacities to reduce reallocations
+        let mut albums: Albums = Vec::with_capacity(songs.len() / 16);
+        let mut artists: Artists = Vec::with_capacity(songs.len() / 64);
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
@@ -764,7 +765,7 @@ impl Library {
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
         let Ok(data) = fs::read_to_string(self.config_dir.clone() + "songs") else {
-            return Vec::with_capacity(1024); // Estimate to reduce reallocations
+            return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
         data.split("\n\n")
             .filter_map(|data| match Song::deserialize(data) {
