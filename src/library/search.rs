@@ -7,18 +7,18 @@
 /// use mellow::library::search::query_score;
 ///
 /// assert_eq!(query_score("world", "Hello world!"), 0.9944444444444445);
-/// assert_eq!(query_score("Hello world!", "world"), 0.3787878787878788);
+/// assert_eq!(query_score("Hello world!", "world"), 0.2604166666666667);
 /// assert_eq!(query_score("test", "test"), 1.0);
 /// assert_eq!(query_score("test", "TEST"), 1.0);
 /// assert_eq!(query_score("test", "testing"), 0.9846938775510204);
 /// assert_eq!(query_score("testing", "test"), 0.5714285714285714);
 /// assert_eq!(query_score("testang", "testing"), 0.8571428571428571);
-/// assert_eq!(query_score("itesting", "testing"), 0.8596491228070176);
-/// assert_eq!(query_score("ttesting", "testing"), 0.9824561403508772);
+/// assert_eq!(query_score("itesting", "testing"), 0.765625);
+/// assert_eq!(query_score("ttesting", "testing"), 0.875);
 /// assert_eq!(query_score("testingg", "testing"), 0.875);
-/// assert_eq!(query_score("fever", "forever"), 0.37065637065637064);
-/// assert_eq!(query_score("apple", "pineapple"), 0.36574074074074076);
-/// assert_eq!(query_score("apples", "oranges"), -0.002976190476190476);
+/// assert_eq!(query_score("fever", "forever"), 0.27450980392156865);
+/// assert_eq!(query_score("apple", "pineapple"), 0.2385185185185185);
+/// assert_eq!(query_score("apples", "oranges"), 0.0);
 /// ```
 #[must_use]
 pub fn query_score(query: &str, item: &str) -> f64 {
@@ -59,7 +59,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
         match_len += (end - start) as f64;
     }
 
-    let query_len = query_bytes.len() as f64;
+    let query_len = (query_bytes.len() + offset) as f64;
     let item_len = item_bytes.len() as f64;
     let result = (match_len - ((item_len - query_len).max(0.0) / (item_len * item_len)))
         / (query_len + (offset as f64 / item_len));
