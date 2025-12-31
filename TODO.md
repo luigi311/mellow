@@ -48,7 +48,6 @@ Music library:
     - [ ] Ability to set tags
     - [ ] Go to album button
     - [ ] Go to artist button
-  - [ ] Search/filtering
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)
@@ -59,7 +58,6 @@ Music library:
     - [ ] Display a track list, each opening a Song subpage
     - [ ] Ability to set tags
     - [ ] Go to artist button
-  - [ ] Search/filtering
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
     - IDEA: Respect current filters (when search is implemented)
@@ -67,9 +65,11 @@ Music library:
   - [ ] Artist subpage, accessed from each item
     - [ ] Display artist info (name/number of albums/average rating)
     - [ ] Display all albums by the artist, each opening an Album subpage
-  - [ ] Search/filtering
 - [x] Play counting
 > Works, but the counting logic could be improved
+- [ ] Search/filtering for songs/albums/artists pages
+  - FIX: Cannot drag-select text because it drags the header bar
+  - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc

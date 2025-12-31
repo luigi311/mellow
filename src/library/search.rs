@@ -2,6 +2,8 @@
 /// score number between 0 and 1, depending on how well
 /// the `query` matches the `item`
 ///
+/// Note: If the `item` is empty, the result will be NaN
+///
 /// # Example:
 /// ```rust
 /// use mellow::library::search::query_score;
@@ -19,6 +21,7 @@
 /// assert_eq!(query_score("fever", "forever"), 0.27450980392156865);
 /// assert_eq!(query_score("apple", "pineapple"), 0.2385185185185185);
 /// assert_eq!(query_score("apples", "oranges"), 0.0);
+/// assert!(query_score("nothing", "").is_nan());
 /// ```
 #[must_use]
 pub fn query_score(query: &str, item: &str) -> f64 {
@@ -112,7 +115,7 @@ where
     let mut matches = Vec::<(T, f64)>::new();
     for item in items {
         let score = score(item, query);
-        if score < 0.5 {
+        if score < 0.75 || score.is_nan() {
             continue;
         }
         let index = matches.binary_search_by(|item| score.total_cmp(&item.1));
