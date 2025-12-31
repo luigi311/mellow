@@ -27,8 +27,8 @@ bringing music to the center of your focus.
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP  |
-|  5  | Music library                             | ⚠️ WIP, no UI yet |
-|  6  | Music library search/filters              | ❌ TODO |
+|  5  | Music library                             | ⚠️ WIP: No UI yet |
+|  6  | Music library search/filters              | ⚠️ WIP: Simple search, no UI yet |
 |  7  | Play counts and ratings                   | ⚠️ WIP: Basic play counting, no UI yet |
 |  8  | Tag-like playlists                        | ❌ TODO |
 |  9  | Media controller support (MPRIS)          | ❌ TODO |

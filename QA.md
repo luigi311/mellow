@@ -32,7 +32,7 @@ Music Library:
 - [ ] The 'Albums' page and its subpages do not have performance issues
 - [ ] The 'Artists' page and its subpages do not have performance issues
 - [x] The player works while the library is building in the background
-- [ ] Search results show up quickly and progressively
+- [ ] Search results show up quickly or progressively
 
 User Experience:
 

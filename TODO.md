@@ -1,14 +1,3 @@
-Misc:
-
-- [-] Load song info without blocking the UI
-  - TODO: Library songs/albums/artists
-
-Main Player:
-
-- [ ] Marquee long titles
-- [ ] Background color(s) matching the album cover
-  - [ ] Bonus: alter the colors differently for dark/light theme
-
 Song queue:
 
 - [-] Display the song queue
@@ -37,7 +26,6 @@ Music library:
   - TODO: Allow users to initiate a full rebuild
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
-    - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all songs
   - [ ] Song subpage, accessed from each item
     - [ ] Display song info (title/album/artist, maybe album cover)
@@ -50,7 +38,6 @@ Music library:
     - [ ] Go to artist button
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
-    - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all albums
   - [ ] Album subpage, accessed from each item
     - [ ] Display album info (album cover/title/artist/year)
@@ -60,16 +47,27 @@ Music library:
     - [ ] Go to artist button
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
-    - IDEA: Respect current filters (when search is implemented)
   - [ ] Show all artists
   - [ ] Artist subpage, accessed from each item
     - [ ] Display artist info (name/number of albums/average rating)
     - [ ] Display all albums by the artist, each opening an Album subpage
 - [x] Play counting
 > Works, but the counting logic could be improved
-- [ ] Search/filtering for songs/albums/artists pages
+- [-] Search/filtering for songs/albums/artists pages
+  - FIX: Cancelling search using escape key does not un-toggle the search button
   - FIX: Cannot drag-select text because it drags the header bar
   - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
+
+Misc:
+
+- [-] Load song info without blocking the UI
+  - TODO: Library songs/albums/artists
+
+Improvements:
+
+- [ ] Marquee long titles
+- [ ] Background color(s) matching the album cover
+  - [ ] Bonus: alter the colors differently for dark/light theme
