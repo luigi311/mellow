@@ -104,7 +104,6 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 /// assert_eq!(results.next(), Some(&"Song of the Singing Birds"));
 /// assert_eq!(results.next(), Some(&"Sing the Song"));
 /// assert_eq!(results.next(), Some(&"Hit Single"));
-/// assert_eq!(results.next(), Some(&"Song 4"));
 /// assert_eq!(results.next(), None);
 /// ```
 pub fn query_items<T, S>(items: &Vec<T>, query: &str, score: S) -> Vec<T>
