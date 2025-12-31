@@ -20,6 +20,7 @@
             <property name="show_title">False</property>
             <child type="start">
               <object class="GtkToggleButton">
+                <signal name="toggled" handler="handle_toggle_search" swapped="true"/>
                 <property name="icon_name">system-search-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Search</property>
               </object>
@@ -40,6 +41,16 @@
                 <property name="menu-model">play_menu</property>
                 <property name="icon-name">media-playlist-shuffle-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Play Shuffled</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="top">
+          <object class="GtkSearchBar" id="search_bar">
+            <!-- <property name="search-mode-enabled">True</property> -->
+            <child>
+              <object class="GtkSearchEntry" id="search_entry">
+                <!-- <property name="hexpand">True</property> -->
               </object>
             </child>
           </object>

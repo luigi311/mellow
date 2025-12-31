@@ -1,5 +1,4 @@
 use adw::subclass::prelude::*;
-use glib::Object;
 use gtk::glib;
 
 use crate::library::Artists;
@@ -13,16 +12,9 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for LibraryArtistsPage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl LibraryArtistsPage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
+    pub fn init_search(&self) {
+        self.imp().init_search();
     }
 
     pub fn load_artists(&self, artists: &Artists) {

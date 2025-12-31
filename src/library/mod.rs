@@ -192,11 +192,13 @@ pub enum LibraryRequest {
 
     InitQueue,
     QueueFromPaths(Box<[String]>),
+    // TODO: Instead of requiring a query each time,
+    // maybe store/update it separately?
     PlayAllSongs(String),
-    PlayAllAlbums,
-    ShuffleAllAlbums,
-    PlayAllArtists,
-    ShuffleAllArtists,
+    PlayAllAlbums(String),
+    ShuffleAllAlbums(String),
+    PlayAllArtists(String),
+    ShuffleAllArtists(String),
 
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
@@ -253,10 +255,10 @@ impl Library {
                 LibraryRequest::InitQueue => self.init_queue()?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
                 LibraryRequest::PlayAllSongs(query) => self.play_all_songs(&query)?,
-                LibraryRequest::PlayAllAlbums => self.play_all_albums()?,
-                LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums()?,
-                LibraryRequest::PlayAllArtists => self.play_all_artists()?,
-                LibraryRequest::ShuffleAllArtists => self.shuffle_all_artists()?,
+                LibraryRequest::PlayAllAlbums(query) => self.play_all_albums(&query)?,
+                LibraryRequest::ShuffleAllAlbums(query) => self.shuffle_all_albums(&query)?,
+                LibraryRequest::PlayAllArtists(query) => self.play_all_artists(&query)?,
+                LibraryRequest::ShuffleAllArtists(query) => self.shuffle_all_artists(&query)?,
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
@@ -536,7 +538,8 @@ impl Library {
     /// Returns a queue of all albums in the library,
     /// with sequential order of songs
     #[must_use]
-    pub fn all_albums(&self) -> Vec<QueueItem> {
+    pub fn all_albums(&self, query: &str) -> Vec<QueueItem> {
+        // TODO: Filter albums using `query`
         let mut queue = Vec::<QueueItem>::with_capacity(self.songs.len());
         for album in &self.albums {
             for song in &album.lock().unwrap().songs {
@@ -547,9 +550,9 @@ impl Library {
     }
 
     /// Starts a queue of all albums in the library
-    pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums()))?;
+            .send(PlayerRequest::LoadQueue(self.all_albums(&query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
@@ -564,6 +567,7 @@ impl Library {
     /// ordered albums
     #[must_use]
     pub fn all_albums_shuffled(&self) -> Vec<QueueItem> {
+        // TODO: Filter albums using `query`
         let mut queue = Vec::with_capacity(self.songs.len());
         let mut shuffled: Vec<usize> = (0..self.albums.len()).collect();
         for i in 0..shuffled.len() {
@@ -579,7 +583,7 @@ impl Library {
     }
 
     /// Starts a randomly ordered queue of all albums in the library
-    pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
@@ -594,7 +598,8 @@ impl Library {
     /// Returns a queue of all artists in the library,
     /// with albums and songs in sequential order
     #[must_use]
-    pub fn all_artists(&self) -> Vec<QueueItem> {
+    pub fn all_artists(&self, query: &str) -> Vec<QueueItem> {
+        // TODO: Filter artists using `query`
         let mut queue = Vec::<QueueItem>::with_capacity(self.songs.len());
         for artist in &self.artists {
             for album in &artist.lock().unwrap().albums {
@@ -607,9 +612,9 @@ impl Library {
     }
 
     /// Starts a queue of all albums in the library
-    pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists()))?;
+            .send(PlayerRequest::LoadQueue(self.all_artists(&query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
@@ -623,7 +628,8 @@ impl Library {
     /// with albums and songs in sequential order, but
     /// randomly ordered artists
     #[must_use]
-    pub fn all_artists_shuffled(&self) -> Vec<QueueItem> {
+    pub fn all_artists_shuffled(&self, query: &str) -> Vec<QueueItem> {
+        // TODO: Filter artists using `query`
         let mut queue = Vec::with_capacity(self.songs.len());
         let mut shuffled: Vec<usize> = (0..self.artists.len()).collect();
         for i in 0..shuffled.len() {
@@ -641,9 +647,9 @@ impl Library {
     }
 
     /// Starts a randomly ordered queue of all artists in the library
-    pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled()))?;
+            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled(query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))

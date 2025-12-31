@@ -1,5 +1,4 @@
 use adw::subclass::prelude::*;
-use glib::Object;
 use gtk::glib;
 
 use crate::library::Albums;
@@ -13,16 +12,9 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for LibraryAlbumsPage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl LibraryAlbumsPage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
+    pub fn init_search(&self) {
+        self.imp().init_search();
     }
 
     pub fn load_albums(&self, albums: &Albums) {

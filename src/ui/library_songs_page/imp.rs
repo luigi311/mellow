@@ -19,11 +19,11 @@ pub struct LibrarySongsPage {
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
     shuffle_button: TemplateChild<adw::SplitButton>,
+
     #[template_child]
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
-
     search_query: Rc<RefCell<String>>,
 }
 
