@@ -13,6 +13,7 @@ Song queue:
 
 - [-] Display the song queue
   - TODO: Draw the entire queue (using a more performant approach)
+  - FIX: Memory leak when toggling shuffle
 - [-] Allow reordering the queue
 > Untested, needs UI
 - [-] Allow adding songs to the queue

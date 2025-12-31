@@ -72,6 +72,9 @@ impl Window {
     pub fn init_ui_elements(&self) {
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
+        self.library_songs_page.init_search();
+        // self.library_albums_page.init_search();
+        // self.library_artists_page.init_search();
     }
 
     #[allow(clippy::future_not_send)]

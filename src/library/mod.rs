@@ -192,7 +192,7 @@ pub enum LibraryRequest {
 
     InitQueue,
     QueueFromPaths(Box<[String]>),
-    PlayAllSongs,
+    PlayAllSongs(String),
     PlayAllAlbums,
     ShuffleAllAlbums,
     PlayAllArtists,
@@ -252,7 +252,7 @@ impl Library {
 
                 LibraryRequest::InitQueue => self.init_queue()?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
-                LibraryRequest::PlayAllSongs => self.play_all_songs()?,
+                LibraryRequest::PlayAllSongs(query) => self.play_all_songs(&query)?,
                 LibraryRequest::PlayAllAlbums => self.play_all_albums()?,
                 LibraryRequest::ShuffleAllAlbums => self.shuffle_all_albums()?,
                 LibraryRequest::PlayAllArtists => self.play_all_artists()?,
@@ -306,7 +306,7 @@ impl Library {
         }
 
         // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        self.play_all_songs()?;
+        self.play_all_songs("")?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(false)))?;
         Ok(())
@@ -500,34 +500,30 @@ impl Library {
         self.artists = artists;
     }
 
-    /// Returns a queue of all songs in the library
+    /// Returns a queue of all songs in the library matching the given `query`
     #[must_use]
-    pub fn all_songs(&self) -> Vec<QueueItem> {
-        // if query.is_empty() {
-        self.songs
-            .iter()
-            .map(|song| QueueItem::Song(Arc::clone(song)))
-            .collect()
-        // } else {
-        // TODO: Accept a `query` argument to filter the playlist?
-        // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
-        // let song_results = search::query_items(&self.songs, query, |song, query| {
-        //     search::query_score(query, &song.lock().unwrap().info().basic().title)
-        // });
-        // for result in song_results.iter().rev() {
-        //     println!("{}", &result.lock().unwrap().info().basic().title);
-        // }
-        // song_results
-        //     .iter()
-        //     .map(|song| QueueItem::Song(Arc::clone(song)))
-        //     .collect()
-        // }
+    pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
+        if query.is_empty() {
+            self.songs
+                .iter()
+                .map(|song| QueueItem::Song(Arc::clone(song)))
+                .collect()
+        } else {
+            // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
+            let song_results = search::query_items(&self.songs, query, |song, query| {
+                search::query_score(query, &song.lock().unwrap().info().basic().title)
+            });
+            song_results
+                .iter()
+                .map(|song| QueueItem::Song(Arc::clone(song)))
+                .collect()
+        }
     }
 
-    /// Starts a queue of all songs in the library
-    pub fn play_all_songs(&self) -> Result<(), Box<dyn Error>> {
+    /// Starts a queue of all songs in the library matching the given `query`
+    pub fn play_all_songs(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_songs()))?;
+            .send(PlayerRequest::LoadQueue(self.all_songs(query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
