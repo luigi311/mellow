@@ -4,7 +4,8 @@ Uncheck all boxes and re-test to ensure the following:
 
 Playback:
 
-- [x] Pause/play/skip work as expected
+- [ ] Pause/play/skip work as expected
+  - FIX: Spacebar-to-play shortcut interferes with library search
 - [x] Shuffle/repeat/sequential modes work as expected
 - [x] Seeking works as expected
   - [x] Seeking to any point in the song (click or drag)
