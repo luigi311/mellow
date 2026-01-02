@@ -685,11 +685,13 @@ impl Library {
 
     /// Starts a queue of all songs found within the specified `paths`,
     /// recursively. Does nothing if no song files were found.
-    pub fn play_from_paths(&self, paths: &[String]) -> Result<(), mpsc::SendError<PlayerRequest>> {
+    pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
         if let Some(queue) = self.songs_from_paths(paths) {
             self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
             self.player_tx.send(PlayerRequest::SkipTo(0))?;
             self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+            self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+            self.ui_tx.send(UpdateUI::FocusPlaying)?;
         }
         Ok(())
     }

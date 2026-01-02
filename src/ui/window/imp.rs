@@ -292,7 +292,7 @@ impl ObjectSubclass for Window {
 
         class.install_action_async("win.queue_from_disk", None, async |window, _, _| {
             // let filter = gtk::FileFilter::new();
-            // filter.add_mime_type("inode/audio");
+            // filter.add_mime_type("inode/audio"); // TODO: Restrict to audio files
             let file_picker = gtk::FileDialog::builder()
                 .modal(true)
                 // .default_filter(&filter)
@@ -300,23 +300,27 @@ impl ObjectSubclass for Window {
                 .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
                 .build();
 
-            if let Ok(dirs) = file_picker
-                .select_multiple_folders_future(Some(&window))
-                .await
-            {
-                println!("TODO: Actually play the files/folders");
+            // TODO: If possible, allow files OR folders
+            if let Ok(dirs) = file_picker.open_multiple_future(Some(&window)).await {
                 let mut paths = vec![];
                 let mut index = 0;
-                dbg!(dirs.n_items());
                 while let Some(path) = dirs.item(index) {
-                    dbg!(&path);
-                    paths.push(path);
+                    paths.push(
+                        path.downcast::<gio::File>()
+                            .unwrap()
+                            .path()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_string(),
+                    );
                     index += 1;
                 }
-                // let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                // library_tx
-                //     .send(LibraryRequest::QueueFromPaths(paths.into()))
-                //     .expect(EXP_RX);
+                dbg!(&paths);
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                library_tx
+                    .send(LibraryRequest::QueueFromPaths(paths.into()))
+                    .expect(EXP_RX);
             }
         });
     }
