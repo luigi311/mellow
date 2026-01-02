@@ -8,6 +8,13 @@
             <property name="show_title">False</property>
             <child type="start">
               <object class="GtkToggleButton">
+                <property name="icon_name">document-open-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Open from Disk</property>
+                <property name="action-name">win.queue_from_disk</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkToggleButton">
                 <property name="icon_name">accessories-dictionary-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Show Lyrics</property>
                 <property name="action-name">navigation.push</property>
