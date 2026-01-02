@@ -336,6 +336,7 @@ impl ObjectImpl for Window {
         let obj = self.obj();
         obj.setup_settings();
         obj.setup_actions();
+        obj.setup_drag_and_drop();
     }
 }
 impl WindowImpl for Window {

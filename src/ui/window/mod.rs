@@ -1,5 +1,6 @@
 use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
+use gdk::{DragAction, FileList};
 use gio::Settings;
 use glib::{Object, clone};
 use gtk::{Orientation, gdk, gio, glib};
@@ -165,6 +166,27 @@ impl Window {
                 about::show_about_dialog(window);
             }))
             .build()]);
+    }
+
+    pub fn setup_drag_and_drop(&self) {
+        let drop_target =
+            gtk::DropTarget::new(FileList::static_type(), DragAction::COPY | DragAction::MOVE);
+        drop_target.connect_drop(|_, value, _, _| {
+            let files: Vec<String> = value
+                .get::<FileList>()
+                .unwrap()
+                .files()
+                .iter()
+                .map(|file| file.path().unwrap().to_str().unwrap().to_string())
+                .collect();
+            LIBRARY_TX
+                .get()
+                .expect(EXP_INIT)
+                .send(LibraryRequest::QueueFromPaths(files.into()))
+                .expect(EXP_RX);
+            true
+        });
+        self.add_controller(drop_target);
     }
 
     /// Saves all settings and the player state

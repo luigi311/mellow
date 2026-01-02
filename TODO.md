@@ -12,11 +12,13 @@ Song queue:
 - [x] Allow inserting stoppers (scheduled pause)
 - [x] Access song lyrics using a header-bar icon
 - [ ] Ability to select/remove multiple items at once
-- [ ] Drag file/folder onto player to start a queue with them
-> The bottom sheet could open automatically and focus the song
-queue, then show a "Drop here to start playing" message
 - [x] Display a landing page
 > The "Open from Disk" picker could be improved to accept directories as well
+- [x] Drag file/folder onto player to start a queue with them
+  - TODO: Add visual feedback when the file is over the window
+  > The bottom sheet could open automatically and focus the song
+  queue, then show a "Drop here to start playing" message, or the
+  window could show an overlay (like Amberol does)
 
 Music library:
 
