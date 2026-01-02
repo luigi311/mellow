@@ -73,8 +73,8 @@ impl Window {
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
         self.library_songs_page.init_search();
-        // self.library_albums_page.init_search();
-        // self.library_artists_page.init_search();
+        self.library_albums_page.init_search();
+        self.library_artists_page.init_search();
     }
 
     #[allow(clippy::future_not_send)]
@@ -286,8 +286,37 @@ impl ObjectSubclass for Window {
                         dir.path().unwrap().to_str().unwrap().into(),
                     ))
                     .expect(EXP_RX);
-                // TODO: Update incrementally instead of rebuilding
                 library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+            }
+        });
+
+        class.install_action_async("win.queue_from_disk", None, async |window, _, _| {
+            // let filter = gtk::FileFilter::new();
+            // filter.add_mime_type("inode/audio");
+            let file_picker = gtk::FileDialog::builder()
+                .modal(true)
+                // .default_filter(&filter)
+                .accept_label("Play Now")
+                .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
+                .build();
+
+            if let Ok(dirs) = file_picker
+                .select_multiple_folders_future(Some(&window))
+                .await
+            {
+                println!("TODO: Actually play the files/folders");
+                let mut paths = vec![];
+                let mut index = 0;
+                dbg!(dirs.n_items());
+                while let Some(path) = dirs.item(index) {
+                    dbg!(&path);
+                    paths.push(path);
+                    index += 1;
+                }
+                // let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                // library_tx
+                //     .send(LibraryRequest::QueueFromPaths(paths.into()))
+                //     .expect(EXP_RX);
             }
         });
     }

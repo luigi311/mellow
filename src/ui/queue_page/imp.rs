@@ -26,6 +26,9 @@ pub struct QueuePage {
     #[template_child]
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
+    #[template_child]
+    view_stack: TemplateChild<adw::ViewStack>,
+
     pub song_page: OnceCell<QueueSongPage>,
 }
 
@@ -47,8 +50,22 @@ impl QueuePage {
             .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .expect(EXP_RX);
     }
+    #[template_callback]
+    pub fn handle_open_library(&self) {
+        UI_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(UpdateUI::FocusLibrary)
+            .expect(EXP_RX);
+    }
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
+        self.view_stack
+            .set_visible_child_name(match queue.is_empty() {
+                true => "queue_empty",
+                false => "song_queue",
+            });
+
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support reordering queue items
         // TODO: Display the entire queue

@@ -15,6 +15,8 @@ Song queue:
 - [ ] Drag file/folder onto player to start a queue with them
 > The bottom sheet could open automatically and focus the song
 queue, then show a "Drop here to start playing" message
+- [-] Display a landing page
+  - TODO: Make the "Open from Disk" button work
 
 Music library:
 

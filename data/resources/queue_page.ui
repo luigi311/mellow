@@ -29,29 +29,79 @@
             </child>
           </object>
         </child>
-        <!-- TODO: Landing page when nothing is playing -->
-        <!-- with buttons for "Open Library" and "Open From Disk" -->
+
         <property name="content">
-          <!-- TODO: Button to scroll back to the playing song -->
-          <object class="GtkScrolledWindow" id="scrolled_window">
+          <object class="AdwViewStack" id="view_stack">
+
             <child>
-              <object class="AdwClamp">
-                <child>
-                  <object class="GtkListBox" id="list_box">
-                  <!-- <object class="GtkListView" id="list_view"> -->
-                    <property name="selection_mode">none</property>
-                    <property name="margin_top">18</property>
-                    <property name="margin_bottom">18</property>
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <style>
-                      <class name="boxed-list"/>
-                    </style>
+              <object class="AdwViewStackPage">
+                <property name="name">queue_empty</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">media-playback-start-symbolic</property>
+                    <property name="description" translatable="yes">Nothing is currenly playing</property>
+                    <child>
+                      <object class="AdwClamp">
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkButton">
+                                <signal name="clicked" handler="handle_open_library" swapped="true"/>
+                                <property name="label">Find in Library</property>
+                                <style>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="action-name">win.queue_from_disk</property>
+                                <property name="label">Open from Disk</property>
+                                <style>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
-                </child>
+                </property>
               </object>
             </child>
+
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">song_queue</property>
+                <property name="child">
+                  <!-- TODO: Button to scroll back to the playing song -->
+                  <object class="GtkScrolledWindow" id="scrolled_window">
+                    <child>
+                      <object class="AdwClamp">
+                        <child>
+                          <object class="GtkListBox" id="list_box">
+                          <!-- <object class="GtkListView" id="list_view"> -->
+                            <property name="selection_mode">none</property>
+                            <property name="margin_top">18</property>
+                            <property name="margin_bottom">18</property>
+                            <property name="margin_start">12</property>
+                            <property name="margin_end">12</property>
+                            <style>
+                              <class name="boxed-list"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+
           </object>
+
         </property>
       </object>
     </property>
