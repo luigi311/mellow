@@ -754,6 +754,11 @@ impl Library {
                     (queue.lock().unwrap().as_mut().unwrap_unchecked())
                         .extend(songs.lock().unwrap().take().unwrap_unchecked())
                 };
+            } else if file == "Stopper" {
+                // SAFETY: `queue` is initalized as `Some`
+                unsafe {
+                    (queue.lock().unwrap().as_mut().unwrap_unchecked()).push(QueueItem::Stopper);
+                }
             }
         }
 
