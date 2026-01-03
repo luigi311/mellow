@@ -23,12 +23,16 @@ impl QueueSongPage {
         Object::builder().build()
     }
 
-    pub fn set_info(&self, index: usize, song: &str, album: &str, artist: &str, stop_after: bool) {
+    pub fn set_info(&self, index: usize, song: &str, album: &str, artist: &str) {
         let song_page = self.imp();
         song_page.index.set(index);
         song_page.song_title.set_label(song);
         song_page.album_title.set_label(album);
         song_page.artist_name.set_label(artist);
+    }
+
+    pub fn set_stop_after(&self, stop_after: bool) {
+        let song_page = self.imp();
         song_page.stop_after.set(stop_after);
         song_page.stop_after_button.set_title(match stop_after {
             // TODO: Support translations

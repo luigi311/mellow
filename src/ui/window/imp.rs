@@ -142,7 +142,11 @@ impl Window {
         if queue.is_empty() {
             return;
         }
+
         let index = self.song_queue_index.get();
+        let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
+        self.queue_song_page.set_stop_after(stop_after);
+
         let song = &queue[index];
         if song.is_stopper() {
             return;
@@ -221,15 +225,15 @@ impl Window {
     fn open_queue_subpage(&self, index: usize) {
         let queue = self.song_queue.borrow();
         let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
-        let song = &queue[index];
-        let mut song = song.as_song();
+        let mut song = queue[index].as_song();
         let mut info = song.info();
         let info = info.basic();
         self.queue_song_page
             .activate_action("ui.playing_nav_push", Some(&"info".to_variant()))
             .expect(ACTION_ERR);
         self.queue_song_page
-            .set_info(index, &info.title, &info.album, &info.artist, stop_after);
+            .set_info(index, &info.title, &info.album, &info.artist);
+        self.queue_song_page.set_stop_after(stop_after);
     }
 
     fn update_progress(&self, progress: Option<f64>) {
