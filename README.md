@@ -12,7 +12,24 @@
 
 Mellow is an experimental music player, which strives for maximal immersion with
 minimal distraction. Elements of the interface are purposefully abstracted away,
-bringing music to the center of your focus.
+letting music be the central point of focus.
+
+# Philosophy
+
+Mellow's primary design goal is to minimize distraction and maximize immersion,
+and with that encourage experiencing the music in-the-moment.
+
+Unlike most players, Mellow puts the currently playing song at the base of the
+interface. This means that there is no "back" button on the main player, which
+might be tempting to press. Rather, everything that is unrelated to the currently
+playing song is done inside an overlay, hidden from view except when needed.
+
+This divides the interface into two parts; the main player (the "now"), and the
+overlay (the "not now"). The main player features the currently playing song and
+player controls, and the overlay is used for everything else; browsing the library
+to find what to play, editing the song queue to choose what plays next, setting the
+shuffle and repeat modes, and configuring the application.
+When the overlay is closed, it is time to enjoy the music.
 
 # Roadmap
 
@@ -26,7 +43,7 @@ bringing music to the center of your focus.
 |  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
-|  4  | Song queue interface & management         | ⚠️ WIP  |
+|  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
 |  5  | Music library                             | ⚠️ WIP: No UI yet |
 |  6  | Music library search/filters              | ⚠️ WIP: Simple search, no UI yet |
 |  7  | Play counts and ratings                   | ⚠️ WIP: Basic play counting, no UI yet |
