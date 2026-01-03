@@ -297,11 +297,12 @@ impl ObjectSubclass for Window {
         });
 
         class.install_action_async("win.queue_from_disk", None, async |window, _, _| {
-            // let filter = gtk::FileFilter::new();
-            // filter.add_mime_type("inode/audio"); // TODO: Restrict to audio files
+            let filter = gtk::FileFilter::new();
+            filter.add_mime_type("audio/*");
+            filter.add_mime_type("inode/directory");
             let file_picker = gtk::FileDialog::builder()
                 .modal(true)
-                // .default_filter(&filter)
+                .default_filter(&filter)
                 .accept_label("Play Now")
                 .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
                 .build();
