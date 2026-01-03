@@ -12,6 +12,7 @@ use crate::player::song_queue::QueueItem;
 #[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]
 pub struct QueueSongPage {
     pub index: Cell<usize>,
+    pub stop_after: Cell<bool>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -19,6 +20,8 @@ pub struct QueueSongPage {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
+    #[template_child]
+    pub stop_after_button: TemplateChild<adw::ActionRow>,
 }
 
 #[gtk::template_callbacks]
@@ -44,10 +47,13 @@ impl QueueSongPage {
         PLAYER_TX
             .get()
             .expect(EXP_INIT)
-            .send(PlayerRequest::InsertAt(Box::new((
-                self.index.get() + 1,
-                QueueItem::Stopper,
-            ))))
+            .send({
+                let index = self.index.get() + 1;
+                match self.stop_after.get() {
+                    false => PlayerRequest::InsertAt(Box::new((index, QueueItem::Stopper))),
+                    true => PlayerRequest::RemoveAt(index),
+                }
+            })
             .expect(EXP_RX);
         self.obj()
             .activate_action("ui.playing_nav_pop", None)

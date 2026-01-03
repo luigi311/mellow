@@ -7,8 +7,7 @@ Song queue:
 > Untested, needs UI
 - [-] Allow adding songs to the queue
 > Implemented, needs library UI
-- [-] Allow removing items from the queue
-> Needs UI for removing stoppers
+- [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)
 - [x] Access song lyrics using a header-bar icon
 - [ ] Ability to select/remove multiple items at once

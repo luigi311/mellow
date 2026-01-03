@@ -1,4 +1,4 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
 
@@ -23,11 +23,17 @@ impl QueueSongPage {
         Object::builder().build()
     }
 
-    pub fn set_info(&self, index: usize, song_title: &str, album_title: &str, artist_name: &str) {
+    pub fn set_info(&self, index: usize, song: &str, album: &str, artist: &str, stop_after: bool) {
         let song_page = self.imp();
         song_page.index.set(index);
-        song_page.song_title.set_label(song_title);
-        song_page.album_title.set_label(album_title);
-        song_page.artist_name.set_label(artist_name);
+        song_page.song_title.set_label(song);
+        song_page.album_title.set_label(album);
+        song_page.artist_name.set_label(artist);
+        song_page.stop_after.set(stop_after);
+        song_page.stop_after_button.set_title(match stop_after {
+            // TODO: Support translations
+            true => "Do Not Stop After",
+            false => "Stop After",
+        });
     }
 }

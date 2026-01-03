@@ -81,7 +81,7 @@
                   </object>
                 </child>
                 <child>
-                  <object class="AdwActionRow">
+                  <object class="AdwActionRow" id="stop_after_button">
                     <signal name="activated" handler="handle_stop_after" swapped="true"/>
                     <property name="title" translatable="yes">Pause After</property>
                     <property name="activatable">True</property>
