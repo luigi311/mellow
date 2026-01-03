@@ -32,8 +32,8 @@ impl QueueSongPage {
         song_page.stop_after.set(stop_after);
         song_page.stop_after_button.set_title(match stop_after {
             // TODO: Support translations
-            true => "Do Not Stop After",
-            false => "Stop After",
+            true => "Do Not Pause After",
+            false => "Pause After",
         });
     }
 }
