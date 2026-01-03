@@ -349,7 +349,7 @@ impl Library {
 
         self.tasks.run({
             let songs = songs.clone();
-            move || Library::create_associations(songs).expect(EXP_RX)
+            move || Library::create_associations(&songs).expect(EXP_RX)
         });
 
         // TODO: Check all files if they still exist, and detect if they were moved
@@ -366,7 +366,7 @@ impl Library {
     }
 
     /// Returns a list of `songs` whose files still exist on disk
-    pub fn filter_missing(songs: Songs) -> Songs {
+    pub fn filter_missing(songs: &Songs) -> Songs {
         songs
             .iter()
             .filter(|song| {
@@ -377,12 +377,12 @@ impl Library {
                     .path()
                     .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists))
             })
-            .map(|song| Arc::clone(song))
+            .map(Arc::clone)
             .collect()
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
-    pub fn create_associations(songs: Songs) -> Result<(), Box<dyn Error>> {
+    pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
@@ -576,7 +576,7 @@ impl Library {
     /// Starts a queue of all albums in the library
     pub fn play_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums(&query)))?;
+            .send(PlayerRequest::LoadQueue(self.all_albums(query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
@@ -650,7 +650,7 @@ impl Library {
     /// Starts a queue of all albums in the library
     pub fn play_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists(&query)))?;
+            .send(PlayerRequest::LoadQueue(self.all_artists(query)))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))

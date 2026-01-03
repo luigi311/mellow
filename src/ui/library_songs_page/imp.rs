@@ -40,7 +40,7 @@ impl LibrarySongsPage {
     }
 
     #[template_callback]
-    pub fn handle_toggle_search(&self, toggle: gtk::ToggleButton) {
+    pub fn handle_toggle_search(&self, toggle: &gtk::ToggleButton) {
         self.search_bar.set_search_mode(toggle.is_active());
     }
 

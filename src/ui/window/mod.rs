@@ -171,6 +171,7 @@ impl Window {
     pub fn setup_drag_and_drop(&self) {
         let drop_target =
             gtk::DropTarget::new(FileList::static_type(), DragAction::COPY | DragAction::MOVE);
+        // TODO: Add visual feedback when the file is over the window
         drop_target.connect_drop(|_, value, _, _| {
             let files: Vec<String> = value
                 .get::<FileList>()

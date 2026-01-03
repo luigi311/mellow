@@ -203,7 +203,8 @@ pub struct SongInfoLoader<'i> {
 
 impl SongInfoLoader<'_> {
     /// Returns a reference to the `gio::File`
-    pub fn file(&self) -> &gio::File {
+    #[must_use]
+    pub const fn file(&self) -> &gio::File {
         self.file
     }
 
@@ -229,10 +230,12 @@ impl SongInfoLoader<'_> {
         )
     }
 
+    #[must_use]
     pub const fn user(&self) -> &UserSongInfo {
         self.user_info
     }
 
+    #[must_use]
     pub const fn user_mut(&mut self) -> &mut UserSongInfo {
         self.user_info
     }

@@ -24,17 +24,16 @@ pub fn main() -> glib::ExitCode {
 fn init(app: &Application) {
     mellow::init_globals().expect(INIT_ERR);
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init().expect(INIT_ERR);
-    let mut library = Library::init(player_tx, ui_tx.clone());
+    let mut library = Library::init(player_tx, ui_tx);
 
     thread::Builder::new()
         .name("library".to_string())
         .spawn(move || library.request_handler().unwrap())
         .expect(INIT_ERR);
-
-    mellow::ui::init(app, ui_rx);
-
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || player.controller().unwrap())
         .expect(INIT_ERR);
+
+    mellow::ui::init(app, ui_rx);
 }
