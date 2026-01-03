@@ -21,6 +21,8 @@ pub struct LibrarySongsPage {
     shuffle_button: TemplateChild<adw::SplitButton>,
 
     #[template_child]
+    search_button: TemplateChild<gtk::ToggleButton>,
+    #[template_child]
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
@@ -37,6 +39,11 @@ impl LibrarySongsPage {
                 search_query.replace(entry.text().to_string());
             }
         ));
+        self.search_button
+            .bind_property("active", &self.search_bar.get(), "search-mode-enabled")
+            .sync_create()
+            .bidirectional()
+            .build();
     }
 
     #[template_callback]

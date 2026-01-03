@@ -56,7 +56,6 @@ Music library:
 - [x] Play counting
 > Works, but the counting logic could be improved
 - [-] Search/filtering for songs/albums/artists pages
-  - FIX: Cancelling search using escape key does not un-toggle the search button
   - FIX: Cannot drag-select text because it drags the header bar
   - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering

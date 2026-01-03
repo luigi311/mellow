@@ -19,7 +19,7 @@
           <object class="AdwHeaderBar">
             <property name="show_title">False</property>
             <child type="start">
-              <object class="GtkToggleButton">
+              <object class="GtkToggleButton" id="search_button">
                 <signal name="toggled" handler="handle_toggle_search" swapped="true"/>
                 <property name="icon_name">system-search-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Search</property>
