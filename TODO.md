@@ -24,7 +24,6 @@ Music library:
 - [x] Save/load user settings (such as library directories)
 - [x] Serialize the library to disk
 - [-] Incremental library rebuilding
-  - TODO: Remove missing songs
   - TODO: Detect modifications
   - TODO: Allow users to initiate a full rebuild
 - [ ] Songs page

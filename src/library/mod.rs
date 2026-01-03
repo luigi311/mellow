@@ -349,7 +349,7 @@ impl Library {
 
         self.tasks.run({
             let songs = songs.clone();
-            move || Library::create_associations(&songs).expect(EXP_RX)
+            move || Library::create_associations(songs).expect(EXP_RX)
         });
 
         // TODO: Check all files if they still exist, and detect if they were moved
@@ -365,13 +365,30 @@ impl Library {
         Ok(())
     }
 
+    /// Returns a list of `songs` whose files still exist on disk
+    pub fn filter_missing(songs: Songs) -> Songs {
+        songs
+            .iter()
+            .filter(|song| {
+                song.lock()
+                    .unwrap()
+                    .info()
+                    .file()
+                    .path()
+                    .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists))
+            })
+            .map(|song| Arc::clone(song))
+            .collect()
+    }
+
     /// Creates connections between library `songs`, `albums`, and `artists`
-    pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
-        // Estimate minimum capacities to reduce reallocations
-        let mut albums: Albums = Vec::with_capacity(songs.len() / 16);
-        let mut artists: Artists = Vec::with_capacity(songs.len() / 64);
+    pub fn create_associations(songs: Songs) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
+
+        let songs = Library::filter_missing(songs);
+        let mut albums = Vec::with_capacity(songs.len() / 16);
+        let mut artists = Vec::with_capacity(songs.len() / 64);
 
         // Spawning more tasks than there are workers,
         // in case some finish sooner than others
@@ -472,6 +489,7 @@ impl Library {
             ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))?;
         }
 
+        library_tx.send(LibraryRequest::SetSongs(songs))?;
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
 
