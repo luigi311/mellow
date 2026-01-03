@@ -202,6 +202,11 @@ pub struct SongInfoLoader<'i> {
 }
 
 impl SongInfoLoader<'_> {
+    /// Returns a reference to the `gio::File`
+    pub fn file(&self) -> &gio::File {
+        self.file
+    }
+
     /// Retruns the song file URI, which can be used by `GStreamer`
     #[inline]
     #[must_use]
