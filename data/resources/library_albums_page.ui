@@ -53,14 +53,36 @@
         </child>
         <property name="content">
 
-          <!-- TODO: Create a widget to display each album -->
-          <!-- TODO: Display the list of albums -->
-          <!-- TODO: Create a subpage for the album -->
-
-          <object class="AdwStatusPage">
-            <property name="icon-name">media-optical-cd-audio-symbolic</property>
-            <property name="title" translatable="yes">Albums</property>
-            <property name="description" translatable="yes">Albums will appear here in a future version</property>
+          <object class="AdwViewStack" id="view_stack">
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">albums</property>
+                <property name="child">
+                  <object class="GtkScrolledWindow">
+                    <child>
+                      <object class="GtkGridView" id="albums_grid">
+                        <property name="single-click-activate">True</property>
+                        <style>
+                          <class name="card"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">placeholder</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">media-optical-cd-audio-symbolic</property>
+                    <property name="title" translatable="yes">Albums</property>
+                    <property name="description" translatable="yes">Albums will appear here in a future version</property>
+                  </object>
+                </property>
+              </object>
+            </child>
           </object>
         </property>
       </object>

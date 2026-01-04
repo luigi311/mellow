@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="play_menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Play</attribute>
+        <!-- TODO: Play the album sequentially -->
+        <!-- <attribute name='action'>player.play_all_albums</attribute> -->
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Shuffle</attribute>
+        <!-- TODO: Play the album with shuffle mode -->
+        <!-- <attribute name='action'>player.shuffle_all_albums</attribute> -->
+      </item>
+    </section>
+  </menu>
+  <template class="MellowAlbumPage" parent="AdwNavigationPage">
+
+    <!-- TODO: Create the album page according to the mockup -->
+
+    <property name="child">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="show_title">False</property>
+            <child type="end">
+              <object class="AdwSplitButton" id="play_button">
+                <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
+                <property name="menu-model">play_menu</property>
+                <property name="icon-name">media-playback-start-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play All</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="AdwSplitButton" id="shuffle_button">
+                <property name="visible">false</property>
+                <signal name="clicked" handler="handle_play_shuffled" swapped="true"/>
+                <property name="menu-model">play_menu</property>
+                <property name="icon-name">media-playlist-shuffle-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Play Shuffled</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwPreferencesPage">
+            <property name="valign">center</property>
+            <child>
+              <object class="AdwPreferencesGroup">
+
+                <child>
+                  <object class="AdwPreferencesRow">
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="halign">center</property>
+                        Album artwork
+                        <child>
+                          <object class="GtkPicture" id="album_cover">
+                            <property name="margin_top">16</property>
+                            <property name="content_fit">contain</property>
+                            <property name="halign">center</property>
+                            <property name="width_request">0</property>
+                            <property name="height_request">0</property>
+                            <style>
+                              <class name="card"/>
+                            </style>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="GtkBox">
+                            <property name="margin_top">16</property>
+                            <property name="spacing">6</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkLabel" id="album_title">
+                                <property name="ellipsize">end</property>
+                                <style>
+                                  <class name="caption-heading"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="artist_name">
+                                <property name="margin_bottom">8</property>
+                                <property name="ellipsize">end</property>
+                                <style>
+                                  <class name="caption-heading"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="MellowRating"/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwPreferencesGroup">
+                <child>
+                  <object class="GtkListBox" id="list_box">
+                    <property name="selection_mode">none</property>
+                    <style>
+                      <class name="boxed-list"/>
+                    </style>
+
+                    <!-- TODO: Remove these and display the album songs -->
+                    <child>
+                      <object class="MellowQueueRow"/>
+                    </child>
+                    <child>
+                      <object class="MellowQueueRow"/>
+                    </child>
+                    <child>
+                      <object class="MellowQueueRow"/>
+                    </child>
+
+                  </object>
+                </child>
+              </object>
+            </child>
+
+          </object>
+        </property>
+      </object>
+    </property>
+
+  </template>
+</interface>

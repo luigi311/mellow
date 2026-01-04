@@ -86,7 +86,7 @@
                     <property name="use-underline">True</property>
 
                     <property name="child">
-                      <object class="AdwNavigationView">
+                      <object class="AdwNavigationView" id="library_navigation_view">
 
                         Library home page
                         <child>
@@ -109,6 +109,13 @@
                           <object class="MellowLibraryAlbumsPage" id="library_albums_page">
                             <property name="title" translatable="yes">Albums</property>
                             <property name="tag">library_albums</property>
+                          </object>
+                        </child>
+                        Album Page
+                        <child>
+                          <object class="MellowAlbumPage" id="library_album_page">
+                            <property name="title" translatable="yes">Album</property>
+                            <property name="tag">album</property>
                           </object>
                         </child>
 

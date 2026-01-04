@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="MellowAlbumTile" parent="GtkBox">
+    <property name="valign">center</property>
+    <property name="orientation">vertical</property>
+    <property name="margin_top">3</property>
+    <property name="margin_bottom">3</property>
+
+    Album artwork
+    <child>
+      <object class="GtkPicture" id="album_cover">
+        <property name="halign">center</property>
+        <property name="width_request">128</property>
+        <property name="height_request">128</property>
+        <style>
+          <class name="card"/>
+        </style>
+      </object>
+    </child>
+
+    Album info
+    <child>
+      <object class="GtkBox">
+        <property name="spacing">6</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="album">
+            <property name="margin_top">6</property>
+            <property name="ellipsize">end</property>
+            <style>
+              <class name="heading"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel" id="artist">
+            <property name="margin_bottom">6</property>
+            <property name="ellipsize">end</property>
+            <style>
+              <class name="caption-heading"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+  </template>
+</interface>

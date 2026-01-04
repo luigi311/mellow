@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MellowQueueRow" parent="AdwActionRow">
+
+    <!-- FIX: AdwActionRow doesn't work with GtkListView -->
+
     <property name="title_lines">1</property>
     <property name="subtitle_lines">1</property>
     <property name="use_markup">False</property>

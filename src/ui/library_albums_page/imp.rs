@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::glib;
+use gtk::{gio, glib};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -9,6 +9,9 @@ use crate::library::LIBRARY_TX;
 use crate::library::{Albums, LibraryRequest};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::ui::album_tile::AlbumTile;
+use crate::ui::index_object::IndexObject;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_albums_page.ui")]
@@ -17,6 +20,9 @@ pub struct LibraryAlbumsPage {
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
     shuffle_button: TemplateChild<adw::SplitButton>,
+
+    #[template_child]
+    albums_grid: TemplateChild<gtk::GridView>,
 
     #[template_child]
     search_button: TemplateChild<gtk::ToggleButton>,
@@ -80,6 +86,47 @@ impl LibraryAlbumsPage {
 
     pub fn load_albums(&self, albums: &Albums) {
         println!("TODO: Create a list of library albums in the UI");
+
+        // TODO: Create a proper GObject for the albums?
+        let indexes: Vec<IndexObject> = (0..albums.len() as u64).map(IndexObject::new).collect();
+        let model = gio::ListStore::new::<IndexObject>();
+        model.extend_from_slice(&indexes);
+        let factory = gtk::SignalListItemFactory::new();
+
+        factory.connect_setup(move |_, list_item| {
+            let album_tile = AlbumTile::default();
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            list_item.set_child(Some(&album_tile));
+            // list_item
+            //     .property_expression("item")
+            //     .chain_property::<IndexObject>("index")
+            //     .bind(&album_tile, "index", gtk::Widget::NONE);
+        });
+
+        factory.connect_bind(move |_, list_item| {
+            let album_tile = AlbumTile::default();
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            list_item.set_child(Some(&album_tile));
+            // list_item
+            //     .property_expression("item")
+            //     .chain_property::<IndexObject>("index")
+            //     .bind(&album_tile, "album", gtk::Widget::NONE);
+        });
+
+        self.albums_grid
+            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+        self.albums_grid.set_factory(Some(&factory));
+        self.albums_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::AlbumPage(index as usize))
+                .expect(EXP_RX);
+        });
     }
 }
 

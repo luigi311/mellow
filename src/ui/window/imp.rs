@@ -10,8 +10,9 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs};
 use crate::player::song_queue::QueueItem;
+use crate::ui::album_page::AlbumPage;
 use crate::ui::library_albums_page::LibraryAlbumsPage;
 use crate::ui::library_artists_page::LibraryArtistsPage;
 use crate::ui::library_home_page::LibraryHomePage;
@@ -45,7 +46,11 @@ pub struct Window {
     #[template_child]
     pub library_albums_page: TemplateChild<LibraryAlbumsPage>,
     #[template_child]
+    pub library_album_page: TemplateChild<AlbumPage>,
+    #[template_child]
     pub library_artists_page: TemplateChild<LibraryArtistsPage>,
+    #[template_child]
+    pub library_navigation_view: TemplateChild<adw::NavigationView>,
 
     // View stack "Playing" tab
     #[template_child]
@@ -66,6 +71,10 @@ pub struct Window {
 
     pub song_queue: RefCell<Box<[QueueItem]>>,
     pub song_queue_index: Cell<usize>,
+
+    pub library_songs: RefCell<Songs>,
+    pub library_albums: RefCell<Albums>,
+    pub library_artists: RefCell<Artists>,
 }
 
 impl Window {
@@ -97,12 +106,14 @@ impl Window {
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
+
                 UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(&dirs),
-                UpdateUI::LibrarySongs(songs) => self.library_songs_page.load_songs(&songs),
-                UpdateUI::LibraryAlbums(albums) => self.library_albums_page.load_albums(&albums),
-                UpdateUI::LibraryArtists(artists) => {
-                    self.library_artists_page.load_artists(&artists);
-                }
+                UpdateUI::LibrarySongs(songs) => self.load_library_songs(&songs),
+                UpdateUI::LibraryAlbums(albums) => self.load_library_albums(&albums),
+                UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
+
+                UpdateUI::AlbumPage(index) => self.open_album_page(index),
+
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),
@@ -261,6 +272,36 @@ impl Window {
     pub fn open_sheet(&self, open: bool) {
         self.sheet.set_open(open);
     }
+
+    fn load_library_songs(&self, songs: &Songs) {
+        self.library_songs.replace(songs.clone());
+        self.library_songs_page.load_songs(songs);
+    }
+    fn load_library_albums(&self, albums: &Albums) {
+        self.library_albums.replace(albums.clone());
+        self.library_albums_page.load_albums(albums);
+    }
+    fn open_album_page(&self, index: usize) {
+        let album = &self.library_albums.borrow()[index];
+        let album = album.lock().unwrap();
+        self.library_navigation_view.push_by_tag("album");
+        self.library_album_page.set_info(
+            index,
+            &album.title,
+            &album.artist.lock().unwrap().name,
+            album.songs[0] // IDEA: Load artwork in the background?
+                .lock()
+                .unwrap()
+                .info()
+                .detailed()
+                .artwork
+                .as_ref(),
+        );
+    }
+    fn load_library_artists(&self, artists: &Artists) {
+        self.library_artists.replace(artists.clone());
+        self.library_artists_page.load_artists(artists);
+    }
 }
 
 #[glib::object_subclass]
@@ -271,6 +312,7 @@ impl ObjectSubclass for Window {
 
     fn class_init(class: &mut Self::Class) {
         LibraryHomePage::static_type();
+        AlbumPage::static_type();
         Rating::static_type();
 
         class.bind_template();

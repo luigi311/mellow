@@ -4,6 +4,9 @@ use gtk::{self, glib};
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
+mod album_page;
+mod album_tile;
+mod index_object;
 mod library_albums_page;
 mod library_artists_page;
 mod library_home_page;
@@ -35,10 +38,13 @@ pub enum UpdateUI {
     Shuffle(bool),
     Repeat(bool),
     Progress(Option<f64>),
+
     LibraryDirs(Box<[String]>),
     LibrarySongs(Songs),
     LibraryAlbums(Albums),
     LibraryArtists(Artists),
+    AlbumPage(usize),
+
     FocusLibrary,
     FocusPlaying,
     FocusSettings,
