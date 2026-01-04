@@ -40,9 +40,11 @@ Music library:
     - [ ] Go to artist button
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
-  - [ ] Show all albums
-  - [ ] Album subpage, accessed from each item
-    - [ ] Display album info (album cover/title/artist/year)
+  - [-] Show all albums
+    - TODO: Show album artwork
+    - TODO: Show album info (artist/title)
+  - [-] Album subpage, accessed from each item
+    - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)
     - [ ] Display a track list, each opening a Song subpage
     - [ ] Ability to set tags

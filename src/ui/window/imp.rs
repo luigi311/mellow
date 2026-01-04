@@ -289,6 +289,10 @@ impl Window {
             index,
             &album.title,
             &album.artist.lock().unwrap().name,
+            &match album.year {
+                year if year > 0 => year.to_string(),
+                _ => String::new(),
+            },
             album.songs[0] // IDEA: Load artwork in the background?
                 .lock()
                 .unwrap()

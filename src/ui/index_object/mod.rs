@@ -9,9 +9,6 @@ glib::wrapper! {
 
 impl IndexObject {
     pub fn new(index: u64) -> Self {
-        Object::builder()
-            .property("index", index)
-            // TODO
-            .build()
+        Object::builder().property("index", index).build()
     }
 }

@@ -28,6 +28,7 @@ impl AlbumPage {
         index: usize,
         album: &str,
         artist: &str,
+        year: &str,
         artwork: Option<&gdk::Texture>,
     ) {
         let ui = self.imp();
@@ -40,5 +41,6 @@ impl AlbumPage {
         ui.index.set(index);
         ui.album_title.set_label(album);
         ui.artist_name.set_label(artist);
+        ui.year.set_label(year);
     }
 }

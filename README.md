@@ -44,7 +44,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
-|  5  | Music library                             | ⚠️ WIP: No UI yet |
+|  5  | Music library                             | ⚠️ WIP: UI is not yet usable |
 |  6  | Music library search/filters              | ⚠️ WIP: Simple search, no UI yet |
 |  7  | Play counts and ratings                   | ⚠️ WIP: Basic play counting, no UI yet |
 |  8  | Tag-like playlists                        | ❌ TODO |

@@ -16,6 +16,8 @@ pub struct AlbumPage {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
+    #[template_child]
+    pub year: TemplateChild<gtk::Label>,
 
     #[template_child]
     pub list_box: TemplateChild<gtk::ListBox>,
