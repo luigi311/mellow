@@ -58,11 +58,13 @@
                         Album artwork
                         <child>
                           <object class="GtkPicture" id="album_cover">
+                            <property name="margin_start">16</property>
+                            <property name="margin_end">16</property>
                             <property name="margin_top">16</property>
                             <property name="content_fit">contain</property>
                             <property name="halign">center</property>
-                            <property name="width_request">0</property>
-                            <property name="height_request">0</property>
+                            <property name="width_request">256</property>
+                            <property name="height_request">256</property>
                             <style>
                               <class name="card"/>
                             </style>
@@ -77,7 +79,9 @@
                             <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkLabel" id="artist_name">
-                                <property name="ellipsize">end</property>
+                                <property name="wrap">true</property>
+                                <property name="wrap-mode">word</property>
+                                <property name="justify">center</property>
                                 <style>
                                   <class name="caption-heading"/>
                                 </style>
@@ -85,7 +89,9 @@
                             </child>
                             <child>
                               <object class="GtkLabel" id="album_title">
-                                <property name="ellipsize">end</property>
+                                <property name="wrap">true</property>
+                                <property name="wrap-mode">word</property>
+                                <property name="justify">center</property>
                                 <style>
                                   <class name="heading"/>
                                 </style>
