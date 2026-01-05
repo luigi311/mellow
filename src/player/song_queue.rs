@@ -164,7 +164,7 @@ impl SongQueue {
     /// Locates a song within the `shuffled` vec and returns its index
     #[must_use]
     pub fn shuffled_index(&self, index: usize) -> Option<usize> {
-        for i in 0..self.len() {
+        for i in 0..self.shuffled.len() {
             if self.shuffled[i] == index {
                 return Some(index);
             }
@@ -468,12 +468,6 @@ impl SongQueue {
     /// the file if `remember` is `false`
     pub fn save_queue(remember: bool, song_queue: &[QueueItem], playing_index: usize) {
         let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
-        // TODO: Also save the shuffled queue and shuffle setting (new file)
-        // the file contents could look something like this:
-        // /------------------\
-        // | True             | <- Whether shuffle mode is on
-        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
-        // \------------------/
         let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
         if !remember {
             let _ = fs::remove_file(&queue_file);
@@ -490,6 +484,12 @@ impl SongQueue {
                 })
                 .collect::<String>()
                 .trim();
+        // TODO: Also save the shuffled queue and shuffle setting (new file)
+        // the file contents could look something like this:
+        // /------------------\
+        // | True             | <- Whether shuffle mode is on
+        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
+        // \------------------/
         match fs::write(&queue_file, contents) {
             Ok(()) => println!("Song queue state successfully written to disk"),
             Err(e) => eprintln!("Problems writing queue state: {e}"),

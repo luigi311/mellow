@@ -161,7 +161,7 @@ impl Player {
         });
 
         loop {
-            const LOOP_RATE: f64 = 60.2;
+            const LOOP_RATE: f64 = 60.2; // IDEA: Could be calculated using widget width and track length
             #[allow(clippy::cast_sign_loss)]
             #[allow(clippy::cast_possible_truncation)]
             const UPDATE_INTERVAL: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
@@ -339,9 +339,7 @@ impl Player {
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
-        let target_ms = (self
-            .backend
-            .query_duration::<ClockTime>()
+        let target_ms = ((self.backend.query_duration::<ClockTime>())
             .unwrap_or_default()
             .mseconds() as f64
             * position) as u64;
@@ -351,10 +349,7 @@ impl Player {
 
     /// Seek to a particular time in the song
     fn seek_to_time(&self, time: ClockTime) -> Result<(), gst::StateChangeError> {
-        match self
-            .backend
-            .seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time)
-        {
+        match (self.backend).seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time) {
             Ok(()) => {
                 self.backend.state(None).0?;
                 self.ui_set_time();
