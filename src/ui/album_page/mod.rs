@@ -53,11 +53,23 @@ impl AlbumPage {
             _ => String::new(),
         });
 
+        // IDEA: Divide discs into separate groups
         ui.songs_list.remove_all();
         for song in &album.songs {
             // TODO: Either implement a new widget or rename `QueueRow`
             let entry = QueueRow::new();
-            entry.set_title(&song.lock().unwrap().info().basic().title);
+            let mut song = song.lock().unwrap();
+            let mut info = song.info();
+            let info = info.basic();
+            entry.add_prefix(
+                &gtk::Label::builder()
+                    .width_chars(2)
+                    .label(info.track.to_string())
+                    .justify(gtk::Justification::Center)
+                    .css_classes(["dimmed", "numeric"])
+                    .build(),
+            );
+            entry.set_title(&info.title);
             // TODO: Open a song page on click
             ui.songs_list.append(&entry);
         }
