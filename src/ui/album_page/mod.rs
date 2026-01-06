@@ -2,6 +2,8 @@ use adw::subclass::prelude::*;
 use glib::Object;
 use gtk::{gdk, glib};
 
+use crate::ui::fallback_album_image;
+
 mod imp;
 
 glib::wrapper! {
@@ -35,8 +37,7 @@ impl AlbumPage {
         if artwork.is_some() {
             ui.album_cover.set_paintable(artwork);
         } else {
-            ui.album_cover
-                .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+            ui.album_cover.set_paintable(Some(&fallback_album_image()));
         }
         ui.index.set(index);
         ui.album_title.set_label(album);

@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::subclass::prelude::*;
 use glib::{Object, object::IsA};
 use gtk::{gdk, glib};
 
@@ -23,7 +23,7 @@ impl QueueRow {
         Self::default()
     }
 
-    pub fn set_prefix_image(&self, image: &impl IsA<gdk::Paintable>) {
-        self.imp().prefix_image.set_paintable(Some(image));
+    pub fn set_prefix_image(&self, image: Option<&impl IsA<gdk::Paintable>>) {
+        self.imp().prefix_image.set_paintable(image);
     }
 }

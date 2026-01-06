@@ -1,9 +1,10 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gdk, glib};
+use gtk::glib;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::ui::fallback_song_image;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/main_player.ui")]
@@ -87,8 +88,7 @@ impl ObjectSubclass for MainPlayer {
 
 impl ObjectImpl for MainPlayer {
     fn constructed(&self) {
-        self.album_cover
-            .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+        self.album_cover.set_paintable(Some(&fallback_song_image()));
         self.obj().set_state(false, false);
     }
 }

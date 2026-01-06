@@ -1,6 +1,6 @@
 use adw::{self, Application, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
-use gtk::{self, glib};
+use gtk::{self, gdk, glib};
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -60,4 +60,19 @@ pub fn init(app: &Application, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
     window.present();
 
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
+}
+
+// IDEA: The fallback images could be cached somehow
+// (might be tricky since `gdk::Paintable` cannot be const)
+
+// Returns a fallback image intended for albums with missing artwork
+pub fn fallback_album_image() -> gdk::Paintable {
+    // TODO: Fallback image for albums (maybe a symbolic disc icon?)
+    gdk::Paintable::new_empty(1, 1)
+}
+
+// Returns a fallback image intended for songs with missing album covers
+pub fn fallback_song_image() -> gdk::Paintable {
+    // TODO: Fallback image for songs (maybe a symbolic note icon?)
+    gdk::Paintable::new_empty(1, 1)
 }

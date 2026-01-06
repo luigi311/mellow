@@ -9,6 +9,7 @@ use std::time::Duration;
 use crate::excuses::{EXP_RX, EXP_SAFE};
 use crate::format_duration;
 use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::ui::fallback_song_image;
 
 mod imp;
 
@@ -72,11 +73,8 @@ impl MainPlayer {
         if artwork.is_some() {
             ui.album_cover.set_paintable(artwork);
         } else {
-            ui.album_cover
-                .set_paintable(Some(&gdk::Paintable::new_empty(1, 1)));
+            ui.album_cover.set_paintable(Some(&fallback_song_image()));
         }
-        ui.album_cover.set_width_request(0);
-        ui.album_cover.set_height_request(0);
 
         ui.song_title.set_label(song);
         ui.album_title.set_label(album);

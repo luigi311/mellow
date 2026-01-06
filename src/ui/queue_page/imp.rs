@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gdk, glib};
+use gtk::glib;
 use std::cell::OnceCell;
 use std::thread;
 
@@ -10,7 +10,7 @@ use crate::player::song_queue::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::queue_row::QueueRow;
 use crate::ui::queue_song_page::QueueSongPage;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
@@ -91,14 +91,17 @@ impl QueuePage {
                     }
 
                     // TODO: Cached low-res album covers
-                    let detailed_info = info.inspect_detailed();
-                    if let Some(detailed_info) = detailed_info
-                        && let Some(artwork) = detailed_info.artwork.as_ref()
-                    {
+                    let artwork = info.inspect_detailed().map_or_else(
+                        || {
+                            needs_loading = true;
+                            None
+                        },
+                        |info| info.artwork.as_ref(),
+                    );
+                    if artwork.is_some() {
                         entry.set_prefix_image(artwork);
                     } else {
-                        entry.set_prefix_image(&gdk::Paintable::new_empty(1, 1));
-                        needs_loading |= detailed_info.is_none();
+                        entry.set_prefix_image(Some(&fallback_song_image()));
                     }
 
                     drop(song);
