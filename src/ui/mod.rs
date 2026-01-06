@@ -7,7 +7,6 @@ use tokio::sync::mpsc as tokio_mpsc;
 mod album_object;
 mod album_page;
 mod album_tile;
-mod index_object;
 mod library_albums_page;
 mod library_artists_page;
 mod library_home_page;

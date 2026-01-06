@@ -11,7 +11,6 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::album_object::AlbumObject;
 use crate::ui::album_tile::AlbumTile;
-use crate::ui::index_object::IndexObject;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -86,23 +85,22 @@ impl LibraryAlbumsPage {
     }
 
     pub fn load_albums(&self, albums: &Albums) {
+        let model = gio::ListStore::new::<AlbumObject>();
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
                 let album = albums[index].lock().unwrap();
                 AlbumObject::new(&album.title, &album.artist.lock().unwrap().name)
             })
             .collect();
-        let model = gio::ListStore::new::<AlbumObject>();
         model.extend_from_slice(&albums);
-        let factory = gtk::SignalListItemFactory::new();
 
+        let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
                 .set_child(Some(&AlbumTile::default()));
         });
-
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
                 .downcast_ref::<gtk::ListItem>()
