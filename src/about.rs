@@ -63,19 +63,11 @@ mod tests {
         );
 
         match LICENSE_TYPE {
-            License::MitX11 => assert!(
-                license.to_uppercase() == "MIT",
-                "LICENSE_TYPE: MIT\nCargo: {license}"
-            ),
-            License::Lgpl30 => assert!(
-                license.to_uppercase() == "LGPL3",
-                "LICENSE_TYPE: LGPL3\nCargo: {license}"
-            ),
             License::Gpl30 => assert!(
-                license.to_uppercase() == "GPL3",
-                "LICENSE_TYPE: GPL3\nCargo: {license}"
+                license == "GPL-3.0",
+                "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
             ),
-            _ => panic!("Unknown license"),
+            value => panic!("Cannot test license\nLICENSE_TYPE: {value:?}\nCargo: {license}"),
         }
 
         Ok(())
