@@ -20,7 +20,7 @@ pub struct AlbumPage {
     pub year: TemplateChild<gtk::Label>,
 
     #[template_child]
-    pub list_box: TemplateChild<gtk::ListBox>,
+    pub songs_list: TemplateChild<gtk::ListBox>,
 }
 
 #[gtk::template_callbacks]

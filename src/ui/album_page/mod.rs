@@ -1,8 +1,11 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
-use gtk::{gdk, glib};
+use gtk::glib;
+use std::sync::MutexGuard;
 
+use crate::library::Album;
 use crate::ui::fallback_album_image;
+use crate::ui::queue_row::QueueRow;
 
 mod imp;
 
@@ -25,23 +28,38 @@ impl AlbumPage {
         Object::builder().build()
     }
 
-    pub fn set_info(
-        &self,
-        index: usize,
-        album: &str,
-        artist: &str,
-        year: &str,
-        artwork: Option<&gdk::Texture>,
-    ) {
+    pub fn update(&self, index: usize, album: &MutexGuard<Album>) {
         let ui = self.imp();
+        let songs = &album.songs;
+
+        let mut first_song = songs[0].lock().unwrap();
+        let mut info = first_song.info();
+        let artwork = info
+            .detailed() // IDEA: Load artwork in the background?
+            .artwork
+            .as_ref();
         if artwork.is_some() {
             ui.album_cover.set_paintable(artwork);
         } else {
             ui.album_cover.set_paintable(Some(&fallback_album_image()));
         }
+        drop(first_song);
+
         ui.index.set(index);
-        ui.album_title.set_label(album);
-        ui.artist_name.set_label(artist);
-        ui.year.set_label(year);
+        ui.album_title.set_label(&album.title);
+        ui.artist_name.set_label(&album.artist.lock().unwrap().name);
+        ui.year.set_label(&match album.year {
+            year if year > 0 => year.to_string(),
+            _ => String::new(),
+        });
+
+        ui.songs_list.remove_all();
+        for song in &album.songs {
+            // TODO: Either implement a new widget or rename `QueueRow`
+            let entry = QueueRow::new();
+            entry.set_title(&song.lock().unwrap().info().basic().title);
+            // TODO: Open a song page on click
+            ui.songs_list.append(&entry);
+        }
     }
 }

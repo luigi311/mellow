@@ -120,23 +120,11 @@
             <child>
               <object class="AdwPreferencesGroup">
                 <child>
-                  <object class="GtkListBox" id="list_box">
+                  <object class="GtkListBox" id="songs_list">
                     <property name="selection_mode">none</property>
                     <style>
                       <class name="boxed-list"/>
                     </style>
-
-                    <!-- TODO: Remove these and display the album songs -->
-                    <child>
-                      <object class="MellowQueueRow"/>
-                    </child>
-                    <child>
-                      <object class="MellowQueueRow"/>
-                    </child>
-                    <child>
-                      <object class="MellowQueueRow"/>
-                    </child>
-
                   </object>
                 </child>
               </object>

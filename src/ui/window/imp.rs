@@ -284,23 +284,8 @@ impl Window {
     fn open_album_page(&self, index: usize) {
         let album = &self.library_albums.borrow()[index];
         let album = album.lock().unwrap();
+        self.library_album_page.update(index, &album);
         self.library_navigation_view.push_by_tag("album");
-        self.library_album_page.set_info(
-            index,
-            &album.title,
-            &album.artist.lock().unwrap().name,
-            &match album.year {
-                year if year > 0 => year.to_string(),
-                _ => String::new(),
-            },
-            album.songs[0] // IDEA: Load artwork in the background?
-                .lock()
-                .unwrap()
-                .info()
-                .detailed()
-                .artwork
-                .as_ref(),
-        );
     }
     fn load_library_artists(&self, artists: &Artists) {
         self.library_artists.replace(artists.clone());

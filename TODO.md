@@ -45,7 +45,8 @@ Music library:
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)
-    - [ ] Display a track list, each opening a Song subpage
+    - [-] Display a track list, each opening a Song subpage
+      - TODO: Open a Song subpage
     - [ ] Ability to set tags
     - [ ] Go to artist button
 - [ ] Artists page
