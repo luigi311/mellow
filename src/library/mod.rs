@@ -306,8 +306,10 @@ impl Library {
         }
 
         if self.songs.is_empty() {
-            self.ui_tx.send(UpdateUI::FocusLibrary)?;
+            // Maybe open the settings page and focus on the directory options?
+            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
             self.ui_tx.send(UpdateUI::OpenSheet(true))?;
+            return Ok(());
         }
 
         // self.player_tx.send(PlayerRequest::SetShuffle(true))?;

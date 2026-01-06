@@ -204,7 +204,7 @@ impl SongQueue {
             false => self.ui_update_queue(),
         }
         if self.is_empty() {
-            self.ui_open_library();
+            self.ui_open_playing();
         }
     }
 
@@ -459,8 +459,8 @@ impl SongQueue {
     }
 
     /// Requests the UI to open the music library
-    fn ui_open_library(&self) {
-        self.ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
+    fn ui_open_playing(&self) {
+        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
         self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 

@@ -22,6 +22,8 @@ pub struct LibraryAlbumsPage {
     shuffle_button: TemplateChild<adw::SplitButton>,
 
     #[template_child]
+    view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
     albums_grid: TemplateChild<gtk::GridView>,
 
     #[template_child]
@@ -85,6 +87,12 @@ impl LibraryAlbumsPage {
     }
 
     pub fn load_albums(&self, albums: &Albums) {
+        if albums.is_empty() {
+            self.view_stack.set_visible_child_name("empty");
+            return;
+        }
+        self.view_stack.set_visible_child_name("albums");
+
         let model = gio::ListStore::new::<AlbumObject>();
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
