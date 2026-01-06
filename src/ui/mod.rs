@@ -4,6 +4,7 @@ use gtk::{self, glib};
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
+mod album_object;
 mod album_page;
 mod album_tile;
 mod index_object;

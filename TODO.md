@@ -42,7 +42,6 @@ Music library:
   - [x] Buttons to play all albums (shuffled/sequential)
   - [-] Show all albums
     - TODO: Show album artwork
-    - TODO: Show album info (artist/title)
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)

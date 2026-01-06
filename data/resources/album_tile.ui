@@ -3,8 +3,8 @@
   <template class="MellowAlbumTile" parent="GtkBox">
     <property name="valign">center</property>
     <property name="orientation">vertical</property>
-    <property name="margin_top">3</property>
-    <property name="margin_bottom">3</property>
+    <property name="margin_top">6</property>
+    <property name="margin_bottom">6</property>
 
     Album artwork
     <child>
@@ -28,7 +28,7 @@
             <property name="margin_top">6</property>
             <property name="ellipsize">end</property>
             <style>
-              <class name="heading"/>
+              <class name="caption-heading"/>
             </style>
           </object>
         </child>
@@ -37,7 +37,7 @@
             <property name="margin_bottom">6</property>
             <property name="ellipsize">end</property>
             <style>
-              <class name="caption-heading"/>
+              <class name="caption"/>
             </style>
           </object>
         </child>
