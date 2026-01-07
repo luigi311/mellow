@@ -267,14 +267,6 @@ impl Library {
             move || Library::create_associations(&songs).expect(EXP_RX)
         });
 
-        // TODO: Check all files if they still exist, and detect if they were moved
-        // 1: Go through all songs and check if they no longer exist on disk
-        // 2: Move those to a list of missing songs (referred to as `old` from now on)
-        // 3: Compare each old info against all songs in the library
-        //   3.1: If a match is found, copy `….info().user()` to the new one
-        //   Idea: Expand outwards from the old index when searching
-        // 4: Remove the old songs from the library (on the main library thread)
-
         self.set_songs(songs);
 
         Ok(())
@@ -282,6 +274,11 @@ impl Library {
 
     /// Returns a list of `songs` whose files still exist on disk
     pub fn filter_missing(songs: &Songs) -> Songs {
+        // TODO: Filter songs which aren't in any configured paths
+        // TODO: Keep missing songs stored somewhere?
+        // In case a library is temporarily missing (for example on
+        // removable storage), it would be better if the data for
+        // those could be retained instead of completely forgotten
         songs
             .iter()
             .filter(|song| {
@@ -294,6 +291,16 @@ impl Library {
             })
             .map(Arc::clone)
             .collect()
+    }
+
+    pub fn remove_duplicates(&mut self) {
+        // TODO: Check all files if they still exist, and detect if they were moved
+        // 1: Go through all songs and check if they no longer exist on disk
+        // 2: Move those to a list of missing songs (referred to as `old` from now on)
+        // 3: Compare each old info against all songs in the library
+        //   3.1: If a match is found, copy `….info().user()` to the new one
+        //   Idea: Expand outwards from the old index when searching
+        // 4: Remove the old songs from the library (on the main library thread)
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`

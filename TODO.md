@@ -41,7 +41,7 @@ Music library:
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
   - [-] Show all albums
-    - TODO: Show album artwork
+    - TODO: Show album artworks
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)
@@ -74,3 +74,9 @@ Improvements:
 - [ ] Marquee long titles
 - [ ] Background color(s) matching the album cover
   - [ ] Bonus: alter the colors differently for dark/light theme
+- [ ] Ability to disable library directories
+> Disabled directories would still retain song data (play counts, etc),
+> but be excluded from the actual `songs`/`albums`/`artists` used by the
+> `Library`. This would also allow the library to temporarily disable
+> missing directories.
+> (For example, using an enum: `Enabled`/`Disabled`/`Missing`)

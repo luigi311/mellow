@@ -158,7 +158,11 @@ impl SongQueue {
         }
         if self.is_empty() {
             self.ui_open_playing();
+            // return;
         }
+        // TODO: Require an index, because it's less error-prone
+        // Forgetting to change the playing index could cause a panic
+        // self.player_tx.send(PlayerRequest::SkipTo(index)).expect(EXP_RX);
     }
 
     /// Restarts the queue from the beginning

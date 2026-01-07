@@ -1,3 +1,7 @@
+//! This was made for learning/experimenting with `GObject`s,
+//! and can be removed. Keeping it for now, just in case it
+//! might come useful while prototyping list implementations.
+
 use glib::Object;
 use gtk::glib;
 
