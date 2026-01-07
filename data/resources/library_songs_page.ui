@@ -56,24 +56,56 @@
         </child>
         <child type="top">
           <object class="GtkSearchBar" id="search_bar">
-            <!-- <property name="search-mode-enabled">True</property> -->
             <child>
-              <object class="GtkSearchEntry" id="search_entry">
-                <!-- <property name="hexpand">True</property> -->
-              </object>
+              <object class="GtkSearchEntry" id="search_entry"/>
             </child>
           </object>
         </child>
+
         <property name="content">
+          <object class="AdwViewStack" id="view_stack">
 
-          <!-- TODO: Create a widget to display each song -->
-          <!-- TODO: Display the list of songs -->
-          <!-- TODO: Create a subpage for the song -->
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">empty</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">audio-x-generic-symbolic</property>
+                    <property name="title" translatable="yes">Songs</property>
+                    <property name="description" translatable="yes">Songs are currently unavailable</property>
+                  </object>
+                </property>
+              </object>
+            </child>
 
-          <object class="AdwStatusPage">
-            <property name="icon-name">audio-x-generic-symbolic</property>
-            <property name="title" translatable="yes">Songs</property>
-            <property name="description" translatable="yes">Songs will appear here in a future version</property>
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">songs</property>
+                <property name="child">
+                  <!-- TODO: Button to scroll back to the playing song -->
+                  <object class="GtkScrolledWindow" id="scrolled_window">
+                    <child>
+                      <object class="AdwClamp">
+                        <child>
+                          <!-- TODO: Display the list of songs -->
+                          <object class="GtkListView" id="list_view">
+                            <!-- <property name="selection_mode">none</property> -->
+                            <property name="margin_top">18</property>
+                            <property name="margin_bottom">18</property>
+                            <property name="margin_start">12</property>
+                            <property name="margin_end">12</property>
+                            <style>
+                              <class name="card"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+
           </object>
         </property>
       </object>

@@ -58,10 +58,34 @@
           <!-- TODO: Display the list of artists -->
           <!-- TODO: Create a subpage for the artist -->
 
-          <object class="AdwStatusPage">
-            <property name="icon-name">avatar-default-symbolic</property>
-            <property name="title" translatable="yes">Artists</property>
-            <property name="description" translatable="yes">Artists will appear here in a future version</property>
+          <object class="AdwViewStack" id="view_stack">
+
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">empty</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">avatar-default-symbolic</property>
+                    <property name="title" translatable="yes">Artists</property>
+                    <property name="description" translatable="yes">Artists are currently unavailable</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">artists</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">avatar-default-symbolic</property>
+                    <property name="title" translatable="yes">Artists</property>
+                    <property name="description" translatable="yes">Artists will appear here in a future version</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+
           </object>
         </property>
       </object>

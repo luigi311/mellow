@@ -19,6 +19,9 @@ pub struct LibraryArtistsPage {
     shuffle_button: TemplateChild<adw::SplitButton>,
 
     #[template_child]
+    view_stack: TemplateChild<adw::ViewStack>,
+
+    #[template_child]
     search_button: TemplateChild<gtk::ToggleButton>,
     #[template_child]
     search_bar: TemplateChild<gtk::SearchBar>,
@@ -79,6 +82,11 @@ impl LibraryArtistsPage {
     }
 
     pub fn load_artists(&self, artists: &Artists) {
+        if artists.is_empty() {
+            self.view_stack.set_visible_child_name("empty");
+            return;
+        }
+        self.view_stack.set_visible_child_name("artists");
         println!("TODO: Create a list of library artists in the UI");
     }
 }

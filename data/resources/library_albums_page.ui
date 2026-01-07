@@ -54,6 +54,20 @@
         <property name="content">
 
           <object class="AdwViewStack" id="view_stack">
+
+            <child>
+              <object class="AdwViewStackPage">
+                <property name="name">empty</property>
+                <property name="child">
+                  <object class="AdwStatusPage">
+                    <property name="icon-name">media-optical-cd-audio-symbolic</property>
+                    <property name="title" translatable="yes">Albums</property>
+                    <property name="description" translatable="yes">Albums are currently unavailable</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+
             <child>
               <object class="AdwViewStackPage">
                 <property name="name">albums</property>
@@ -71,18 +85,7 @@
                 </property>
               </object>
             </child>
-            <child>
-              <object class="AdwViewStackPage">
-                <property name="name">empty</property>
-                <property name="child">
-                  <object class="AdwStatusPage">
-                    <property name="icon-name">media-optical-cd-audio-symbolic</property>
-                    <property name="title" translatable="yes">Albums</property>
-                    <property name="description" translatable="yes">Albums are currently unavailable</property>
-                  </object>
-                </property>
-              </object>
-            </child>
+
           </object>
         </property>
       </object>
