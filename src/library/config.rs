@@ -81,7 +81,7 @@ impl LibraryConfig {
     /// Updates the `uri_opt` property, used to optimize song index lookups
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
-    /// the common part is "file::///home/", so `uri_opt` becomes 13
+    /// the common part is "file:///home/", so `uri_opt` becomes 13
     ///
     /// Note: If spaces or special characters are common between directories,
     /// the assigned value may be shorter than necessary
@@ -118,7 +118,7 @@ impl LibraryConfig {
     /// Updates the `uri_opt` property, used to optimize song index lookups
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
-    /// the common part is "file::///home/", so `uri_opt` becomes 13
+    /// the common part is "file:///home/", so `uri_opt` becomes 13
     ///
     /// This is an older version of the function; it might be worth
     /// benchmarking to see which implementation is faster
@@ -149,7 +149,7 @@ impl LibraryConfig {
     /// have in common (the length until the first differing character)
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
-    /// the common part is "file::///home/", and the returned value is 13
+    /// the common part is "file:///home/", and the returned value is 13
     pub const fn uri_opt(&self) -> usize {
         self.uri_opt
     }
