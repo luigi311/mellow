@@ -80,15 +80,18 @@ impl LibraryConfig {
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
     ///
+    /// For example, for `["file:///home/Music", "file:///home/Other"]`,
+    /// the common part is "file::///home/", so `uri_opt` becomes 13
+    ///
     /// Note: If spaces or special characters are common between directories,
     /// the assigned value may be shorter than necessary
     pub fn update_trim_uri(&mut self) {
         match self.directories.len() {
-            0 => return,
+            0 => return self.uri_opt = 0,
             1 => return self.uri_opt = self.directories[0].len() + "file://".len(),
-            _ => (),
+            _ => self.uri_opt = 0,
         }
-        self.uri_opt = 0;
+
         let mut dirs: Vec<Chars<'_>> = self.directories.iter().map(|dir| dir.chars()).collect();
         'counter: loop {
             let chars: Vec<Option<char>> = dirs.iter_mut().map(|c| c.next()).collect();
@@ -113,6 +116,12 @@ impl LibraryConfig {
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
+    ///
+    /// For example, for `["file:///home/Music", "file:///home/Other"]`,
+    /// the common part is "file::///home/", so `uri_opt` becomes 13
+    ///
+    /// This is an older version of the function; it might be worth
+    /// benchmarking to see which implementation is faster
     pub fn update_trim_uri_old(&mut self) {
         if self.directories.is_empty() {
             return;
@@ -139,8 +148,8 @@ impl LibraryConfig {
     /// Returns the length of characters all configured directories' URIs
     /// have in common (the length until the first differing character)
     ///
-    /// For example, for "file:///home/Music" and "file:///home/Other",
-    /// the common part is "file::///home/", so the length is 13
+    /// For example, for `["file:///home/Music", "file:///home/Other"]`,
+    /// the common part is "file::///home/", and the returned value is 13
     pub const fn uri_opt(&self) -> usize {
         self.uri_opt
     }
