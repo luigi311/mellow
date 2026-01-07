@@ -92,7 +92,7 @@ impl LibraryConfig {
             _ => self.uri_opt = 0,
         }
 
-        let mut dirs: Vec<Chars<'_>> = self.directories.iter().map(|dir| dir.chars()).collect();
+        let mut dirs: Vec<Chars> = self.directories.iter().map(|dir| dir.chars()).collect();
         'counter: loop {
             let chars: Vec<Option<char>> = dirs.iter_mut().map(|c| c.next()).collect();
             for i in 1..chars.len() {
