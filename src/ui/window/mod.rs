@@ -91,6 +91,20 @@ impl Window {
                     move |_, _, _| songs_page.handle_play_shuffled()
                 ))
                 .build(),
+            gio::ActionEntry::builder("play_visible_album")
+                .activate(clone!(
+                    #[weak(rename_to=album_page)]
+                    self.imp().library_album_page.imp(),
+                    move |_, _, _| album_page.handle_play_sequential()
+                ))
+                .build(),
+            gio::ActionEntry::builder("shuffle_visible_album")
+                .activate(clone!(
+                    #[weak(rename_to=album_page)]
+                    self.imp().library_album_page.imp(),
+                    move |_, _, _| album_page.handle_play_shuffled()
+                ))
+                .build(),
             gio::ActionEntry::builder("play_all_albums")
                 .activate(clone!(
                     #[weak(rename_to=albums_page)]

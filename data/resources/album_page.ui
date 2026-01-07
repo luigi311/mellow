@@ -4,13 +4,11 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">Play</attribute>
-        <!-- TODO: Play the album sequentially -->
-        <!-- <attribute name='action'>player.play_all_albums</attribute> -->
+        <attribute name='action'>player.play_visible_album</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">Shuffle</attribute>
-        <!-- TODO: Play the album with shuffle mode -->
-        <!-- <attribute name='action'>player.shuffle_all_albums</attribute> -->
+        <attribute name='action'>player.shuffle_visible_album</attribute>
       </item>
     </section>
   </menu>

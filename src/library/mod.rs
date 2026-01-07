@@ -4,7 +4,7 @@ use gtk::gio;
 use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
-use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
 use std::{fs, mem};
 use tokio::sync::mpsc::{self as tokio_mpsc, UnboundedSender};
 
@@ -203,6 +203,8 @@ pub enum LibraryRequest {
     PlayAllArtists(String),
     ShuffleAllArtists(String),
 
+    PlayAlbum(usize),
+
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
@@ -262,6 +264,10 @@ impl Library {
                 LibraryRequest::ShuffleAllAlbums(query) => self.shuffle_all_albums(&query)?,
                 LibraryRequest::PlayAllArtists(query) => self.play_all_artists(&query)?,
                 LibraryRequest::ShuffleAllArtists(query) => self.shuffle_all_artists(&query)?,
+
+                LibraryRequest::PlayAlbum(index) => {
+                    self.play_album(&self.albums[index].lock().unwrap())?;
+                }
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
@@ -549,6 +555,19 @@ impl Library {
     pub fn play_all_songs(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_songs(query)))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
+    pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
+        self.player_tx.send(PlayerRequest::LoadQueue(
+            album.songs.iter().map(QueueItem::from_song).collect(),
+        ))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))

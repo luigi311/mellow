@@ -67,6 +67,13 @@ impl QueueItem {
             _ => None,
         }
     }
+
+    /// Creates a `QueueItem::Song` using the specified `song`
+    #[inline]
+    #[must_use]
+    pub fn from_song(song: &Arc<Mutex<Song>>) -> QueueItem {
+        QueueItem::Song(Arc::clone(song))
+    }
 }
 
 impl SongQueue {
