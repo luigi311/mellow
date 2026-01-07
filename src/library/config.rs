@@ -1,5 +1,6 @@
 use gio::prelude::FileExt;
 use gtk::gio;
+use std::str::Chars;
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::excuses::EXP_RX;
@@ -77,9 +78,47 @@ impl LibraryConfig {
         self.update_trim_uri();
     }
 
-    /// Updates the `trim_uri` property, used to optimize song index lookups
-    /// Note that this currently only checks if the paths are differ by length
+    /// Updates the `uri_opt` property, used to optimize song index lookups
+    ///
+    /// Note: If spaces or special characters are common between directories,
+    /// the assigned value may be shorter than necessary
     pub fn update_trim_uri(&mut self) {
+        match self.directories.len() {
+            0 => return,
+            1 => return self.uri_opt = self.directories[0].len() + "file://".len(),
+            _ => (),
+        }
+        self.uri_opt = 0;
+        let mut dirs: Vec<Chars<'_>> = self.directories.iter().map(|dir| dir.chars()).collect();
+        'counter: loop {
+            let chars: Vec<Option<char>> = dirs.iter_mut().map(|c| c.next()).collect();
+            for i in 1..chars.len() {
+                // SAFETY: Range ensures `i` is less than `chars.len()`
+                let cur = unsafe { chars.get_unchecked(i) };
+                // SAFETY: Range ensures `i` is at least 1
+                let last = unsafe { chars.get_unchecked(i - 1) };
+
+                if cur != last || cur.is_none() {
+                    break 'counter;
+                }
+            }
+            // SAFETY: `get_unchecked(0)`: `chars` cannot be empty due to early return
+            // SAFETY: `unwrap_unchecked()`: outer loop exits if any char is `None`
+            self.uri_opt += unsafe { chars.get_unchecked(0).unwrap_unchecked().len_utf8() };
+        }
+        self.uri_opt += "file://".len();
+        // for dir in &self.directories {
+        //     dbg!(&gio::File::for_path(dir).uri()[self.uri_opt..]);
+        // }
+    }
+
+    /// Updates the `uri_opt` property, used to optimize song index lookups
+    ///
+    /// Note: This function can be wrong for paths with spaces or special
+    /// characters (which could cause sorting issues (or panic?)):
+    /// - directory[0]: "/some path" ("file:///some%20path")
+    /// - directory[1]: "/some_path" ("file:///some_path")
+    pub fn update_trim_uri_old(&mut self) {
         if self.directories.is_empty() {
             return;
         }
