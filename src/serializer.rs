@@ -22,15 +22,13 @@
 ///     "three, four".to_string(),
 /// ];
 ///
-/// let serialized = serialize!(
-///     number => "number",
-///     text => "text",
-///     time.nseconds() => "time",
-///     serialize_list(list) => "list",
-/// );
-///
 /// assert_eq!(
-///     serialized,
+///     serialize!(
+///         number => "number",
+///         text => "text",
+///         time.nseconds() => "time",
+///         serialize_list(list) => "list",
+///     ),
 ///     "\
 /// number: 5
 /// text: hello
@@ -89,15 +87,13 @@ pub fn serialize_list(list: &[String]) -> String {
 /// let mut time = ClockTime::default();
 /// let mut list = Vec::new();
 ///
-/// let data = "\
+/// deserialize!(
+///     "\
 /// number: 5
 /// text: hello
 /// time: 50000
 /// list: one, two, three\\, four,
-/// ";
-///
-/// deserialize!(
-///     data,
+/// ",
 ///     "number"<"parse"> => number,
 ///     "text"<"String"> => text,
 ///     "time"<"ClockTime"> => time,
