@@ -16,7 +16,7 @@
 /// let number = 5;
 /// let text = "hello";
 /// let time = ClockTime::from_nseconds(50000);
-/// let list = vec![
+/// let list = &[
 ///     "one".to_string(),
 ///     "two".to_string(),
 ///     "three, four".to_string(),
@@ -26,7 +26,7 @@
 ///     number => "number",
 ///     text => "text",
 ///     time.nseconds() => "time",
-///     serialize_list(&list) => "list",
+///     serialize_list(list) => "list",
 /// );
 ///
 /// assert_eq!(
@@ -54,7 +54,7 @@ macro_rules! serialize {
 /// use mellow::serializer::serialize_list;
 ///
 /// assert_eq!(
-///     serialize_list(&vec![
+///     serialize_list(&[
 ///         "one".to_string(),
 ///         "two".to_string(),
 ///         "three, four".to_string(),
@@ -109,7 +109,7 @@ pub fn serialize_list(list: &[String]) -> String {
 /// assert_eq!(time, ClockTime::from_nseconds(50000));
 /// assert_eq!(
 ///     list,
-///     vec![
+///     [
 ///         "one".to_string(),
 ///         "two".to_string(),
 ///         "three, four".to_string(),
