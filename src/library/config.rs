@@ -113,11 +113,6 @@ impl LibraryConfig {
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
-    ///
-    /// Note: This function can be wrong for paths with spaces or special
-    /// characters (which could cause sorting issues (or panic?)):
-    /// - directory[0]: "/some path" ("file:///some%20path")
-    /// - directory[1]: "/some_path" ("file:///some_path")
     pub fn update_trim_uri_old(&mut self) {
         if self.directories.is_empty() {
             return;
