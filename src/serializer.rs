@@ -10,17 +10,23 @@
 ///
 /// # Example:
 /// ```rust
-/// use mellow::serialize;
+/// use mellow::{serialize, serializer::serialize_list};
 /// use gst::ClockTime;
 ///
 /// let number = 5;
 /// let text = "hello";
 /// let time = ClockTime::from_nseconds(50000);
+/// let list = vec![
+///     "one".to_string(),
+///     "two".to_string(),
+///     "three, four".to_string(),
+/// ];
 ///
 /// let serialized = serialize!(
 ///     number => "number",
 ///     text => "text",
 ///     time.nseconds() => "time",
+///     serialize_list(&list) => "list",
 /// );
 ///
 /// assert_eq!(
@@ -29,6 +35,7 @@
 /// number: 5
 /// text: hello
 /// time: 50000
+/// list: one, two, three\\, four, \n\
 /// "
 /// );
 /// ```
@@ -105,7 +112,7 @@ pub fn serialize_list(list: &[String]) -> String {
 ///     vec![
 ///         "one".to_string(),
 ///         "two".to_string(),
-///         "three, four".to_string()
+///         "three, four".to_string(),
 ///     ],
 /// );
 ///
