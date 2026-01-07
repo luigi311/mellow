@@ -6,7 +6,7 @@ use std::cell::Cell;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]

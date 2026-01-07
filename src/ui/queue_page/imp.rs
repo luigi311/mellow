@@ -6,7 +6,7 @@ use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::queue_row::QueueRow;
 use crate::ui::queue_song_page::QueueSongPage;

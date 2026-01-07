@@ -3,7 +3,7 @@ use glib::Object;
 use gtk::glib;
 
 use crate::excuses::INIT_ERR;
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 use crate::ui::queue_song_page::QueueSongPage;
 
 mod imp;

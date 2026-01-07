@@ -11,7 +11,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs};
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
 use crate::ui::library_albums_page::LibraryAlbumsPage;
 use crate::ui::library_artists_page::LibraryArtistsPage;

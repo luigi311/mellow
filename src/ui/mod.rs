@@ -22,7 +22,7 @@ mod window;
 
 use crate::about::{APP_ID, APP_NAME};
 use crate::library::{Albums, Artists, Songs};
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 use crate::ui::window::Window;
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();

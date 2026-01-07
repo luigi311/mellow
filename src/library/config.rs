@@ -1,0 +1,113 @@
+use gio::prelude::FileExt;
+use gtk::gio;
+use tokio::sync::mpsc::UnboundedSender;
+
+use crate::excuses::EXP_RX;
+use crate::ui::{UI_TX, UpdateUI};
+
+pub const FILE_SUPPORT: &[&str] = &[
+    "flac", "m4a", "mp3", "aac", "ac3", "wav",
+    // TODO: Ensure all listed formats work
+    // Untested:
+    "ape", "mpc", "ogg",
+];
+
+#[derive(Default)]
+pub struct LibraryConfig {
+    pub directories: Vec<String>,
+    uri_opt: usize,
+}
+
+impl LibraryConfig {
+    /// Replaces the configured directories with `dirs`
+    pub fn set_libraries(&mut self, dirs: &[String], ui_tx: &UnboundedSender<UpdateUI>) {
+        self.directories = dirs.into();
+        self.directories.sort();
+        println!(
+            "Library directories updated\nLibraries: {:?}",
+            self.directories
+        );
+        ui_tx
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Adds `dir` to the configured directories
+    pub fn add_library(&mut self, dir: String) {
+        if self.directories.contains(&dir) || dir.is_empty() {
+            return;
+        }
+        self.directories.push(dir);
+        self.directories.sort();
+        println!("Added a new library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Replaces configured directory at `index` with `dir`
+    pub fn edit_library(&mut self, index: usize, dir: String) {
+        if self.directories.contains(&dir) {
+            return self.remove_library(index);
+        }
+        self.directories[index] = dir;
+        self.directories.sort();
+        println!("Edited a library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Removes the configured directory at `index`
+    pub fn remove_library(&mut self, index: usize) {
+        self.directories.remove(index);
+        println!("Removed a library\nLibraries: {:?}", self.directories);
+        UI_TX
+            .get()
+            .unwrap()
+            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
+            .expect(EXP_RX);
+        self.update_trim_uri();
+    }
+
+    /// Updates the `trim_uri` property, used to optimize song index lookups
+    /// Note that this currently only checks if the paths are differ by length
+    pub fn update_trim_uri(&mut self) {
+        if self.directories.is_empty() {
+            return;
+        }
+        self.uri_opt = usize::MAX;
+        let mut last_dir = self.directories[0].chars();
+        for dir in &self.directories {
+            let mut new_chars = dir.chars().take(self.uri_opt);
+            let mut old_chars = last_dir.clone().take(self.uri_opt);
+            last_dir = dir.chars();
+            let mut len = 0;
+            while let (Some(new), Some(old)) = (new_chars.next(), old_chars.next()) {
+                if old != new {
+                    break;
+                }
+                len += new.len_utf8();
+            }
+            self.uri_opt = self
+                .uri_opt
+                .min(gio::File::for_path(&dir[0..len]).uri().len());
+        }
+    }
+
+    /// Returns the length of characters all configured directories' URIs
+    /// have in common (the length until the first differing character)
+    ///
+    /// For example, for "file:///home/Music" and "file:///home/Other",
+    /// the common part is "file::///home/", so the length is 13
+    pub const fn uri_opt(&self) -> usize {
+        self.uri_opt
+    }
+}

@@ -6,10 +6,11 @@ use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
 use std::{fs, mem};
-use tokio::sync::mpsc::{self as tokio_mpsc, UnboundedSender};
+use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
 pub mod artist;
+pub mod config;
 pub mod search;
 pub mod song;
 
@@ -20,8 +21,9 @@ pub use song::{Song, SongInfo};
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::album::SortedAlbumSongs;
 use crate::library::artist::SortedArtistAlbums;
+use crate::library::config::{FILE_SUPPORT, LibraryConfig};
 use crate::player::PlayerRequest;
-use crate::player::song_queue::QueueItem;
+use crate::player::queue_item::QueueItem;
 use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
@@ -29,13 +31,6 @@ use crate::{CONFIG_DIR, visit_dirs};
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
-
-const FILE_SUPPORT: &[&str] = &[
-    "flac", "m4a", "mp3", "aac", "ac3", "wav",
-    // TODO: Ensure all listed formats work
-    // Untested:
-    "ape", "mpc", "ogg",
-];
 
 pub struct Library {
     pub songs: Songs,
@@ -49,97 +44,6 @@ pub struct Library {
     player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     rx: mpsc::Receiver<LibraryRequest>,
-}
-
-#[derive(Default)]
-pub struct LibraryConfig {
-    pub directories: Vec<String>,
-    trim_uri: usize,
-}
-
-impl LibraryConfig {
-    /// Replaces the configured directories with `dirs`
-    pub fn set_libraries(&mut self, dirs: &[String], ui_tx: &UnboundedSender<UpdateUI>) {
-        self.directories = dirs.into();
-        self.directories.sort();
-        println!(
-            "Library directories updated\nLibraries: {:?}",
-            self.directories
-        );
-        ui_tx
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
-        self.update_trim_uri();
-    }
-
-    /// Adds `dir` to the configured directories
-    pub fn add_library(&mut self, dir: String) {
-        if self.directories.contains(&dir) || dir.is_empty() {
-            return;
-        }
-        self.directories.push(dir);
-        self.directories.sort();
-        println!("Added a new library\nLibraries: {:?}", self.directories);
-        UI_TX
-            .get()
-            .unwrap()
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
-        self.update_trim_uri();
-    }
-
-    /// Replaces configured directory at `index` with `dir`
-    pub fn edit_library(&mut self, index: usize, dir: String) {
-        if self.directories.contains(&dir) {
-            return self.remove_library(index);
-        }
-        self.directories[index] = dir;
-        self.directories.sort();
-        println!("Edited a library\nLibraries: {:?}", self.directories);
-        UI_TX
-            .get()
-            .unwrap()
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
-        self.update_trim_uri();
-    }
-
-    /// Removes the configured directory at `index`
-    pub fn remove_library(&mut self, index: usize) {
-        self.directories.remove(index);
-        println!("Removed a library\nLibraries: {:?}", self.directories);
-        UI_TX
-            .get()
-            .unwrap()
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
-        self.update_trim_uri();
-    }
-
-    /// Updates the `trim_uri` property, used to optimize song index lookups
-    /// Note that this currently only checks if the paths are differ by length
-    pub fn update_trim_uri(&mut self) {
-        if self.directories.is_empty() {
-            return;
-        }
-        self.trim_uri = usize::MAX;
-        let mut last_dir = self.directories[0].chars();
-        for dir in &self.directories {
-            let mut new_chars = dir.chars().take(self.trim_uri);
-            let mut old_chars = last_dir.clone().take(self.trim_uri);
-            last_dir = dir.chars();
-            let mut len = 0;
-            while let (Some(new), Some(old)) = (new_chars.next(), old_chars.next()) {
-                if old != new {
-                    break;
-                }
-                len += new.len_utf8();
-            }
-            self.trim_uri = self
-                .trim_uri
-                .min(gio::File::for_path(&dir[0..len]).uri().len());
-        }
-    }
 }
 
 // IDEA: Options to re-sort using different criteria,
@@ -347,7 +251,7 @@ impl Library {
                 let mut songs = songs.lock().unwrap();
                 // SAFETY: `songs` is initialized as `Some`
                 let songs = unsafe { songs.as_mut().unwrap_unchecked() };
-                let Err(index) = songs.find_song(&file.uri(), self.config.trim_uri) else {
+                let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) else {
                     return;
                 };
 
@@ -535,19 +439,13 @@ impl Library {
     #[must_use]
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
         if query.is_empty() {
-            self.songs
-                .iter()
-                .map(|song| QueueItem::Song(Arc::clone(song)))
-                .collect()
+            self.songs.iter().map(QueueItem::from_song).collect()
         } else {
             // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
             let song_results = search::query_items(&self.songs, query, |song, query| {
                 search::query_score(query, &song.lock().unwrap().info().basic().title)
             });
-            song_results
-                .iter()
-                .map(|song| QueueItem::Song(Arc::clone(song)))
-                .collect()
+            song_results.iter().map(QueueItem::from_song).collect()
         }
     }
 
@@ -798,9 +696,9 @@ impl Library {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
                 let file = gio::File::for_path(file);
-                match self.songs.find_song(&file.uri(), self.config.trim_uri) {
+                match self.songs.find_song(&file.uri(), self.config.uri_opt()) {
                     Ok(index) => {
-                        // SAFETY: `index` is always within bounds
+                        // SAFETY: `index` is `Ok`, therefore within bounds
                         return QueueItem::Song(Arc::clone(unsafe {
                             self.songs.get_unchecked(index)
                         }));

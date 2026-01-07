@@ -1,11 +1,10 @@
 use rand::random_range;
 use std::fs;
-use std::sync::{Arc, Mutex, MutexGuard, mpsc};
+use std::sync::mpsc;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::Song;
-use crate::player::PlayerRequest;
+use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
 use crate::{CONFIG_DIR, reorder_vec};
 
@@ -21,59 +20,6 @@ pub struct SongQueue {
 
     player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
-}
-
-#[derive(Clone)]
-pub enum QueueItem {
-    Song(Arc<Mutex<Song>>),
-    Stopper,
-}
-
-impl QueueItem {
-    /// Assumes the `QueueItem` is a `Song`, and returns a
-    /// `MutexGuard` for accessing the inner value
-    ///
-    /// # Panics
-    /// The function panics if the `QueueItem` is not a `Song`
-    ///
-    /// Note: Since each `Stopper` is removed when encountered,
-    /// this method is safe when chained with `Song::current()`
-    pub fn as_song(&self) -> MutexGuard<'_, Song> {
-        match self {
-            Self::Song(song) => song.lock().unwrap(),
-            Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
-        }
-    }
-    /// Returns `true` if the `QueueItem` is a `Song`
-    #[must_use]
-    pub const fn is_song(&self) -> bool {
-        matches!(self, Self::Song(_))
-    }
-    /// Returns `true` if the `QueueItem` is a `Stopper`
-    #[must_use]
-    pub const fn is_stopper(&self) -> bool {
-        matches!(self, Self::Stopper)
-    }
-
-    /// Runs a closure on the `QueueItem` if it is a `Song`,
-    /// and returns the output of the closure inside an `Option`.
-    /// If the `QueueItem` is not a `Song`, `None` is returned.
-    pub fn map<F, T>(&self, f: F) -> Option<T>
-    where
-        F: FnOnce(MutexGuard<'_, Song>) -> T,
-    {
-        match self {
-            QueueItem::Song(song) => Some(f(song.lock().unwrap())),
-            _ => None,
-        }
-    }
-
-    /// Creates a `QueueItem::Song` using the specified `song`
-    #[inline]
-    #[must_use]
-    pub fn from_song(song: &Arc<Mutex<Song>>) -> QueueItem {
-        QueueItem::Song(Arc::clone(song))
-    }
 }
 
 impl SongQueue {

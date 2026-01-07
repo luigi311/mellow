@@ -6,9 +6,10 @@ use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_RX, INIT_ERR};
-use crate::player::song_queue::{QueueItem, SongQueue};
+use crate::player::{queue_item::QueueItem, song_queue::SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 
+pub mod queue_item;
 pub mod song_queue;
 
 // TODO: MPRIS support for Gnome Shell media controls
