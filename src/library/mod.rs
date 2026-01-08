@@ -232,13 +232,10 @@ impl Library {
     // Assigns `self.songs` by loading the serialized data (if any), then
     // inserting any new audio files found within the configured libraries
     pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
-        if self.songs.is_empty() {
-            self.songs = self.deserialize_songs();
-        }
-
-        let mut songs = Vec::new();
-        mem::swap(&mut self.songs, &mut songs);
-        let songs = Arc::new(Mutex::new(Some(songs)));
+        let songs = Arc::new(Mutex::new(Some(match self.songs.is_empty() {
+            false => mem::take(&mut self.songs),
+            true => self.deserialize_songs(),
+        })));
 
         // TODO: Check file modification times and update info/associations
         for library_path in &self.config.directories {
@@ -758,8 +755,7 @@ impl Library {
     /// Writes the configuration to disk and shuts down gracefully.
     /// Notifies the caller over the `notify_done` channel when done.
     pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
-        let mut songs = Vec::new();
-        mem::swap(&mut self.songs, &mut songs);
+        let songs = mem::take(&mut self.songs);
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
         notify_done.send(()).expect(EXP_RX);
