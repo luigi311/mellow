@@ -110,9 +110,6 @@ impl LibraryConfig {
             self.uri_opt += unsafe { chars.get_unchecked(0).unwrap_unchecked().len_utf8() };
         }
         self.uri_opt += "file://".len();
-        // for dir in &self.directories {
-        //     dbg!(&gio::File::for_path(dir).uri()[self.uri_opt..]);
-        // }
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
