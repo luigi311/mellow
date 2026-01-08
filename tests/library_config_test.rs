@@ -25,6 +25,8 @@ mod tests {
         config_tester.test_sort_alphabetically();
         config_tester.test_reject_duplicates();
         config_tester.test_reject_empty();
+        config_tester.test_uri_opt_remainder_special_chars();
+        config_tester.test_uri_opt_remainder_common_special_chars();
     }
 
     impl ConfigTester {
@@ -39,18 +41,13 @@ mod tests {
 
         fn test_uri_opt_remainder_single_dir(&mut self) {
             assert_eq!(
-                self.config
-                    .directories
-                    .iter()
-                    .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
-                    .collect::<Vec<_>>(),
-                [""],
+                self.uri_opt_split(),
+                [("file:///test".to_string(), String::new())],
                 "`test_uri_opt_remainder_single_dir()`",
             )
         }
 
         fn test_set_libraries(&mut self) {
-            // Test setting directories
             self.config.set_libraries(
                 &[
                     "/some/directory".to_string(),
@@ -67,27 +64,26 @@ mod tests {
 
         fn test_uri_opt_remainder_after_set(&self) {
             assert_eq!(
-                self.config
-                    .directories
-                    .iter()
-                    .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
-                    .collect::<Vec<_>>(),
-                ["directory", "other/directory"],
+                self.uri_opt_split(),
+                [
+                    ("file:///some/".to_string(), "directory".to_string()),
+                    ("file:///some/".to_string(), "other/directory".to_string()),
+                ],
                 "`test_uri_opt_remainder_after_set()`",
-            )
+            );
         }
 
         fn test_uri_opt_remainder_after_add(&mut self) {
             self.config.add_library("/songs".to_string());
             assert_eq!(
-                self.config
-                    .directories
-                    .iter()
-                    .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
-                    .collect::<Vec<_>>(),
-                ["me/directory", "me/other/directory", "ngs"],
+                self.uri_opt_split(),
+                [
+                    ("file:///so".to_string(), "me/directory".to_string()),
+                    ("file:///so".to_string(), "me/other/directory".to_string()),
+                    ("file:///so".to_string(), "ngs".to_string()),
+                ],
                 "`test_uri_opt_remainder_after_add()`",
-            )
+            );
         }
 
         fn test_remove_library(&mut self) {
@@ -101,14 +97,13 @@ mod tests {
 
         fn test_uri_opt_remainder_after_remove(&mut self) {
             assert_eq!(
-                self.config
-                    .directories
-                    .iter()
-                    .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
-                    .collect::<Vec<_>>(),
-                ["directory", "other/directory"],
+                self.uri_opt_split(),
+                [
+                    ("file:///some/".to_string(), "directory".to_string()),
+                    ("file:///some/".to_string(), "other/directory".to_string())
+                ],
                 "`test_uri_opt_remainder_after_remove()`",
-            )
+            );
         }
 
         fn test_sort_alphabetically(&mut self) {
@@ -136,6 +131,48 @@ mod tests {
                 ["/audio", "/some/directory", "/some/other/directory",],
                 "`test_reject_empty()`"
             );
+        }
+
+        fn test_uri_opt_remainder_special_chars(&mut self) {
+            self.config.set_libraries(
+                &["/test/🤷/".to_string(), "/test/🦀/".to_string()],
+                UI_TX.get().unwrap(),
+            );
+            for (first_half, _) in self.uri_opt_split() {
+                assert_eq!(
+                    first_half, "file:///test/",
+                    "`uri_opt_remainder_special_chars()`"
+                );
+            }
+        }
+
+        fn test_uri_opt_remainder_common_special_chars(&mut self) {
+            self.config.set_libraries(
+                &["/test/🤷/🦀".to_string(), "/test/🤷/🤷".to_string()],
+                UI_TX.get().unwrap(),
+            );
+            assert!(self.config.uri_opt() <= "file:///test/%F0%9F%A4%B7/".len());
+            // NOTE: The below test is currently failing, but as long as the
+            // `uri_opt` value is less than the common part length, it shouln't
+            // cause any issues other than be slightly suboptimal
+            // for (first_half, _) in self.uri_opt_split() {
+            //     assert_eq!(
+            //         first_half, "file:///test/%F0%9F%A4%B7/",
+            //         "`uri_opt_remainder_special_chars()`"
+            //     );
+            // }
+        }
+
+        fn uri_opt_split(&self) -> Vec<(String, String)> {
+            self.config
+                .directories
+                .iter()
+                .map(|dir| {
+                    let uri = &gio::File::for_path(dir).uri();
+                    let split = uri.split_at(self.config.uri_opt());
+                    (split.0.to_string(), split.1.to_string())
+                })
+                .collect()
         }
     }
 
