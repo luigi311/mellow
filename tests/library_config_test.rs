@@ -45,7 +45,7 @@ mod tests {
                     .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
                     .collect::<Vec<_>>(),
                 [""],
-                "`test_uri_opt_single()`",
+                "`test_uri_opt_remainder_single_dir()`",
             )
         }
 
@@ -73,7 +73,7 @@ mod tests {
                     .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
                     .collect::<Vec<_>>(),
                 ["directory", "other/directory"],
-                "`test_uri_opt_after_set()`",
+                "`test_uri_opt_remainder_after_set()`",
             )
         }
 
@@ -86,7 +86,7 @@ mod tests {
                     .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
                     .collect::<Vec<_>>(),
                 ["me/directory", "me/other/directory", "ngs"],
-                "`test_uri_opt_after_add()`",
+                "`test_uri_opt_remainder_after_add()`",
             )
         }
 
@@ -107,7 +107,7 @@ mod tests {
                     .map(|dir| gio::File::for_path(dir).uri()[self.config.uri_opt()..].to_string())
                     .collect::<Vec<_>>(),
                 ["directory", "other/directory"],
-                "`test_uri_opt_after_remove()`",
+                "`test_uri_opt_remainder_after_remove()`",
             )
         }
 
