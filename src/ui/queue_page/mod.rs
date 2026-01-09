@@ -4,7 +4,7 @@ use gtk::glib;
 
 use crate::excuses::INIT_ERR;
 use crate::player::queue_item::QueueItem;
-use crate::ui::queue_song_page::QueueSongPage;
+use crate::ui::queue_subpage::QueueSubpage;
 
 mod imp;
 
@@ -27,7 +27,7 @@ impl QueuePage {
         Object::builder().build()
     }
 
-    pub fn init(&self, song_page: QueueSongPage) {
+    pub fn init(&self, song_page: QueueSubpage) {
         let queue_page = self.imp();
         queue_page.song_page.set(song_page).expect(INIT_ERR);
     }

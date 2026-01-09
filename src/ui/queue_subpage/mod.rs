@@ -5,19 +5,19 @@ use gtk::glib;
 mod imp;
 
 glib::wrapper! {
-    pub struct QueueSongPage(ObjectSubclass<imp::QueueSongPage>)
+    pub struct QueueSubpage(ObjectSubclass<imp::QueueSubpage>)
         @extends adw::NavigationPage, gtk::Widget,
         @implements
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for QueueSongPage {
+impl Default for QueueSubpage {
     fn default() -> Self {
         Object::builder().build()
     }
 }
 
-impl QueueSongPage {
+impl QueueSubpage {
     #[must_use]
     pub fn new() -> Self {
         Object::builder().build()

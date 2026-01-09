@@ -12,7 +12,7 @@
       </item>
     </section>
   </menu>
-  <template class="MellowLibraryAlbumsPage" parent="AdwNavigationPage">
+  <template class="MellowAlbumsPage" parent="AdwNavigationPage">
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">

@@ -4,15 +4,24 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">Play</attribute>
-        <attribute name='action'>player.play_all_artists</attribute>
+        <attribute name='action'>player.play_all_songs</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">Shuffle</attribute>
-        <attribute name='action'>player.shuffle_all_artists</attribute>
+        <attribute name='action'>player.shuffle_all_songs</attribute>
       </item>
     </section>
   </menu>
-  <template class="MellowLibraryArtistsPage" parent="AdwNavigationPage">
+  <template class="MellowSongsPage" parent="AdwNavigationPage">
+
+    IDEA: Each listed song could open a subpage, similar to how the queue works,
+    but containing buttons for "Play Now", "Play Next", "Add To Queue", etc. This
+    same page widget could be re-used when accessed from the Album page. To make
+    this work, (for example) the "Play Now" button could have its behavior altered
+    using a `connect_play_now()` function, which would take a closure to run whenever
+    the button is pressed. That way, when pressed from the Album page, it could
+    queue all of the album tracks, and skip to the one that was clicked on.
+    
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">
@@ -52,12 +61,8 @@
             </child>
           </object>
         </child>
+
         <property name="content">
-
-          <!-- TODO: Create a widget to display each artist -->
-          <!-- TODO: Display the list of artists -->
-          <!-- TODO: Create a subpage for the artist -->
-
           <object class="AdwViewStack" id="view_stack">
 
             <child>
@@ -65,9 +70,9 @@
                 <property name="name">empty</property>
                 <property name="child">
                   <object class="AdwStatusPage">
-                    <property name="icon-name">avatar-default-symbolic</property>
-                    <property name="title" translatable="yes">Artists</property>
-                    <property name="description" translatable="yes">Artists are currently unavailable</property>
+                    <property name="icon-name">audio-x-generic-symbolic</property>
+                    <property name="title" translatable="yes">Songs</property>
+                    <property name="description" translatable="yes">Songs are currently unavailable</property>
                   </object>
                 </property>
               </object>
@@ -75,12 +80,27 @@
 
             <child>
               <object class="AdwViewStackPage">
-                <property name="name">artists</property>
+                <property name="name">songs</property>
                 <property name="child">
-                  <object class="AdwStatusPage">
-                    <property name="icon-name">avatar-default-symbolic</property>
-                    <property name="title" translatable="yes">Artists</property>
-                    <property name="description" translatable="yes">Artists will appear here in a future version</property>
+                  <!-- TODO: Button to scroll back to the playing song -->
+                  <object class="GtkScrolledWindow" id="scrolled_window">
+                    <child>
+                      <object class="AdwClamp">
+                        <child>
+                          <!-- TODO: Display the list of songs -->
+                          <object class="GtkListView" id="list_view">
+                            <!-- <property name="selection_mode">none</property> -->
+                            <property name="margin_top">18</property>
+                            <property name="margin_bottom">18</property>
+                            <property name="margin_start">12</property>
+                            <property name="margin_end">12</property>
+                            <style>
+                              <class name="card"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                 </property>
               </object>

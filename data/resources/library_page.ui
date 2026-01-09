@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="MellowLibraryHomePage" parent="AdwNavigationPage">
+  <template class="MellowLibraryPage" parent="AdwNavigationPage">
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">

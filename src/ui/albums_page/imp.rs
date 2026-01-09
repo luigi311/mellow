@@ -14,8 +14,8 @@ use crate::ui::album_tile::AlbumTile;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/library_albums_page.ui")]
-pub struct LibraryAlbumsPage {
+#[template(resource = "/com/github/userwithaname/Mellow/albums_page.ui")]
+pub struct AlbumsPage {
     #[template_child]
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
@@ -36,7 +36,7 @@ pub struct LibraryAlbumsPage {
 }
 
 #[gtk::template_callbacks]
-impl LibraryAlbumsPage {
+impl AlbumsPage {
     pub fn init_search(&self) {
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
@@ -137,9 +137,9 @@ impl LibraryAlbumsPage {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for LibraryAlbumsPage {
-    const NAME: &str = "MellowLibraryAlbumsPage";
-    type Type = super::LibraryAlbumsPage;
+impl ObjectSubclass for AlbumsPage {
+    const NAME: &str = "MellowAlbumsPage";
+    type Type = super::AlbumsPage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -152,6 +152,6 @@ impl ObjectSubclass for LibraryAlbumsPage {
     }
 }
 
-impl ObjectImpl for LibraryAlbumsPage {}
-impl WidgetImpl for LibraryAlbumsPage {}
-impl NavigationPageImpl for LibraryAlbumsPage {}
+impl ObjectImpl for AlbumsPage {}
+impl WidgetImpl for AlbumsPage {}
+impl NavigationPageImpl for AlbumsPage {}

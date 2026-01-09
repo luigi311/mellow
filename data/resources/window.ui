@@ -90,7 +90,7 @@
 
                         Library home page
                         <child>
-                          <object class="MellowLibraryHomePage">
+                          <object class="MellowLibraryPage">
                             <property name="title" translatable="yes">Library</property>
                             <property name="tag">library</property>
                           </object>
@@ -98,7 +98,7 @@
 
                         Songs
                         <child>
-                          <object class="MellowLibrarySongsPage" id="library_songs_page">
+                          <object class="MellowSongsPage" id="library_songs_page">
                             <property name="title" translatable="yes">Songs</property>
                             <property name="tag">library_songs</property>
                           </object>
@@ -106,7 +106,7 @@
 
                         Albums
                         <child>
-                          <object class="MellowLibraryAlbumsPage" id="library_albums_page">
+                          <object class="MellowAlbumsPage" id="library_albums_page">
                             <property name="title" translatable="yes">Albums</property>
                             <property name="tag">library_albums</property>
                           </object>
@@ -121,7 +121,7 @@
 
                         Artists
                         <child>
-                          <object class="MellowLibraryArtistsPage" id="library_artists_page">
+                          <object class="MellowArtistsPage" id="library_artists_page">
                             <property name="title" translatable="yes">Artists</property>
                             <property name="tag">library_artists</property>
                           </object>
@@ -152,7 +152,7 @@
 
                         Song info page
                         <child>
-                          <object class="MellowQueueSongPage" id="queue_song_page">
+                          <object class="MellowQueueSubpage" id="queue_song_page">
                             <property name="title" translatable="yes">Song Info</property>
                             <property name="tag">info</property>
                           </object>

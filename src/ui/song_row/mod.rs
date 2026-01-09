@@ -5,19 +5,19 @@ use gtk::{gdk, glib};
 mod imp;
 
 glib::wrapper! {
-    pub struct QueueRow(ObjectSubclass<imp::QueueRow>)
+    pub struct SongRow(ObjectSubclass<imp::SongRow>)
         @extends adw::ActionRow, adw::PreferencesRow, gtk::ListBoxRow, gtk::Widget,
         @implements
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for QueueRow {
+impl Default for SongRow {
     fn default() -> Self {
         Object::builder().build()
     }
 }
 
-impl QueueRow {
+impl SongRow {
     #[must_use]
     pub fn new() -> Self {
         Self::default()

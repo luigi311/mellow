@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="MellowQueueRow" parent="AdwActionRow">
+  <template class="MellowSongRow" parent="AdwActionRow">
 
     <!-- FIX: AdwActionRow doesn't work with GtkListView -->
 

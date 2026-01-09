@@ -6,7 +6,7 @@ use std::cell::Cell;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::queue_row::QueueRow;
+use crate::ui::song_row::SongRow;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/album_page.ui")]
@@ -63,7 +63,7 @@ impl ObjectSubclass for AlbumPage {
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
-        QueueRow::static_type();
+        SongRow::static_type();
 
         class.bind_template();
         class.bind_template_callbacks();

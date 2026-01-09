@@ -11,8 +11,8 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/library_songs_page.ui")]
-pub struct LibrarySongsPage {
+#[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
+pub struct SongsPage {
     // TODO: Remember last play mode between sessions
     // (and maybe reuse the same widget?)
     #[template_child]
@@ -33,7 +33,7 @@ pub struct LibrarySongsPage {
 }
 
 #[gtk::template_callbacks]
-impl LibrarySongsPage {
+impl SongsPage {
     pub fn init_search(&self) {
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
@@ -92,9 +92,9 @@ impl LibrarySongsPage {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for LibrarySongsPage {
-    const NAME: &str = "MellowLibrarySongsPage";
-    type Type = super::LibrarySongsPage;
+impl ObjectSubclass for SongsPage {
+    const NAME: &str = "MellowSongsPage";
+    type Type = super::SongsPage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -106,6 +106,6 @@ impl ObjectSubclass for LibrarySongsPage {
         obj.init_template();
     }
 }
-impl ObjectImpl for LibrarySongsPage {}
-impl WidgetImpl for LibrarySongsPage {}
-impl NavigationPageImpl for LibrarySongsPage {}
+impl ObjectImpl for SongsPage {}
+impl WidgetImpl for SongsPage {}
+impl NavigationPageImpl for SongsPage {}

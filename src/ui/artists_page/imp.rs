@@ -11,8 +11,8 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/library_artists_page.ui")]
-pub struct LibraryArtistsPage {
+#[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]
+pub struct ArtistsPage {
     #[template_child]
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
@@ -31,7 +31,7 @@ pub struct LibraryArtistsPage {
 }
 
 #[gtk::template_callbacks]
-impl LibraryArtistsPage {
+impl ArtistsPage {
     pub fn init_search(&self) {
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
@@ -92,9 +92,9 @@ impl LibraryArtistsPage {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for LibraryArtistsPage {
-    const NAME: &str = "MellowLibraryArtistsPage";
-    type Type = super::LibraryArtistsPage;
+impl ObjectSubclass for ArtistsPage {
+    const NAME: &str = "MellowArtistsPage";
+    type Type = super::ArtistsPage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -107,6 +107,6 @@ impl ObjectSubclass for LibraryArtistsPage {
     }
 }
 
-impl ObjectImpl for LibraryArtistsPage {}
-impl WidgetImpl for LibraryArtistsPage {}
-impl NavigationPageImpl for LibraryArtistsPage {}
+impl ObjectImpl for ArtistsPage {}
+impl WidgetImpl for ArtistsPage {}
+impl NavigationPageImpl for ArtistsPage {}

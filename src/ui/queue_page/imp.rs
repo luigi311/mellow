@@ -8,8 +8,8 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::queue_row::QueueRow;
-use crate::ui::queue_song_page::QueueSongPage;
+use crate::ui::queue_subpage::QueueSubpage;
+use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 #[derive(Default, CompositeTemplate)]
@@ -29,7 +29,7 @@ pub struct QueuePage {
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
 
-    pub song_page: OnceCell<QueueSongPage>,
+    pub song_page: OnceCell<QueueSubpage>,
 }
 
 #[gtk::template_callbacks]
@@ -82,7 +82,7 @@ impl QueuePage {
                     let song_info = info.basic();
                     let is_playing = i == index;
 
-                    let entry = QueueRow::default();
+                    let entry = SongRow::default();
                     entry.set_title(&song_info.title);
                     entry.set_subtitle(&song_info.artist);
                     if is_playing {
@@ -117,7 +117,7 @@ impl QueuePage {
                     self.list_box.append(&entry);
                 }
                 QueueItem::Stopper => {
-                    let entry = QueueRow::default();
+                    let entry = SongRow::default();
                     entry.set_title("Pause");
                     entry.add_css_class("heading");
                     entry.add_css_class("dimmed");

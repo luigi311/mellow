@@ -3,13 +3,13 @@ use gtk::CompositeTemplate;
 use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/library_home_page.ui")]
-pub struct LibraryHomePage;
+#[template(resource = "/com/github/userwithaname/Mellow/library_page.ui")]
+pub struct LibraryPage;
 
 #[glib::object_subclass]
-impl ObjectSubclass for LibraryHomePage {
-    const NAME: &str = "MellowLibraryHomePage";
-    type Type = super::LibraryHomePage;
+impl ObjectSubclass for LibraryPage {
+    const NAME: &str = "MellowLibraryPage";
+    type Type = super::LibraryPage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -21,6 +21,6 @@ impl ObjectSubclass for LibraryHomePage {
     }
 }
 
-impl ObjectImpl for LibraryHomePage {}
-impl WidgetImpl for LibraryHomePage {}
-impl NavigationPageImpl for LibraryHomePage {}
+impl ObjectImpl for LibraryPage {}
+impl WidgetImpl for LibraryPage {}
+impl NavigationPageImpl for LibraryPage {}

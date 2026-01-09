@@ -1,24 +1,24 @@
 use adw::subclass::prelude::*;
 use gtk::glib;
 
-use crate::library::Songs;
+use crate::library::Artists;
 
 mod imp;
 
 glib::wrapper! {
-    pub struct LibrarySongsPage(ObjectSubclass<imp::LibrarySongsPage>)
+    pub struct ArtistsPage(ObjectSubclass<imp::ArtistsPage>)
         @extends adw::NavigationPage, gtk::Widget,
         @implements
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl LibrarySongsPage {
+impl ArtistsPage {
     pub fn init_search(&self) {
         self.imp().init_search();
     }
 
-    pub fn load_songs(&self, songs: &Songs) {
-        println!("load_songs()");
-        self.imp().load_songs(songs);
+    pub fn load_artists(&self, artists: &Artists) {
+        println!("load_artists()");
+        self.imp().load_artists(artists);
     }
 }

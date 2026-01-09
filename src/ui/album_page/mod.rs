@@ -5,7 +5,7 @@ use std::sync::MutexGuard;
 
 use crate::library::Album;
 use crate::ui::fallback_album_image;
-use crate::ui::queue_row::QueueRow;
+use crate::ui::song_row::SongRow;
 
 mod imp;
 
@@ -56,8 +56,7 @@ impl AlbumPage {
         // IDEA: Divide discs into separate groups
         ui.songs_list.remove_all();
         for song in &album.songs {
-            // TODO: Either implement a new widget or rename `QueueRow`
-            let entry = QueueRow::new();
+            let entry = SongRow::new();
             let mut song = song.lock().unwrap();
             let mut info = song.info();
             let info = info.basic();

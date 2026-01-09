@@ -13,16 +13,16 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
-use crate::ui::library_albums_page::LibraryAlbumsPage;
-use crate::ui::library_artists_page::LibraryArtistsPage;
-use crate::ui::library_home_page::LibraryHomePage;
-use crate::ui::library_songs_page::LibrarySongsPage;
+use crate::ui::albums_page::AlbumsPage;
+use crate::ui::artists_page::ArtistsPage;
+use crate::ui::library_page::LibraryPage;
 use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
-use crate::ui::queue_song_page::QueueSongPage;
+use crate::ui::queue_subpage::QueueSubpage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
+use crate::ui::songs_page::SongsPage;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -42,13 +42,13 @@ pub struct Window {
 
     // View stack "Library" tab
     #[template_child]
-    pub library_songs_page: TemplateChild<LibrarySongsPage>,
+    pub library_songs_page: TemplateChild<SongsPage>,
     #[template_child]
-    pub library_albums_page: TemplateChild<LibraryAlbumsPage>,
+    pub library_albums_page: TemplateChild<AlbumsPage>,
     #[template_child]
     pub library_album_page: TemplateChild<AlbumPage>,
     #[template_child]
-    pub library_artists_page: TemplateChild<LibraryArtistsPage>,
+    pub library_artists_page: TemplateChild<ArtistsPage>,
     #[template_child]
     pub library_navigation_view: TemplateChild<adw::NavigationView>,
 
@@ -56,7 +56,7 @@ pub struct Window {
     #[template_child]
     queue_page: TemplateChild<QueuePage>,
     #[template_child]
-    queue_song_page: TemplateChild<QueueSongPage>,
+    queue_song_page: TemplateChild<QueueSubpage>,
     #[template_child]
     lyrics_page: TemplateChild<LyricsPage>,
     #[template_child]
@@ -300,7 +300,7 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
-        LibraryHomePage::static_type();
+        LibraryPage::static_type();
         AlbumPage::static_type();
         Rating::static_type();
 

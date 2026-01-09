@@ -3,16 +3,16 @@ use gtk::CompositeTemplate;
 use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/queue_row.ui")]
-pub struct QueueRow {
+#[template(resource = "/com/github/userwithaname/Mellow/song_row.ui")]
+pub struct SongRow {
     #[template_child]
     pub prefix_image: TemplateChild<gtk::Picture>,
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for QueueRow {
-    const NAME: &str = "MellowQueueRow";
-    type Type = super::QueueRow;
+impl ObjectSubclass for SongRow {
+    const NAME: &str = "MellowSongRow";
+    type Type = super::SongRow;
     type ParentType = adw::ActionRow;
 
     fn class_init(class: &mut Self::Class) {
@@ -24,8 +24,8 @@ impl ObjectSubclass for QueueRow {
     }
 }
 
-impl ObjectImpl for QueueRow {}
-impl WidgetImpl for QueueRow {}
-impl ActionRowImpl for QueueRow {}
-impl PreferencesRowImpl for QueueRow {}
-impl ListBoxRowImpl for QueueRow {}
+impl ObjectImpl for SongRow {}
+impl WidgetImpl for SongRow {}
+impl ActionRowImpl for SongRow {}
+impl PreferencesRowImpl for SongRow {}
+impl ListBoxRowImpl for SongRow {}

@@ -9,8 +9,8 @@ use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/queue_song_page.ui")]
-pub struct QueueSongPage {
+#[template(resource = "/com/github/userwithaname/Mellow/queue_subpage.ui")]
+pub struct QueueSubpage {
     pub index: Cell<usize>,
     pub stop_after: Cell<bool>,
 
@@ -25,7 +25,7 @@ pub struct QueueSongPage {
 }
 
 #[gtk::template_callbacks]
-impl QueueSongPage {
+impl QueueSubpage {
     #[template_callback]
     pub fn handle_play_now(&self) {
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
@@ -73,9 +73,9 @@ impl QueueSongPage {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for QueueSongPage {
-    const NAME: &str = "MellowQueueSongPage";
-    type Type = super::QueueSongPage;
+impl ObjectSubclass for QueueSubpage {
+    const NAME: &str = "MellowQueueSubpage";
+    type Type = super::QueueSubpage;
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
@@ -88,6 +88,6 @@ impl ObjectSubclass for QueueSongPage {
     }
 }
 
-impl ObjectImpl for QueueSongPage {}
-impl WidgetImpl for QueueSongPage {}
-impl NavigationPageImpl for QueueSongPage {}
+impl ObjectImpl for QueueSubpage {}
+impl WidgetImpl for QueueSubpage {}
+impl NavigationPageImpl for QueueSubpage {}
