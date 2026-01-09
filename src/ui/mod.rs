@@ -16,6 +16,7 @@ mod queue_page;
 mod queue_subpage;
 mod rating;
 mod settings_page;
+mod song_page;
 mod song_row;
 mod songs_page;
 mod window;

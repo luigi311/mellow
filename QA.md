@@ -1,6 +1,7 @@
 # Quality Assurance
 
-Uncheck all boxes and re-test to ensure the following:
+1. Run `cargo test` and ensure everything passes
+2. Uncheck all boxes and re-test to ensure the following:
 
 Playback:
 

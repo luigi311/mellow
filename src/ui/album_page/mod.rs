@@ -69,7 +69,9 @@ impl AlbumPage {
                     .build(),
             );
             entry.set_title(&info.title);
-            // TODO: Open a song page on click
+
+            entry.connect_activated(|_| println!("TODO: Open a song page on click"));
+
             ui.songs_list.append(&entry);
         }
     }
