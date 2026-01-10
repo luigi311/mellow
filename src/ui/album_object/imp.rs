@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Properties;
-use gtk::glib;
+use gtk::{gdk, glib};
 use std::cell::RefCell;
 
 use crate::ui::album_object::AlbumData;
@@ -10,6 +10,7 @@ use crate::ui::album_object::AlbumData;
 pub struct AlbumObject {
     #[property(name = "album", get, set, type = String, member = album)]
     #[property(name = "artist", get, set, type = String, member = artist)]
+    #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
     pub data: RefCell<AlbumData>,
 }
 

@@ -1,5 +1,5 @@
 use glib::Object;
-use gtk::glib;
+use gtk::{gdk, glib};
 
 mod imp;
 
@@ -20,4 +20,5 @@ impl AlbumObject {
 pub struct AlbumData {
     album: String,
     artist: String,
+    artwork: Option<gdk::Paintable>,
 }
