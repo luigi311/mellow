@@ -23,7 +23,7 @@ impl ToShuffledQueue for Artist {
 pub type ArtistMutex = Arc<Mutex<Artist>>;
 impl ToQueue for ArtistMutex {
     fn to_queue(&self) -> Vec<QueueItem> {
-        self.lock().unwrap().to_shuffled_queue()
+        self.lock().unwrap().to_queue()
     }
 }
 impl ToShuffledQueue for ArtistMutex {
