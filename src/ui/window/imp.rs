@@ -117,7 +117,9 @@ impl Window {
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
 
                 UpdateUI::AlbumPage(index) => self.open_album_page(index),
-                UpdateUI::SongPage(context) => self.open_song_page(context),
+                UpdateUI::SongPage(context) => {
+                    self.open_song_page(context.0, &context.1, context.2);
+                }
 
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
@@ -286,14 +288,13 @@ impl Window {
         self.library_albums.replace(albums.clone());
         self.library_albums_page.load_albums(albums);
     }
-    fn open_song_page(&self, context: Box<(usize, SongMutex, Box<dyn ToQueue + Send>)>) {
-        self.library_song_page
-            .update(context.0, &context.1, context.2);
+    fn open_song_page(&self, index: usize, song: &SongMutex, to_queue: Box<dyn ToQueue + Send>) {
+        self.library_song_page.update(index, song, to_queue);
         self.library_navigation_view.push_by_tag("song");
     }
     fn open_album_page(&self, index: usize) {
         let album = &self.library_albums.borrow()[index];
-        self.library_album_page.update(index, &album);
+        self.library_album_page.update(index, album);
         self.library_navigation_view.push_by_tag("album");
     }
     fn load_library_artists(&self, artists: &Artists) {

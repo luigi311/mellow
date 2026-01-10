@@ -13,10 +13,7 @@ pub struct Album {
 
 impl ToQueue for Album {
     fn to_queue(&self) -> Vec<QueueItem> {
-        self.songs
-            .iter()
-            .map(|song| QueueItem::from_song(song))
-            .collect()
+        self.songs.iter().map(QueueItem::from_song).collect()
     }
 }
 
