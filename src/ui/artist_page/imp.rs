@@ -15,11 +15,11 @@ pub struct ArtistPage {
 impl ArtistPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
-        println!("TODO: Play artist albums (sequential)");
+        println!("TODO: Play all albums by this artist (sequential)");
     }
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
-        println!("TODO: Play artist albums (shuffled)");
+        println!("TODO: Play all albums by this artist (shuffled)");
     }
 }
 

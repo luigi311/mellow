@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, MutexGuard};
 
-use crate::library::Song;
+use crate::library::{Song, song::SongMutex};
 
 #[derive(Clone)]
 pub enum QueueItem {
-    Song(Arc<Mutex<Song>>),
+    Song(SongMutex),
     Stopper,
 }
 
@@ -50,7 +50,7 @@ impl QueueItem {
     /// Creates a `QueueItem::Song` using the specified `song`
     #[inline]
     #[must_use]
-    pub fn from_song(song: &Arc<Mutex<Song>>) -> QueueItem {
+    pub fn from_song(song: &SongMutex) -> QueueItem {
         QueueItem::Song(Arc::clone(song))
     }
 }
