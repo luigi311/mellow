@@ -111,6 +111,9 @@ where
     S: Fn(&T, &str) -> f64,
     T: Clone,
 {
+    if query.is_empty() {
+        return items.to_owned();
+    }
     let mut matches = Vec::<(T, f64)>::new();
     for item in items {
         let score = score(item, query);

@@ -46,8 +46,13 @@ pub struct Library {
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
-// IDEA: Options to re-sort using different criteria,
-// with the below functions respecting said option
+pub trait ToQueue {
+    fn to_queue(&self) -> Vec<QueueItem>;
+}
+
+pub trait ToShuffledQueue {
+    fn to_shuffled_queue(&self) -> Vec<QueueItem>;
+}
 
 pub type Songs = Vec<Arc<Mutex<Song>>>;
 pub trait SortedSongs {
@@ -59,6 +64,11 @@ impl SortedSongs for Songs {
         self.binary_search_by(|song| {
             song.lock().unwrap().info().file_uri()[trim_start..].cmp(&uri[trim_start..])
         })
+    }
+}
+impl ToQueue for Songs {
+    fn to_queue(&self) -> Vec<QueueItem> {
+        self.iter().map(QueueItem::from_song).collect()
     }
 }
 
@@ -81,6 +91,33 @@ impl SortedAlbums for Albums {
         })
     }
 }
+impl ToQueue for Albums {
+    fn to_queue(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::<QueueItem>::with_capacity(self.len() * 8);
+        for album in self {
+            for song in &album.lock().unwrap().songs {
+                queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
+    }
+}
+impl ToShuffledQueue for Albums {
+    fn to_shuffled_queue(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::with_capacity(self.len() * 8);
+        let mut shuffled: Vec<usize> = (0..self.len()).collect();
+        for i in 0..shuffled.len() {
+            let rand_index = random_range(0..shuffled.len());
+            shuffled.swap(i, rand_index);
+        }
+        for index in shuffled {
+            for song in &self[index].lock().unwrap().songs {
+                queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
+    }
+}
 
 pub type Artists = Vec<Arc<Mutex<Artist>>>;
 pub trait SortedArtists {
@@ -92,9 +129,36 @@ impl SortedArtists for Artists {
         self.binary_search_by(|artist| artist.lock().unwrap().name.cmp(&info.album_artist))
     }
 }
-
-pub trait ToQueue {
-    fn to_queue(&self) -> Vec<QueueItem>;
+impl ToQueue for Artists {
+    fn to_queue(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::<QueueItem>::with_capacity(self.len() * 16);
+        for artist in self {
+            for album in &artist.lock().unwrap().albums {
+                for song in &album.lock().unwrap().songs {
+                    queue.push(QueueItem::Song(Arc::clone(song)));
+                }
+            }
+        }
+        queue
+    }
+}
+impl ToShuffledQueue for Artists {
+    fn to_shuffled_queue(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::with_capacity(self.len() * 16);
+        let mut shuffled: Vec<usize> = (0..self.len()).collect();
+        for i in 0..shuffled.len() {
+            let rand_index = random_range(0..shuffled.len());
+            shuffled.swap(i, rand_index);
+        }
+        for index in shuffled {
+            for album in &self[index].lock().unwrap().albums {
+                for song in &album.lock().unwrap().songs {
+                    queue.push(QueueItem::Song(Arc::clone(song)));
+                }
+            }
+        }
+        queue
+    }
 }
 
 pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
@@ -103,8 +167,9 @@ pub enum LibraryRequest {
 
     InitQueue,
     QueueFromPaths(Box<[String]>),
-    // TODO: Instead of requiring a query each time,
-    // maybe store/update it separately?
+
+    // TODO: Filter and start the queue directly from the UI instead
+    // (using the `ToQueue`/`ToShuffledQueue` traits)
     PlayAllSongs(String),
     PlayAllAlbums(String),
     ShuffleAllAlbums(String),
@@ -446,15 +511,11 @@ impl Library {
     /// Returns a queue of all songs in the library matching the given `query`
     #[must_use]
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
-        if query.is_empty() {
-            self.songs.iter().map(QueueItem::from_song).collect()
-        } else {
-            // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
-            let song_results = search::query_items(&self.songs, query, |song, query| {
-                search::query_score(query, &song.lock().unwrap().info().basic().title)
-            });
-            song_results.iter().map(QueueItem::from_song).collect()
-        }
+        // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
+        search::query_items(&self.songs, query, |song, query| {
+            search::query_score(query, &song.lock().unwrap().info().basic().title)
+        })
+        .to_queue()
     }
 
     /// Starts a queue of all songs in the library matching the given `query`
@@ -487,20 +548,10 @@ impl Library {
     /// with sequential order of songs
     #[must_use]
     pub fn all_albums(&self, query: &str) -> Vec<QueueItem> {
-        let albums = if query.is_empty() {
-            &self.albums
-        } else {
-            &search::query_items(&self.albums, query, |album, query| {
-                search::query_score(query, &album.lock().unwrap().title)
-            })
-        };
-        let mut queue = Vec::<QueueItem>::with_capacity(albums.len() * 8);
-        for album in albums {
-            for song in &album.lock().unwrap().songs {
-                queue.push(QueueItem::Song(Arc::clone(song)));
-            }
-        }
-        queue
+        search::query_items(&self.albums, query, |album, query| {
+            search::query_score(query, &album.lock().unwrap().title)
+        })
+        .to_queue()
     }
 
     /// Starts a queue of all albums in the library
@@ -521,25 +572,10 @@ impl Library {
     /// ordered albums
     #[must_use]
     pub fn all_albums_shuffled(&self, query: &str) -> Vec<QueueItem> {
-        let albums = if query.is_empty() {
-            &self.albums
-        } else {
-            &search::query_items(&self.albums, query, |album, query| {
-                search::query_score(query, &album.lock().unwrap().title)
-            })
-        };
-        let mut queue = Vec::with_capacity(albums.len() * 8);
-        let mut shuffled: Vec<usize> = (0..albums.len()).collect();
-        for i in 0..shuffled.len() {
-            let rand_index = random_range(0..shuffled.len());
-            shuffled.swap(i, rand_index);
-        }
-        for index in shuffled {
-            for song in &albums[index].lock().unwrap().songs {
-                queue.push(QueueItem::Song(Arc::clone(song)));
-            }
-        }
-        queue
+        search::query_items(&self.albums, query, |album, query| {
+            search::query_score(query, &album.lock().unwrap().title)
+        })
+        .to_shuffled_queue()
     }
 
     /// Starts a randomly ordered queue of all albums in the library
@@ -559,22 +595,10 @@ impl Library {
     /// with albums and songs in sequential order
     #[must_use]
     pub fn all_artists(&self, query: &str) -> Vec<QueueItem> {
-        let artists = if query.is_empty() {
-            &self.artists
-        } else {
-            &search::query_items(&self.artists, query, |artist, query| {
-                search::query_score(query, &artist.lock().unwrap().name)
-            })
-        };
-        let mut queue = Vec::<QueueItem>::with_capacity(self.songs.len());
-        for artist in artists {
-            for album in &artist.lock().unwrap().albums {
-                for song in &album.lock().unwrap().songs {
-                    queue.push(QueueItem::Song(Arc::clone(song)));
-                }
-            }
-        }
-        queue
+        search::query_items(&self.artists, query, |artist, query| {
+            search::query_score(query, &artist.lock().unwrap().name)
+        })
+        .to_queue()
     }
 
     /// Starts a queue of all albums in the library
@@ -595,27 +619,10 @@ impl Library {
     /// randomly ordered artists
     #[must_use]
     pub fn all_artists_shuffled(&self, query: &str) -> Vec<QueueItem> {
-        let artists = if query.is_empty() {
-            &self.artists
-        } else {
-            &search::query_items(&self.artists, query, |artist, query| {
-                search::query_score(query, &artist.lock().unwrap().name)
-            })
-        };
-        let mut queue = Vec::with_capacity(artists.len() * 16);
-        let mut shuffled: Vec<usize> = (0..artists.len()).collect();
-        for i in 0..shuffled.len() {
-            let rand_index = random_range(0..shuffled.len());
-            shuffled.swap(i, rand_index);
-        }
-        for index in shuffled {
-            for album in &artists[index].lock().unwrap().albums {
-                for song in &album.lock().unwrap().songs {
-                    queue.push(QueueItem::Song(Arc::clone(song)));
-                }
-            }
-        }
-        queue
+        search::query_items(&self.artists, query, |artist, query| {
+            search::query_score(query, &artist.lock().unwrap().name)
+        })
+        .to_shuffled_queue()
     }
 
     /// Starts a randomly ordered queue of all artists in the library

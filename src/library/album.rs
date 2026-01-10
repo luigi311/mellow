@@ -14,7 +14,7 @@ pub struct Album {
 
 impl ToQueue for Album {
     fn to_queue(&self) -> Vec<QueueItem> {
-        self.songs.iter().map(QueueItem::from_song).collect()
+        self.songs.to_queue()
     }
 }
 

@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::library::{Album, SongInfo, ToQueue};
+use crate::library::{Album, SongInfo, ToQueue, ToShuffledQueue};
 use crate::player::queue_item::QueueItem;
 
 pub struct Artist {
@@ -11,20 +11,24 @@ pub struct Artist {
 
 impl ToQueue for Artist {
     fn to_queue(&self) -> Vec<QueueItem> {
-        let mut queue = Vec::<QueueItem>::with_capacity(16);
-        for album in &self.albums {
-            for song in &album.lock().unwrap().songs {
-                queue.push(QueueItem::Song(Arc::clone(song)));
-            }
-        }
-        queue
+        self.albums.to_queue()
+    }
+}
+impl ToShuffledQueue for Artist {
+    fn to_shuffled_queue(&self) -> Vec<QueueItem> {
+        self.albums.to_shuffled_queue()
     }
 }
 
 pub type ArtistMutex = Arc<Mutex<Artist>>;
 impl ToQueue for ArtistMutex {
     fn to_queue(&self) -> Vec<QueueItem> {
-        self.lock().unwrap().to_queue()
+        self.lock().unwrap().to_shuffled_queue()
+    }
+}
+impl ToShuffledQueue for ArtistMutex {
+    fn to_shuffled_queue(&self) -> Vec<QueueItem> {
+        self.lock().unwrap().to_shuffled_queue()
     }
 }
 

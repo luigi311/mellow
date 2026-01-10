@@ -48,6 +48,9 @@ pub enum UpdateUI {
     LibraryArtists(Artists),
 
     AlbumPage(usize),
+    // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
+    // Or `Vec<QueueItem>` directly, which would also remove the
+    // need for the second field
     SongPage(Box<(usize, SongMutex, Box<dyn ToQueue + Send>)>),
 
     FocusLibrary,
