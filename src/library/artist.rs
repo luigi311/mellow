@@ -1,11 +1,31 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::library::{Album, SongInfo};
+use crate::library::{Album, SongInfo, ToQueue};
+use crate::player::queue_item::QueueItem;
 
 pub struct Artist {
     pub name: String,
     pub albums: ArtistAlbums,
+}
+
+impl ToQueue for Artist {
+    fn to_queue(&self) -> Vec<QueueItem> {
+        let mut queue = Vec::<QueueItem>::with_capacity(16);
+        for album in &self.albums {
+            for song in &album.lock().unwrap().songs {
+                queue.push(QueueItem::Song(Arc::clone(song)));
+            }
+        }
+        queue
+    }
+}
+
+pub type ArtistMutex = Arc<Mutex<Artist>>;
+impl ToQueue for ArtistMutex {
+    fn to_queue(&self) -> Vec<QueueItem> {
+        self.lock().unwrap().to_queue()
+    }
 }
 
 pub type ArtistAlbums = Vec<Arc<Mutex<Album>>>;

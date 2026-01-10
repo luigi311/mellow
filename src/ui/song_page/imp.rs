@@ -1,31 +1,54 @@
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+
+use crate::excuses::EXP_INIT;
+use crate::excuses::EXP_RX;
+use crate::library::ToQueue;
+use crate::player::PLAYER_TX;
+use crate::player::PlayerRequest;
+use crate::ui::UI_TX;
+use crate::ui::UpdateUI;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
 pub struct SongPage {
-    pub index: Cell<usize>,
-    pub stop_after: Cell<bool>,
-
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
-    #[template_child]
-    pub stop_after_button: TemplateChild<adw::ActionRow>,
 
-    pub activate_action: Cell<Option<Box<dyn Fn(Self) -> ()>>>,
+    pub index: Cell<usize>,
+    pub context: RefCell<Option<Box<dyn ToQueue + Send>>>,
 }
 
 #[gtk::template_callbacks]
 impl SongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
-        //TODO: Start a queue based on current context and skip to this song
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::SetShuffle(false))
+            .expect(EXP_RX);
+        player_tx
+            .send(PlayerRequest::LoadQueue(
+                self.context.borrow().as_ref().expect(EXP_INIT).to_queue(),
+            ))
+            .expect(EXP_RX);
+        player_tx
+            .send(PlayerRequest::SkipTo(self.index.get()))
+            .expect(EXP_RX);
+        player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        UI_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(UpdateUI::OpenSheet(false))
+            .expect(EXP_RX);
     }
 }
 

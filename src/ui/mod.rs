@@ -22,7 +22,8 @@ mod songs_page;
 mod window;
 
 use crate::about::{APP_ID, APP_NAME};
-use crate::library::{Albums, Artists, Songs};
+use crate::library::song::SongMutex;
+use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::window::Window;
 
@@ -44,7 +45,9 @@ pub enum UpdateUI {
     LibrarySongs(Songs),
     LibraryAlbums(Albums),
     LibraryArtists(Artists),
+
     AlbumPage(usize),
+    SongPage(Box<(usize, SongMutex, Box<dyn ToQueue + Send>)>),
 
     FocusLibrary,
     FocusPlaying,

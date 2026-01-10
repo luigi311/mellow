@@ -93,6 +93,10 @@ impl SortedArtists for Artists {
     }
 }
 
+pub trait ToQueue {
+    fn to_queue(&self) -> Vec<QueueItem>;
+}
+
 pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
 pub enum LibraryRequest {
     Rebuild,

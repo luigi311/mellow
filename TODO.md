@@ -30,11 +30,11 @@ Music library:
   - [x] Buttons to play all songs (shuffled/sequential)
   - [ ] Show all songs
   - [ ] Song subpage, accessed from each item
-    - [ ] Display song info (title/album/artist, maybe album cover)
+    - [-] Display song info (title/album/artist, maybe album cover)
     - [ ] Interactive rating widget
-    - [ ] Play Now: Start a new queue and skip to the selected track
-      - IDEA: Use a closure so the page can be reused in different contexts
+    - [x] Play Now: Start a new queue and skip to the selected track
     - [ ] Play Next: Insert the song to the next position in the queue
+    - [ ] Add to Queue button
     - [ ] Ability to set tags
     - [ ] Go to album button
     - [ ] Go to artist button
@@ -45,6 +45,8 @@ Music library:
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)
+    - [x] Play/Shuffle buttons
+    - [ ] Add to Queue button
     - [-] Display a track list, each opening a Song subpage
       - TODO: Open a Song subpage
     - [ ] Ability to set tags

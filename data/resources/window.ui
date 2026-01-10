@@ -103,6 +103,13 @@
                             <property name="tag">library_songs</property>
                           </object>
                         </child>
+                        Song Page
+                        <child>
+                          <object class="MellowSongPage" id="library_song_page">
+                            <property name="title" translatable="yes">song</property>
+                            <property name="tag">song</property>
+                          </object>
+                        </child>
 
                         Albums
                         <child>

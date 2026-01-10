@@ -10,7 +10,8 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs};
+use crate::library::song::SongMutex;
+use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
 use crate::ui::albums_page::AlbumsPage;
@@ -22,6 +23,7 @@ use crate::ui::queue_page::QueuePage;
 use crate::ui::queue_subpage::QueueSubpage;
 use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
+use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -43,6 +45,8 @@ pub struct Window {
     // View stack "Library" tab
     #[template_child]
     pub library_songs_page: TemplateChild<SongsPage>,
+    #[template_child]
+    pub library_song_page: TemplateChild<SongPage>,
     #[template_child]
     pub library_albums_page: TemplateChild<AlbumsPage>,
     #[template_child]
@@ -113,6 +117,7 @@ impl Window {
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
 
                 UpdateUI::AlbumPage(index) => self.open_album_page(index),
+                UpdateUI::SongPage(context) => self.open_song_page(context),
 
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
@@ -281,9 +286,13 @@ impl Window {
         self.library_albums.replace(albums.clone());
         self.library_albums_page.load_albums(albums);
     }
+    fn open_song_page(&self, context: Box<(usize, SongMutex, Box<dyn ToQueue + Send>)>) {
+        self.library_song_page
+            .update(context.0, &context.1, context.2);
+        self.library_navigation_view.push_by_tag("song");
+    }
     fn open_album_page(&self, index: usize) {
         let album = &self.library_albums.borrow()[index];
-        let album = album.lock().unwrap();
         self.library_album_page.update(index, &album);
         self.library_navigation_view.push_by_tag("album");
     }
