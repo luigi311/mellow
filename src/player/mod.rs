@@ -41,6 +41,8 @@ pub enum PlayerRequest {
     AppendQueue(Vec<QueueItem>),
     /// Inserts an item into the queue
     InsertAt(Box<(usize, QueueItem)>),
+    /// Inserts an item into the queue relative to the currently playing index
+    InsertRelative(Box<(isize, QueueItem)>),
     /// Remove item at the specified index from the queue
     RemoveAt(usize),
 
@@ -77,6 +79,7 @@ impl std::fmt::Debug for PlayerRequest {
                     format!("AppendQueue(…): {} items", queue.len())
                 }
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
+                Self::InsertRelative(item) => format!("InsertAt({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
@@ -199,6 +202,16 @@ impl Player {
                 PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
+                PlayerRequest::InsertRelative(item) => {
+                    self.insert_to_queue(
+                        if item.0 >= 0 {
+                            self.queue.index() + item.0 as usize
+                        } else {
+                            self.queue.index() - item.0 as usize
+                        },
+                        item.1,
+                    ) == ()
+                }
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
                         if self.next_song_loaded {

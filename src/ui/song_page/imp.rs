@@ -48,6 +48,17 @@ impl SongPage {
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
+    #[template_callback]
+    pub fn handle_play_next(&self) {
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::InsertRelative(Box::new((
+                1,
+                self.context.borrow().as_ref().expect(EXP_INIT).to_queue()[self.index.get()]
+                    .clone(),
+            ))))
+            .expect(EXP_RX);
+    }
 }
 
 #[glib::object_subclass]

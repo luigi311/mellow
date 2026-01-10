@@ -82,6 +82,19 @@
                   </object>
                 </child>
 
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_play_next" swapped="true"/>
+                    <property name="title" translatable="yes">Play Next</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
               </object>
             </child>
 

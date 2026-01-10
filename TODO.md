@@ -6,7 +6,8 @@ Song queue:
 - [-] Allow reordering the queue
 > Untested, needs UI
 - [-] Allow adding songs to the queue
-> Implemented, needs library UI
+  - TODO: Support adding albums
+  - TODO: Support adding artists
 - [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)
 - [x] Access song lyrics using a header-bar icon
@@ -65,6 +66,12 @@ Music library:
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
+- [ ] Ability to disable library directories
+> Disabled directories would still retain song data (play counts, etc),
+> but be excluded from the actual `songs`/`albums`/`artists` used by the
+> `Library`. This would also allow the library to temporarily disable
+> missing directories.
+> (For example, using an enum: `Enabled`/`Disabled`/`Missing`)
 
 Misc:
 
@@ -76,9 +83,3 @@ Improvements:
 - [ ] Marquee long titles
 - [ ] Background color(s) matching the album cover
   - [ ] Bonus: alter the colors differently for dark/light theme
-- [ ] Ability to disable library directories
-> Disabled directories would still retain song data (play counts, etc),
-> but be excluded from the actual `songs`/`albums`/`artists` used by the
-> `Library`. This would also allow the library to temporarily disable
-> missing directories.
-> (For example, using an enum: `Enabled`/`Disabled`/`Missing`)

@@ -532,9 +532,8 @@ impl Library {
     }
 
     pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
-            album.songs.iter().map(QueueItem::from_song).collect(),
-        ))?;
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(album.songs.to_queue()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
