@@ -4,11 +4,13 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">Play</attribute>
-        <attribute name='action'>player.play_all_artists</attribute>
+        <!-- TODO: Sequential queue -->
+        <!-- <attribute name='action'>player.play_all_artists</attribute> -->
       </item>
       <item>
         <attribute name="label" translatable="yes">Shuffle</attribute>
-        <attribute name='action'>player.shuffle_all_artists</attribute>
+        <!-- TODO: Shuffled queue -->
+        <!-- <attribute name='action'>player.shuffle_all_artists</attribute> -->
       </item>
     </section>
   </menu>

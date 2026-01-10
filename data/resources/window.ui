@@ -106,7 +106,7 @@
                         Song Page
                         <child>
                           <object class="MellowSongPage" id="library_song_page">
-                            <property name="title" translatable="yes">song</property>
+                            <property name="title" translatable="yes">Song</property>
                             <property name="tag">song</property>
                           </object>
                         </child>
@@ -131,6 +131,13 @@
                           <object class="MellowArtistsPage" id="library_artists_page">
                             <property name="title" translatable="yes">Artists</property>
                             <property name="tag">library_artists</property>
+                          </object>
+                        </child>
+                        Artist Page
+                        <child>
+                          <object class="MellowArtistPage" id="library_artist_page">
+                            <property name="title" translatable="yes">Artist</property>
+                            <property name="tag">artist</property>
                           </object>
                         </child>
 

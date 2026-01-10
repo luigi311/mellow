@@ -15,6 +15,7 @@ use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs, ToQueue
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
 use crate::ui::albums_page::AlbumsPage;
+use crate::ui::artist_page::ArtistPage;
 use crate::ui::artists_page::ArtistsPage;
 use crate::ui::library_page::LibraryPage;
 use crate::ui::lyrics_page::LyricsPage;
@@ -53,6 +54,8 @@ pub struct Window {
     pub library_album_page: TemplateChild<AlbumPage>,
     #[template_child]
     pub library_artists_page: TemplateChild<ArtistsPage>,
+    #[template_child]
+    pub library_artist_page: TemplateChild<ArtistPage>,
     #[template_child]
     pub library_navigation_view: TemplateChild<adw::NavigationView>,
 

@@ -8,6 +8,7 @@ mod album_object;
 mod album_page;
 mod album_tile;
 mod albums_page;
+mod artist_page;
 mod artists_page;
 mod library_page;
 mod lyrics_page;
