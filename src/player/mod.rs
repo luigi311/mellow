@@ -204,10 +204,9 @@ impl Player {
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {
                     self.insert_to_queue(
-                        if item.0 >= 0 {
-                            self.queue.index() + item.0 as usize
-                        } else {
-                            self.queue.index() - item.0 as usize
+                        match item.0 >= 0 {
+                            true => self.queue.index() + item.0 as usize,
+                            false => self.queue.index() - -item.0 as usize,
                         },
                         item.1,
                     ) == ()
