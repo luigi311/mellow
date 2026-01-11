@@ -30,6 +30,9 @@ pub struct SongPage {
 impl SongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
+        self.obj()
+            .activate_action("ui.library_nav_pop", None)
+            .expect(ACTION_ERR);
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SetShuffle(false))
@@ -48,9 +51,6 @@ impl SongPage {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
-        self.obj()
-            .activate_action("ui.library_nav_pop", None)
-            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_play_next(&self) {

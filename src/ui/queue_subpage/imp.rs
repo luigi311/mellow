@@ -28,6 +28,12 @@ pub struct QueueSubpage {
 impl QueueSubpage {
     #[template_callback]
     pub fn handle_play_now(&self) {
+        self.obj()
+            .activate_action("ui.close_sheet", None)
+            .expect(ACTION_ERR);
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SkipTo(self.index.get()))
@@ -35,15 +41,12 @@ impl QueueSubpage {
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
-        self.obj()
-            .activate_action("ui.close_sheet", None)
-            .expect(ACTION_ERR);
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_stop_after(&self) {
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
         PLAYER_TX
             .get()
             .expect(EXP_INIT)
@@ -52,20 +55,17 @@ impl QueueSubpage {
                 true => PlayerRequest::RemoveAt(self.index.get() + 1),
             })
             .expect(EXP_RX);
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_remove_item(&self) {
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
         PLAYER_TX
             .get()
             .expect(EXP_INIT)
             .send(PlayerRequest::RemoveAt(self.index.get()))
             .expect(EXP_RX);
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
     }
 }
 
