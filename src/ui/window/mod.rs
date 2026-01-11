@@ -172,6 +172,26 @@ impl Window {
                     }
                 ))
                 .build(),
+            gio::ActionEntry::builder("library_nav_push")
+                .parameter_type(Some(&String::static_variant_type()))
+                .activate(clone!(
+                    #[weak(rename_to=ui)]
+                    self.imp(),
+                    move |_, _, tag| {
+                        let tag = tag.unwrap().get::<String>().unwrap();
+                        ui.library_navigation_view.push_by_tag(&tag);
+                    }
+                ))
+                .build(),
+            gio::ActionEntry::builder("library_nav_pop")
+                .activate(clone!(
+                    #[weak(rename_to=ui)]
+                    self.imp(),
+                    move |_, _, _| {
+                        ui.library_navigation_view.pop();
+                    }
+                ))
+                .build(),
         ]);
         self.insert_action_group("ui", Some(&ui_actions));
 
