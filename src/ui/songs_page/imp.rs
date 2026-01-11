@@ -2,7 +2,6 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
 use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
@@ -29,7 +28,7 @@ pub struct SongsPage {
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
-    search_query: Rc<RefCell<String>>,
+    search_query: RefCell<String>,
 }
 
 #[gtk::template_callbacks]
@@ -70,10 +69,10 @@ impl SongsPage {
 
     fn play_now(&self, shuffle: bool) {
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::SetShuffle(shuffle))
             .expect(EXP_RX);
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         library_tx
             .send(LibraryRequest::PlayAllSongs(
                 self.search_query.borrow().to_string(),
