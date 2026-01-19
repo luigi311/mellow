@@ -8,7 +8,9 @@ mod album_object;
 mod album_page;
 mod album_tile;
 mod albums_page;
+mod artist_object;
 mod artist_page;
+mod artist_tile;
 mod artists_page;
 mod library_page;
 mod lyrics_page;
@@ -47,6 +49,7 @@ pub enum UpdateUI {
     LibraryAlbums(Albums),
     LibraryArtists(Artists),
 
+    ArtistPage(usize),
     AlbumPage(usize),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the

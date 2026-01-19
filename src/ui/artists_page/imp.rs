@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::glib;
+use gtk::{gio, glib};
 use std::cell::RefCell;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -8,6 +8,9 @@ use crate::library::LIBRARY_TX;
 use crate::library::{Artists, LibraryRequest};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::ui::artist_object::ArtistObject;
+use crate::ui::artist_tile::ArtistTile;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]
@@ -19,6 +22,8 @@ pub struct ArtistsPage {
 
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    artists_grid: TemplateChild<gtk::GridView>,
 
     #[template_child]
     search_button: TemplateChild<gtk::ToggleButton>,
@@ -80,13 +85,55 @@ impl ArtistsPage {
             .expect(EXP_RX);
     }
 
-    pub fn load_artists(&self, artists: &Artists) {
-        if artists.is_empty() {
+    pub fn load_artists(&self, artsits: &Artists) {
+        if artsits.is_empty() {
             self.view_stack.set_visible_child_name("empty");
             return;
         }
         self.view_stack.set_visible_child_name("artists");
-        println!("TODO: Create a list of library artists in the UI");
+
+        let model = gio::ListStore::new::<ArtistObject>();
+        let albums: Vec<ArtistObject> = (0..artsits.len())
+            .map(|index| {
+                let artist = artsits[index].lock().unwrap();
+                ArtistObject::new(&artist.name, artist.albums.len() as u64)
+            })
+            .collect();
+        model.extend_from_slice(&albums);
+
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(move |_, list_item| {
+            list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .set_child(Some(&ArtistTile::default()));
+        });
+        factory.connect_bind(move |_, list_item| {
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            let object = list_item
+                .item()
+                .and_downcast::<ArtistObject>()
+                .expect("Needs to be ArtistObject");
+            let artist_tile = ArtistTile::new();
+            artist_tile.set_info(&object.artist(), object.albums());
+            // let artist_tile = ArtistTile::builder()
+            //     .info(&object.artist(), object.albums())
+            //     .build();
+            list_item.set_child(Some(&artist_tile));
+        });
+
+        self.artists_grid
+            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+        self.artists_grid.set_factory(Some(&factory));
+        self.artists_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::ArtistPage(index as usize))
+                .expect(EXP_RX);
+        });
     }
 }
 

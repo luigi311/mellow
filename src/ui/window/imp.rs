@@ -119,6 +119,7 @@ impl Window {
                 UpdateUI::LibraryAlbums(albums) => self.load_library_albums(&albums),
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
 
+                UpdateUI::ArtistPage(index) => self.open_artist_page(index),
                 UpdateUI::AlbumPage(index) => self.open_album_page(index),
                 UpdateUI::SongPage(context) => {
                     self.open_song_page(context.0, &context.1, context.2);
@@ -294,6 +295,12 @@ impl Window {
     fn open_song_page(&self, index: usize, song: &SongMutex, to_queue: Box<dyn ToQueue + Send>) {
         self.library_song_page.update(index, song, to_queue);
         self.library_navigation_view.push_by_tag("song");
+    }
+    fn open_artist_page(&self, index: usize) {
+        let artist = &self.library_artists.borrow()[index];
+        self.library_artist_page
+            .update(index, &artist.lock().unwrap().albums);
+        self.library_navigation_view.push_by_tag("artist");
     }
     fn open_album_page(&self, index: usize) {
         let album = &self.library_albums.borrow()[index];
