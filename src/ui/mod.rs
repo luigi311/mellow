@@ -6,6 +6,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 mod album_object;
 mod album_page;
+mod album_row;
 mod album_tile;
 mod albums_page;
 mod artist_object;
@@ -49,8 +50,8 @@ pub enum UpdateUI {
     LibraryAlbums(Albums),
     LibraryArtists(Artists),
 
-    ArtistPage(usize),
-    AlbumPage(usize),
+    ArtistPage(usize), //TODO: Could this be refactored to take an `ArtistMutex`?
+    AlbumPage(usize),  //TODO: Could this be refactored to take an `AlbumMutex`?
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field

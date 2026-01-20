@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="MellowAlbumRow" parent="AdwActionRow">
+
+    <property name="title_lines">1</property>
+    <property name="subtitle_lines">1</property>
+    <property name="use_markup">False</property>
+    <property name="activatable">True</property>
+
+    <!-- TODO: Design according to the mockup -->
+    
+    <child type="prefix">
+      <object class="GtkPicture" id="prefix_image">
+        <property name="valign">center</property>
+        <property name="content_fit">contain</property>
+        <property name="margin_top">7</property>
+        <property name="margin_bottom">7</property>
+        <style>
+          <class name="card"/>
+        </style>
+      </object>
+    </child>
+
+    <child type="suffix">
+      <object class="GtkImage">
+        <property name="icon_name">go-next-symbolic</property>
+      </object>
+    </child>
+
+  </template>
+</interface>

@@ -9,6 +9,11 @@ use crate::ui::song_row::SongRow;
 #[template(resource = "/com/github/userwithaname/Mellow/artist_page.ui")]
 pub struct ArtistPage {
     pub index: Cell<usize>,
+
+    #[template_child]
+    pub artist_name: TemplateChild<gtk::Label>,
+    #[template_child]
+    pub albums_list: TemplateChild<gtk::ListBox>,
 }
 
 #[gtk::template_callbacks]

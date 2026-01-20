@@ -43,8 +43,43 @@
             </child>
           </object>
         </child>
-        <!-- <property name="content"> -->
-        <!-- </property> -->
+        <property name="content">
+          <object class="GtkBox">
+            <property name="vexpand">True</property>
+            <property name="hexpand">True</property>
+            <property name="valign">center</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkLabel" id="artist_name">
+                <property name="wrap">true</property>
+                <property name="wrap-mode">word</property>
+                <property name="justify">center</property>
+                <style>
+                  <class name="heading"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="AdwPreferencesPage">
+                <property name="valign">center</property>
+                <child>
+                  <object class="AdwPreferencesGroup">
+                    <property name="title">Albums</property>
+                    <property name="separate_rows">True</property>
+                    <child>
+                      <object class="GtkListBox" id="albums_list">
+                        <property name="selection_mode">none</property>
+                        <style>
+                          <class name="boxed-list"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
       </object>
     </property>
 

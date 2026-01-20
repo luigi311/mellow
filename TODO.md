@@ -54,10 +54,14 @@ Music library:
     - [ ] Go to artist button
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
-  - [ ] Show all artists
+  - [-] Show all artists
+    - TODO: Show images (and/or other visual improvements)
   - [ ] Artist subpage, accessed from each item
     - [ ] Display artist info (name/number of albums/average rating)
-    - [ ] Display all albums by the artist, each opening an Album subpage
+    - [-] Display all albums by the artist, each opening an Album subpage
+      - TODO: Open subpage
+    - [ ] Play/Shuffle buttons
+    - [ ] Add to Queue button
 - [x] Play counting
 > Works, but the counting logic could be improved
 - [-] Search/filtering for songs/albums/artists pages

@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/com/github/userwithaname/Mellow/">
     <file compressed="true" preprocess="xml-stripblanks">album_page.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">album_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">albums_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">album_tile.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">artist_page.ui</file>

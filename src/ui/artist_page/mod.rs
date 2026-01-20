@@ -1,8 +1,10 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
 
 use crate::library::Albums;
+use crate::ui::album_row::AlbumRow;
+use crate::ui::fallback_song_image;
 
 mod imp;
 
@@ -25,10 +27,33 @@ impl ArtistPage {
         Object::builder().build()
     }
 
-    pub fn update(&self, index: usize, albums: &Albums) {
-        let artist_page = self.imp();
-        artist_page.index.set(index);
+    pub fn update(&self, index: usize, artist: &str, albums: &Albums) {
+        let ui = self.imp();
+        ui.index.set(index);
+        ui.artist_name.set_label(artist);
 
-        println!("TODO: Show artist's albums");
+        ui.albums_list.remove_all();
+        for album in albums {
+            let entry = AlbumRow::new();
+
+            let album_locked = album.lock().unwrap();
+            entry.set_title(&album_locked.title);
+            entry.set_subtitle(&match album_locked.year {
+                year if year > 0 => year.to_string(),
+                _ => String::new(),
+            });
+
+            let mut first_song = album_locked.songs[0].lock().unwrap();
+            let mut info = first_song.info();
+            let info = info.detailed();
+            let artwork = info.artwork.as_ref();
+            if artwork.is_some() {
+                entry.set_prefix_image(artwork);
+            } else {
+                entry.set_prefix_image(Some(&fallback_song_image()));
+            }
+
+            ui.albums_list.append(&entry);
+        }
     }
 }

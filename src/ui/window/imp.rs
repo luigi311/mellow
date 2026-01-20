@@ -298,8 +298,9 @@ impl Window {
     }
     fn open_artist_page(&self, index: usize) {
         let artist = &self.library_artists.borrow()[index];
+        let artist = artist.lock().unwrap();
         self.library_artist_page
-            .update(index, &artist.lock().unwrap().albums);
+            .update(index, &artist.name, &artist.albums);
         self.library_navigation_view.push_by_tag("artist");
     }
     fn open_album_page(&self, index: usize) {
