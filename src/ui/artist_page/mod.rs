@@ -53,6 +53,8 @@ impl ArtistPage {
                 entry.set_prefix_image(Some(&fallback_song_image()));
             }
 
+            entry.connect_activated(move |_| println!("TODO: Open the album subpage"));
+
             ui.albums_list.append(&entry);
         }
     }
