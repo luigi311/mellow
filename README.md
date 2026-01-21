@@ -47,7 +47,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  5  | Music library                             | ⚠️ WIP: Basics are done, but see below |
 | 5.1 | Library songs page                        | ❌ TODO |
 | 5.2 | Library albums page                       | ⚠️ WIP: UI is not yet fully implemented |
-| 5.3 | Library artists page                      | ❌ TODO |
+| 5.3 | Library artists page                      | ⚠️ WIP: UI is not yet fully implemented |
 |  6  | Music library search/filters              | ⚠️ WIP: Simple search, no UI yet |
 |  7  | Play counts and ratings                   | ⚠️ WIP: Basic play counting, no UI yet |
 |  8  | Tag-like playlists                        | ❌ TODO |

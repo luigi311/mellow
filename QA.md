@@ -5,8 +5,7 @@
 
 Playback:
 
-- [ ] Pause/play/skip work as expected
-  - FIX: Spacebar-to-play shortcut interferes with library search
+- [x] Pause/play/skip work as expected
 - [x] Shuffle/repeat/sequential modes work as expected
 - [x] Seeking works as expected
   - [x] Seeking to any point in the song (click or drag)
@@ -32,8 +31,13 @@ Music Library:
 - [ ] The 'Songs' page and its subpages do not have performance issues
 - [ ] The 'Albums' page and its subpages do not have performance issues
 - [ ] The 'Artists' page and its subpages do not have performance issues
-- [x] The player works while the library is building in the background
-- [ ] Search results show up quickly or progressively
+- [ ] Library building works in the background and doesn't affect functionality
+  - FIX: No way to cancel, simultaneous changes/rebuilds could cause incorrect results
+  - FIX: Rebuilding sometimes blocks library requests(?)
+- [ ] Searching is quick and works as expected
+  - TODO: Search results for songs/albums/artists
+  - TODO: Filters for songs/albums/artists
+  - FIX: Spacebar-to-play shortcut interferes with library search
 
 User Experience:
 
