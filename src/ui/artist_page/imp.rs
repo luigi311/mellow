@@ -3,6 +3,9 @@ use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
 use std::cell::Cell;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::song_row::SongRow;
 
 #[derive(Default, CompositeTemplate)]
@@ -20,11 +23,29 @@ pub struct ArtistPage {
 impl ArtistPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
-        println!("TODO: Play all albums by this artist (sequential)");
+        PLAYER_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::SetShuffle(false))
+            .expect(EXP_RX);
+        LIBRARY_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::PlayArtist(self.index.get()))
+            .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
-        println!("TODO: Play all albums by this artist (shuffled)");
+        PLAYER_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::SetShuffle(false))
+            .expect(EXP_RX);
+        LIBRARY_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::ShuffleArtist(self.index.get()))
+            .expect(EXP_RX);
     }
 }
 

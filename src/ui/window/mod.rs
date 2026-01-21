@@ -105,6 +105,20 @@ impl Window {
                     move |_, _, _| album_page.handle_play_shuffled()
                 ))
                 .build(),
+            gio::ActionEntry::builder("play_visible_artist")
+                .activate(clone!(
+                    #[weak(rename_to=artist_page)]
+                    self.imp().library_artist_page.imp(),
+                    move |_, _, _| artist_page.handle_play_sequential()
+                ))
+                .build(),
+            gio::ActionEntry::builder("shuffle_visible_artist")
+                .activate(clone!(
+                    #[weak(rename_to=artist_page)]
+                    self.imp().library_artist_page.imp(),
+                    move |_, _, _| artist_page.handle_play_shuffled()
+                ))
+                .build(),
             gio::ActionEntry::builder("play_all_albums")
                 .activate(clone!(
                     #[weak(rename_to=albums_page)]

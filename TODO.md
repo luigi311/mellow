@@ -60,7 +60,7 @@ Music library:
     - [ ] Display artist info (name/number of albums/average rating)
     - [-] Display all albums by the artist, each opening an Album subpage
       - TODO: Open subpage
-    - [ ] Play/Shuffle buttons
+    - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
 - [x] Play counting
 > Works, but the counting logic could be improved

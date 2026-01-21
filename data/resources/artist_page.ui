@@ -4,13 +4,11 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">Play</attribute>
-        <!-- TODO: Sequental playback -->
-        <!-- <attribute name='action'>player.play_visible_artist</attribute> -->
+        <attribute name='action'>player.play_visible_artist</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">Shuffle</attribute>
-        <!-- TODO: Shuffled playback -->
-        <!-- <attribute name='action'>player.shuffle_visible_artist</attribute> -->
+        <attribute name='action'>player.shuffle_visible_artist</attribute>
       </item>
     </section>
   </menu>

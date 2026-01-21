@@ -177,6 +177,8 @@ pub enum LibraryRequest {
     ShuffleAllArtists(String),
 
     PlayAlbum(usize),
+    PlayArtist(usize),
+    ShuffleArtist(usize),
 
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
@@ -240,6 +242,12 @@ impl Library {
 
                 LibraryRequest::PlayAlbum(index) => {
                     self.play_album(&self.albums[index].lock().unwrap())?;
+                }
+                LibraryRequest::PlayArtist(index) => {
+                    self.play_artist(&self.artists[index].lock().unwrap())?;
+                }
+                LibraryRequest::ShuffleArtist(index) => {
+                    self.shuffle_artist_albums(&self.artists[index].lock().unwrap())?;
                 }
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
@@ -581,6 +589,30 @@ impl Library {
     pub fn shuffle_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue(self.all_albums_shuffled(query)))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
+    pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(artist.to_queue()))?;
+        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
+    pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue(artist.to_shuffled_queue()))?;
         self.player_tx.send(PlayerRequest::SkipTo(0))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
