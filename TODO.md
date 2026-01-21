@@ -34,7 +34,7 @@ Music library:
     - [-] Display song info (title/album/artist, maybe album cover)
     - [ ] Interactive rating widget
     - [x] Play Now: Start a new queue and skip to the selected track
-    - [ ] Play Next: Insert the song to the next position in the queue
+    - [x] Play Next: Insert the song to the next position in the queue
     - [ ] Add to Queue button
     - [ ] Ability to set tags
     - [ ] Go to album button
@@ -48,8 +48,7 @@ Music library:
     - [ ] Interactive rating widget (or non-interactive average?)
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
-    - [-] Display a track list, each opening a Song subpage
-      - TODO: Open a Song subpage
+    - [x] Display a track list, each opening a Song subpage
     - [ ] Ability to set tags
     - [ ] Go to artist button
 - [ ] Artists page
