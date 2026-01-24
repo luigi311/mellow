@@ -52,6 +52,7 @@ impl Default for SongInfo {
 
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
+    pub modified: i64,
     pub play_count: u8,
     pub rating: u8,
 }
@@ -62,6 +63,7 @@ impl UserSongInfo {
         Self {
             play_count: 0,
             rating: 0,
+            modified: 0,
         }
     }
 
@@ -147,6 +149,7 @@ impl<'s> Song {
             info.disc => "disc",
             info.year => "year",
             info.duration.nseconds() => "duration",
+            user_info.modified => "modified",
             user_info.play_count => "play_count",
             user_info.rating => "rating",
         )
@@ -175,6 +178,7 @@ impl<'s> Song {
             "disc"<"parse"> => info.disc,
             "year"<"parse"> => info.year,
             "duration"<"ClockTime"> => info.duration,
+            "modified"<"parse"> => user_info.modified,
             "play_count"<"parse"> => user_info.play_count,
             "rating"<"parse"> => user_info.rating,
         );
@@ -243,6 +247,28 @@ impl SongInfoLoader<'_> {
             || "Unknown".to_string(),
             |f| f.to_str().unwrap().to_string(),
         )
+    }
+    /// Returns the song file modification time
+    pub fn file_modification_time(&self) -> i64 {
+        self.file()
+            .query_info(
+                gio::FILE_ATTRIBUTE_TIME_MODIFIED,
+                gio::FileQueryInfoFlags::empty(),
+                gio::Cancellable::NONE,
+            )
+            .unwrap()
+            .modification_date_time()
+            .unwrap()
+            .to_unix()
+    }
+    /// Last known modification time (Unix format); compare with
+    /// `file_modification_time()` to detect modifications
+    pub const fn modified(&self) -> i64 {
+        self.user_info.modified
+    }
+    /// Updates the modification time to the current one from the file
+    pub fn update_modified(&mut self) {
+        self.user_info.modified = self.file_modification_time();
     }
 
     #[must_use]
@@ -330,6 +356,7 @@ impl SongInfoLoader<'_> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
+        self.update_modified();
         let tagged = self.tagged.as_ref().unwrap();
         let tag = tagged
             .primary_tag()

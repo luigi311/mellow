@@ -381,8 +381,10 @@ impl Library {
                         if !info.file_path().starts_with(dir) {
                             continue;
                         }
-                        // TODO: Check file modification times and update info
-                        // (by calling `info.unload_basic()` if changed)
+                        if info.file_modification_time() != info.modified() {
+                            println!("{}: modified, reloading info", info.filename());
+                            info.unload_basic();
+                        }
                         drop(song_locked);
                         songs.insert(index, song);
                         break;
@@ -427,8 +429,6 @@ impl Library {
                 }
             }
         }
-
-        // TODO: Optimize or improve concurrency
 
         // Attempt to locate missing files if they were moved
         let ui_tx = UI_TX.get().expect(EXP_INIT);

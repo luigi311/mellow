@@ -25,7 +25,6 @@ Music library:
 - [x] Save/load user settings (such as library directories)
 - [x] Serialize the library to disk
 - [-] Incremental library rebuilding
-  - TODO: Detect modifications
   - TODO: Allow users to initiate a full rebuild
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
