@@ -356,12 +356,8 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Attempts to reassociate entries if their files were moved
     pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, config: LibraryConfig) {
-        let mut old_songs = Vec::with_capacity(songs.len());
-        mem::swap(songs, &mut old_songs);
-        old_songs.extend_from_slice(&mem::replace(
-            missing_songs,
-            Vec::with_capacity(missing_songs.len()),
-        ));
+        let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
+        old_songs.extend(missing_songs.drain(..));
         for song in old_songs.drain(..) {
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
