@@ -342,8 +342,9 @@ impl Library {
 
         self.tasks.run({
             let songs = songs.clone();
+            let missing_songs = self.missing_songs.clone();
             let uri_opt = self.config.uri_opt();
-            move || Library::create_associations(songs, uri_opt).expect(EXP_RX)
+            move || Library::create_associations(songs, missing_songs, uri_opt).expect(EXP_RX)
         });
 
         self.set_songs(songs);
@@ -352,13 +353,12 @@ impl Library {
     }
 
     /// Ensures validity of the provided `songs`:
-    /// - Sorts `songs` and resolves duplicate entries (modified in-place)
-    /// - Removes missing files from `songs` and returns them
+    /// - Sorts `songs` and resolves duplicate entries
+    /// - Moves missing files from `songs` into `missing_songs`
     /// - Attempts to reassociate entries if their files were moved
-    pub fn validate_songs(songs: &mut Songs, uri_opt: usize) -> Songs {
+    pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, uri_opt: usize) {
         let mut old_songs = Vec::with_capacity(songs.len());
         mem::swap(songs, &mut old_songs);
-        let mut missing_songs = Vec::new();
         for song in old_songs.drain(..) {
             // TODO: Filter songs outside of `self.config.directories`?
             let mut song_locked = song.lock().unwrap();
@@ -405,7 +405,7 @@ impl Library {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         let mut i = 0.0;
         let len = missing_songs.len() as f64;
-        'iter: for missing in mem::take(&mut missing_songs) {
+        'iter: for missing in mem::take(missing_songs) {
             let mut missing_locked = missing.lock().unwrap();
             let mut old_info = missing_locked.info();
             for song in songs.iter() {
@@ -424,19 +424,20 @@ impl Library {
             i += 1.0;
         }
         ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
-
-        missing_songs
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
-    pub fn create_associations(mut songs: Songs, uri_opt: usize) -> Result<(), Box<dyn Error>> {
+    pub fn create_associations(
+        mut songs: Songs,
+        mut missing_songs: Songs,
+        uri_opt: usize,
+    ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
+        Library::validate_songs(&mut songs, &mut missing_songs, uri_opt);
         library_tx
-            .send(LibraryRequest::SetMissingSongs(Library::validate_songs(
-                &mut songs, uri_opt,
-            )))
+            .send(LibraryRequest::SetMissingSongs(missing_songs))
             .expect(EXP_RX);
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
