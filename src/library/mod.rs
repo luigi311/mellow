@@ -36,7 +36,7 @@ pub struct Library {
     pub songs: Songs,
     pub albums: Albums,
     pub artists: Artists,
-    pub missing_songs: Songs, // TODO: Add some way of removing those
+    pub missing_songs: Songs,
 
     config: LibraryConfig,
     config_dir: String,
@@ -343,8 +343,8 @@ impl Library {
         self.tasks.run({
             let songs = songs.clone();
             let missing_songs = self.missing_songs.clone();
-            let uri_opt = self.config.uri_opt();
-            move || Library::create_associations(songs, missing_songs, uri_opt).expect(EXP_RX)
+            let config = self.config.clone();
+            move || Library::create_associations(songs, missing_songs, config).expect(EXP_RX)
         });
 
         self.set_songs(songs);
@@ -356,14 +356,20 @@ impl Library {
     /// - Sorts `songs` and resolves duplicate entries
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Attempts to reassociate entries if their files were moved
-    pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, uri_opt: usize) {
+    pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, config: LibraryConfig) {
         let mut old_songs = Vec::with_capacity(songs.len());
         mem::swap(songs, &mut old_songs);
         for song in old_songs.drain(..) {
             // TODO: Filter songs outside of `self.config.directories`?
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
-            match songs.find_song(&info.file_uri(), uri_opt) {
+            let missing_libraries = config.directories.iter().filter_map(|dir| {
+                match fs::exists(dir).unwrap_or(false) {
+                    false => Some(gio::File::for_path(dir).uri()),
+                    true => None,
+                }
+            });
+            match songs.find_song(&info.file_uri(), config.uri_opt()) {
                 Err(index)
                     if info
                         .file()
@@ -376,11 +382,24 @@ impl Library {
                 }
                 Err(_) => {
                     // Missing file
-                    match missing_songs.find_song(&info.file_uri(), uri_opt) {
+                    let uri = &info.file_uri();
+                    match missing_songs.find_song(uri, config.uri_opt()) {
                         Err(index) => {
                             // New missing song entry
-                            drop(song_locked);
-                            missing_songs.insert(index, song);
+                            for dir in missing_libraries {
+                                // Only remember missing files if they are within
+                                // a library directory which is currently missing
+                                // (otherwise, they were most likely removed)
+                                if uri[config.uri_opt()..].starts_with(&dir[config.uri_opt()..]) {
+                                    println!(
+                                        "Remembering {} because its library is missing",
+                                        info.filename()
+                                    );
+                                    drop(song_locked);
+                                    missing_songs.insert(index, song);
+                                    break;
+                                }
+                            }
                         }
                         Ok(index) => {
                             // Duplicate missing song entry
@@ -429,12 +448,12 @@ impl Library {
     pub fn create_associations(
         mut songs: Songs,
         mut missing_songs: Songs,
-        uri_opt: usize,
+        config: LibraryConfig,
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        Library::validate_songs(&mut songs, &mut missing_songs, uri_opt);
+        Library::validate_songs(&mut songs, &mut missing_songs, config);
         library_tx
             .send(LibraryRequest::SetMissingSongs(missing_songs))
             .expect(EXP_RX);

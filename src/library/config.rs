@@ -13,7 +13,7 @@ pub const FILE_SUPPORT: &[&str] = &[
     "ape", "mpc", "ogg",
 ];
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
     uri_opt: usize,
@@ -69,6 +69,8 @@ impl LibraryConfig {
     /// Removes the configured directory at `index`
     pub fn remove_library(&mut self, index: usize) {
         self.directories.remove(index);
+        // TODO: Remove entries from `Library::songs`
+        // (might want to check that it's not a subdirectory of another library)
         println!("Removed a library\nLibraries: {:?}", self.directories);
         UI_TX
             .get()

@@ -79,7 +79,7 @@ impl std::fmt::Debug for PlayerRequest {
                     format!("AppendQueue(…): {} items", queue.len())
                 }
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
-                Self::InsertRelative(item) => format!("InsertAt({}, …)", item.0),
+                Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
