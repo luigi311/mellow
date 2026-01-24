@@ -358,7 +358,7 @@ impl Library {
     pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, config: LibraryConfig) {
         let mut old_songs = Vec::with_capacity(songs.len());
         mem::swap(songs, &mut old_songs);
-        songs.extend_from_slice(&mem::replace(
+        old_songs.extend_from_slice(&mem::replace(
             missing_songs,
             Vec::with_capacity(missing_songs.len()),
         ));
