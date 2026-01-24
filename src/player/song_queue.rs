@@ -233,9 +233,12 @@ impl SongQueue {
     }
 
     /// Inserts an item into the queue at the specified index
-    pub fn insert(&mut self, index: usize, item: QueueItem) {
-        if item.is_stopper() && index < self.len() && self.nth(index).is_stopper() {
-            return;
+    pub fn insert(&mut self, mut index: usize, item: QueueItem) {
+        if index < self.len() && self.nth(index).is_stopper() {
+            if item.is_stopper() {
+                return;
+            }
+            index += 1; // Keep stopper after the same song as before
         }
 
         if self.shuffle {
