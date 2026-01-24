@@ -69,12 +69,10 @@ Music library:
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
-- [ ] Ability to disable library directories
+- [ ] Ability to disable library directories(?)
 > Disabled directories would still retain song data (play counts, etc),
 > but be excluded from the actual `songs`/`albums`/`artists` used by the
-> `Library`. This would also allow the library to temporarily disable
-> missing directories.
-> (For example, using an enum: `Enabled`/`Disabled`/`Missing`)
+> `Library` (design needed for enabling/disabling libraries)
 
 Misc:
 

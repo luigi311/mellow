@@ -318,7 +318,6 @@ impl Library {
             true => self.deserialize_songs(),
         })));
 
-        // TODO: Check file modification times and update info/associations
         for library_path in &self.config.directories {
             let _ = visit_dirs(Path::new(&library_path), &|f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
@@ -360,7 +359,6 @@ impl Library {
         let mut old_songs = Vec::with_capacity(songs.len());
         mem::swap(songs, &mut old_songs);
         for song in old_songs.drain(..) {
-            // TODO: Filter songs outside of `self.config.directories`?
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {
@@ -382,6 +380,8 @@ impl Library {
                         if !info.file_path().starts_with(dir) {
                             continue;
                         }
+                        // TODO: Check file modification times and update info
+                        // (by calling `info.unload_basic()` if changed)
                         drop(song_locked);
                         songs.insert(index, song);
                         break;
