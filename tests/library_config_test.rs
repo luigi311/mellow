@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests {
     use gtk::{gio, prelude::FileExt};
+    use std::sync::mpsc;
     use tokio::sync::mpsc as tokio_mpsc;
 
     use mellow::library::config::LibraryConfig;
+    use mellow::library::{LIBRARY_TX, LibraryRequest};
     use mellow::ui::{UI_TX, UpdateUI};
 
     struct ConfigTester {
         config: LibraryConfig,
         _ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
+        _library_rx: mpsc::Receiver<LibraryRequest>,
     }
 
     #[test]
@@ -180,9 +183,12 @@ mod tests {
         fn default() -> Self {
             let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
             UI_TX.get_or_init(|| ui_tx.clone());
+            let (library_tx, library_rx) = mpsc::channel::<LibraryRequest>();
+            LIBRARY_TX.get_or_init(|| library_tx.clone());
             ConfigTester {
                 config: LibraryConfig::default(),
                 _ui_rx: ui_rx,
+                _library_rx: library_rx,
             }
         }
     }

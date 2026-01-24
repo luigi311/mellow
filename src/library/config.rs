@@ -3,7 +3,7 @@ use gtk::gio;
 use std::str::Chars;
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::excuses::EXP_RX;
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -70,12 +70,12 @@ impl LibraryConfig {
     fn update_library(&self) {
         UI_TX
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
             .expect(EXP_RX);
         LIBRARY_TX
             .get()
-            .unwrap()
+            .expect(EXP_INIT)
             .send(LibraryRequest::Rebuild)
             .expect(EXP_RX);
     }
