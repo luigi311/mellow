@@ -50,17 +50,29 @@ impl Default for SongInfo {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UserSongInfo {
     pub play_count: u8,
     pub rating: u8,
 }
 
 impl UserSongInfo {
-    const fn default() -> Self {
+    pub const fn default() -> Self {
         Self {
             play_count: 0,
             rating: 0,
+        }
+    }
+
+    /// Copies info from `other` and merges into `self`:
+    /// - Play counts are summed up
+    /// - Ratings are averaged, or whichever one is non-zero is used
+    pub const fn combine_with(&mut self, other: &UserSongInfo) {
+        self.play_count += other.play_count;
+        if self.rating == 0 {
+            self.rating = other.rating;
+        } else if other.rating > 0 {
+            self.rating = (self.rating + other.rating) / 2;
         }
     }
 }

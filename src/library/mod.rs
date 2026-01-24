@@ -30,12 +30,13 @@ use crate::{CONFIG_DIR, visit_dirs};
 
 // TODO: Support song/album ratings
 // TODO: Implement song/album/artist search/filtering
-// TODO: Efficient search/filter by tag, rating, titles, etc. Use SQL?
+// TODO: Efficient search/filter by tag, rating, titles, etc
 
 pub struct Library {
     pub songs: Songs,
     pub albums: Albums,
     pub artists: Artists,
+    pub missing_songs: Songs, // TODO: Add some way of removing those
 
     config: LibraryConfig,
     config_dir: String,
@@ -188,6 +189,7 @@ pub enum LibraryRequest {
     SetSongs(Songs),
     SetAlbums(Albums),
     SetArtists(Artists),
+    SetMissingSongs(Songs),
 
     RunTask(BoxedTask),
     Shutdown(mpsc::Sender<()>),
@@ -208,6 +210,7 @@ impl Library {
             songs: Vec::new(),
             albums: Vec::new(),
             artists: Vec::new(),
+            missing_songs: Vec::new(),
 
             config: LibraryConfig::default(),
             config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
@@ -231,6 +234,7 @@ impl Library {
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
                 LibraryRequest::SetArtists(artists) => self.set_artists(artists),
+                LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
 
                 LibraryRequest::InitQueue => self.init_queue()?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
@@ -338,7 +342,8 @@ impl Library {
 
         self.tasks.run({
             let songs = songs.clone();
-            move || Library::create_associations(&songs).expect(EXP_RX)
+            let uri_opt = self.config.uri_opt();
+            move || Library::create_associations(songs, uri_opt).expect(EXP_RX)
         });
 
         self.set_songs(songs);
@@ -346,43 +351,87 @@ impl Library {
         Ok(())
     }
 
-    /// Returns a list of `songs` whose files still exist on disk
-    pub fn filter_missing(songs: &Songs) -> Songs {
-        // TODO: Filter songs which aren't in any configured paths
-        // TODO: Keep missing songs stored somewhere?
-        // In case a library is temporarily missing (for example on
-        // removable storage), it would be better if the data for
-        // those could be retained instead of completely forgotten
-        songs
-            .iter()
-            .filter(|song| {
-                song.lock()
-                    .unwrap()
-                    .info()
-                    .file()
-                    .path()
-                    .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists))
-            })
-            .map(Arc::clone)
-            .collect()
-    }
+    /// Ensures validity of the provided `songs`:
+    /// - Sorts `songs` and resolves duplicate entries (modified in-place)
+    /// - Removes missing files from `songs` and returns them
+    /// - Attempts to reassociate entries if their files were moved
+    pub fn validate_songs(songs: &mut Songs, uri_opt: usize) -> Songs {
+        let mut old_songs = Vec::with_capacity(songs.len());
+        mem::swap(songs, &mut old_songs);
+        let mut missing_songs = Vec::new();
+        for song in old_songs.drain(..) {
+            // TODO: Filter songs outside of `self.config.directories`?
+            let mut song_locked = song.lock().unwrap();
+            let mut info = song_locked.info();
+            match songs.find_song(&info.file_uri(), uri_opt) {
+                Err(index)
+                    if info
+                        .file()
+                        .path()
+                        .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
+                {
+                    // Valid song entry
+                    drop(song_locked);
+                    songs.insert(index, song);
+                }
+                Err(_) => {
+                    // Missing file
+                    match missing_songs.find_song(&info.file_uri(), uri_opt) {
+                        Err(index) => {
+                            // New missing song entry
+                            drop(song_locked);
+                            missing_songs.insert(index, song);
+                        }
+                        Ok(index) => {
+                            // Duplicate missing song entry
+                            info.user_mut()
+                                .combine_with(missing_songs[index].lock().unwrap().info().user());
+                        }
+                    }
+                }
+                Ok(index) => {
+                    // Duplicate entry
+                    println!("Resolving duplicate entry: {}", info.filename());
+                    info.user_mut()
+                        .combine_with(songs[index].lock().unwrap().info().user());
+                    continue;
+                }
+            }
+        }
 
-    pub fn remove_duplicates(&mut self) {
-        // TODO: Check all files if they still exist, and detect if they were moved
-        // 1: Go through all songs and check if they no longer exist on disk
-        // 2: Move those to a list of missing songs (referred to as `old` from now on)
-        // 3: Compare each old info against all songs in the library
-        //   3.1: If a match is found, copy `….info().user()` to the new one
-        //   Idea: Expand outwards from the old index when searching
-        // 4: Remove the old songs from the library (on the main library thread)
+        // Attempt to locate missing files if they were moved
+        'iter: for missing in mem::take(&mut missing_songs) {
+            let mut missing_locked = missing.lock().unwrap();
+            let mut old_info = missing_locked.info();
+            for song in songs.iter() {
+                let mut song_locked = song.lock().unwrap();
+                let mut info = song_locked.info();
+                if info.basic() == old_info.basic() {
+                    // Copy the user-assigned song info to the new entry
+                    println!("Found moved file: {}", old_info.filename());
+                    info.user_mut().combine_with(old_info.user());
+                    continue 'iter;
+                }
+            }
+            println!("File not found: {}", old_info.filename());
+            drop(missing_locked);
+            missing_songs.push(missing);
+        }
+
+        missing_songs
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
-    pub fn create_associations(songs: &Songs) -> Result<(), Box<dyn Error>> {
+    pub fn create_associations(mut songs: Songs, uri_opt: usize) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let songs = Library::filter_missing(songs);
+        library_tx
+            .send(LibraryRequest::SetMissingSongs(Library::validate_songs(
+                &mut songs, uri_opt,
+            )))
+            .expect(EXP_RX);
+
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
 
@@ -514,6 +563,10 @@ impl Library {
             .send(UpdateUI::LibraryArtists(artists.clone()))
             .expect(EXP_RX);
         self.artists = artists;
+    }
+    /// Replaces `self.missing_songs` with `missing_songs`
+    fn set_missing_songs(&mut self, missing_songs: Songs) {
+        self.missing_songs = missing_songs;
     }
 
     /// Returns a queue of all songs in the library matching the given `query`
@@ -797,7 +850,17 @@ impl Library {
     /// Writes the configuration to disk and shuts down gracefully.
     /// Notifies the caller over the `notify_done` channel when done.
     pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
-        let songs = mem::take(&mut self.songs);
+        let mut songs = mem::take(&mut self.songs);
+        for song in mem::take(&mut self.missing_songs) {
+            // Re-insert missing songs so their info is kept
+            let Err(index) = songs.find_song(
+                &song.lock().unwrap().info().file_uri(),
+                self.config.uri_opt(),
+            ) else {
+                continue;
+            };
+            songs.insert(index, song);
+        }
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
         notify_done.send(()).expect(EXP_RX);
