@@ -147,6 +147,7 @@ impl LibraryConfig {
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
     /// the common part is "file:///home/", and the returned value is 13
+    #[must_use]
     pub const fn uri_opt(&self) -> usize {
         self.uri_opt
     }

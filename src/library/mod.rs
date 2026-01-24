@@ -394,7 +394,6 @@ impl Library {
                     println!("Resolving duplicate entry: {}", info.filename());
                     info.user_mut()
                         .combine_with(songs[index].lock().unwrap().info().user());
-                    continue;
                 }
             }
         }
@@ -403,7 +402,7 @@ impl Library {
 
         // Attempt to locate missing files if they were moved
         let ui_tx = UI_TX.get().expect(EXP_INIT);
-        let mut i = 0.0;
+        let mut progress = 0.0;
         let len = missing_songs.len() as f64;
         'iter: for missing in mem::take(missing_songs) {
             let mut missing_locked = missing.lock().unwrap();
@@ -420,8 +419,8 @@ impl Library {
             }
             drop(missing_locked);
             missing_songs.push(missing);
-            let _ = ui_tx.send(UpdateUI::Progress(Some(i / len)));
-            i += 1.0;
+            progress += 1.0;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(progress / len)));
         }
         ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
     }
@@ -539,7 +538,7 @@ impl Library {
             }
             drop(song_unwrapped);
 
-            ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)))?;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)));
         }
 
         library_tx.send(LibraryRequest::SetSongs(songs))?;

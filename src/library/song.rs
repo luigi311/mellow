@@ -57,6 +57,7 @@ pub struct UserSongInfo {
 }
 
 impl UserSongInfo {
+    #[must_use]
     pub const fn default() -> Self {
         Self {
             play_count: 0,
