@@ -399,7 +399,12 @@ impl Library {
             }
         }
 
+        // TODO: Optimize or improve concurrency
+
         // Attempt to locate missing files if they were moved
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let mut i = 0.0;
+        let len = missing_songs.len() as f64;
         'iter: for missing in mem::take(&mut missing_songs) {
             let mut missing_locked = missing.lock().unwrap();
             let mut old_info = missing_locked.info();
@@ -413,10 +418,12 @@ impl Library {
                     continue 'iter;
                 }
             }
-            println!("File not found: {}", old_info.filename());
             drop(missing_locked);
             missing_songs.push(missing);
+            let _ = ui_tx.send(UpdateUI::Progress(Some(i / len)));
+            i += 1.0;
         }
+        ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
 
         missing_songs
     }
