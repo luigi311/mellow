@@ -358,7 +358,8 @@ impl Library {
     pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, config: LibraryConfig) {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.extend(missing_songs.drain(..));
-        for song in old_songs.drain(..) {
+        let mut possibly_moved = Vec::new();
+        'iter: for song in old_songs.drain(..) {
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {
@@ -405,9 +406,11 @@ impl Library {
                                     );
                                     drop(song_locked);
                                     missing_songs.insert(index, song);
-                                    break;
+                                    continue 'iter;
                                 }
                             }
+                            drop(song_locked);
+                            possibly_moved.push(song);
                         }
                         // Duplicate missing song entry
                         Ok(index) => {
@@ -430,8 +433,8 @@ impl Library {
         // Attempt to locate missing files if they were moved
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         let mut progress = 0.0;
-        let len = missing_songs.len() as f64;
-        'iter: for missing in mem::take(missing_songs) {
+        let len = possibly_moved.len() as f64;
+        'iter: for missing in possibly_moved {
             let mut missing_locked = missing.lock().unwrap();
             let mut old_info = missing_locked.info();
             for song in songs.iter() {
@@ -444,8 +447,6 @@ impl Library {
                     continue 'iter;
                 }
             }
-            drop(missing_locked);
-            missing_songs.push(missing);
             progress += 1.0;
             let _ = ui_tx.send(UpdateUI::Progress(Some(progress / len)));
         }
