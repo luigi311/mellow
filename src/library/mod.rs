@@ -255,9 +255,13 @@ impl Library {
                 }
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
-                LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
+                LibraryRequest::EditLibrary(args) => {
+                    self.config.edit_library(args.0, args.1, &self.songs);
+                }
                 LibraryRequest::SetLibraries(dirs) => self.config.set_libraries(&dirs, &self.ui_tx),
-                LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
+                LibraryRequest::RemoveLibrary(index) => {
+                    self.config.remove_library(index, &self.songs);
+                }
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,

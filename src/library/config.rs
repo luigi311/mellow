@@ -1,9 +1,11 @@
 use gio::prelude::FileExt;
 use gtk::gio;
 use std::str::Chars;
+use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::excuses::EXP_RX;
+use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::{LIBRARY_TX, LibraryRequest, Songs};
 use crate::ui::{UI_TX, UpdateUI};
 
 pub const FILE_SUPPORT: &[&str] = &[
@@ -51,9 +53,9 @@ impl LibraryConfig {
     }
 
     /// Replaces configured directory at `index` with `dir`
-    pub fn edit_library(&mut self, index: usize, dir: String) {
+    pub fn edit_library(&mut self, index: usize, dir: String, songs: &Songs) {
         if self.directories.contains(&dir) {
-            return self.remove_library(index);
+            return self.remove_library(index, songs);
         }
         self.directories[index] = dir;
         self.directories.sort();
@@ -67,10 +69,8 @@ impl LibraryConfig {
     }
 
     /// Removes the configured directory at `index`
-    pub fn remove_library(&mut self, index: usize) {
-        self.directories.remove(index);
-        // TODO: Remove entries from `Library::songs`
-        // (might want to check that it's not a subdirectory of another library)
+    pub fn remove_library(&mut self, index: usize, songs: &Songs) {
+        let removed = self.directories.remove(index);
         println!("Removed a library\nLibraries: {:?}", self.directories);
         UI_TX
             .get()
@@ -78,6 +78,34 @@ impl LibraryConfig {
             .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
             .expect(EXP_RX);
         self.update_trim_uri();
+
+        for dir in &self.directories[..index] {
+            if removed.starts_with(dir) {
+                return; // Contained within another directory, don't remove songs
+            }
+        }
+        LIBRARY_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::SetSongs(
+                songs
+                    .iter()
+                    .filter_map(|song| {
+                        if !song
+                            .lock()
+                            .unwrap()
+                            .info()
+                            .file_path()
+                            .starts_with(&removed)
+                        {
+                            Some(Arc::clone(song))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ))
+            .expect(EXP_RX);
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
