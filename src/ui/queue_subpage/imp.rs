@@ -50,9 +50,12 @@ impl QueueSubpage {
         PLAYER_TX
             .get()
             .expect(EXP_INIT)
-            .send(match self.stop_after.get() {
-                false => PlayerRequest::InsertRelative(Box::new((1, QueueItem::Stopper))),
-                true => PlayerRequest::RemoveAt(self.index.get() + 1),
+            .send({
+                let index = self.index.get() + 1;
+                match self.stop_after.get() {
+                    false => PlayerRequest::InsertAt(Box::new((index, QueueItem::Stopper))),
+                    true => PlayerRequest::RemoveAt(index),
+                }
             })
             .expect(EXP_RX);
     }
