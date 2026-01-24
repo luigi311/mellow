@@ -344,7 +344,6 @@ impl ObjectSubclass for Window {
                         dir.path().unwrap().to_str().unwrap().into(),
                     ))
                     .expect(EXP_RX);
-                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
             }
         });
 

@@ -255,13 +255,9 @@ impl Library {
                 }
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
-                LibraryRequest::EditLibrary(args) => {
-                    self.config.edit_library(args.0, args.1, &self.songs);
-                }
+                LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
                 LibraryRequest::SetLibraries(dirs) => self.config.set_libraries(&dirs, &self.ui_tx),
-                LibraryRequest::RemoveLibrary(index) => {
-                    self.config.remove_library(index, &self.songs);
-                }
+                LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
@@ -374,22 +370,30 @@ impl Library {
                 }
             });
             match songs.find_song(&info.file_uri(), config.uri_opt()) {
+                // Valid song entry
                 Err(index)
                     if info
                         .file()
                         .path()
                         .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
                 {
-                    // Valid song entry
-                    drop(song_locked);
-                    songs.insert(index, song);
+                    // Filter songs from removed libraries
+                    for dir in &config.directories {
+                        if !info.file_path().starts_with(dir) {
+                            continue;
+                        }
+                        drop(song_locked);
+                        songs.insert(index, song);
+                        break;
+                    }
+                    // IDEA: To disable libraries, move `songs` into `disabled_songs`
                 }
+                // Missing file
                 Err(_) => {
-                    // Missing file
                     let uri = &info.file_uri();
                     match missing_songs.find_song(uri, config.uri_opt()) {
+                        // New missing song entry
                         Err(index) => {
-                            // New missing song entry
                             for dir in missing_libraries {
                                 // Only remember missing files if they are within
                                 // a library directory which is currently missing
@@ -405,15 +409,15 @@ impl Library {
                                 }
                             }
                         }
+                        // Duplicate missing song entry
                         Ok(index) => {
-                            // Duplicate missing song entry
                             info.user_mut()
                                 .combine_with(missing_songs[index].lock().unwrap().info().user());
                         }
                     }
                 }
+                // Duplicate entry
                 Ok(index) => {
-                    // Duplicate entry
                     println!("Resolving duplicate entry: {}", info.filename());
                     info.user_mut()
                         .combine_with(songs[index].lock().unwrap().info().user());
