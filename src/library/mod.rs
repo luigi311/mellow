@@ -438,37 +438,34 @@ impl Library {
 
         for missing in possibly_moved {
             let mut missing_locked = missing.lock().unwrap();
-            let mut old_info = missing_locked.info();
+            let old_info = missing_locked.info();
 
             // Optimization: start with an initial guess and expand outwards
             let guess = match songs.find_song(&old_info.file_uri(), config.uri_opt()) {
                 Err(index) | Ok(index) => index,
             };
             let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
-            fn find_moved(song: &mut MutexGuard<Song>, old_info: &mut SongInfoLoader) -> bool {
-                let mut info = song.info();
-                if info.basic() == old_info.basic() {
+            fn locate_if_moved(cmp_info: &mut SongInfoLoader, old_info: &SongInfoLoader) -> bool {
+                if old_info.inspect_basic() == Some(cmp_info.basic()) {
                     // Copy the user-assigned song info to the new entry
                     println!("Found moved file: {}", old_info.filename());
-                    info.user_mut().combine_with(old_info.user());
+                    cmp_info.user_mut().combine_with(old_info.user());
                     return true;
                 }
                 false
             }
             loop {
-                progress += 1.0;
-                let _ = ui_tx.send(UpdateUI::Progress(Some(progress / len)));
-                if right
-                    .next()
-                    .is_some_and(|song| find_moved(&mut song.lock().unwrap(), &mut old_info))
-                    || left
-                        .next_back()
-                        .is_some_and(|song| find_moved(&mut song.lock().unwrap(), &mut old_info))
-                    || progress >= len
+                if right.next().is_some_and(|song| {
+                    locate_if_moved(&mut song.lock().unwrap().info(), &old_info)
+                }) || left.next_back().is_some_and(|song| {
+                    locate_if_moved(&mut song.lock().unwrap().info(), &old_info)
+                }) || progress >= len
                 {
                     break;
                 }
             }
+            progress += 1.0;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(progress / len)));
         }
         ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
     }

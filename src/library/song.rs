@@ -324,6 +324,11 @@ impl SongInfoLoader<'_> {
         // SAFETY: `load_basic()` ensures the value is `Some`
         unsafe { self.info.take().unwrap_unchecked() }
     }
+    /// Returns the basic song info if loaded, but does not load it
+    #[inline]
+    pub const fn inspect_basic(&self) -> Option<&SongInfo> {
+        self.info.as_ref()
+    }
     /// Loads basic song info so it is ready to be used later
     /// This method call can be chained
     #[inline]
@@ -416,7 +421,7 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the detailed song info if loaded, but does not load it
     #[inline]
-    pub const fn inspect_detailed(&mut self) -> Option<&DetailedSongInfo> {
+    pub const fn inspect_detailed(&self) -> Option<&DetailedSongInfo> {
         self.detailed_info.as_ref()
     }
     /// Loads detailed song info so it is ready to be used later
