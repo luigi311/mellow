@@ -52,10 +52,10 @@ impl Default for SongInfo {
 
 impl PartialEq for SongInfo {
     fn eq(&self, other: &Self) -> bool {
-        self.track == other.track
-            && self.title == other.title
+        self.title == other.title
             && self.album == other.album
             && self.artist == other.artist
+            && self.track == other.track
     }
 }
 
@@ -79,6 +79,7 @@ impl UserSongInfo {
     /// Copies info from `other` and merges into `self`:
     /// - Play counts are summed up
     /// - Ratings are averaged, or whichever one is non-zero is used
+    /// - Modification time remains unchanged
     pub const fn merge_with(&mut self, other: &UserSongInfo) {
         self.play_count += other.play_count;
         if self.rating == 0 {

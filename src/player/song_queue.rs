@@ -236,7 +236,7 @@ impl SongQueue {
     pub fn insert(&mut self, mut index: usize, item: QueueItem) {
         if index < self.len() && self.nth(index).is_stopper() {
             if item.is_stopper() {
-                return;
+                return; // Disallow inserting duplicate stoppers
             }
             index += 1; // Keep stopper after the same song as before
         }

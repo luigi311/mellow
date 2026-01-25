@@ -358,7 +358,7 @@ impl Library {
     /// - Attempts to reassociate entries if their files were moved
     pub fn validate_songs(songs: &mut Songs, missing_songs: &mut Songs, config: LibraryConfig) {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
-        old_songs.extend(missing_songs.drain(..));
+        old_songs.append(missing_songs);
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs.drain(..) {
             let mut song_locked = song.lock().unwrap();
@@ -383,7 +383,7 @@ impl Library {
                             continue;
                         }
                         if info.file_modification_time() != info.modified() {
-                            println!("{}: modified, reloading info", info.filename());
+                            println!("{}: reloading info", info.filename());
                             info.unload_basic();
                         }
                         drop(song_locked);
