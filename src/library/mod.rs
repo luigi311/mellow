@@ -418,7 +418,7 @@ impl Library {
                         // Duplicate missing song entry
                         Ok(index) => {
                             info.user_mut()
-                                .combine_with(missing_songs[index].lock().unwrap().info().user());
+                                .merge_with(missing_songs[index].lock().unwrap().info().user());
                         }
                     }
                 }
@@ -426,7 +426,7 @@ impl Library {
                 Ok(index) => {
                     println!("Resolving duplicate entry: {}", info.filename());
                     info.user_mut()
-                        .combine_with(songs[index].lock().unwrap().info().user());
+                        .merge_with(songs[index].lock().unwrap().info().user());
                 }
             }
         }
@@ -445,20 +445,20 @@ impl Library {
                 Err(index) | Ok(index) => index,
             };
             let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
-            fn locate_if_moved(cmp_info: &mut SongInfoLoader, old_info: &SongInfoLoader) -> bool {
-                if old_info.inspect_basic() == Some(cmp_info.basic()) {
+            fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
+                if cmp_info.inspect_basic() == Some(info.basic()) {
                     // Copy the user-assigned song info to the new entry
-                    println!("Found moved file: {}", old_info.filename());
-                    cmp_info.user_mut().combine_with(old_info.user());
+                    println!("Found moved file: {}", cmp_info.filename());
+                    info.user_mut().merge_with(cmp_info.user());
                     return true;
                 }
                 false
             }
             loop {
                 if right.next().is_some_and(|song| {
-                    locate_if_moved(&mut song.lock().unwrap().info(), &old_info)
+                    merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
                 }) || left.next_back().is_some_and(|song| {
-                    locate_if_moved(&mut song.lock().unwrap().info(), &old_info)
+                    merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
                 }) || progress >= len
                 {
                     break;

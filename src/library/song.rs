@@ -50,6 +50,15 @@ impl Default for SongInfo {
     }
 }
 
+impl PartialEq for SongInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.track == other.track
+            && self.title == other.title
+            && self.album == other.album
+            && self.artist == other.artist
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
     pub modified: i64,
@@ -70,22 +79,13 @@ impl UserSongInfo {
     /// Copies info from `other` and merges into `self`:
     /// - Play counts are summed up
     /// - Ratings are averaged, or whichever one is non-zero is used
-    pub const fn combine_with(&mut self, other: &UserSongInfo) {
+    pub const fn merge_with(&mut self, other: &UserSongInfo) {
         self.play_count += other.play_count;
         if self.rating == 0 {
             self.rating = other.rating;
         } else if other.rating > 0 {
             self.rating = (self.rating + other.rating) / 2;
         }
-    }
-}
-
-impl PartialEq for SongInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.title == other.title
-            && self.album == other.album
-            && self.artist == other.artist
-            && self.track == other.track
     }
 }
 
