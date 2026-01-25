@@ -455,11 +455,12 @@ impl Library {
                 false
             }
             loop {
-                if right.next().is_some_and(|song| {
+                let (left, right) = (left.next_back(), right.next());
+                if right.is_some_and(|song| {
                     merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
-                }) || left.next_back().is_some_and(|song| {
+                }) || left.is_some_and(|song| {
                     merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
-                }) || progress >= len
+                }) || (left.is_none() && right.is_none())
                 {
                     break;
                 }
