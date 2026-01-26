@@ -56,26 +56,6 @@ When the overlay is closed, it is time to enjoy the music.
 
 # Building from source
 
-## Prerequisites
-
-### [Compile the Mellow GSchema](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html):
-
-On Linux or macOS:
-
-```bash
-mkdir -p $HOME/.local/share/glib-2.0/schemas
-cp data/resources/com.github.userwithaname.Mellow.gschema.xml $HOME/.local/share/glib-2.0/schemas/
-glib-compile-schemas $HOME/.local/share/glib-2.0/schemas/
-```
-
-Or on Windows:
-
-```bash
-mkdir C:/ProgramData/glib-2.0/schemas/
-cp data/resources/com.github.userwithaname.Mellow.gschema.xml C:/ProgramData/glib-2.0/schemas/
-glib-compile-schemas C:/ProgramData/glib-2.0/schemas/
-```
-
 ## Build dependencies
 
 > [!NOTE]
@@ -110,13 +90,14 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 dnf install meson ninja-build
 ```
 
-## Building
+## Building / Installing
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
 ```bash
-meson setup builddir -Dprofile=development --prefix=~/.local
+meson setup builddir --prefix=~/.local
 meson install -C builddir
 ```
 
-To run it, launch the executable binary in `target/release/mellow`
+Mellow will be installed in '~/.local/share/mellow', and a shortcut
+will appear in your desktop environment.
