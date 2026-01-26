@@ -11,10 +11,7 @@ pub fn main() -> glib::ExitCode {
     glib::set_application_name(about::app_name());
     glib::set_program_name(Some(about::app_name().to_lowercase()));
 
-    gio::resources_register(
-        &gio::Resource::load(mellow::about::resources_file())
-            .expect("Could not load resources file"),
-    );
+    register_resources();
 
     let app = Application::builder()
         .application_id(mellow::about::app_id())
@@ -23,6 +20,18 @@ pub fn main() -> glib::ExitCode {
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("player.play_pause", &["space"]);
     app.run_with_args(&[] as &[&str; 0])
+}
+
+#[inline]
+fn register_resources() {
+    #[cfg(feature = "no-meson")]
+    gio::resources_register_include!("mellow.gresource").expect("Failed to register resources");
+
+    #[cfg(not(feature = "no-meson"))]
+    gio::resources_register(
+        &gio::Resource::load(mellow::about::resources_file())
+            .expect("Could not load resources file"),
+    );
 }
 
 #[inline]

@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0"
 
+[features]
+# default = ["no-meson"]
+no-meson = ["dep:glib-build-tools"]
+
+[build-dependencies]
+glib-build-tools = { version = "0.21.0", optional = true }
+
 [dependencies]
 adw   = { version = "0.8.0",  package = "libadwaita",   features = ["v1_8"]       }
 gst   = { version = "0.24.2", package = "gstreamer"                               }
