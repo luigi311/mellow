@@ -5,7 +5,9 @@ edition = "2024"
 license = "GPL-3.0"
 
 [features]
-# default = ["no-meson"]
+default = [
+  # "no-meson" # Enable to build using Cargo; if used, gschema must be compiled manually
+]
 no-meson = ["dep:glib-build-tools"]
 
 [build-dependencies]

@@ -1,9 +1,9 @@
 use adw::prelude::AdwDialogExt;
 use gtk::{License, glib::object::IsA};
 
-const APP_NAME: &str = "Mellow";
-const VERSION: &str = "0.1.0";
 const APP_ID: Option<&str> = option_env!("APP_ID");
+const APP_NAME: Option<&str> = option_env!("APP_NAME");
+const APP_VERSION: Option<&str> = option_env!("APP_VERSION");
 const RESOURCES_FILE: Option<&str> = option_env!("RESOURCES_FILE");
 
 const COPYRIGHT: &str = "© 2025 Iva Kotar";
@@ -14,27 +14,25 @@ const DESIGNERS: &[&str] = &["Iva Kotar"];
 pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
     let about = adw::AboutDialog::builder()
         .application_icon(app_id())
-        .application_name(APP_NAME)
+        .application_name(app_name())
         .issue_url("https://github.com/Userwithaname/mellow/issues/")
         .developers(DEVELOPERS)
         .designers(DESIGNERS)
         .copyright(COPYRIGHT)
         .license_type(LICENSE_TYPE)
-        .version(VERSION)
+        .version(app_version())
         .build();
     about.present(Some(parent));
 }
 
-pub const fn app_name() -> &'static str {
-    // TODO: Could this be set using Meson as well?
-    APP_NAME
-}
-pub const fn app_version() -> &'static str {
-    // TODO: Could this be set using Meson as well?
-    VERSION
-}
 pub const fn app_id() -> &'static str {
     APP_ID.expect("APP_ID env var not set at compile time")
+}
+pub const fn app_name() -> &'static str {
+    APP_NAME.expect("APP_NAME env var not set at compile time")
+}
+pub const fn app_version() -> &'static str {
+    APP_VERSION.expect("APP_VERSION env var not set at compile time")
 }
 pub const fn resources_file() -> &'static str {
     RESOURCES_FILE.expect("RESOURCES_FILE env var not set at compile time")
@@ -46,7 +44,7 @@ mod tests {
     use gtk::License;
     use std::fs;
 
-    use crate::about::{APP_NAME, LICENSE_TYPE, VERSION};
+    use crate::about;
 
     #[test]
     fn metadata_consistency() -> Result<(), Box<dyn Error>> {
@@ -72,15 +70,17 @@ mod tests {
         }
 
         assert!(
-            app_name.to_lowercase() == APP_NAME.to_lowercase(),
-            "APP_NAME: {APP_NAME}\nCargo: {app_name}"
+            app_name.to_lowercase() == about::app_name().to_lowercase(),
+            "APP_NAME: {}\nCargo: {app_name}",
+            about::app_name()
         );
         assert!(
-            version.to_lowercase() == VERSION.to_lowercase(),
-            "VERSION: {VERSION}\nCargo: {version}"
+            version.to_lowercase() == about::app_version().to_lowercase(),
+            "VERSION: {}\nCargo: {version}",
+            about::app_version(),
         );
 
-        match LICENSE_TYPE {
+        match about::LICENSE_TYPE {
             License::Gpl30 => assert!(
                 license == "GPL-3.0",
                 "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
