@@ -127,7 +127,7 @@ mod tests {
         );
         assert!(
             gschema.contains(&app_id_path),
-            "Incorrect path in `resources.gresource.xml`"
+            "Incorrect path in `{app_id_meson}.gschema.xml.in`"
         );
 
         // Test if licenses in Cargo and the about window match
