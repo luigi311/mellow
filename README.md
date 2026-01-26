@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-  <img height=128 src="data/resources/icons/com.github.userwithaname.Mellow.png">
+  <img height=128 src="data/icons/com.github.userwithaname.Mellow.png">
   <br>Mellow
 </h1>
   <p align="center">
