@@ -6,7 +6,7 @@ license = "GPL-3.0"
 
 [features]
 default = [
-  # "no-meson" # Enable to build using Cargo; if used, gschema must be compiled manually
+  # "no-meson" # Cargo build support; requires manual gschema setup
 ]
 no-meson = ["dep:glib-build-tools"]
 

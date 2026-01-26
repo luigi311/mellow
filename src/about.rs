@@ -50,8 +50,6 @@ mod tests {
     fn metadata_consistency() -> Result<(), Box<dyn Error>> {
         let project_dir = env!("CARGO_MANIFEST_DIR");
 
-        // TODO: Test app ID for widgets and resources
-
         let (mut name_meson, mut name_cargo) = ("(none)", "(none)");
         let (mut version_meson, mut version_cargo) = ("(none)", "(none)");
         let (mut app_id_meson, mut app_id_build_rs) = ("(none)", "(none)");
@@ -94,6 +92,7 @@ mod tests {
             }
         }
 
+        // Test if project info in Meson and Cargo matches
         assert!(
             name_meson == name_cargo,
             "Meson: {name_meson}\nCargo: {name_cargo}",
@@ -106,7 +105,32 @@ mod tests {
             app_id_meson == app_id_build_rs,
             "Meson: {app_id_meson}\nCargo: {app_id_build_rs}",
         );
+        assert!(
+            app_id_meson.to_lowercase().contains(name_meson),
+            "APP_ID must contain the application name"
+        );
 
+        let app_id_path = format!("\"/{}/\"", app_id_meson.replace('.', "/"));
+
+        // Test if resources are using the correct ID
+        let gresources =
+            fs::read_to_string([project_dir, "/data/resources/resources.gresource.xml"].concat())?;
+        assert!(
+            gresources.contains(&app_id_path),
+            "Incorrect prefix in `resources.gresource.xml`"
+        );
+        let gschema =
+            fs::read_to_string(format!("{project_dir}/data/{app_id_meson}.gschema.xml.in"))?;
+        assert!(
+            gschema.contains(app_id_meson),
+            "Incorrect ID in `{app_id_meson}.gschema.xml.in`"
+        );
+        assert!(
+            gschema.contains(&app_id_path),
+            "Incorrect path in `resources.gresource.xml`"
+        );
+
+        // Test if licenses in Cargo and the about window match
         match LICENSE_TYPE {
             License::Gpl30 => assert!(
                 license == "GPL-3.0",
