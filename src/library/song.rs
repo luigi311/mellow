@@ -250,6 +250,7 @@ impl SongInfoLoader<'_> {
         )
     }
     /// Returns the song file modification time
+    #[must_use]
     pub fn file_modification_time(&self) -> i64 {
         self.file()
             .query_info(
@@ -264,6 +265,7 @@ impl SongInfoLoader<'_> {
     }
     /// Last known modification time (Unix format); compare with
     /// `file_modification_time()` to detect modifications
+    #[must_use]
     pub const fn modified(&self) -> i64 {
         self.user_info.modified
     }
@@ -320,6 +322,7 @@ impl SongInfoLoader<'_> {
     }
     /// Loads basic song info if needed, then returns and unloads it
     #[inline]
+    #[must_use]
     pub fn take_basic(&mut self) -> SongInfo {
         self.load_basic();
         // SAFETY: `load_basic()` ensures the value is `Some`
@@ -327,6 +330,7 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the basic song info if loaded, but does not load it
     #[inline]
+    #[must_use]
     pub const fn inspect_basic(&self) -> Option<&SongInfo> {
         self.info.as_ref()
     }
@@ -415,6 +419,7 @@ impl SongInfoLoader<'_> {
     }
     /// Loads detailed song info if needed, then returns and unloads it
     #[inline]
+    #[must_use]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
         // SAFETY: `load_detailed()` ensures the value is `Some`
@@ -422,6 +427,7 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the detailed song info if loaded, but does not load it
     #[inline]
+    #[must_use]
     pub const fn inspect_detailed(&self) -> Option<&DetailedSongInfo> {
         self.detailed_info.as_ref()
     }

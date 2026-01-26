@@ -27,6 +27,7 @@ impl ToQueue for AlbumMutex {
 
 pub type AlbumSongs = Vec<Arc<Mutex<Song>>>;
 pub trait SortedAlbumSongs {
+    /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbumSongs for AlbumSongs {

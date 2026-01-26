@@ -58,6 +58,7 @@ pub trait ToShuffledQueue {
 
 pub type Songs = Vec<Arc<Mutex<Song>>>;
 pub trait SortedSongs {
+    /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize>;
 }
 impl SortedSongs for Songs {
@@ -76,6 +77,7 @@ impl ToQueue for Songs {
 
 pub type Albums = Vec<Arc<Mutex<Album>>>;
 pub trait SortedAlbums {
+    /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbums for Albums {
@@ -123,6 +125,7 @@ impl ToShuffledQueue for Albums {
 
 pub type Artists = Vec<Arc<Mutex<Artist>>>;
 pub trait SortedArtists {
+    /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_artist(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedArtists for Artists {
@@ -429,6 +432,10 @@ impl Library {
                         .merge_with(songs[index].lock().unwrap().info().user());
                 }
             }
+        }
+
+        if possibly_moved.is_empty() {
+            return;
         }
 
         // Attempt to locate missing files if they were moved
@@ -904,15 +911,15 @@ impl Library {
     /// Notifies the caller over the `notify_done` channel when done.
     pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
         let mut songs = mem::take(&mut self.songs);
-        for song in mem::take(&mut self.missing_songs) {
+        for missing_song in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
             let Err(index) = songs.find_song(
-                &song.lock().unwrap().info().file_uri(),
+                &missing_song.lock().unwrap().info().file_uri(),
                 self.config.uri_opt(),
             ) else {
                 continue;
             };
-            songs.insert(index, song);
+            songs.insert(index, missing_song);
         }
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
