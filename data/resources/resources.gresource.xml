@@ -20,7 +20,4 @@
     <file compressed="true" preprocess="xml-stripblanks">songs_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>
-  <gresource prefix="/com/github/userwithaname/Mellow/icons/">
-    <file>com.github.userwithaname.Mellow.png</file>
-  </gresource>
 </gresources>

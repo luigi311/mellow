@@ -2,18 +2,23 @@ use adw::{Application, prelude::*};
 use gtk::{gio, glib};
 use std::thread;
 
-use mellow::about::{APP_ID, APP_NAME};
+use mellow::about;
 use mellow::excuses::INIT_ERR;
 use mellow::library::Library;
 use mellow::player::Player;
 
 pub fn main() -> glib::ExitCode {
-    glib::set_application_name(APP_NAME);
-    glib::set_program_name(Some(APP_NAME.to_lowercase()));
+    glib::set_application_name(about::app_name());
+    glib::set_program_name(Some(about::app_name().to_lowercase()));
 
-    gio::resources_register_include!("mellow.gresource").expect("Failed to register resources");
+    gio::resources_register(
+        &gio::Resource::load(mellow::about::resources_file())
+            .expect("Could not load resources file"),
+    );
 
-    let app = Application::builder().application_id(APP_ID).build();
+    let app = Application::builder()
+        .application_id(mellow::about::app_id())
+        .build();
     app.connect_activate(init);
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("player.play_pause", &["space"]);

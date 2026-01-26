@@ -1,9 +1,10 @@
 use adw::prelude::AdwDialogExt;
 use gtk::{License, glib::object::IsA};
 
-pub const APP_NAME: &str = "Mellow";
-pub const VERSION: &str = "0.1.0";
-pub const APP_ID: &str = "com.github.userwithaname.Mellow";
+const APP_NAME: &str = "Mellow";
+const VERSION: &str = "0.1.0";
+const APP_ID: Option<&str> = option_env!("APP_ID");
+const RESOURCES_FILE: Option<&str> = option_env!("RESOURCES_FILE");
 
 const COPYRIGHT: &str = "© 2025 Iva Kotar";
 const LICENSE_TYPE: License = License::Gpl30;
@@ -12,7 +13,7 @@ const DESIGNERS: &[&str] = &["Iva Kotar"];
 
 pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
     let about = adw::AboutDialog::builder()
-        .application_icon(APP_ID)
+        .application_icon(app_id())
         .application_name(APP_NAME)
         .issue_url("https://github.com/Userwithaname/mellow/issues/")
         .developers(DEVELOPERS)
@@ -22,6 +23,21 @@ pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
         .version(VERSION)
         .build();
     about.present(Some(parent));
+}
+
+pub const fn app_name() -> &'static str {
+    // TODO: Could this be set using Meson as well?
+    APP_NAME
+}
+pub const fn app_version() -> &'static str {
+    // TODO: Could this be set using Meson as well?
+    VERSION
+}
+pub const fn app_id() -> &'static str {
+    APP_ID.expect("APP_ID env var not set at compile time")
+}
+pub const fn resources_file() -> &'static str {
+    RESOURCES_FILE.expect("RESOURCES_FILE env var not set at compile time")
 }
 
 #[cfg(test)]
@@ -35,6 +51,8 @@ mod tests {
     #[test]
     fn metadata_consistency() -> Result<(), Box<dyn Error>> {
         let cargo_toml = fs::read_to_string(env!("CARGO_MANIFEST_DIR").to_owned() + "/Cargo.toml")?;
+        // TODO: Test Meson configuration (version, app name, etc)
+        // TODO: Test app ID for widgets and resources
 
         let mut app_name = "(none)";
         let mut version = "(none)";

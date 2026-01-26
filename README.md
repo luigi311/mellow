@@ -105,12 +105,18 @@ dnf install gtk4-devel libadwaita-devel
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+### [Meson](https://mesonbuild.com/SimpleStart.html#installing-meson):
+```bash
+dnf install meson ninja-build
+```
+
 ## Building
 
-### [Build using Cargo](https://doc.rust-lang.org/cargo/commands/cargo-build.html):
+### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
 ```bash
-cargo build --release
+meson setup builddir -Dprofile=development --prefix=~/.local
+meson install -C builddir
 ```
 
 To run it, launch the executable binary in `target/release/mellow`

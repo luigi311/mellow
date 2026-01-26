@@ -25,7 +25,7 @@ mod song_row;
 mod songs_page;
 mod window;
 
-use crate::about::{APP_ID, APP_NAME};
+use crate::about;
 use crate::library::song::SongMutex;
 use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
@@ -67,8 +67,8 @@ pub enum UpdateUI {
 #[inline]
 pub fn init(app: &Application, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
     let window = Window::new(app);
-    window.set_title(Some(APP_NAME));
-    window.set_icon_name(Some(APP_ID));
+    window.set_title(Some(about::app_name()));
+    window.set_icon_name(Some(about::app_id()));
     window.present();
 
     glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });

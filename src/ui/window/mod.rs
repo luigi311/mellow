@@ -7,7 +7,7 @@ use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 use std::time::Duration;
 
-use crate::about::{self, APP_ID};
+use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::SongQueue;
@@ -45,7 +45,7 @@ impl Window {
     }
 
     fn setup_settings(&self) {
-        let settings = Settings::new(APP_ID);
+        let settings = Settings::new(about::app_id());
         self.imp().settings.set(settings).expect(INIT_ERR);
     }
 
