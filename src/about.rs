@@ -130,13 +130,26 @@ mod tests {
             "Incorrect path in `{app_id_meson}.gschema.xml.in`"
         );
 
-        // Test if licenses in Cargo and the about window match
+        // Test if licenses match
+        let license_file = fs::read_to_string([project_dir, "/LICENSE"].concat())?;
         match LICENSE_TYPE {
-            License::Gpl30 => assert!(
-                license == "GPL-3.0",
-                "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
-            ),
-            value => panic!("Cannot test license\nLICENSE_TYPE: {value:?}\nCargo: {license}"),
+            License::Gpl30 => {
+                assert!(
+                    license == "GPL-3.0",
+                    "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
+                );
+                assert!(
+                    license_file
+                        .lines()
+                        .next()
+                        .expect("LICENSE file is empty")
+                        .contains("GNU GENERAL PUBLIC LICENSE"),
+                    "LICENSE file does not contain the correct license"
+                );
+            }
+            value => {
+                panic!("License test must be updated\nLICENSE_TYPE: {value:?}\nCargo: {license}")
+            }
         }
 
         Ok(())
