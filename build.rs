@@ -25,11 +25,9 @@ fn main() {
 
 #[cfg(not(feature = "no-meson"))]
 fn main() {
-    let app_name = option_env!("APP_ID")
-        .expect("APP_ID env var not set at compile time")
-        .rsplit_once('.')
-        .expect("Invalid APP_ID")
-        .1;
-    println!("cargo:rustc-env=APP_NAME={app_name}");
+    if let Some(app_id) = option_env!("APP_ID") {
+        let app_name = app_id.rsplit_once('.').expect("Invalid APP_ID").1;
+        println!("cargo:rustc-env=APP_NAME={app_name}");
+    }
     // Everything else is done by Meson
 }

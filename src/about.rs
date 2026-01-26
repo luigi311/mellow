@@ -44,43 +44,70 @@ mod tests {
     use gtk::License;
     use std::fs;
 
-    use crate::about;
+    use crate::about::LICENSE_TYPE;
 
     #[test]
     fn metadata_consistency() -> Result<(), Box<dyn Error>> {
-        let cargo_toml = fs::read_to_string(env!("CARGO_MANIFEST_DIR").to_owned() + "/Cargo.toml")?;
-        // TODO: Test Meson configuration (version, app name, etc)
+        let project_dir = env!("CARGO_MANIFEST_DIR");
+
         // TODO: Test app ID for widgets and resources
 
-        let mut app_name = "(none)";
-        let mut version = "(none)";
+        let (mut name_meson, mut name_cargo) = ("(none)", "(none)");
+        let (mut version_meson, mut version_cargo) = ("(none)", "(none)");
+        let (mut app_id_meson, mut app_id_build_rs) = ("(none)", "(none)");
         let mut license = "(none)";
 
+        let meson_build = fs::read_to_string([project_dir, "/meson.build"].concat())?;
+        for line in meson_build.lines() {
+            if let Some((_, name)) = line.split_once("project('") {
+                name_meson = name.split_once('\'').unwrap().0;
+            }
+            if let Some((_, version)) = line.split_once("version: '") {
+                version_meson = version.split_once('\'').unwrap().0;
+            }
+            if line.starts_with("base_id") {
+                app_id_meson = line.split_once("=").unwrap().1.trim();
+                app_id_meson = &app_id_meson[1..app_id_meson.len() - 1];
+                break; // This assumes `base_id` is below `project()`
+            }
+        }
+
+        let cargo_toml = fs::read_to_string([project_dir, "/Cargo.toml"].concat())?;
         for line in cargo_toml.lines() {
             if line.starts_with("name") {
-                app_name = line.split_once("=").unwrap().1.trim();
-                app_name = &app_name[1..app_name.len() - 1];
+                name_cargo = line.split_once("=").unwrap().1.trim();
+                name_cargo = &name_cargo[1..name_cargo.len() - 1];
             } else if line.starts_with("version") {
-                version = line.split_once("=").unwrap().1.trim();
-                version = &version[1..version.len() - 1];
+                version_cargo = line.split_once("=").unwrap().1.trim();
+                version_cargo = &version_cargo[1..version_cargo.len() - 1];
             } else if line.starts_with("license") {
                 license = line.split_once("=").unwrap().1.trim();
                 license = &license[1..license.len() - 1];
             }
         }
 
+        let build_rs = fs::read_to_string([project_dir, "/build.rs"].concat())?;
+        for line in build_rs.lines() {
+            if line.contains("const APP_ID") {
+                app_id_build_rs = line.split_once("=").unwrap().1.trim();
+                app_id_build_rs = &app_id_build_rs[1..app_id_build_rs.len() - 2];
+            }
+        }
+
         assert!(
-            app_name.to_lowercase() == about::app_name().to_lowercase(),
-            "APP_NAME: {}\nCargo: {app_name}",
-            about::app_name()
+            name_meson == name_cargo,
+            "Meson: {name_meson}\nCargo: {name_cargo}",
         );
         assert!(
-            version.to_lowercase() == about::app_version().to_lowercase(),
-            "VERSION: {}\nCargo: {version}",
-            about::app_version(),
+            version_meson.to_lowercase() == version_cargo.to_lowercase(),
+            "Meson: {version_meson}\nCargo: {version_cargo}",
+        );
+        assert!(
+            app_id_meson == app_id_build_rs,
+            "Meson: {app_id_meson}\nCargo: {app_id_build_rs}",
         );
 
-        match about::LICENSE_TYPE {
+        match LICENSE_TYPE {
             License::Gpl30 => assert!(
                 license == "GPL-3.0",
                 "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
