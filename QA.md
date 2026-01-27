@@ -47,3 +47,5 @@ User Experience:
 - [x] All actions respond to user input without delay
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)
+- [ ] Does not leak memory
+  - FIX: Song queue memory leak (see TODO.md)
