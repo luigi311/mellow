@@ -102,7 +102,7 @@ dnf install meson ninja-build
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
-Running the below command will install Mellow on your system:
+Running the following commands will install Mellow on your system:
 
 ```bash
 meson setup builddir --prefix=~/.local
