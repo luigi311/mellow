@@ -56,10 +56,11 @@ When the overlay is closed, it is time to enjoy the music.
 
 # Building from source
 
-## Build dependencies
-
 > [!NOTE]
-> DNF commands are meant for Fedora
+> The below instructions are meant for Fedora;
+> they might be different on other systems
+
+## Build dependencies
 
 ### [GStreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html):
 ```bash
@@ -97,7 +98,7 @@ dnf install meson ninja-build
 > setting up icons, and creating the application shortcut, so Meson should be
 > preferred whenever possible.
 
-## Building and Installing
+## Building and installing
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
@@ -108,11 +109,31 @@ meson setup builddir --prefix=~/.local
 meson install -C builddir
 ```
 
-The following files will be created:
-- `~/.local/bin/mellow` - the main executable
-- `~/.local/share/mellow/` - a directory containing the compiled Mellow resources
-- `~/.local/share/applications/com.github.userwithaname.Mellow.desktop` - app launcher
-- `~/.local/share/icons/hicolor/scalable/apps/com.github.userwithaname.Mellow.png` - app icon
-- `~/.local/share/glib-2.0/schemas/com.github.userwithaname.Mellow.gschema.xml` - Mellow GSchema
-(application settings; `gschemas.compiled` is created as well, but note that
-it may also contain schemas for other applications on your system)
+The following files and directories will be created:
+```
+~
+├── .config
+│   └── mellow ⟵┬─ Created when launched
+│       └── …  ⟵╯
+└── .local
+    ├── bin
+    │   └── mellow ⟵─ Main program executable
+    └── share
+        ├── applications
+        │   └── com.github.userwithaname.Mellow.desktop
+        ├── glib-2.0
+        │   └── schemas
+        │       ├── com.github.userwithaname.Mellow.gschema.xml
+        │       └── gschemas.compiled ⟵╮
+        │           Note: May also contain schemas for other apps
+        └── icons
+            └── hicolor
+                └── scalable
+                    └── apps
+                        └── com.github.userwithaname.Mellow.png
+```
+
+> [!TIP]
+> Ensure the `mellow` executable is within your `$PATH` for the shortcut to
+> work correctly. If you've used a different build command, the executable
+> might be in a different location than shown above.
