@@ -7,6 +7,8 @@ use mellow::excuses::INIT_ERR;
 use mellow::library::Library;
 use mellow::player::Player;
 
+// FIX: Crashes when opening a second instance (with %F in `.desktop`)
+
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(about::app_name());
     glib::set_program_name(Some(about::app_name().to_lowercase()));

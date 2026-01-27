@@ -4,7 +4,6 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::Albums;
 use crate::library::artist::ArtistMutex;
 use crate::ui::album_row::AlbumRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};

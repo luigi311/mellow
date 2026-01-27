@@ -1,5 +1,9 @@
 Song queue:
 
+- FIX: Queue subpage should close (or update) when the queue changes
+(for example, starting a new queue still shows old info, which leads
+to misleading behavior - pressing play would jump to a different song
+than shown on the page, or even try to index out of bounds)
 - [-] Display the song queue
   - TODO: Draw the entire queue (using a more performant approach)
   - FIX: Memory leak when toggling shuffle
@@ -56,8 +60,8 @@ Music library:
     - TODO: Show images (and/or other visual improvements)
   - [ ] Artist subpage, accessed from each item
     - [ ] Display artist info (name/number of albums/average rating)
-    - [-] Display all albums by the artist, each opening an Album subpage
-      - TODO: Open subpage
+    - [x] Display all albums by the artist, each opening an Album subpage
+      - TODO: Visual improvements
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
 - [x] Play counting
