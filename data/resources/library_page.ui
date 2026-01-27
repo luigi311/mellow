@@ -15,13 +15,13 @@
               <object class="AdwPreferencesGroup">
                 <child>
                   <object class="AdwActionRow">
-                    <property name="title">Songs</property>
+                    <property name="title">Artists</property>
                     <property name="activatable">True</property>
                     <property name="action-name">navigation.push</property>
-                    <property name="action-target">'library_songs'</property>
+                    <property name="action-target">'library_artists'</property>
                     <child type="prefix">
                       <object class="GtkImage">
-                        <property name="icon_name">audio-x-generic-symbolic</property>
+                        <property name="icon_name">avatar-default-symbolic</property>
                       </object>
                     </child>
                     <child type="suffix">
@@ -51,13 +51,13 @@
                 </child>
                 <child>
                   <object class="AdwActionRow">
-                    <property name="title">Artists</property>
+                    <property name="title">Songs</property>
                     <property name="activatable">True</property>
                     <property name="action-name">navigation.push</property>
-                    <property name="action-target">'library_artists'</property>
+                    <property name="action-target">'library_songs'</property>
                     <child type="prefix">
                       <object class="GtkImage">
-                        <property name="icon_name">avatar-default-symbolic</property>
+                        <property name="icon_name">audio-x-generic-symbolic</property>
                       </object>
                     </child>
                     <child type="suffix">
