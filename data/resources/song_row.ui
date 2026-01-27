@@ -2,7 +2,9 @@
 <interface>
   <template class="MellowSongRow" parent="AdwActionRow">
 
-    <!-- FIX: AdwActionRow doesn't work with GtkListView -->
+    <!-- FIX: Song row should have a fixed height -->
+    <!-- FIX: AdwActionRow doesn't work with GtkListView; a different -->
+    <!-- type of widget will be needed to display the queue item rows -->
 
     <property name="title_lines">1</property>
     <property name="subtitle_lines">1</property>

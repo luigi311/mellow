@@ -2,12 +2,12 @@
 <interface>
   <template class="MellowAlbumRow" parent="AdwActionRow">
 
+    <!-- FIX: Album row should have a fixed height -->
+
     <property name="title_lines">1</property>
     <property name="subtitle_lines">1</property>
     <property name="use_markup">False</property>
     <property name="activatable">True</property>
-
-    <!-- TODO: Design according to the mockup -->
     
     <child type="prefix">
       <object class="GtkPicture" id="prefix_image">

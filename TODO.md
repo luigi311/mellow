@@ -30,18 +30,15 @@ Music library:
 - [x] Serialize the library to disk
 - [-] Incremental library rebuilding
   - TODO: Allow users to initiate a full rebuild
-- [ ] Songs page
-  - [x] Buttons to play all songs (shuffled/sequential)
-  - [ ] Show all songs
-  - [ ] Song subpage, accessed from each item
-    - [-] Display song info (title/album/artist, maybe album cover)
-    - [ ] Interactive rating widget
-    - [x] Play Now: Start a new queue and skip to the selected track
-    - [x] Play Next: Insert the song to the next position in the queue
+- [ ] Artists page
+  - [x] Buttons to play all artists (shuffled/sequential)
+  - [-] Show all artists
+    - TODO: Show images (and/or other visual improvements)
+  - [-] Artist subpage, accessed from each item
+    - [-] Display artist info (name/number of albums/average rating)
+    - [x] Display all albums by the artist, each opening an Album subpage
+    - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
-    - [ ] Ability to set tags
-    - [ ] Go to album button
-    - [ ] Go to artist button
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
   - [-] Show all albums
@@ -54,16 +51,18 @@ Music library:
     - [x] Display a track list, each opening a Song subpage
     - [ ] Ability to set tags
     - [ ] Go to artist button
-- [ ] Artists page
-  - [x] Buttons to play all artists (shuffled/sequential)
-  - [-] Show all artists
-    - TODO: Show images (and/or other visual improvements)
-  - [ ] Artist subpage, accessed from each item
-    - [ ] Display artist info (name/number of albums/average rating)
-    - [x] Display all albums by the artist, each opening an Album subpage
-      - TODO: Visual improvements
-    - [x] Play/Shuffle buttons
+- [ ] Songs page
+  - [x] Buttons to play all songs (shuffled/sequential)
+  - [ ] Show all songs
+  - [ ] Song subpage, accessed from each item
+    - [-] Display song info (title/album/artist, maybe album cover)
+    - [ ] Interactive rating widget
+    - [x] Play Now: Start a new queue and skip to the selected track
+    - [x] Play Next: Insert the song to the next position in the queue
     - [ ] Add to Queue button
+    - [ ] Ability to set tags
+    - [ ] Go to album button
+    - [ ] Go to artist button
 - [x] Play counting
 > Works, but the counting logic could be improved
 - [-] Search/filtering for songs/albums/artists pages
