@@ -1,6 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
+use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
@@ -28,7 +29,7 @@ impl AlbumPage {
         Object::builder().build()
     }
 
-    pub fn update(&self, index: usize, album: &AlbumMutex) {
+    pub fn update(&self, album: &AlbumMutex) {
         let ui = self.imp();
         let album_locked = album.lock().unwrap();
         let songs = &album_locked.songs;
@@ -46,7 +47,7 @@ impl AlbumPage {
         }
         drop(first_song);
 
-        ui.index.set(index);
+        ui.album.replace(Some(Arc::clone(album)));
         ui.album_title.set_label(&album_locked.title);
         ui.artist_name
             .set_label(&album_locked.artist.lock().unwrap().name);

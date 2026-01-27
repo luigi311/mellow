@@ -26,6 +26,7 @@ mod songs_page;
 mod window;
 
 use crate::about;
+use crate::library::album::AlbumMutex;
 use crate::library::song::SongMutex;
 use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
@@ -51,7 +52,8 @@ pub enum UpdateUI {
     LibraryArtists(Artists),
 
     ArtistPage(usize), //TODO: Could this be refactored to take an `ArtistMutex`?
-    AlbumPage(usize),  //TODO: Could this be refactored to take an `AlbumMutex`?
+    AlbumPageByIndex(usize),
+    AlbumPage(AlbumMutex),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field

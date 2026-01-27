@@ -1,10 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
+use std::sync::Arc;
 
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::Albums;
 use crate::ui::album_row::AlbumRow;
-use crate::ui::fallback_song_image;
+use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 mod imp;
 
@@ -53,7 +55,16 @@ impl ArtistPage {
                 entry.set_prefix_image(Some(&fallback_song_image()));
             }
 
-            entry.connect_activated(move |_| println!("TODO: Open the album subpage"));
+            entry.connect_activated({
+                let album = Arc::clone(album);
+                move |_| {
+                    UI_TX
+                        .get()
+                        .expect(EXP_INIT)
+                        .send(UpdateUI::AlbumPage(Arc::clone(&album)))
+                        .expect(EXP_RX);
+                }
+            });
 
             ui.albums_list.append(&entry);
         }

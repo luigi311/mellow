@@ -129,7 +129,7 @@ impl AlbumsPage {
             UI_TX
                 .get()
                 .unwrap()
-                .send(UpdateUI::AlbumPage(index as usize))
+                .send(UpdateUI::AlbumPageByIndex(index as usize))
                 .expect(EXP_RX);
         });
     }

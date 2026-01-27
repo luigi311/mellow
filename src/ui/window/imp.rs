@@ -10,6 +10,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::library::album::AlbumMutex;
 use crate::library::song::SongMutex;
 use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
@@ -120,7 +121,8 @@ impl Window {
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
 
                 UpdateUI::ArtistPage(index) => self.open_artist_page(index),
-                UpdateUI::AlbumPage(index) => self.open_album_page(index),
+                UpdateUI::AlbumPageByIndex(index) => self.open_album_page_by_index(index),
+                UpdateUI::AlbumPage(album) => self.open_album_page(&album),
                 UpdateUI::SongPage(context) => {
                     self.open_song_page(context.0, &context.1, context.2);
                 }
@@ -303,9 +305,12 @@ impl Window {
             .update(index, &artist.name, &artist.albums);
         self.library_navigation_view.push_by_tag("artist");
     }
-    fn open_album_page(&self, index: usize) {
+    fn open_album_page_by_index(&self, index: usize) {
         let album = &self.library_albums.borrow()[index];
-        self.library_album_page.update(index, album);
+        self.open_album_page(album);
+    }
+    fn open_album_page(&self, album: &AlbumMutex) {
+        self.library_album_page.update(album);
         self.library_navigation_view.push_by_tag("album");
     }
     fn load_library_artists(&self, artists: &Artists) {

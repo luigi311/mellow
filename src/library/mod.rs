@@ -19,7 +19,7 @@ pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::album::SortedAlbumSongs;
+use crate::library::album::{AlbumMutex, SortedAlbumSongs};
 use crate::library::artist::SortedArtistAlbums;
 use crate::library::config::{FILE_SUPPORT, LibraryConfig};
 use crate::library::song::SongInfoLoader;
@@ -181,7 +181,7 @@ pub enum LibraryRequest {
     PlayAllArtists(String),
     ShuffleAllArtists(String),
 
-    PlayAlbum(usize),
+    PlayAlbum(AlbumMutex),
     PlayArtist(usize),
     ShuffleArtist(usize),
 
@@ -248,8 +248,8 @@ impl Library {
                 LibraryRequest::PlayAllArtists(query) => self.play_all_artists(&query)?,
                 LibraryRequest::ShuffleAllArtists(query) => self.shuffle_all_artists(&query)?,
 
-                LibraryRequest::PlayAlbum(index) => {
-                    self.play_album(&self.albums[index].lock().unwrap())?;
+                LibraryRequest::PlayAlbum(album) => {
+                    self.play_album(&album.lock().unwrap())?;
                 }
                 LibraryRequest::PlayArtist(index) => {
                     self.play_artist(&self.artists[index].lock().unwrap())?;
