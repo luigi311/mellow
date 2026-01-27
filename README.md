@@ -90,14 +90,29 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 dnf install meson ninja-build
 ```
 
-## Building / Installing
+> [!TIP]
+> It is also possible to build Mellow using [Cargo](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
+> directly by adding `--feature no-meson`. Note that this will require manually
+> [installing the GSchema](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html),
+> setting up icons, and creating the application shortcut, so Meson should be
+> preferred whenever possible.
+
+## Building and Installing
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
+
+Running the below command will install Mellow on your system:
 
 ```bash
 meson setup builddir --prefix=~/.local
 meson install -C builddir
 ```
 
-Mellow will be installed in '~/.local/share/mellow', and a shortcut
-will appear in your desktop environment.
+The following files will be created:
+- `~/.local/bin/mellow` - the main executable
+- `~/.local/share/mellow/` - a directory containing the compiled Mellow resources
+- `~/.local/share/applications/com.github.userwithaname.Mellow.desktop` - app launcher
+- `~/.local/share/icons/hicolor/scalable/apps/com.github.userwithaname.Mellow.png` - app icon
+- `~/.local/share/glib-2.0/schemas/com.github.userwithaname.Mellow.gschema.xml` - Mellow GSchema
+(application settings; `gschemas.compiled` is created as well, but note that
+it may also contain schemas for other applications on your system)
