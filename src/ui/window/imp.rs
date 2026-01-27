@@ -11,6 +11,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
+use crate::library::artist::ArtistMutex;
 use crate::library::song::SongMutex;
 use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
@@ -120,7 +121,8 @@ impl Window {
                 UpdateUI::LibraryAlbums(albums) => self.load_library_albums(&albums),
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
 
-                UpdateUI::ArtistPage(index) => self.open_artist_page(index),
+                UpdateUI::ArtistPageByIndex(index) => self.open_artist_page_by_index(index),
+                UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
                 UpdateUI::AlbumPageByIndex(index) => self.open_album_page_by_index(index),
                 UpdateUI::AlbumPage(album) => self.open_album_page(&album),
                 UpdateUI::SongPage(context) => {
@@ -298,16 +300,15 @@ impl Window {
         self.library_song_page.update(index, song, to_queue);
         self.library_navigation_view.push_by_tag("song");
     }
-    fn open_artist_page(&self, index: usize) {
-        let artist = &self.library_artists.borrow()[index];
-        let artist = artist.lock().unwrap();
-        self.library_artist_page
-            .update(index, &artist.name, &artist.albums);
+    fn open_artist_page_by_index(&self, index: usize) {
+        self.open_artist_page(&self.library_artists.borrow()[index]);
+    }
+    fn open_artist_page(&self, artist: &ArtistMutex) {
+        self.library_artist_page.update(artist);
         self.library_navigation_view.push_by_tag("artist");
     }
     fn open_album_page_by_index(&self, index: usize) {
-        let album = &self.library_albums.borrow()[index];
-        self.open_album_page(album);
+        self.open_album_page(&self.library_albums.borrow()[index]);
     }
     fn open_album_page(&self, album: &AlbumMutex) {
         self.library_album_page.update(album);

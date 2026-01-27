@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::Albums;
+use crate::library::artist::ArtistMutex;
 use crate::ui::album_row::AlbumRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
@@ -29,13 +30,14 @@ impl ArtistPage {
         Object::builder().build()
     }
 
-    pub fn update(&self, index: usize, artist: &str, albums: &Albums) {
+    pub fn update(&self, artist: &ArtistMutex) {
         let ui = self.imp();
-        ui.index.set(index);
-        ui.artist_name.set_label(artist);
+        ui.artist.replace(Some(Arc::clone(artist)));
+        let artist = artist.lock().unwrap();
+        ui.artist_name.set_label(&artist.name);
 
         ui.albums_list.remove_all();
-        for album in albums {
+        for album in &artist.albums {
             let entry = AlbumRow::new();
 
             let album_locked = album.lock().unwrap();

@@ -131,7 +131,7 @@ impl ArtistsPage {
             UI_TX
                 .get()
                 .unwrap()
-                .send(UpdateUI::ArtistPage(index as usize))
+                .send(UpdateUI::ArtistPageByIndex(index as usize))
                 .expect(EXP_RX);
         });
     }
