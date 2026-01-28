@@ -36,7 +36,7 @@ pub enum PlayerRequest {
     SongEnd,
 
     /// Load a new queue
-    LoadQueue(Vec<QueueItem>),
+    LoadQueue((Vec<QueueItem>, usize)),
     /// Appends multiple items to the current queue
     AppendQueue(Vec<QueueItem>),
     /// Inserts an item into the queue
@@ -72,8 +72,8 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
-                Self::LoadQueue(queue) => {
-                    format!("LoadQueue(…): {} items", queue.len())
+                Self::LoadQueue((queue, index)) => {
+                    format!("LoadQueue((…, {index})): {} items", queue.len())
                 }
                 Self::AppendQueue(queue) => {
                     format!("AppendQueue(…): {} items", queue.len())
@@ -199,7 +199,7 @@ impl Player {
                 },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
-                PlayerRequest::LoadQueue(queue) => self.queue.load_new(queue) != (),
+                PlayerRequest::LoadQueue((queue, index)) => self.queue.load_new(queue, index) != (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {

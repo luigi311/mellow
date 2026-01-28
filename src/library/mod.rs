@@ -636,8 +636,7 @@ impl Library {
     /// Starts a queue of all songs in the library matching the given `query`
     pub fn play_all_songs(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_songs(query)))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((self.all_songs(query), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -648,8 +647,7 @@ impl Library {
 
     pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(album.songs.to_queue()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((album.songs.to_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -671,8 +669,7 @@ impl Library {
     /// Starts a queue of all albums in the library
     pub fn play_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums(query)))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((self.all_albums(query), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -694,9 +691,10 @@ impl Library {
 
     /// Starts a randomly ordered queue of all albums in the library
     pub fn shuffle_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums_shuffled(query)))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx.send(PlayerRequest::LoadQueue((
+            self.all_albums_shuffled(query),
+            0,
+        )))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -707,8 +705,7 @@ impl Library {
 
     pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(artist.to_queue()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((artist.to_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -719,8 +716,7 @@ impl Library {
 
     pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(artist.to_shuffled_queue()))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((artist.to_shuffled_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -742,8 +738,7 @@ impl Library {
     /// Starts a queue of all albums in the library
     pub fn play_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists(query)))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+            .send(PlayerRequest::LoadQueue((self.all_artists(query), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -765,9 +760,10 @@ impl Library {
 
     /// Starts a randomly ordered queue of all artists in the library
     pub fn shuffle_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists_shuffled(query)))?;
-        self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        self.player_tx.send(PlayerRequest::LoadQueue((
+            self.all_artists_shuffled(query),
+            0,
+        )))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -804,10 +800,7 @@ impl Library {
             });
 
             self.player_tx
-                .send(PlayerRequest::LoadQueue(queue))
-                .expect(EXP_RX);
-            self.player_tx
-                .send(PlayerRequest::SkipTo(track))
+                .send(PlayerRequest::LoadQueue((queue, track)))
                 .expect(EXP_RX);
 
             self.tasks.run(|| load_info.join().unwrap());

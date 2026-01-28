@@ -38,12 +38,10 @@ impl SongPage {
             .send(PlayerRequest::SetShuffle(false))
             .expect(EXP_RX);
         player_tx
-            .send(PlayerRequest::LoadQueue(
+            .send(PlayerRequest::LoadQueue((
                 self.context.borrow().as_ref().expect(EXP_INIT).to_queue(),
-            ))
-            .expect(EXP_RX);
-        player_tx
-            .send(PlayerRequest::SkipTo(self.index.get()))
+                self.index.get(),
+            )))
             .expect(EXP_RX);
         player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
