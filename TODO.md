@@ -53,8 +53,10 @@ Music library:
     - [ ] Go to artist button
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
-  - [ ] Show all songs
-  - [ ] Song subpage, accessed from each item
+  - [-] Show all songs
+    - TODO: Show album artworks
+    - FIX: Alignment issues
+  - [-] Song subpage, accessed from each item
     - [-] Display song info (title/album/artist, maybe album cover)
     - [ ] Interactive rating widget
     - [x] Play Now: Start a new queue and skip to the selected track

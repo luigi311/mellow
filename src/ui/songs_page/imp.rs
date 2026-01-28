@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::glib;
+use gtk::{gio, glib};
 use std::cell::RefCell;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -8,6 +8,9 @@ use crate::library::LIBRARY_TX;
 use crate::library::{LibraryRequest, Songs};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::ui::song_object::SongObject;
+use crate::ui::song_tile::SongTile;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
@@ -21,6 +24,8 @@ pub struct SongsPage {
 
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    songs_grid: TemplateChild<gtk::GridView>,
 
     #[template_child]
     search_button: TemplateChild<gtk::ToggleButton>,
@@ -85,8 +90,50 @@ impl SongsPage {
             self.view_stack.set_visible_child_name("empty");
             return;
         }
-        // self.view_stack.set_visible_child_name("songs");
-        println!("TODO: Create a list of library songs in the UI");
+        self.view_stack.set_visible_child_name("songs");
+
+        let model = gio::ListStore::new::<SongObject>();
+        let songs: Vec<SongObject> = (0..songs.len())
+            .map(|index| {
+                let mut song = songs[index].lock().unwrap();
+                let mut info = song.info();
+                let info = info.basic();
+                SongObject::new(&info.title, &info.artist)
+            })
+            .collect();
+        model.extend_from_slice(&songs);
+
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(move |_, list_item| {
+            list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .set_child(Some(&SongTile::default()));
+        });
+        factory.connect_bind(move |_, list_item| {
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            let object = list_item
+                .item()
+                .and_downcast::<SongObject>()
+                .expect("Needs to be SongObject");
+            let song_tile = SongTile::builder()
+                .info(&object.song(), &object.artist())
+                .build();
+            list_item.set_child(Some(&song_tile));
+        });
+
+        self.songs_grid
+            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+        self.songs_grid.set_factory(Some(&factory));
+        self.songs_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::SongPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
     }
 }
 

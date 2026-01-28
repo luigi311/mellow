@@ -20,8 +20,10 @@ mod queue_page;
 mod queue_subpage;
 mod rating;
 mod settings_page;
+mod song_object;
 mod song_page;
 mod song_row;
+mod song_tile;
 mod songs_page;
 mod window;
 
@@ -56,6 +58,7 @@ pub enum UpdateUI {
     ArtistPage(ArtistMutex),
     AlbumPageByIndex(usize),
     AlbumPage(AlbumMutex),
+    SongPageByIndex(usize),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field

@@ -125,6 +125,7 @@ impl Window {
                 UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
                 UpdateUI::AlbumPageByIndex(index) => self.open_album_page_by_index(index),
                 UpdateUI::AlbumPage(album) => self.open_album_page(&album),
+                UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
                 UpdateUI::SongPage(context) => {
                     self.open_song_page(context.0, &context.1, context.2);
                 }
@@ -296,6 +297,17 @@ impl Window {
         self.library_albums.replace(albums.clone());
         self.library_albums_page.load_albums(albums);
     }
+    fn load_library_artists(&self, artists: &Artists) {
+        self.library_artists.replace(artists.clone());
+        self.library_artists_page.load_artists(artists);
+    }
+
+    // TODO: Reset the scroll position when opening song/album/artist page
+
+    fn open_song_page_by_index(&self, index: usize) {
+        let songs: Songs = self.library_songs.borrow().clone();
+        self.open_song_page(index, &songs[index].clone(), Box::new(songs));
+    }
     fn open_song_page(&self, index: usize, song: &SongMutex, to_queue: Box<dyn ToQueue + Send>) {
         self.library_song_page.update(index, song, to_queue);
         self.library_navigation_view.push_by_tag("song");
@@ -313,10 +325,6 @@ impl Window {
     fn open_album_page(&self, album: &AlbumMutex) {
         self.library_album_page.update(album);
         self.library_navigation_view.push_by_tag("album");
-    }
-    fn load_library_artists(&self, artists: &Artists) {
-        self.library_artists.replace(artists.clone());
-        self.library_artists_page.load_artists(artists);
     }
 }
 

@@ -18,6 +18,7 @@
     <file compressed="true" preprocess="xml-stripblanks">song_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">song_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">songs_page.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">song_tile.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>
 </gresources>
