@@ -283,6 +283,10 @@ impl Player {
     }
 
     /// Replaces the song queue with `queue` and skips to `index`
+    ///
+    /// # Panics
+    /// The function panics if `index` is out of bounds of `queue`,
+    /// except when the `queue` is empty
     fn load_queue(&mut self, queue: Vec<QueueItem>, index: usize) {
         if queue.is_empty() {
             let _ = self.backend.set_state(State::Null);
@@ -306,9 +310,7 @@ impl Player {
         self.queue.load_new(queue);
         self.skip_to(index);
 
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
+        (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::RunTask(Box::new(move || {
                 load_info.join().unwrap()
             })))
@@ -544,17 +546,17 @@ impl Player {
         self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
     }
 
-    /// Requests the UI to open the music library
-    fn ui_open_playing(&self) {
-        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
-    }
-
     /// Sends the current playback time to the UI receiver
     fn ui_set_time(&self) {
         let time = self.current_time();
         // println!("ui_set_time({time:?})");
         self.ui_tx.send(UpdateUI::PlayerTime(time)).expect(EXP_RX);
+    }
+
+    /// Requests the UI to open the music library
+    fn ui_open_playing(&self) {
+        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 
     /// Handles `GStreamer` events and empties the message queue

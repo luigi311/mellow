@@ -276,10 +276,9 @@ impl Library {
 
         // Start a queue from arguments, if they contain any supported files
         if args.len() > 0
-            && self
-                .queue_from_paths(&args.collect::<Box<[String]>>(), 0)
-                .is_ok()
+            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
         {
+            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
             return Ok(());
         }
 
@@ -287,10 +286,10 @@ impl Library {
         if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue")
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
-            && self
-                .queue_from_paths(&lines.map(String::from).collect::<Vec<_>>(), track)
-                .is_ok()
+            && let Some(queue) = self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
         {
+            self.player_tx
+                .send(PlayerRequest::LoadQueue((queue, track)))?;
             return Ok(());
         }
 
@@ -775,22 +774,13 @@ impl Library {
     /// Starts a queue of all songs found within the specified `paths`,
     /// recursively. Does nothing if no song files were found.
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
-        if self.queue_from_paths(paths, 0).is_ok() {
+        if let Some(queue) = self.songs_from_paths(paths) {
+            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
             self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
             self.ui_tx.send(UpdateUI::OpenSheet(false))?;
             self.ui_tx.send(UpdateUI::FocusPlaying)?;
         }
         Ok(())
-    }
-
-    pub fn queue_from_paths(&self, paths: &[String], track: usize) -> Result<(), ()> {
-        if let Some(queue) = self.songs_from_paths(paths) {
-            self.player_tx
-                .send(PlayerRequest::LoadQueue((queue, track)))
-                .expect(EXP_RX);
-            return Ok(());
-        }
-        Err(())
     }
 
     /// Returns a queue of all songs found within the specified `paths`,
