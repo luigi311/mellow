@@ -275,7 +275,9 @@ impl Library {
         args.next();
 
         // Start a queue from arguments, if they contain any supported files
-        if let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>()) {
+        if args.len() > 0
+            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
+        {
             self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
             self.player_tx.send(PlayerRequest::SkipTo(0))?;
             return Ok(());
