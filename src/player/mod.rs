@@ -284,6 +284,13 @@ impl Player {
 
     /// Replaces the song queue with `queue` and skips to `index`
     fn load_queue(&mut self, queue: Vec<QueueItem>, index: usize) {
+        if queue.is_empty() {
+            let _ = self.backend.set_state(State::Null);
+            self.queue.load_new(queue);
+            self.ui_open_playing();
+            return;
+        }
+
         // Start loading the song info in the background immediately
         let current_item = QueueItem::clone(&queue[index]);
         let load_info = thread::spawn(move || match current_item {
@@ -535,6 +542,12 @@ impl Player {
     fn ui_update_song_info(&self) {
         println!("ui_update_song_info()");
         self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+    }
+
+    /// Requests the UI to open the music library
+    fn ui_open_playing(&self) {
+        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 
     /// Sends the current playback time to the UI receiver

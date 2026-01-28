@@ -1,10 +1,9 @@
 use rand::random_range;
+use std::fs;
 use std::sync::mpsc;
-use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
 use crate::{CONFIG_DIR, reorder_vec};
@@ -410,12 +409,6 @@ impl SongQueue {
         self.ui_tx
             .send(UpdateUI::QueueIndex(self.index))
             .expect(EXP_RX);
-    }
-
-    /// Requests the UI to open the music library
-    fn ui_open_playing(&self) {
-        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 
     /// Saves the provided queue to a file on disk, or removes
