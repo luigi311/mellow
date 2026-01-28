@@ -70,8 +70,8 @@ impl QueuePage {
         // TODO: Support reordering queue items
         // TODO: Display the entire queue
         self.list_box.remove_all();
-        let start = index.saturating_sub(10);
-        let end = (index + 15).min(queue.len());
+        let start = index.saturating_sub(45);
+        let end = (index + 45).min(queue.len());
         let mut needs_loading = false;
         for (i, item) in queue.iter().enumerate().take(end).skip(start) {
             match item {
