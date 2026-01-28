@@ -5,7 +5,7 @@ use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
-use std::{fs, mem, thread};
+use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
@@ -785,25 +785,9 @@ impl Library {
 
     pub fn queue_from_paths(&self, paths: &[String], track: usize) -> Result<(), ()> {
         if let Some(queue) = self.songs_from_paths(paths) {
-            // Start loading the song info in the background immediately
-            let load_info = thread::spawn({
-                let queue_item = QueueItem::clone(&queue[track]);
-                move || match queue_item {
-                    QueueItem::Song(song) => {
-                        let mut song = song.lock().unwrap();
-                        let mut info = song.info();
-                        info.load_detailed();
-                        info.load_basic();
-                    }
-                    QueueItem::Stopper => {}
-                }
-            });
-
             self.player_tx
                 .send(PlayerRequest::LoadQueue((queue, track)))
                 .expect(EXP_RX);
-
-            self.tasks.run(|| load_info.join().unwrap());
             return Ok(());
         }
         Err(())
