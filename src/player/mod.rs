@@ -2,10 +2,12 @@ use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{OnceLock, mpsc};
+use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{queue_item::QueueItem, song_queue::SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -199,7 +201,7 @@ impl Player {
                 },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
-                PlayerRequest::LoadQueue((queue, index)) => self.queue.load_new(queue, index) != (),
+                PlayerRequest::LoadQueue((queue, index)) => self.load_queue(queue, index) == (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {
@@ -278,6 +280,32 @@ impl Player {
 
         // Re-enable gapless playback (for example after track skip)
         self.backend.set_property("instant-uri", false);
+    }
+
+    /// Replaces the song queue with `queue` and skips to `index`
+    fn load_queue(&mut self, queue: Vec<QueueItem>, index: usize) {
+        // Start loading the song info in the background immediately
+        let current_item = QueueItem::clone(&queue[index]);
+        let load_info = thread::spawn(move || match current_item {
+            QueueItem::Song(song) => {
+                let mut song = song.lock().unwrap();
+                let mut info = song.info();
+                info.load_detailed();
+                info.load_basic();
+            }
+            QueueItem::Stopper => {}
+        });
+
+        self.queue.load_new(queue);
+        self.skip_to(index);
+
+        LIBRARY_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(LibraryRequest::RunTask(Box::new(move || {
+                load_info.join().unwrap()
+            })))
+            .expect(EXP_RX);
     }
 
     /// Starts or pauses playback depending on state

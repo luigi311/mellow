@@ -151,56 +151,18 @@ impl SongQueue {
     }
 
     /// Replaces the current queue with the provided one
-    ///
-    /// # Panics
-    /// The function panics if `index` is out of bounds of `queue`,
-    /// except when the `queue` is empty
-    pub fn load_new(&mut self, queue: Vec<QueueItem>, index: usize) {
-        if queue.is_empty() {
-            self.empty_queue();
-        }
-
-        // Start loading the song info in the background immediately
-        let current_item = QueueItem::clone(&queue[index]);
-        let load_info = thread::spawn(move || match current_item {
-            QueueItem::Song(song) => {
-                let mut song = song.lock().unwrap();
-                let mut info = song.info();
-                info.load_detailed();
-                info.load_basic();
-            }
-            QueueItem::Stopper => {}
-        });
-
+    pub fn load_new(&mut self, queue: Vec<QueueItem>) {
         self.songs = queue;
         match self.shuffle {
             true => self.new_shuffled_queue(),
             false => self.ui_update_queue(),
         }
-        self.player_tx
-            .send(PlayerRequest::SkipTo(index))
-            .expect(EXP_RX);
-
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(LibraryRequest::RunTask(Box::new(move || {
-                load_info.join().unwrap()
-            })))
-            .expect(EXP_RX);
     }
 
     /// Restarts the queue from the beginning
     /// Playback state has to be manually updated
     pub fn restart_queue(&mut self) {
         self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
-    }
-
-    pub fn empty_queue(&mut self) {
-        self.songs = Vec::new();
-        self.shuffled = Vec::new();
-        self.ui_update_queue();
-        self.ui_open_playing();
     }
 
     /// Creates a vec of random indexes for the shuffle mode
