@@ -43,7 +43,6 @@ When the overlay is closed, it is time to enjoy the music.
 - 📋 Song queue - view or edit the list of playing songs
 - 📀 Music library - browse and play your local music collection
 - 🌈 Gapless playback - uninterrupted transitions between songs
-- 🏁 Fast and lightweight - highly optimized and responsive
 
 # Roadmap
 
