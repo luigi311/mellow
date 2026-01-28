@@ -5,7 +5,7 @@ use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
-use std::{fs, mem};
+use std::{fs, mem, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
@@ -276,30 +276,22 @@ impl Library {
 
         // Start a queue from arguments, if they contain any supported files
         if args.len() > 0
-            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
+            && self
+                .queue_from_paths(&args.collect::<Box<[String]>>(), 0)
+                .is_ok()
         {
-            self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
-            self.player_tx.send(PlayerRequest::SkipTo(0))?;
             return Ok(());
         }
 
         // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue") {
-            'queue: {
-                let mut lines = queue.lines();
-                let Some(Ok(track)) = lines.next().map(str::parse) else {
-                    break 'queue;
-                };
-                let Some(queue) =
-                    self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
-                else {
-                    break 'queue;
-                };
-
-                self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
-                self.player_tx.send(PlayerRequest::SkipTo(track))?;
-                return Ok(());
-            }
+        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue")
+            && let mut lines = queue.lines()
+            && let Some(Ok(track)) = lines.next().map(str::parse)
+            && self
+                .queue_from_paths(&lines.map(String::from).collect::<Vec<_>>(), track)
+                .is_ok()
+        {
+            return Ok(());
         }
 
         if self.songs.is_empty() {
@@ -787,14 +779,41 @@ impl Library {
     /// Starts a queue of all songs found within the specified `paths`,
     /// recursively. Does nothing if no song files were found.
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
-        if let Some(queue) = self.songs_from_paths(paths) {
-            self.player_tx.send(PlayerRequest::LoadQueue(queue))?;
-            self.player_tx.send(PlayerRequest::SkipTo(0))?;
+        if self.queue_from_paths(paths, 0).is_ok() {
             self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
             self.ui_tx.send(UpdateUI::OpenSheet(false))?;
             self.ui_tx.send(UpdateUI::FocusPlaying)?;
         }
         Ok(())
+    }
+
+    pub fn queue_from_paths(&self, paths: &[String], track: usize) -> Result<(), ()> {
+        if let Some(queue) = self.songs_from_paths(paths) {
+            // Start loading the song info in the background immediately
+            let load_info = thread::spawn({
+                let queue_item = QueueItem::clone(&queue[track]);
+                move || match queue_item {
+                    QueueItem::Song(song) => {
+                        let mut song = song.lock().unwrap();
+                        let mut info = song.info();
+                        info.load_detailed();
+                        info.load_basic();
+                    }
+                    QueueItem::Stopper => {}
+                }
+            });
+
+            self.player_tx
+                .send(PlayerRequest::LoadQueue(queue))
+                .expect(EXP_RX);
+            self.player_tx
+                .send(PlayerRequest::SkipTo(track))
+                .expect(EXP_RX);
+
+            self.tasks.run(|| load_info.join().unwrap());
+            return Ok(());
+        }
+        Err(())
     }
 
     /// Returns a queue of all songs found within the specified `paths`,
