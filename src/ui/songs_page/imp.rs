@@ -8,8 +8,8 @@ use crate::library::LIBRARY_TX;
 use crate::library::{LibraryRequest, Songs};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::ui::item_row::ItemRow;
 use crate::ui::song_object::SongObject;
-use crate::ui::song_tile::SongTile;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -108,7 +108,7 @@ impl SongsPage {
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
-                .set_child(Some(&SongTile::default()));
+                .set_child(Some(&ItemRow::default()));
         });
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
@@ -118,8 +118,8 @@ impl SongsPage {
                 .item()
                 .and_downcast::<SongObject>()
                 .expect("Needs to be SongObject");
-            let song_tile = SongTile::builder()
-                .info(&object.song(), &object.artist())
+            let song_tile = ItemRow::builder()
+                .titles(&object.song(), &object.artist())
                 .build();
             list_item.set_child(Some(&song_tile));
         });

@@ -9,7 +9,7 @@ use crate::library::{Albums, LibraryRequest};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::album_object::AlbumObject;
-use crate::ui::album_tile::AlbumTile;
+use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -106,7 +106,7 @@ impl AlbumsPage {
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
-                .set_child(Some(&AlbumTile::default()));
+                .set_child(Some(&ItemTile::default()));
         });
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
@@ -116,8 +116,8 @@ impl AlbumsPage {
                 .item()
                 .and_downcast::<AlbumObject>()
                 .expect("Needs to be AlbumObject");
-            let album_tile = AlbumTile::builder()
-                .info(&object.album(), &object.artist())
+            let album_tile = ItemTile::builder()
+                .titles(&object.album(), &object.artist())
                 .build();
             list_item.set_child(Some(&album_tile));
         });

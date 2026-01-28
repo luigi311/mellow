@@ -1,25 +1,22 @@
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::Cell;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/song_tile.ui")]
-pub struct SongTile {
+#[template(resource = "/com/github/userwithaname/Mellow/item_row.ui")]
+pub struct ItemRow {
     #[template_child]
-    pub album_cover: TemplateChild<gtk::Picture>,
+    pub image: TemplateChild<gtk::Picture>,
     #[template_child]
     pub title: TemplateChild<gtk::Label>,
     #[template_child]
-    pub artist: TemplateChild<gtk::Label>,
-
-    pub index: Cell<u64>,
+    pub subtitle: TemplateChild<gtk::Label>,
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for SongTile {
-    const NAME: &str = "MellowSongTile";
-    type Type = super::SongTile;
+impl ObjectSubclass for ItemRow {
+    const NAME: &str = "MellowItemRow";
+    type Type = super::ItemRow;
     type ParentType = gtk::Box;
 
     fn class_init(class: &mut Self::Class) {
@@ -31,6 +28,6 @@ impl ObjectSubclass for SongTile {
     }
 }
 
-impl ObjectImpl for SongTile {}
-impl WidgetImpl for SongTile {}
-impl BoxImpl for SongTile {}
+impl ObjectImpl for ItemRow {}
+impl WidgetImpl for ItemRow {}
+impl BoxImpl for ItemRow {}

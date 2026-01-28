@@ -4,10 +4,10 @@
     <file compressed="true" preprocess="xml-stripblanks">album_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">album_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">albums_page.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">album_tile.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">artist_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">artists_page.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">artist_tile.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">item_tile.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">item_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">library_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">lyrics_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">main_player.ui</file>
@@ -18,7 +18,6 @@
     <file compressed="true" preprocess="xml-stripblanks">song_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">song_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">songs_page.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">song_tile.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>
 </gresources>

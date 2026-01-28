@@ -1,31 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="MellowArtistTile" parent="GtkBox">
+  <template class="MellowItemTile" parent="GtkBox">
     <property name="valign">center</property>
-    <property name="orientation">vertical</property>
+    <property name="spacing">6</property>
     <property name="margin_top">6</property>
     <property name="margin_bottom">6</property>
+    <property name="orientation">vertical</property>
 
-    Artist image
     <child>
-      <object class="GtkPicture" id="artist_image">
+      <object class="GtkPicture" id="image">
         <property name="halign">center</property>
         <property name="width_request">128</property>
         <property name="height_request">128</property>
         <style>
-          <class name="circular"/>
+          <class name="card"/>
         </style>
       </object>
     </child>
 
-    Artist info
     <child>
       <object class="GtkBox">
         <property name="spacing">6</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkLabel" id="artist">
-            <property name="margin_top">6</property>
+          <object class="GtkLabel" id="title">
             <property name="ellipsize">end</property>
             <style>
               <class name="caption-heading"/>
@@ -33,8 +31,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkLabel" id="num_albums">
-            <property name="margin_bottom">6</property>
+          <object class="GtkLabel" id="subtitle">
             <property name="ellipsize">end</property>
             <style>
               <class name="caption"/>

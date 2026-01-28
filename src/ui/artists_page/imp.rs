@@ -9,7 +9,7 @@ use crate::library::{Artists, LibraryRequest};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::artist_object::ArtistObject;
-use crate::ui::artist_tile::ArtistTile;
+use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -106,7 +106,7 @@ impl ArtistsPage {
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
-                .set_child(Some(&ArtistTile::default()));
+                .set_child(Some(&ItemTile::default()));
         });
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
@@ -116,11 +116,10 @@ impl ArtistsPage {
                 .item()
                 .and_downcast::<ArtistObject>()
                 .expect("Needs to be ArtistObject");
-            let artist_tile = ArtistTile::new();
-            artist_tile.set_info(&object.artist(), object.albums());
-            // let artist_tile = ArtistTile::builder()
-            //     .info(&object.artist(), object.albums())
-            //     .build();
+            let artist_tile = ItemTile::builder()
+                .titles(&object.artist(), &format!("Albums: {}", object.albums()))
+                .image_css_classes(&["circular"])
+                .build();
             list_item.set_child(Some(&artist_tile));
         });
 
