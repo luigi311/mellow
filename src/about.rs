@@ -25,15 +25,19 @@ pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
     about.present(Some(parent));
 }
 
+#[must_use]
 pub const fn app_id() -> &'static str {
     APP_ID.expect("APP_ID env var not set at compile time")
 }
+#[must_use]
 pub const fn app_name() -> &'static str {
     APP_NAME.expect("APP_NAME env var not set at compile time")
 }
+#[must_use]
 pub const fn app_version() -> &'static str {
     APP_VERSION.expect("APP_VERSION env var not set at compile time")
 }
+#[must_use]
 pub const fn resources_file() -> &'static str {
     RESOURCES_FILE.expect("RESOURCES_FILE env var not set at compile time")
 }
