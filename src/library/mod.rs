@@ -248,12 +248,8 @@ impl Library {
                 LibraryRequest::PlayAllArtists(query) => self.play_all_artists(&query)?,
                 LibraryRequest::ShuffleAllArtists(query) => self.shuffle_all_artists(&query)?,
 
-                LibraryRequest::PlayAlbum(album) => {
-                    self.play_album(&album.lock().unwrap())?;
-                }
-                LibraryRequest::PlayArtist(artist) => {
-                    self.play_artist(&artist.lock().unwrap())?;
-                }
+                LibraryRequest::PlayAlbum(album) => self.play_album(&album.lock().unwrap())?,
+                LibraryRequest::PlayArtist(artist) => self.play_artist(&artist.lock().unwrap())?,
                 LibraryRequest::ShuffleArtist(artist) => {
                     self.shuffle_artist_albums(&artist.lock().unwrap())?;
                 }
@@ -373,8 +369,8 @@ impl Library {
                         .path()
                         .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
                 {
-                    // Filter songs from removed libraries
                     for dir in &config.directories {
+                        // Filter songs from removed libraries
                         if !info.file_path().starts_with(dir) {
                             continue;
                         }
@@ -397,7 +393,7 @@ impl Library {
                             for dir in missing_libraries {
                                 // Only remember missing files if they are within
                                 // a library directory which is currently missing
-                                // (otherwise, they were most likely removed)
+                                // (otherwise, they were either moved or removed)
                                 if uri[config.uri_opt()..].starts_with(&dir[config.uri_opt()..]) {
                                     println!(
                                         "Remembering {} because its library is missing",
