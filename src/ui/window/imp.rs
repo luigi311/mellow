@@ -205,7 +205,7 @@ impl Window {
                     .get()
                     .expect(EXP_INIT)
                     .send(LibraryRequest::RunTask(Box::new(move || {
-                        let _ = load_artwork_handle.join();
+                        load_artwork_handle.join().unwrap();
                     })))
                     .expect(EXP_RX);
                 None

@@ -2,12 +2,10 @@ use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{OnceLock, mpsc};
-use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::player::{queue_item::QueueItem, song_queue::SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -295,26 +293,8 @@ impl Player {
             return;
         }
 
-        // Start loading the song info in the background immediately
-        let current_item = QueueItem::clone(&queue[index]);
-        let load_info = thread::spawn(move || match current_item {
-            QueueItem::Song(song) => {
-                let mut song = song.lock().unwrap();
-                let mut info = song.info();
-                info.load_detailed();
-                info.load_basic();
-            }
-            QueueItem::Stopper => {}
-        });
-
         self.queue.load_new(queue);
         self.skip_to(index);
-
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::RunTask(Box::new(move || {
-                load_info.join().unwrap()
-            })))
-            .expect(EXP_RX);
     }
 
     /// Starts or pauses playback depending on state
