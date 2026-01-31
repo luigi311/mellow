@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::Object;
 use gtk::glib;
 
 use crate::library::song::SongMutex;
@@ -13,19 +12,8 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for QueueSubpage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl QueueSubpage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
-    }
-
-    pub fn set_info(&self, index: usize, song: SongMutex) {
+    pub fn update(&self, index: usize, song: SongMutex) {
         let song_page = self.imp();
         song_page.index.set(index);
         let mut song_locked = song.lock().unwrap();

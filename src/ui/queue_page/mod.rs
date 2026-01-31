@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::Object;
 use gtk::glib;
 
 use crate::excuses::INIT_ERR;
@@ -15,18 +14,7 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for QueuePage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl QueuePage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
-    }
-
     pub fn init(&self, song_page: QueueSubpage) {
         let queue_page = self.imp();
         queue_page.song_page.set(song_page).expect(INIT_ERR);

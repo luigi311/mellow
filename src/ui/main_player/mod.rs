@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::Object;
 use gtk::Orientation;
 use gtk::{gdk, glib};
 
@@ -20,18 +19,7 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for MainPlayer {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl MainPlayer {
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn init(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
         // As a workaround for `release` not being signaled by `GtkScale`,

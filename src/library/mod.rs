@@ -352,7 +352,7 @@ impl Library {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing_songs);
         let mut possibly_moved = Vec::new();
-        'iter: for song in old_songs.into_iter() {
+        'iter: for song in old_songs {
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {

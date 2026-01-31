@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::Object;
 use gtk::glib;
 use std::sync::Arc;
 
@@ -17,18 +16,7 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for ArtistPage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl ArtistPage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
-    }
-
     pub fn update(&self, artist: &ArtistMutex) {
         let ui = self.imp();
         ui.artist.replace(Some(Arc::clone(artist)));

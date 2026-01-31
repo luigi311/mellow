@@ -1,5 +1,4 @@
 use adw::subclass::prelude::*;
-use glib::Object;
 use gtk::glib;
 
 use crate::library::{ToQueue, song::SongMutex};
@@ -13,18 +12,7 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for SongPage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl SongPage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
-    }
-
     pub fn update(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
         let song_page = self.imp();
 

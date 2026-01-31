@@ -1,5 +1,4 @@
 use adw::subclass::prelude::*;
-use glib::Object;
 use gtk::glib;
 
 mod imp;
@@ -11,18 +10,7 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
-impl Default for LyricsPage {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl LyricsPage {
-    #[must_use]
-    pub fn new() -> Self {
-        Object::builder().build()
-    }
-
     pub fn set_content(&self, song_title: &str, lyrics: &str) {
         let lyrics_page = self.imp();
         lyrics_page.song_title.set_label(song_title);

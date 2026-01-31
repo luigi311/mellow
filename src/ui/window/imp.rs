@@ -255,7 +255,7 @@ impl Window {
         self.queue_song_page
             .activate_action("ui.playing_nav_push", Some(&"info".to_variant()))
             .expect(ACTION_ERR);
-        self.queue_song_page.set_info(
+        self.queue_song_page.update(
             index,
             Arc::clone(match &queue[index] {
                 QueueItem::Song(song) => song,
