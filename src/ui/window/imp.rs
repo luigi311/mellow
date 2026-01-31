@@ -184,17 +184,24 @@ impl Window {
             QueueItem::Stopper => unreachable!(),
         };
         let mut song = song_mutex.lock().unwrap();
-
         let mut info = song.info();
-        let song_info = info.basic().clone();
+
+        let song_info = info.basic();
+        let (title, album, artist, duration_ms) = (
+            song_info.title.clone(),
+            song_info.album.clone(),
+            song_info.artist.clone(),
+            song_info.duration.mseconds(),
+        );
+
         let detailed_info = info.inspect_detailed();
         let artwork = match detailed_info {
             Some(detailed) => {
-                self.lyrics_page
-                    .set_content(&song_info.title, &detailed.lyrics);
+                self.lyrics_page.set_content(&title, &detailed.lyrics);
                 detailed.artwork.as_ref()
             }
             None => {
+                drop(song);
                 let song = Arc::clone(song_mutex);
                 let ui_tx = UI_TX.get().expect(EXP_INIT);
                 let load_artwork_handle = thread::spawn(move || {
@@ -212,15 +219,9 @@ impl Window {
             }
         };
 
-        let duration_ms = song_info.duration.mseconds();
         *song_duration = Duration::from_millis(duration_ms);
-        self.main_player.set_info(
-            &song_info.title,
-            &song_info.album,
-            &song_info.artist,
-            artwork,
-            song_duration,
-        );
+        self.main_player
+            .set_info(&title, &album, &artist, artwork, song_duration);
 
         if let Some(artwork) = &artwork {
             // TODO: Set window background to match artwork colors
