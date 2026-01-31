@@ -26,7 +26,7 @@ if host_machine.system() == 'linux'
 
   service_conf = configuration_data()
   service_conf.set('APP_ID', application_id)
-  service_conf.set('APP_ID', bindir)
+  service_conf.set('BINDIR', bindir)
   configure_file(
     input: '@0@.service.in'.format(base_id),
     output: '@0@.service'.format(application_id),
