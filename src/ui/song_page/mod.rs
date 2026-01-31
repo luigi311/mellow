@@ -25,19 +25,22 @@ impl SongPage {
         Object::builder().build()
     }
 
-    pub fn update(&self, index: usize, song: &SongMutex, to_queue: Box<dyn ToQueue + Send>) {
+    pub fn update(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
         let song_page = self.imp();
 
-        song_page.index.set(index); // TODO!!
-        let mut song = song.lock().unwrap();
-        let mut info = song.info();
-        let info = info.basic();
-        song_page.song_title.set_label(&info.title);
-        song_page.album_title.set_label(&info.album);
-        song_page.artist_name.set_label(&info.artist);
+        song_page.index.set(index);
+        let mut song_locked = song.lock().unwrap();
+        let mut info = song_locked.info();
+        let song_info = info.basic();
+        song_page.song_title.set_label(&song_info.title);
+        song_page.album_title.set_label(&song_info.album);
+        song_page.artist_name.set_label(&song_info.artist);
         song_page.context.replace(Some(to_queue));
-        song_page.rating.connect_rating_set(|rating| {
-            println!("TODO: Set rating to {rating}");
+        let user_info = info.user();
+        song_page.rating.set_rating_silent(user_info.rating);
+        drop(song_locked);
+        song_page.rating.connect_rating_set(move |rating| {
+            song.lock().unwrap().info().set_rating(rating);
         });
     }
 }

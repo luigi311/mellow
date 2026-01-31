@@ -29,6 +29,13 @@ impl Rating {
         self.imp().set_rating(rating);
     }
 
+    /// Sets the rating without running the `on_rating_set` closure
+    pub fn set_rating_silent(&self, rating: u8) {
+        let ui = self.imp();
+        ui.rating.set(rating);
+        ui.show_rating(rating);
+    }
+
     pub fn connect_rating_set<F>(&self, f: F)
     where
         F: Fn(u8) + 'static,

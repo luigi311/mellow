@@ -127,7 +127,7 @@ impl Window {
                 UpdateUI::AlbumPage(album) => self.open_album_page(&album),
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
                 UpdateUI::SongPage(context) => {
-                    self.open_song_page(context.0, &context.1, context.2);
+                    self.open_song_page(context.0, context.1, context.2);
                 }
 
                 UpdateUI::FocusLibrary => self.focus_library(),
@@ -252,14 +252,16 @@ impl Window {
     fn open_queue_subpage(&self, index: usize) {
         let queue = self.song_queue.borrow();
         let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
-        let mut song = queue[index].as_song();
-        let mut info = song.info();
-        let info = info.basic();
         self.queue_song_page
             .activate_action("ui.playing_nav_push", Some(&"info".to_variant()))
             .expect(ACTION_ERR);
-        self.queue_song_page
-            .set_info(index, &info.title, &info.album, &info.artist);
+        self.queue_song_page.set_info(
+            index,
+            Arc::clone(match &queue[index] {
+                QueueItem::Song(song) => song,
+                _ => unreachable!(),
+            }),
+        );
         self.queue_song_page.set_stop_after(stop_after);
     }
 
@@ -306,9 +308,9 @@ impl Window {
 
     fn open_song_page_by_index(&self, index: usize) {
         let songs: Songs = self.library_songs.borrow().clone();
-        self.open_song_page(index, &songs[index].clone(), Box::new(songs));
+        self.open_song_page(index, Arc::clone(&songs[index]), Box::new(songs));
     }
-    fn open_song_page(&self, index: usize, song: &SongMutex, to_queue: Box<dyn ToQueue + Send>) {
+    fn open_song_page(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
         self.library_song_page.update(index, song, to_queue);
         self.library_navigation_view.push_by_tag("song");
     }

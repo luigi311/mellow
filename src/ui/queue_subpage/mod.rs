@@ -2,6 +2,8 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
 
+use crate::library::song::SongMutex;
+
 mod imp;
 
 glib::wrapper! {
@@ -23,14 +25,20 @@ impl QueueSubpage {
         Object::builder().build()
     }
 
-    pub fn set_info(&self, index: usize, song: &str, album: &str, artist: &str) {
+    pub fn set_info(&self, index: usize, song: SongMutex) {
         let song_page = self.imp();
         song_page.index.set(index);
-        song_page.song_title.set_label(song);
-        song_page.album_title.set_label(album);
-        song_page.artist_name.set_label(artist);
-        song_page.rating.connect_rating_set(|rating| {
-            println!("TODO: Set rating to {rating}");
+        let mut song_locked = song.lock().unwrap();
+        let mut info = song_locked.info();
+        let song_info = info.basic();
+        song_page.song_title.set_label(&song_info.title);
+        song_page.album_title.set_label(&song_info.album);
+        song_page.artist_name.set_label(&song_info.artist);
+        let user_info = info.user();
+        song_page.rating.set_rating_silent(user_info.rating);
+        drop(song_locked);
+        song_page.rating.connect_rating_set(move |rating| {
+            song.lock().unwrap().info().set_rating(rating);
         });
     }
 

@@ -57,7 +57,7 @@ Music library:
     - TODO: Show album artworks
   - [-] Song subpage, accessed from each item
     - [-] Display song info (title/album/artist, maybe album cover)
-    - [ ] Interactive rating widget
+    - [x] Interactive rating widget
     - [x] Play Now: Start a new queue and skip to the selected track
     - [x] Play Next: Insert the song to the next position in the queue
     - [ ] Add to Queue button
