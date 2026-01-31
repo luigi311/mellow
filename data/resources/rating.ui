@@ -2,5 +2,6 @@
 <interface>
   <template class="MellowRating" parent="GtkBox">
     <property name="halign">center</property>
+    <property name="spacing">8</property>
   </template>
 </interface>

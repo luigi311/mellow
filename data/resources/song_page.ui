@@ -57,7 +57,9 @@
                           </object>
                         </child>
                         <child>
-                          <object class="MellowRating" id="rating"/>
+                          <object class="MellowRating" id="rating">
+                            <property name="margin_bottom">6</property>
+                          </object>
                         </child>
                       </object>
                     </child>

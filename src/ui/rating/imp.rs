@@ -22,9 +22,6 @@ impl Rating {
             let star = gtk::Image::builder()
                 .icon_name("starred-symbolic")
                 .css_classes(["dimmed"])
-                .height_request(32)
-                .margin_start(4)
-                .margin_end(4)
                 .build();
             self.obj().append(&star);
             stars.push(star);
@@ -85,9 +82,9 @@ impl Rating {
 
     pub fn pixels_to_rating(&self, pos_x: f64) -> u8 {
         let star = &self.stars.get().as_ref().expect(EXP_INIT)[0];
-        let star_width = (star.width() + star.margin_start() + star.margin_end()) as f64;
         let spacing = self.obj().spacing() as f64;
-        (pos_x / (star_width + spacing) - spacing / 2.0) as u8 + 1
+        let star_width = star.width() as f64 + spacing;
+        ((pos_x + spacing / 2.0) / star_width) as u8 + 1
     }
 }
 
