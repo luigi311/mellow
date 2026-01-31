@@ -44,6 +44,10 @@ impl AlbumPage {
             _ => String::new(),
         });
 
+        ui.rating.connect_rating_set(|rating| {
+            println!("TODO: Decide how to handle album ratings (requested rating: {rating})");
+        });
+
         // IDEA: Divide discs into separate groups
         ui.songs_list.remove_all();
         for i in 0..album_locked.songs.len() {

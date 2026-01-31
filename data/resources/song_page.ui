@@ -21,10 +21,12 @@
                     <child>
                       <object class="GtkBox">
                         <property name="orientation">vertical</property>
+                        <property name="margin_top">6</property>
+                        <property name="margin_bottom">12</property>
+                        <property name="spacing">6</property>
                         <property name="halign">center</property>
                         <child>
                           <object class="GtkLabel" id="song_title">
-                            <property name="margin_top">6</property>
                             <property name="justify">center</property>
                             <property name="wrap">true</property>
                             <property name="wrap-mode">word</property>
@@ -35,7 +37,6 @@
                         </child>
                         <child>
                           <object class="GtkLabel" id="album_title">
-                            <property name="margin_top">6</property>
                             <property name="justify">center</property>
                             <property name="wrap">true</property>
                             <property name="wrap-mode">word</property>
@@ -46,7 +47,6 @@
                         </child>
                         <child>
                           <object class="GtkLabel" id="artist_name">
-                            <property name="margin_top">6</property>
                             <property name="margin_bottom">6</property>
                             <property name="justify">center</property>
                             <property name="wrap">true</property>
@@ -57,9 +57,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="MellowRating" id="rating">
-                            <property name="margin_bottom">6</property>
-                          </object>
+                          <object class="MellowRating" id="rating"/>
                         </child>
                       </object>
                     </child>

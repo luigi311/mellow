@@ -8,6 +8,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::ui::rating::Rating;
 use crate::ui::song_row::SongRow;
 
 #[derive(Default, CompositeTemplate)]
@@ -23,6 +24,9 @@ pub struct AlbumPage {
     pub artist_name: TemplateChild<gtk::Label>,
     #[template_child]
     pub year: TemplateChild<gtk::Label>,
+
+    #[template_child]
+    pub rating: TemplateChild<Rating>,
 
     #[template_child]
     pub songs_list: TemplateChild<gtk::ListBox>,

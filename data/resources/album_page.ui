@@ -73,6 +73,7 @@
                         <child>
                           <object class="GtkBox">
                             <property name="margin_top">16</property>
+                            <property name="margin_bottom">14</property>
                             <property name="spacing">6</property>
                             <property name="orientation">vertical</property>
                             <child>
@@ -103,10 +104,12 @@
                                 </style>
                               </object>
                             </child>
+                            <child>
+                              <object class="MellowRating" id="rating">
+                                <property name="sensitive">False</property>
+                              </object>
+                            </child>
                           </object>
-                        </child>
-                        <child>
-                          <object class="MellowRating"/>
                         </child>
                       </object>
                     </child>
