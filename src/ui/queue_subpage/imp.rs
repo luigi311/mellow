@@ -7,6 +7,7 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
+use crate::ui::rating::Rating;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_subpage.ui")]
@@ -20,6 +21,10 @@ pub struct QueueSubpage {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
+
+    #[template_child]
+    pub rating: TemplateChild<Rating>,
+
     #[template_child]
     pub stop_after_button: TemplateChild<adw::ActionRow>,
 }

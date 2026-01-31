@@ -36,5 +36,8 @@ impl SongPage {
         song_page.album_title.set_label(&info.album);
         song_page.artist_name.set_label(&info.artist);
         song_page.context.replace(Some(to_queue));
+        song_page.rating.connect_rating_set(|rating| {
+            println!("TODO: Set rating to {rating}");
+        });
     }
 }

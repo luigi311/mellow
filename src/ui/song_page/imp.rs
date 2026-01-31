@@ -11,6 +11,7 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::UI_TX;
 use crate::ui::UpdateUI;
+use crate::ui::rating::Rating;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
@@ -21,6 +22,9 @@ pub struct SongPage {
     pub album_title: TemplateChild<gtk::Label>,
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
+
+    #[template_child]
+    pub rating: TemplateChild<Rating>,
 
     pub index: Cell<usize>,
     pub context: RefCell<Option<Box<dyn ToQueue + Send>>>,

@@ -29,6 +29,9 @@ impl QueueSubpage {
         song_page.song_title.set_label(song);
         song_page.album_title.set_label(album);
         song_page.artist_name.set_label(artist);
+        song_page.rating.connect_rating_set(|rating| {
+            println!("TODO: Set rating to {rating}");
+        });
     }
 
     pub fn set_stop_after(&self, stop_after: bool) {

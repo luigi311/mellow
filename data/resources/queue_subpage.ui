@@ -55,7 +55,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="MellowRating"/>
+                          <object class="MellowRating" id="rating"/>
                         </child>
                       </object>
                     </child>
