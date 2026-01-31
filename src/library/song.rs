@@ -266,11 +266,11 @@ impl SongInfoLoader<'_> {
     /// Last known modification time (Unix format); compare with
     /// `file_modification_time()` to detect modifications
     #[must_use]
-    pub const fn modified(&self) -> i64 {
+    pub const fn known_modification_time(&self) -> i64 {
         self.user_info.modified
     }
     /// Updates the modification time to the current one from the file
-    pub fn update_modified(&mut self) {
+    pub fn update_modification_time(&mut self) {
         self.user_info.modified = self.file_modification_time();
     }
 
@@ -366,7 +366,7 @@ impl SongInfoLoader<'_> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
-        self.update_modified();
+        self.update_modification_time();
         let tagged = self.tagged.as_ref().unwrap();
         let tag = tagged
             .primary_tag()
