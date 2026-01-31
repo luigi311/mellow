@@ -125,13 +125,6 @@ impl AlbumsPage {
         self.albums_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.albums_grid.set_factory(Some(&factory));
-        self.albums_grid.connect_activate(|_, index| {
-            UI_TX
-                .get()
-                .unwrap()
-                .send(UpdateUI::AlbumPageByIndex(index as usize))
-                .expect(EXP_RX);
-        });
     }
 }
 
@@ -150,7 +143,16 @@ impl ObjectSubclass for AlbumsPage {
         obj.init_template();
     }
 }
-
-impl ObjectImpl for AlbumsPage {}
+impl ObjectImpl for AlbumsPage {
+    fn constructed(&self) {
+        self.albums_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::AlbumPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
+    }
+}
 impl WidgetImpl for AlbumsPage {}
 impl NavigationPageImpl for AlbumsPage {}

@@ -126,13 +126,6 @@ impl ArtistsPage {
         self.artists_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.artists_grid.set_factory(Some(&factory));
-        self.artists_grid.connect_activate(|_, index| {
-            UI_TX
-                .get()
-                .unwrap()
-                .send(UpdateUI::ArtistPageByIndex(index as usize))
-                .expect(EXP_RX);
-        });
     }
 }
 
@@ -151,7 +144,16 @@ impl ObjectSubclass for ArtistsPage {
         obj.init_template();
     }
 }
-
-impl ObjectImpl for ArtistsPage {}
+impl ObjectImpl for ArtistsPage {
+    fn constructed(&self) {
+        self.artists_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::ArtistPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
+    }
+}
 impl WidgetImpl for ArtistsPage {}
 impl NavigationPageImpl for ArtistsPage {}

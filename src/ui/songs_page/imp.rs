@@ -127,13 +127,6 @@ impl SongsPage {
         self.songs_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.songs_grid.set_factory(Some(&factory));
-        self.songs_grid.connect_activate(|_, index| {
-            UI_TX
-                .get()
-                .unwrap()
-                .send(UpdateUI::SongPageByIndex(index as usize))
-                .expect(EXP_RX);
-        });
     }
 }
 
@@ -152,6 +145,16 @@ impl ObjectSubclass for SongsPage {
         obj.init_template();
     }
 }
-impl ObjectImpl for SongsPage {}
+impl ObjectImpl for SongsPage {
+    fn constructed(&self) {
+        self.songs_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .unwrap()
+                .send(UpdateUI::SongPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
+    }
+}
 impl WidgetImpl for SongsPage {}
 impl NavigationPageImpl for SongsPage {}
