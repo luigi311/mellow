@@ -179,12 +179,12 @@ impl Window {
             return;
         }
 
-        let song_mutex = match song {
+        let song = match song {
             QueueItem::Song(song) => song,
             QueueItem::Stopper => unreachable!(),
         };
-        let mut song = song_mutex.lock().unwrap();
-        let mut info = song.info();
+        let mut song_locked = song.lock().unwrap();
+        let mut info = song_locked.info();
 
         let song_info = info.basic();
         let (title, album, artist, duration_ms) = (
@@ -201,8 +201,8 @@ impl Window {
                 detailed.artwork.as_ref()
             }
             None => {
-                drop(song);
-                let song = Arc::clone(song_mutex);
+                drop(song_locked);
+                let song = Arc::clone(song);
                 let ui_tx = UI_TX.get().expect(EXP_INIT);
                 let load_artwork_handle = thread::spawn(move || {
                     song.lock().unwrap().info().load_detailed();
