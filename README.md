@@ -129,6 +129,9 @@ The following files and directories will be created:
     └── share
         ├── applications
         │   └── com.github.userwithaname.Mellow.desktop
+        ├── dbus-1
+        │   └── services
+        │       └── com.github.userwithaname.Mellow.service
         ├── glib-2.0
         │   └── schemas
         │       ├── com.github.userwithaname.Mellow.gschema.xml
