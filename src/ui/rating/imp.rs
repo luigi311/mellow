@@ -51,11 +51,15 @@ impl Rating {
         let click = gtk::GestureClick::builder()
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
-        click.connect_released(glib::clone!(
+        click.connect_pressed(glib::clone!(
             #[weak(rename_to=rating)]
             self,
             move |_, _, pos_x, _| {
-                rating.set_rating(rating.pixels_to_rating(pos_x));
+                let new_rating = rating.pixels_to_rating(pos_x);
+                rating.set_rating(match new_rating == rating.rating.get() {
+                    false => new_rating,
+                    true => 0,
+                });
             }
         ));
         self.obj().add_controller(click);
