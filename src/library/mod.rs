@@ -379,9 +379,10 @@ impl Library {
                         }
                         drop(song_locked);
                         songs.insert(index, song);
-                        break;
+                        continue 'iter;
                     }
                     // IDEA: To disable libraries, move `songs` into `disabled_songs`
+                    drop(song_locked);
                 }
                 // Missing file
                 Err(_) => {
@@ -410,6 +411,7 @@ impl Library {
                         Ok(index) => {
                             info.user_mut()
                                 .merge_with(missing_songs[index].lock().unwrap().info().user());
+                            drop(song_locked);
                         }
                     }
                 }
@@ -418,6 +420,7 @@ impl Library {
                     println!("Resolving duplicate entry: {}", info.filename());
                     info.user_mut()
                         .merge_with(songs[index].lock().unwrap().info().user());
+                    drop(song_locked);
                 }
             }
         }
@@ -429,7 +432,7 @@ impl Library {
         // Attempt to locate missing files if they were moved
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         let mut progress = 0.0;
-        let len = possibly_moved.len() as f64;
+        let step_size = 1.0 / possibly_moved.len() as f64;
 
         for missing in possibly_moved {
             let mut missing_locked = missing.lock().unwrap();
@@ -460,8 +463,8 @@ impl Library {
                     break;
                 }
             }
-            progress += 1.0;
-            let _ = ui_tx.send(UpdateUI::Progress(Some(progress / len)));
+            progress += step_size;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
         }
         ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
     }
@@ -497,7 +500,7 @@ impl Library {
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         let mut progress = 0.0;
-        let num_songs = songs.len() as f64;
+        let step_size = 1.0 / songs.len() as f64;
         for song in &songs {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
@@ -579,8 +582,8 @@ impl Library {
             }
             drop(song_unwrapped);
 
-            progress += 1.0;
-            let _ = ui_tx.send(UpdateUI::Progress(Some(progress / num_songs)));
+            progress += step_size;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
         }
 
         library_tx.send(LibraryRequest::SetSongs(songs))?;
