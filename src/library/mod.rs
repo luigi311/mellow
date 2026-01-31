@@ -333,13 +333,10 @@ impl Library {
         let songs = songs.lock().unwrap().take().expect(EXP_INIT);
 
         self.tasks.run({
-            let songs = songs.clone();
             let missing_songs = self.missing_songs.clone();
             let config = self.config.clone();
             move || Library::create_associations(songs, missing_songs, config).expect(EXP_RX)
         });
-
-        self.set_songs(songs);
 
         Ok(())
     }
@@ -477,9 +474,8 @@ impl Library {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
         Library::validate_songs(&mut songs, &mut missing_songs, config);
-        library_tx
-            .send(LibraryRequest::SetMissingSongs(missing_songs))
-            .expect(EXP_RX);
+        library_tx.send(LibraryRequest::SetMissingSongs(missing_songs))?;
+        library_tx.send(LibraryRequest::SetSongs(songs.clone()))?;
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
@@ -583,7 +579,6 @@ impl Library {
             let _ = ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)));
         }
 
-        library_tx.send(LibraryRequest::SetSongs(songs))?;
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
 
