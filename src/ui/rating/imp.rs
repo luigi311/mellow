@@ -6,6 +6,9 @@ use std::cell::{Cell, OnceCell, RefCell};
 use crate::excuses::{EXP_INIT, INIT_ERR};
 
 const NUM_STARS: u8 = 5;
+const DEFAULT_STAR_SIZE: i32 = 16;
+const SMALL_STAR_SIZE: i32 = 14;
+const SMALL_STAR_MARGIN: i32 = (DEFAULT_STAR_SIZE - SMALL_STAR_SIZE) / 2;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/rating.ui")]
@@ -35,7 +38,7 @@ impl Rating {
             #[weak(rename_to=rating)]
             self,
             move |_, pos_x, _| {
-                rating.show_rating(rating.pixels_to_rating(pos_x));
+                rating.preview_rating(rating.rating.get(), rating.pixels_to_rating(pos_x));
             }
         ));
         motion.connect_leave(glib::clone!(
@@ -73,17 +76,50 @@ impl Rating {
     pub fn show_rating(&self, rating: u8) {
         let stars = self.stars.get().expect(EXP_INIT);
         for i in 0..rating {
-            stars[i as usize].remove_css_class("dimmed");
+            let star = &stars[i as usize];
+            star.remove_css_class("dimmed");
+            star.set_pixel_size(DEFAULT_STAR_SIZE);
+            star.set_margin_start(0);
+            star.set_margin_end(0);
         }
         for i in rating..NUM_STARS {
-            stars[i as usize].add_css_class("dimmed");
+            let star = &stars[i as usize];
+            star.add_css_class("dimmed");
+            star.set_pixel_size(DEFAULT_STAR_SIZE);
+            star.set_margin_start(0);
+            star.set_margin_end(0);
+        }
+    }
+
+    pub fn preview_rating(&self, rating: u8, preview: u8) {
+        let stars = self.stars.get().expect(EXP_INIT);
+        let rating = rating.max(preview);
+        for i in 0..preview {
+            let star = &stars[i as usize];
+            star.remove_css_class("dimmed");
+            star.set_pixel_size(DEFAULT_STAR_SIZE);
+            star.set_margin_start(0);
+            star.set_margin_end(0);
+        }
+        for i in preview..rating {
+            let star = &stars[i as usize];
+            star.add_css_class("dimmed");
+            star.set_pixel_size(DEFAULT_STAR_SIZE);
+            star.set_margin_start(0);
+            star.set_margin_end(0);
+        }
+        for i in rating..NUM_STARS {
+            let star = &stars[i as usize];
+            star.add_css_class("dimmed");
+            star.set_pixel_size(SMALL_STAR_SIZE);
+            star.set_margin_start(SMALL_STAR_MARGIN);
+            star.set_margin_end(SMALL_STAR_MARGIN);
         }
     }
 
     pub fn pixels_to_rating(&self, pos_x: f64) -> u8 {
-        let star = &self.stars.get().as_ref().expect(EXP_INIT)[0];
         let spacing = self.obj().spacing() as f64;
-        let star_width = star.width() as f64 + spacing;
+        let star_width = DEFAULT_STAR_SIZE as f64 + spacing;
         ((pos_x + spacing / 2.0) / star_width) as u8 + 1
     }
 }
