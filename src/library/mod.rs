@@ -330,7 +330,8 @@ impl Library {
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
-        let songs = songs.lock().unwrap().take().expect(EXP_INIT);
+        // SAFETY: `songs` is initialized as `Some`
+        let songs = unsafe { songs.lock().unwrap().take().unwrap_unchecked() };
 
         self.tasks.run({
             let missing_songs = self.missing_songs.clone();
@@ -475,6 +476,8 @@ impl Library {
 
         Library::validate_songs(&mut songs, &mut missing_songs, config);
         library_tx.send(LibraryRequest::SetMissingSongs(missing_songs))?;
+        // NOTE: Songs could be set at the end to avoid a clone, but if done here,
+        // the UI can use them before all of the (new) songs finish processing
         library_tx.send(LibraryRequest::SetSongs(songs.clone()))?;
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
@@ -495,7 +498,9 @@ impl Library {
         }
 
         // TODO: Allow users to cancel, but serialize so it can continue later
-        for (i, song) in songs.iter().enumerate() {
+        let mut progress = 0.0;
+        let num_songs = songs.len() as f64;
+        for song in songs {
             let mut song_unwrapped = song.lock().unwrap();
             let mut info = song_unwrapped.info();
             let song_info = info.basic();
@@ -513,7 +518,7 @@ impl Library {
                         let song_index = album_songs.find_album_song(song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
-                                album_songs.insert(song_index, Arc::clone(song));
+                                album_songs.insert(song_index, Arc::clone(&song));
                             }
                         }
 
@@ -527,7 +532,7 @@ impl Library {
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
                             year: song_info.year,
-                            songs: vec![Arc::clone(song)],
+                            songs: vec![Arc::clone(&song)],
                             // SAFETY: `artist_index` is guaranteed to be within bounds
                             artist: Arc::clone(unsafe { artists.get_unchecked(artist_index) }),
                         }));
@@ -558,7 +563,7 @@ impl Library {
                     let album = Arc::new(Mutex::new(Album {
                         title: song_info.album.clone(),
                         year: song_info.year,
-                        songs: vec![Arc::clone(song)],
+                        songs: vec![Arc::clone(&song)],
                         artist: Arc::clone(&artist),
                     }));
                     artist.lock().unwrap().albums.push(Arc::clone(&album));
@@ -576,7 +581,8 @@ impl Library {
             }
             drop(song_unwrapped);
 
-            let _ = ui_tx.send(UpdateUI::Progress(Some(i as f64 / songs.len() as f64)));
+            progress += 1.0;
+            let _ = ui_tx.send(UpdateUI::Progress(Some(progress / num_songs)));
         }
 
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
