@@ -142,11 +142,7 @@ impl SongQueue {
     /// ordered with respect to shuffle setting
     #[must_use]
     pub fn ordered_queue(&self) -> Box<[QueueItem]> {
-        let mut songs = Vec::with_capacity(self.len());
-        for i in 0..self.len() {
-            songs.push(self.nth(i).clone());
-        }
-        songs.into()
+        (0..self.len()).map(|i| self.nth(i).clone()).collect()
     }
 
     /// Replaces the current queue with the provided one
