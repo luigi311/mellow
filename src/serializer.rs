@@ -23,12 +23,12 @@
 /// ];
 ///
 /// assert_eq!(
-///     serialize!(
+///     serialize! {
 ///         number => "number",
 ///         text => "text",
 ///         time.nseconds() => "time",
 ///         serialize_list(list) => "list",
-///     ),
+///     },
 ///     "\
 /// number: 5
 /// text: hello
@@ -39,7 +39,7 @@
 /// ```
 #[macro_export]
 macro_rules! serialize {
-    ($($value:expr => $field:tt,)+) => {
+    {$($value:expr => $field:tt,)+} => {
         [$($field.to_owned() + ": " + &$value.to_string() + "\n",)+].concat()
     };
 }
@@ -87,18 +87,21 @@ pub fn serialize_list(list: &[String]) -> String {
 /// let mut time = ClockTime::default();
 /// let mut list = Vec::new();
 ///
-/// deserialize!(
-///     "\
+/// let data = "\
 /// number: 5
 /// text: hello
 /// time: 50000
 /// list: one, two, three\\, four,
-/// ",
-///     "number"<"parse"> => number,
-///     "text"<"String"> => text,
-///     "time"<"ClockTime"> => time,
-///     "list"<"[String]"> => list,
-/// );
+/// ";
+///
+/// deserialize! {
+///     data => {
+///         "number"<"parse"> => number,
+///         "text"<"String"> => text,
+///         "time"<"ClockTime"> => time,
+///         "list"<"[String]"> => list,
+///     }
+/// }
 ///
 /// assert_eq!(number, 5);
 /// assert_eq!(text, "hello".to_string());
@@ -116,7 +119,7 @@ pub fn serialize_list(list: &[String]) -> String {
 /// ```
 #[macro_export]
 macro_rules! deserialize {
-    ($data:tt, $($field:tt<$type:tt> => $target:expr,)+) => {
+    {$data:tt => {$($field:tt<$type:tt> => $target:expr,)+}} => {
         #[cfg(debug_assertions)]
         if $data.is_empty() {
             Err("No data provided".to_string())?

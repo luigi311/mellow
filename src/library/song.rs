@@ -140,7 +140,7 @@ impl<'s> Song {
         let user_info = info.user().clone();
         let info = info.basic();
 
-        serialize!(
+        serialize! {
             uri => "uri",
             info.title => "title",
             info.album => "album",
@@ -153,7 +153,7 @@ impl<'s> Song {
             user_info.modified => "modified",
             user_info.play_count => "play_count",
             user_info.rating => "rating",
-        )
+        }
     }
 
     /// Loads the `data` and constructs a `Song` instance
@@ -168,21 +168,22 @@ impl<'s> Song {
         let mut info = SongInfo::default();
         let mut user_info = UserSongInfo::default();
 
-        deserialize!(
-            data,
-            "uri"<"&str"> => uri,
-            "title"<"String"> => info.title,
-            "album"<"String"> => info.album,
-            "artist"<"String"> => info.artist,
-            "album_artist"<"String"> => info.album_artist,
-            "track"<"parse"> => info.track,
-            "disc"<"parse"> => info.disc,
-            "year"<"parse"> => info.year,
-            "duration"<"ClockTime"> => info.duration,
-            "modified"<"parse"> => user_info.modified,
-            "play_count"<"parse"> => user_info.play_count,
-            "rating"<"parse"> => user_info.rating,
-        );
+        deserialize! {
+            data => {
+                "uri"<"&str"> => uri,
+                "title"<"String"> => info.title,
+                "album"<"String"> => info.album,
+                "artist"<"String"> => info.artist,
+                "album_artist"<"String"> => info.album_artist,
+                "track"<"parse"> => info.track,
+                "disc"<"parse"> => info.disc,
+                "year"<"parse"> => info.year,
+                "duration"<"ClockTime"> => info.duration,
+                "modified"<"parse"> => user_info.modified,
+                "play_count"<"parse"> => user_info.play_count,
+                "rating"<"parse"> => user_info.rating,
+            }
+        }
 
         if uri.is_empty() {
             return Err("Could not initialize `uri`".to_string());
