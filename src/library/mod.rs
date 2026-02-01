@@ -268,21 +268,18 @@ impl Library {
     /// Assigns `self.songs` by loading the serialized data (if any), then
     /// inserting any new audio files found within the configured libraries
     pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
-        let songs = Arc::new(Mutex::new(Some(match self.songs.is_empty() {
+        let mut songs = match self.songs.is_empty() {
             false => mem::take(&mut self.songs),
             true => self.deserialize_songs(),
-        })));
+        };
 
         for library_path in &self.config.directories {
-            let _ = visit_dirs(Path::new(&library_path), &|f| {
+            let _ = visit_dirs(Path::new(&library_path), &mut |f| {
                 let file = gio::File::for_path(f.path().to_str().unwrap());
                 if !file_supported(&file.parse_name()) {
                     return;
                 }
 
-                let mut songs = songs.lock().unwrap();
-                // SAFETY: `songs` is initialized as `Some`
-                let songs = unsafe { songs.as_mut().unwrap_unchecked() };
                 let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) else {
                     return;
                 };
@@ -292,8 +289,6 @@ impl Library {
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
-        // SAFETY: `songs` is initialized as `Some`
-        let songs = unsafe { songs.lock().unwrap().take().unwrap_unchecked() };
         self.songs = songs.clone();
 
         self.tasks.run({
@@ -800,18 +795,17 @@ impl Library {
     /// recursively. Returns `None` if no song files were found.
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
-        let queue = Arc::new(Mutex::new(Some(Vec::new())));
+        let mut queue = Vec::with_capacity(16);
         for file in paths {
             let path = Path::new(&file);
             if file_supported(file) {
                 // Add files from arguments to queue
                 let song = self.queue_from_library_or_new(file);
-                // SAFETY: `queue` is initialized as `Some`
-                unsafe { queue.lock().unwrap().as_mut().unwrap_unchecked().push(song) };
+                queue.push(song);
             } else if path.is_dir() && Path::exists(path) {
                 // Add all files within directory arguments to queue
-                let songs = Arc::new(Mutex::new(Some(Vec::new())));
-                let _ = visit_dirs(path, &|file| {
+                let mut songs = Vec::new();
+                let _ = visit_dirs(path, &mut |file| {
                     let file = file.path();
                     let file = file.to_str().unwrap();
                     if !file_supported(file) {
@@ -820,9 +814,6 @@ impl Library {
 
                     let song = self.queue_from_library_or_new(file);
 
-                    let mut songs = songs.lock().unwrap();
-                    // SAFETY: `songs` is initialized as `Some`
-                    let songs = unsafe { songs.as_mut().unwrap_unchecked() };
                     match songs.binary_search_by(|existing: &QueueItem| {
                         (existing.as_song().info().file_path())
                             .cmp(&song.as_song().info().file_path())
@@ -831,22 +822,15 @@ impl Library {
                     }
                 });
 
-                // SAFETY: `queue` and `songs` are initalized as `Some`
-                unsafe {
-                    (queue.lock().unwrap().as_mut().unwrap_unchecked())
-                        .extend(songs.lock().unwrap().take().unwrap_unchecked());
-                }
+                queue.extend(songs);
             } else if file == "Stopper" {
-                // SAFETY: `queue` is initalized as `Some`
-                unsafe {
-                    (queue.lock().unwrap().as_mut().unwrap_unchecked()).push(QueueItem::Stopper);
-                }
+                queue.push(QueueItem::Stopper);
             }
         }
 
-        match queue.lock().unwrap().take() {
-            Some(queue) if !queue.is_empty() => Some(queue),
-            _ => None,
+        match queue.is_empty() {
+            false => Some(queue),
+            true => None,
         }
     }
 

@@ -155,9 +155,9 @@ pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
 
 /// Runs a closure for every file found within `dir` (recursive)
 ///
-/// Taken from the official Rust documentation:
+/// Adapted from the official Rust documentation:
 /// <https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples>
-pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
+pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
