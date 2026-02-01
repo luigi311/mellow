@@ -81,7 +81,8 @@ pub fn serialize_list(list: &[String]) -> String {
 ///
 /// # Errors
 /// This function causes the caller to propagate an `Err`
-/// value of type `String` in the event of an error
+/// value of type `String` if the value cannot be parsed
+/// (with the exception of `"[parse]"`; see above)
 ///
 /// # Example
 /// ```rust
