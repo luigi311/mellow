@@ -8,7 +8,7 @@
 /// on the left side of the expression to convert it to a
 /// format compatible with `deserialize!()`
 ///
-/// # Example:
+/// # Example
 /// ```rust
 /// use mellow::{serialize, serializer::serialize_list};
 /// use gst::ClockTime;
@@ -21,6 +21,7 @@
 ///     "two".to_string(),
 ///     "three, four".to_string(),
 /// ];
+/// let numbers = &[1, 2, 3, 4];
 ///
 /// assert_eq!(
 ///     serialize! {
@@ -28,12 +29,14 @@
 ///         text => "text",
 ///         time.nseconds() => "time",
 ///         serialize_list(list) => "list",
+///         serialize_list(&numbers.map(|n| n.to_string())) => "numbers",
 ///     },
 ///     "\
 /// number: 5
 /// text: hello
 /// time: 50000
 /// list: one, two, three\\, four, \n\
+/// numbers: 1, 2, 3, 4, \n\
 /// "
 /// );
 /// ```
@@ -47,7 +50,7 @@ macro_rules! serialize {
 /// Combines a list of `String`s into a single `String` which
 /// can be used with the `serialize!()` macro
 ///
-/// # Example:
+/// # Example
 /// ```rust
 /// use mellow::serializer::serialize_list;
 ///
@@ -72,11 +75,15 @@ pub fn serialize_list(list: &[String]) -> String {
 /// Note: Assignment may fail silently for individual fields
 /// if they are not present within the provided `data`
 ///
-/// # Errors:
+/// # Panics
+/// This function may panic when the `"[parse]"` type is used
+/// if the data cannot be parsed into the target type
+///
+/// # Errors
 /// This function causes the caller to propagate an `Err`
 /// value of type `String` in the event of an error
 ///
-/// # Example:
+/// # Example
 /// ```rust
 /// use mellow::deserialize;
 /// use mellow::unescaped_split;
@@ -86,12 +93,14 @@ pub fn serialize_list(list: &[String]) -> String {
 /// let mut text = String::new();
 /// let mut time = ClockTime::default();
 /// let mut list = Vec::new();
+/// let mut numbers: Vec<usize> = Vec::new();
 ///
 /// let data = "\
 /// number: 5
 /// text: hello
 /// time: 50000
 /// list: one, two, three\\, four,
+/// numbers: 1, 2, 3, 4
 /// ";
 ///
 /// deserialize! {
@@ -100,6 +109,7 @@ pub fn serialize_list(list: &[String]) -> String {
 ///         "text"<"String"> => text,
 ///         "time"<"ClockTime"> => time,
 ///         "list"<"[String]"> => list,
+///         "numbers"<"[parse]"> => numbers,
 ///     }
 /// }
 ///
@@ -114,6 +124,7 @@ pub fn serialize_list(list: &[String]) -> String {
 ///         "three, four".to_string(),
 ///     ],
 /// );
+/// assert_eq!(numbers, [1, 2, 3, 4]);
 ///
 /// Ok::<(), String>(())
 /// ```
@@ -147,6 +158,9 @@ macro_rules! deserialize {
     };
     (@to_value "String", $value:expr, $field:expr) => {
         $value.to_owned()
+    };
+    (@to_value "[parse]", $value:expr, $field:expr) => {
+        $value.split(',').into_iter().map(|value| value.trim().parse().unwrap()).collect()
     };
     (@to_value "[String]", $value:expr, $field:expr) => {
         unescaped_split($value, ',')
