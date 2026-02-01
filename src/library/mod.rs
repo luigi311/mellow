@@ -593,18 +593,20 @@ impl Library {
         args.next();
 
         // Start a queue from arguments, if they contain any supported files
-        if args.len() > 0
-            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
-        {
-            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
-            return Ok(());
+        if args.len() > 0 {
+            let queue = self.songs_from_paths(&args.collect::<Box<[String]>>());
+            if !queue.is_empty() {
+                self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
+                return Ok(());
+            }
         }
 
         // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue")
+        if let Ok(queue) = fs::read_to_string([&self.config_dir, "queue"].concat())
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
-            && let Some(queue) = self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
+            && let queue = self.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
+            && !queue.is_empty()
         {
             self.player_tx
                 .send(PlayerRequest::LoadQueue((queue, track)))?;
@@ -780,31 +782,30 @@ impl Library {
     /// Starts a queue of all songs found within the specified `paths`,
     /// recursively. Does nothing if no song files were found.
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
-        if let Some(queue) = self.songs_from_paths(paths) {
-            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
-            self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-            self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-            self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        let queue = self.songs_from_paths(paths);
+        if queue.is_empty() {
+            return Ok(());
         }
+        self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
-    /// Returns a queue of all songs found within the specified `paths`,
-    /// recursively. Returns `None` if no song files were found.
+    /// Takes a list of file or directory paths and returns a queue
     #[must_use]
-    pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
-        let mut queue = Vec::with_capacity(16.max(paths.len()));
+    pub fn songs_from_paths(&self, paths: &[String]) -> Vec<QueueItem> {
+        let mut queue = Vec::with_capacity(paths.len());
         for file in paths {
             if file_supported(file) {
-                // Add files from arguments to queue
                 queue.push(self.queue_from_library_or_new(file));
             } else if file == "Stopper" {
                 queue.push(QueueItem::Stopper);
             } else if let path = Path::new(&file)
                 && path.is_dir()
-                && Path::exists(path)
+                && path.exists()
             {
-                // Add all files within directory arguments to queue
                 let mut songs = Vec::with_capacity(16);
                 let _ = visit_dirs(path, &mut |file| {
                     let file = file.path();
@@ -824,11 +825,7 @@ impl Library {
                 queue.extend(songs);
             }
         }
-
-        match queue.is_empty() {
-            false => Some(queue),
-            true => None,
-        }
+        queue
     }
 
     /// Attempts to locate the given `file` within the library and
