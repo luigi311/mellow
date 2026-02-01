@@ -515,6 +515,7 @@ impl Library {
                     }
                     // IDEA: To disable libraries, move `songs` into `disabled_songs`
                     drop(song_locked);
+                    drop(song);
                 }
                 // Missing file
                 Err(_) => {
@@ -544,6 +545,7 @@ impl Library {
                             info.user_mut()
                                 .merge_with(missing[index].lock().unwrap().info().user());
                             drop(song_locked);
+                            drop(song);
                         }
                     }
                 }
@@ -553,6 +555,7 @@ impl Library {
                     info.user_mut()
                         .merge_with(songs[index].lock().unwrap().info().user());
                     drop(song_locked);
+                    drop(song);
                 }
             }
         }
