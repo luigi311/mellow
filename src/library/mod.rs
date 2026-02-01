@@ -294,7 +294,7 @@ impl Library {
         }
         // SAFETY: `songs` is initialized as `Some`
         let songs = unsafe { songs.lock().unwrap().take().unwrap_unchecked() };
-        self.set_songs(songs.clone());
+        self.songs = songs.clone();
 
         self.tasks.run({
             let missing_songs = self.missing_songs.clone();

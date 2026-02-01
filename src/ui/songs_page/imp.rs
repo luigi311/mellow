@@ -86,22 +86,22 @@ impl SongsPage {
     }
 
     pub fn load_songs(&self, songs: &Songs) {
-        let model = gio::ListStore::new::<SongObject>();
-        let songs: Vec<SongObject> = (0..songs.len())
-            .filter_map(|index| {
-                let mut song = songs[index].lock().unwrap();
-                let info = song.info();
-                let info = info.inspect_basic();
-                info.map(|info| SongObject::new(&info.title, &info.artist))
-            })
-            .collect();
-        model.extend_from_slice(&songs);
-
         if songs.is_empty() {
             self.view_stack.set_visible_child_name("empty");
             return;
         }
         self.view_stack.set_visible_child_name("songs");
+
+        let model = gio::ListStore::new::<SongObject>();
+        let songs: Vec<SongObject> = (0..songs.len())
+            .map(|index| {
+                let mut song = songs[index].lock().unwrap();
+                let mut info = song.info();
+                let info = info.basic();
+                SongObject::new(&info.title, &info.artist)
+            })
+            .collect();
+        model.extend_from_slice(&songs);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
