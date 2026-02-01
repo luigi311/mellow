@@ -76,12 +76,12 @@ pub fn serialize_list(list: &[String]) -> String {
 /// if they are not present within the provided `data`
 ///
 /// # Panics
-/// This function may panic when the `"[parse]"` type is used
+/// This macro may panic when the `"[parse]"` type is used
 /// if the data cannot be parsed into the target type
 ///
 /// # Errors
-/// This function causes the caller to propagate an `Err`
-/// value of type `String` if the value cannot be parsed
+/// This macro causes the caller to propagate an `Err`
+/// value of type `String` if a value cannot be parsed
 /// (with the exception of `"[parse]"`; see above)
 ///
 /// # Example
