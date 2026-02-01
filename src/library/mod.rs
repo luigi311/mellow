@@ -299,23 +299,23 @@ impl Library {
         self.tasks.run({
             let missing_songs = self.missing_songs.clone();
             let config = self.config.clone();
-            move || Library::create_associations(songs, missing_songs, config).expect(EXP_RX)
+            move || Library::create_connections(songs, missing_songs, config).expect(EXP_RX)
         });
 
         Ok(())
     }
 
     /// Creates connections between library `songs`, `albums`, and `artists`
-    pub fn create_associations(
+    pub fn create_connections(
         mut songs: Songs,
-        mut missing_songs: Songs,
+        mut missing: Songs,
         config: LibraryConfig,
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let possibly_moved = Library::validate_songs(&mut songs, &mut missing_songs, &config);
-        library_tx.send(LibraryRequest::SetMissingSongs(missing_songs))?;
+        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, &config);
+        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
@@ -340,8 +340,8 @@ impl Library {
         let mut progress = 0.0;
         let step_size = 1.0 / songs.len() as f64;
         for song in &songs {
-            let mut song_unwrapped = song.lock().unwrap();
-            let mut info = song_unwrapped.info();
+            let mut song_locked = song.lock().unwrap();
+            let mut info = song_locked.info();
             let song_info = info.basic();
 
             let album_index = albums.find_album(song_info);
@@ -350,10 +350,11 @@ impl Library {
             match artist_index {
                 Ok(artist_index) => match album_index {
                     Ok(album_index) => {
-                        // Associate the current song with its album
-                        // SAFETY: `album_index` is guaranteed to be within bounds
-                        let album_songs =
-                            unsafe { &mut albums.get_unchecked(album_index).lock().unwrap().songs };
+                        // SAFETY: `album_index` is `Ok`, therefore within bounds
+                        let album = unsafe { albums.get_unchecked(album_index) };
+
+                        // Add the song to the album songs
+                        let album_songs = &mut album.lock().unwrap().songs;
                         let song_index = album_songs.find_album_song(song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
@@ -361,27 +362,22 @@ impl Library {
                             }
                         }
 
-                        // SAFETY: `album_index` is guaranteed to be within bounds
-                        song_unwrapped.album =
-                            Some(Arc::clone(unsafe { albums.get_unchecked(album_index) }));
+                        // Associate the song with its album
+                        song_locked.album = Some(Arc::clone(album));
                     }
                     Err(album_index) => {
-                        // Create a new album entry for the artist,
-                        // and associate the current song with it
+                        // SAFETY: `artist_index` is `Ok`, therefore within bounds
+                        let artist = unsafe { artists.get_unchecked(artist_index) };
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
                             year: song_info.year,
                             songs: vec![Arc::clone(song)],
-                            // SAFETY: `artist_index` is guaranteed to be within bounds
-                            artist: Arc::clone(unsafe { artists.get_unchecked(artist_index) }),
+                            artist: Arc::clone(artist),
                         }));
-                        albums.insert(album_index, Arc::clone(&album));
 
-                        // Associate the album with the artist
-                        // SAFETY: `artist_index` is guaranteed to be within bounds
-                        let artist_albums = unsafe {
-                            &mut artists.get_unchecked(artist_index).lock().unwrap().albums
-                        };
+                        // Add the album to `albums` and the artist's albums
+                        albums.insert(album_index, Arc::clone(&album));
+                        let artist_albums = &mut artist.lock().unwrap().albums;
                         let album_index = artist_albums.find_artist_album(song_info);
                         match album_index {
                             Err(album_index) | Ok(album_index) => {
@@ -389,12 +385,11 @@ impl Library {
                             }
                         }
 
-                        song_unwrapped.album = Some(Arc::clone(&album));
+                        // Associate the song with its album
+                        song_locked.album = Some(Arc::clone(&album));
                     }
                 },
                 Err(artist_index) => {
-                    // Create a new entry for the artist,
-                    // and associate song/album/artist
                     let artist = Arc::new(Mutex::new(Artist {
                         name: song_info.album_artist.clone(),
                         albums: vec![],
@@ -405,28 +400,31 @@ impl Library {
                         songs: vec![Arc::clone(song)],
                         artist: Arc::clone(&artist),
                     }));
-                    artist.lock().unwrap().albums.push(Arc::clone(&album));
-                    artists.insert(artist_index, artist);
 
-                    // Add the album to `albums` as well
+                    // Add the album to `albums` and the artist's albums
+                    artist.lock().unwrap().albums.push(Arc::clone(&album));
                     match album_index {
                         Err(album_index) | Ok(album_index) => {
                             albums.insert(album_index, Arc::clone(&album));
                         }
                     }
 
-                    song_unwrapped.album = Some(album);
+                    // Add the artist entry
+                    artists.insert(artist_index, artist);
+
+                    // Associate the song with its album
+                    song_locked.album = Some(album);
                 }
             }
-            drop(song_unwrapped);
+            drop(song_locked);
 
             progress += step_size;
             let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
         }
 
-        library_tx.send(LibraryRequest::SetSongs(songs))?;
-        library_tx.send(LibraryRequest::SetAlbums(albums))?;
         library_tx.send(LibraryRequest::SetArtists(artists))?;
+        library_tx.send(LibraryRequest::SetAlbums(albums))?;
+        library_tx.send(LibraryRequest::SetSongs(songs))?;
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
@@ -437,7 +435,7 @@ impl Library {
     /// - Sorts `songs` and resolves duplicate entries
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
-    /// have been moved on disk
+    ///   have been moved on disk
     pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
