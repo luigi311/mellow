@@ -29,7 +29,7 @@ use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
 
-// TODO: Support song/album ratings
+// TODO: Support album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc
 
@@ -263,44 +263,6 @@ impl Library {
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
             }
         }
-    }
-
-    /// Starts the initial player queue
-    pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
-        let mut args = std::env::args();
-        args.next();
-
-        // Start a queue from arguments, if they contain any supported files
-        if args.len() > 0
-            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
-        {
-            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
-            return Ok(());
-        }
-
-        // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue")
-            && let mut lines = queue.lines()
-            && let Some(Ok(track)) = lines.next().map(str::parse)
-            && let Some(queue) = self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
-        {
-            self.player_tx
-                .send(PlayerRequest::LoadQueue((queue, track)))?;
-            return Ok(());
-        }
-
-        if self.songs.is_empty() {
-            // Maybe open the settings page and focus on the directory options?
-            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
-            self.ui_tx.send(UpdateUI::OpenSheet(true))?;
-            return Ok(());
-        }
-
-        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        self.play_all_songs("")?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(false)))?;
-        Ok(())
     }
 
     // Assigns `self.songs` by loading the serialized data (if any), then
@@ -634,6 +596,44 @@ impl Library {
         self.missing_songs = missing_songs;
     }
 
+    /// Starts the initial player queue
+    pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
+        let mut args = std::env::args();
+        args.next();
+
+        // Start a queue from arguments, if they contain any supported files
+        if args.len() > 0
+            && let Some(queue) = self.songs_from_paths(&args.collect::<Box<[String]>>())
+        {
+            self.player_tx.send(PlayerRequest::LoadQueue((queue, 0)))?;
+            return Ok(());
+        }
+
+        // Load the previous queue if file exists
+        if let Ok(queue) = fs::read_to_string(self.config_dir.clone() + "queue")
+            && let mut lines = queue.lines()
+            && let Some(Ok(track)) = lines.next().map(str::parse)
+            && let Some(queue) = self.songs_from_paths(&lines.map(String::from).collect::<Vec<_>>())
+        {
+            self.player_tx
+                .send(PlayerRequest::LoadQueue((queue, track)))?;
+            return Ok(());
+        }
+
+        if self.songs.is_empty() {
+            // Maybe open the settings page and focus on the directory options?
+            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
+            self.ui_tx.send(UpdateUI::OpenSheet(true))?;
+            return Ok(());
+        }
+
+        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
+        self.play_all_songs("")?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(false)))?;
+        Ok(())
+    }
+
     /// Returns a queue of all songs in the library matching the given `query`
     #[must_use]
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
@@ -648,17 +648,6 @@ impl Library {
     pub fn play_all_songs(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((self.all_songs(query), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue((album.songs.to_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -714,20 +703,10 @@ impl Library {
         Ok(())
     }
 
-    pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
+    /// Starts a queue using songs from the given album
+    pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue((artist.to_queue(), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue((artist.to_shuffled_queue(), 0)))?;
+            .send(PlayerRequest::LoadQueue((album.songs.to_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
@@ -775,6 +754,30 @@ impl Library {
             self.all_artists_shuffled(query),
             0,
         )))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
+    /// Starts a queue using songs by the given artist
+    pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue((artist.to_queue(), 0)))?;
+        self.player_tx
+            .send(PlayerRequest::TogglePlay(Some(true)))
+            .expect(EXP_RX);
+        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
+        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        Ok(())
+    }
+
+    /// Starts a queue of randomly ordered albums by the given artist
+    pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
+        self.player_tx
+            .send(PlayerRequest::LoadQueue((artist.to_shuffled_queue(), 0)))?;
         self.player_tx
             .send(PlayerRequest::TogglePlay(Some(true)))
             .expect(EXP_RX);
