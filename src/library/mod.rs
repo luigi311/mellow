@@ -795,11 +795,13 @@ impl Library {
     pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
         let mut queue = Vec::with_capacity(16.max(paths.len()));
         for file in paths {
-            let path = Path::new(&file);
             if file_supported(file) {
                 // Add files from arguments to queue
                 queue.push(self.queue_from_library_or_new(file));
-            } else if path.is_dir() && Path::exists(path) {
+            } else if let path = Path::new(&file)
+                && path.is_dir()
+                && Path::exists(path)
+            {
                 // Add all files within directory arguments to queue
                 let mut songs = Vec::with_capacity(16);
                 let _ = visit_dirs(path, &mut |file| {
