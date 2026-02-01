@@ -798,6 +798,8 @@ impl Library {
             if file_supported(file) {
                 // Add files from arguments to queue
                 queue.push(self.queue_from_library_or_new(file));
+            } else if file == "Stopper" {
+                queue.push(QueueItem::Stopper);
             } else if let path = Path::new(&file)
                 && path.is_dir()
                 && Path::exists(path)
@@ -819,10 +821,7 @@ impl Library {
                         Err(index) | Ok(index) => songs.insert(index, song),
                     }
                 });
-
                 queue.extend(songs);
-            } else if file == "Stopper" {
-                queue.push(QueueItem::Stopper);
             }
         }
 
