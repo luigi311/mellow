@@ -280,12 +280,10 @@ impl Library {
                     return;
                 }
 
-                let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) else {
-                    return;
+                // Add song to library if it is not already there
+                if let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) {
+                    songs.insert(index, Arc::new(Mutex::new(Song::new(file))));
                 };
-
-                let song = Arc::new(Mutex::new(Song::new(file)));
-                songs.insert(index, song);
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
@@ -453,7 +451,7 @@ impl Library {
                         .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
                 {
                     for dir in &config.directories {
-                        // Filter songs from removed libraries
+                        // Filter songs outside of `config.directories`
                         if !info.file_path().starts_with(dir) {
                             continue;
                         }
@@ -795,16 +793,15 @@ impl Library {
     /// recursively. Returns `None` if no song files were found.
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Option<Vec<QueueItem>> {
-        let mut queue = Vec::with_capacity(16);
+        let mut queue = Vec::with_capacity(16.max(paths.len()));
         for file in paths {
             let path = Path::new(&file);
             if file_supported(file) {
                 // Add files from arguments to queue
-                let song = self.queue_from_library_or_new(file);
-                queue.push(song);
+                queue.push(self.queue_from_library_or_new(file));
             } else if path.is_dir() && Path::exists(path) {
                 // Add all files within directory arguments to queue
-                let mut songs = Vec::new();
+                let mut songs = Vec::with_capacity(16);
                 let _ = visit_dirs(path, &mut |file| {
                     let file = file.path();
                     let file = file.to_str().unwrap();
@@ -813,7 +810,6 @@ impl Library {
                     }
 
                     let song = self.queue_from_library_or_new(file);
-
                     match songs.binary_search_by(|existing: &QueueItem| {
                         (existing.as_song().info().file_path())
                             .cmp(&song.as_song().info().file_path())
