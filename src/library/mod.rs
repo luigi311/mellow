@@ -265,8 +265,8 @@ impl Library {
         }
     }
 
-    // Assigns `self.songs` by loading the serialized data (if any), then
-    // inserting any new audio files found within the configured libraries
+    /// Assigns `self.songs` by loading the serialized data (if any), then
+    /// inserting any new audio files found within the configured libraries
     pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
         let songs = Arc::new(Mutex::new(Some(match self.songs.is_empty() {
             false => mem::take(&mut self.songs),
