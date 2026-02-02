@@ -149,7 +149,7 @@ impl ObjectImpl for ArtistsPage {
         self.artists_grid.connect_activate(|_, index| {
             UI_TX
                 .get()
-                .unwrap()
+                .expect(EXP_INIT)
                 .send(UpdateUI::ArtistPageByIndex(index as usize))
                 .expect(EXP_RX);
         });

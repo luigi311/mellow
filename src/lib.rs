@@ -1,5 +1,5 @@
+use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
 use gtk::glib;
-use std::error::Error;
 use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
@@ -17,15 +17,17 @@ pub mod ui;
 pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
 pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 
-pub fn init_globals() -> Result<(), Box<dyn Error>> {
-    CONFIG_DIR.set(glib::user_config_dir().to_str().unwrap().to_string() + "/mellow/")?;
-    MUSIC_DIR.set(
-        glib::user_special_dir(glib::UserDirectory::Music).map_or_else(
-            || [glib::home_dir().to_str().unwrap(), "/Music/"].concat(),
-            |dir| dir.to_str().unwrap().to_string(),
-        ),
-    )?;
-    Ok(())
+/// Initializes the `CONFIG_DIR` and `MUSIC_DIR` global variables
+/// (does nothing if already initialized)
+///
+/// # Panics
+/// The function panics if a variable fails to initialize
+pub fn init_globals() {
+    let _ = CONFIG_DIR.set(user_config_dir().to_str().unwrap().to_string() + "/mellow/");
+    let _ = MUSIC_DIR.set(user_special_dir(UserDirectory::Music).map_or_else(
+        || [home_dir().to_str().unwrap(), "/Music/"].concat(),
+        |dir| dir.to_str().unwrap().to_string(),
+    ));
 }
 
 /// Takes a `&Duration` and returns a nicely formatted `String`

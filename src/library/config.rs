@@ -22,6 +22,9 @@ pub struct LibraryConfig {
 
 impl LibraryConfig {
     /// Replaces the configured directories with `dirs`
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     pub fn set_libraries(&mut self, dirs: &[String], ui_tx: &UnboundedSender<UpdateUI>) {
         self.directories = dirs.into();
         self.directories.sort();
@@ -67,6 +70,10 @@ impl LibraryConfig {
         self.update_trim_uri();
     }
 
+    /// Requests a library rebuild and updates the directory list in the UI
+    ///
+    /// # Panics
+    /// The function panics if either the library or UI channel receiver is closed
     fn update_library(&self) {
         UI_TX
             .get()

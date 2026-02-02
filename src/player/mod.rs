@@ -120,19 +120,29 @@ type PlayerInit = (
 impl Player {
     /// Returns a tuple of `Player`/`player_tx`/`ui_tx`/`ui_rx`
     /// and initializes `PLAYER_TX`/`UI_TX`
+    ///
+    /// # Panics
+    /// The function panics if initialization fails;
+    /// initializing multiple times is not allowed
     #[inline]
-    pub fn init() -> Result<PlayerInit, Box<dyn Error>> {
-        gst::init()?;
+    pub fn init() -> PlayerInit {
+        gst::init().expect("Could not initialize GStreamer");
 
-        let backend = gst::ElementFactory::make("playbin3").build()?;
+        let backend = gst::ElementFactory::make("playbin3")
+            .build()
+            .expect("Failed to create GStreamer element playbin3");
         let bus = backend.bus().expect(INIT_ERR);
 
         let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
         let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
-        PLAYER_TX.set(player_tx.clone()).map_err(|_| INIT_ERR)?;
-        UI_TX.set(ui_tx.clone()).map_err(|_| INIT_ERR).unwrap();
+        PLAYER_TX
+            .set(player_tx.clone())
+            .expect("Only one instance of Player is allowed");
+        UI_TX
+            .set(ui_tx.clone())
+            .expect("Cannot initialize UI_TX multiple times");
 
-        Ok((
+        (
             Player {
                 queue: SongQueue::new(player_tx.clone(), ui_tx.clone()),
 
@@ -152,15 +162,17 @@ impl Player {
             player_tx,
             ui_tx,
             ui_rx,
-        ))
+        )
     }
 
     /// Main controller loop which handles player requests
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
-        // Enable gapless playback
         let player_tx = self.player_tx.clone();
+
+        // Required for gapless playback
         self.backend.connect("about-to-finish", false, move |_| {
-            player_tx.send(PlayerRequest::SongEnd).expect(EXP_RX);
+            // Cannot fail because the receiver is owned by `self`
+            let _ = player_tx.send(PlayerRequest::SongEnd);
             None
         });
 

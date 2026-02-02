@@ -15,10 +15,6 @@ pub struct Runner {
 impl Runner {
     /// Creates a new instance of with a specified number
     /// of worker threads (must be at least 1)
-    ///
-    /// # Panics:
-    /// If the thread count is 0, the `Runner` panics
-    /// at runtime when receiving a task
     #[must_use]
     pub fn new(count: usize) -> Self {
         debug_assert!(count > 0, "Cannot create a thread pool with no threads");
@@ -47,6 +43,9 @@ impl Runner {
     }
     /// Runs a new task in the thread pool. If all available
     /// threads are busy, the task will wait in a queue.
+    ///
+    /// # Panics
+    /// The function panics if no pool threads are running
     pub fn run<T>(&self, task: T)
     where
         T: FnOnce() + Into<Box<T>> + Send + 'static,

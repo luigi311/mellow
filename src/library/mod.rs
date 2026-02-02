@@ -233,7 +233,7 @@ impl Library {
         // `AddLibrary` worked, but `RemoveLibrary` did not...
         loop {
             match self.rx.recv()? {
-                LibraryRequest::Rebuild => self.discover_files()?,
+                LibraryRequest::Rebuild => self.discover_files(),
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
@@ -260,14 +260,15 @@ impl Library {
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
-                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done)?,
+                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done),
             }
         }
     }
 
-    /// Assigns `self.songs` by loading the serialized data (if any), then
-    /// inserting any new audio files found within the configured libraries
-    pub fn discover_files(&mut self) -> Result<(), Box<dyn Error>> {
+    /// Assigns `self.songs` by loading the serialized data (if any) and
+    /// inserts any new audio files found within the configured libraries,
+    /// then runs `create_connections()` in a background process
+    pub fn discover_files(&mut self) {
         let mut songs = match self.songs.is_empty() {
             false => mem::take(&mut self.songs),
             true => self.deserialize_songs(),
@@ -283,31 +284,33 @@ impl Library {
                 // Add song to library if it is not already there
                 if let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) {
                     songs.insert(index, Arc::new(Mutex::new(Song::new(file))));
-                };
+                }
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
         self.songs = songs.clone();
 
         self.tasks.run({
-            let missing_songs = self.missing_songs.clone();
             let config = self.config.clone();
-            move || Library::create_connections(songs, missing_songs, config).expect(EXP_RX)
+            let missing_songs = self.missing_songs.clone();
+            move || Library::create_connections(songs, missing_songs, &config).expect(EXP_RX)
         });
-
-        Ok(())
     }
 
-    /// Creates connections between library `songs`, `albums`, and `artists`
+    /// Creates connections between library `songs`/`albums`/`artists`, and
+    /// validates `songs` using `validate_songs()` and `merge_moved_entries()`
+    ///
+    /// # Errors
+    /// The function errors if either the library or UI channel receiver is closed
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
-        config: LibraryConfig,
+        config: &LibraryConfig,
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, &config);
+        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
@@ -327,7 +330,7 @@ impl Library {
                 .expect(EXP_RX);
         }
 
-        Library::merge_moved_entries(&songs, possibly_moved, &config);
+        Library::merge_moved_entries(&songs, possibly_moved, config);
 
         // TODO: Allow users to cancel, but serialize so it can continue later
         let mut progress = 0.0;
@@ -628,6 +631,9 @@ impl Library {
     }
 
     /// Returns a queue of all songs in the library matching the given `query`
+    ///
+    /// # Panics
+    /// The function panics if any song's `Mutex` is in a poisoned state
     #[must_use]
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
         // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
@@ -638,12 +644,13 @@ impl Library {
     }
 
     /// Starts a queue of all songs in the library matching the given `query`
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_songs(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((self.all_songs(query), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
@@ -651,6 +658,10 @@ impl Library {
 
     /// Returns a queue of all albums in the library,
     /// with sequential order of songs
+    ///
+    /// # Panics
+    /// The function panics if any album's `Mutex` is
+    /// in a poisoned state
     #[must_use]
     pub fn all_albums(&self, query: &str) -> Vec<QueueItem> {
         search::query_items(&self.albums, query, |album, query| {
@@ -660,12 +671,13 @@ impl Library {
     }
 
     /// Starts a queue of all albums in the library
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((self.all_albums(query), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
@@ -674,6 +686,10 @@ impl Library {
     /// Returns a queue of all albums in the library,
     /// with sequential order of songs, but randomly
     /// ordered albums
+    ///
+    /// # Panics
+    /// The function panics if any album's `Mutex` is
+    /// in a poisoned state
     #[must_use]
     pub fn all_albums_shuffled(&self, query: &str) -> Vec<QueueItem> {
         search::query_items(&self.albums, query, |album, query| {
@@ -683,26 +699,28 @@ impl Library {
     }
 
     /// Starts a randomly ordered queue of all albums in the library
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn shuffle_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue((
             self.all_albums_shuffled(query),
             0,
         )))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
     /// Starts a queue using songs from the given album
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_album(&self, album: &MutexGuard<Album>) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((album.songs.to_queue(), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
@@ -710,6 +728,10 @@ impl Library {
 
     /// Returns a queue of all artists in the library,
     /// with albums and songs in sequential order
+    ///
+    /// # Panics
+    /// The function panics if any artist's `Mutex` is
+    /// in a poisoned state
     #[must_use]
     pub fn all_artists(&self, query: &str) -> Vec<QueueItem> {
         search::query_items(&self.artists, query, |artist, query| {
@@ -719,12 +741,13 @@ impl Library {
     }
 
     /// Starts a queue of all albums in the library
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((self.all_artists(query), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
@@ -733,6 +756,10 @@ impl Library {
     /// Returns a queue of all artists in the library,
     /// with albums and songs in sequential order, but
     /// randomly ordered artists
+    ///
+    /// # Panics
+    /// The function panics if any artist's `Mutex` is
+    /// in a poisoned state
     #[must_use]
     pub fn all_artists_shuffled(&self, query: &str) -> Vec<QueueItem> {
         search::query_items(&self.artists, query, |artist, query| {
@@ -742,38 +769,41 @@ impl Library {
     }
 
     /// Starts a randomly ordered queue of all artists in the library
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn shuffle_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue((
             self.all_artists_shuffled(query),
             0,
         )))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
     /// Starts a queue using songs by the given artist
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((artist.to_queue(), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
     /// Starts a queue of randomly ordered albums by the given artist
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
         self.player_tx
             .send(PlayerRequest::LoadQueue((artist.to_shuffled_queue(), 0)))?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
@@ -781,6 +811,9 @@ impl Library {
 
     /// Starts a queue of all songs found within the specified `paths`,
     /// recursively. Does nothing if no song files were found.
+    ///
+    /// # Errors
+    /// The function errors if either the player or UI channel receiver is closed
     pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
         let queue = self.songs_from_paths(paths);
         if queue.is_empty() {
@@ -888,7 +921,10 @@ impl Library {
 
     /// Writes the configuration to disk and shuts down gracefully.
     /// Notifies the caller over the `notify_done` channel when done.
-    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
+    ///
+    /// # Panics
+    /// The function panics if the `notify_done`'s receiver is closed
+    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) {
         let mut songs = mem::take(&mut self.songs);
         for missing_song in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
@@ -903,7 +939,6 @@ impl Library {
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
         notify_done.send(()).expect(EXP_RX);
-        Ok(())
     }
 }
 

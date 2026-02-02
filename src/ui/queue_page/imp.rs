@@ -109,7 +109,7 @@ impl QueuePage {
                     entry.connect_activated(move |_| {
                         UI_TX
                             .get()
-                            .unwrap()
+                            .expect(EXP_INIT)
                             .send(UpdateUI::QueueSupbage(i))
                             .expect(EXP_RX);
                     });

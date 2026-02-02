@@ -148,7 +148,7 @@ impl ObjectImpl for AlbumsPage {
         self.albums_grid.connect_activate(|_, index| {
             UI_TX
                 .get()
-                .unwrap()
+                .expect(EXP_INIT)
                 .send(UpdateUI::AlbumPageByIndex(index as usize))
                 .expect(EXP_RX);
         });

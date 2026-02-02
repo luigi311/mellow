@@ -150,7 +150,7 @@ impl ObjectImpl for SongsPage {
         self.songs_grid.connect_activate(|_, index| {
             UI_TX
                 .get()
-                .unwrap()
+                .expect(EXP_INIT)
                 .send(UpdateUI::SongPageByIndex(index as usize))
                 .expect(EXP_RX);
         });

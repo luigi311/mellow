@@ -21,7 +21,7 @@ pub fn main() -> glib::ExitCode {
     app.connect_activate(init);
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("player.play_pause", &["space"]);
-    app.run_with_args(&[] as &[&str; 0])
+    app.run_with_args(&[] as &[&str])
 }
 
 #[inline]
@@ -38,8 +38,8 @@ fn register_resources() {
 
 #[inline]
 fn init(app: &Application) {
-    mellow::init_globals().expect(INIT_ERR);
-    let (mut player, player_tx, ui_tx, ui_rx) = Player::init().expect(INIT_ERR);
+    mellow::init_globals();
+    let (mut player, player_tx, ui_tx, ui_rx) = Player::init();
     let mut library = Library::init(player_tx, ui_tx);
 
     thread::Builder::new()
