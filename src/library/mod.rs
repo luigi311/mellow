@@ -363,9 +363,7 @@ impl Library {
                     Ok(album_index) => {
                         // SAFETY: `album_index` is `Ok`, therefore within bounds
                         let album = unsafe { albums.get_unchecked(album_index) };
-                        // SAFETY: `album`'s `Mutex` cannot be poisoned
-                        // because it doesn't leave the current thread
-                        let album_songs = unsafe { &mut album.lock().unwrap_unchecked().songs };
+                        let album_songs = &mut album.lock().unwrap().songs;
 
                         // Add the song to the album songs
                         let song_index = album_songs.find_album_song(song_info);
@@ -381,9 +379,7 @@ impl Library {
                     Err(album_index) => {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
                         let artist = unsafe { artists.get_unchecked(artist_index) };
-                        // SAFETY: `artist`'s `Mutex` cannot be poisoned
-                        // because it doesn't leave the current thread
-                        let artist_albums = unsafe { &mut artist.lock().unwrap_unchecked().albums };
+                        let artist_albums = &mut artist.lock().unwrap().albums;
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
                             year: song_info.year,
@@ -417,11 +413,7 @@ impl Library {
                     }));
 
                     // Add the album to `albums` and the artist's albums
-                    // SAFETY: `artist`'s `Mutex` cannot be poisoned
-                    // because it doesn't leave the current thread
-                    unsafe { artist.lock().unwrap_unchecked() }
-                        .albums
-                        .push(Arc::clone(&album));
+                    artist.lock().unwrap().albums.push(Arc::clone(&album));
                     match album_index {
                         Err(album_index) | Ok(album_index) => {
                             albums.insert(album_index, Arc::clone(&album));
