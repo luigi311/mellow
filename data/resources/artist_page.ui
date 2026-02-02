@@ -14,9 +14,6 @@
   </menu>
   <template class="MellowArtistPage" parent="AdwNavigationPage">
 
-    <!-- TODO: Create the artist page according to the mockup -->
-    <!-- (or redesign?) -->
-
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">

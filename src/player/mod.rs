@@ -171,6 +171,13 @@ impl Player {
     /// The function may error upon handling a request:
     /// - If a required channel receiver is closed
     /// - Due to an unhandled `GStreamer` error
+    ///
+    /// # Panics
+    /// The function may panic when handling a request
+    /// in some cases, such as:
+    /// - A `QueueItem` contains a poisoned `Mutex`
+    /// - A required channel receiver is closed
+    /// - A crash occurs in `GStreamer`
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
         let player_tx = self.player_tx.clone();
 
