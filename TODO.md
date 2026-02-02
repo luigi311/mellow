@@ -26,10 +26,11 @@ than shown on the page, or even try to index out of bounds)
 
 Music library:
 
-- [x] Save/load user settings (such as library directories)
+- [ ] Save/load user settings (such as library directories)
+  - TODO: Save/load shuffle preference for individual views
 - [x] Serialize the library to disk
-- [-] Incremental library rebuilding
-  - TODO: Allow users to initiate a full rebuild
+- [x] Incremental library rebuilding
+- [ ] Allow initiating a full library rebuild
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
   - [-] Show all artists
@@ -46,6 +47,7 @@ Music library:
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] Interactive rating widget (or non-interactive average?)
+      - TODO: Decide how ratings should be handled and how to store them
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
@@ -67,6 +69,7 @@ Music library:
 - [x] Play counting
 > Works, but the counting logic could be improved
 - [-] Search/filtering for songs/albums/artists pages
+  - TODO: Show the search results
   - FIX: Cannot drag-select text because it drags the header bar
   - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering

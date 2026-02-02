@@ -40,8 +40,8 @@ When the overlay is closed, it is time to enjoy the music.
 # Features
 
 - ✨ Sleek and minimal interface - less clutter, more music
-- 📋 Song queue - view or edit the list of playing songs
 - 📀 Music library - browse and play your local music collection
+- 📋 Song queue - view or edit the list of playing songs
 - 🌈 Gapless playback - uninterrupted transitions between songs
 
 # Roadmap
@@ -53,11 +53,11 @@ When the overlay is closed, it is time to enjoy the music.
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
 |  5  | Music library                             | ⚠️ WIP: Basics are done, but see below |
-| 5.1 | Library artists page                      | ⚠️ WIP: UI is not yet fully implemented |
-| 5.2 | Library albums page                       | ⚠️ WIP: UI is not yet fully implemented |
-| 5.3 | Library songs page                        | ⚠️ WIP: UI is not yet fully implemented |
-|  6  | Music library search/filters              | ⚠️ WIP: Simple search, no UI yet |
-|  7  | Play counts and ratings                   | ⚠️ WIP: Song ratings, play counting works but no UI yet |
+| 5.1 | Library artists page                      | ⚠️ WIP: Missing artworks and some functionality |
+| 5.2 | Library albums page                       | ⚠️ WIP: Missing artworks and some functionality |
+| 5.3 | Library songs page                        | ⚠️ WIP: Missing artworks and some functionality |
+|  6  | Music library search/filters              | ⚠️ WIP: Play button filters by query, no UI yet |
+|  7  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, play counts are not shown anywhere yet |
 |  8  | Tag-like playlists                        | ❌ TODO |
 |  9  | Media controller support (MPRIS)          | ❌ TODO |
 | 10  | Adaptive background/colors                | ❌ TODO |
