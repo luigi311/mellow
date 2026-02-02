@@ -234,7 +234,7 @@ impl Library {
     ///
     /// # Panics
     /// The function may panic upon handling a request if
-    /// a poisoned `Mutex` is passe
+    /// a poisoned `Mutex` is passed
     #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         // FIX: Library requests blocked while building the library?
