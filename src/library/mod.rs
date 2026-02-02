@@ -363,9 +363,11 @@ impl Library {
                     Ok(album_index) => {
                         // SAFETY: `album_index` is `Ok`, therefore within bounds
                         let album = unsafe { albums.get_unchecked(album_index) };
+                        // SAFETY: `album`'s `Mutex` cannot be poisoned
+                        // because it doesn't leave the current thread
+                        let album_songs = unsafe { &mut album.lock().unwrap_unchecked().songs };
 
                         // Add the song to the album songs
-                        let album_songs = &mut album.lock().unwrap().songs;
                         let song_index = album_songs.find_album_song(song_info);
                         match song_index {
                             Err(song_index) | Ok(song_index) => {
@@ -379,6 +381,9 @@ impl Library {
                     Err(album_index) => {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
                         let artist = unsafe { artists.get_unchecked(artist_index) };
+                        // SAFETY: `artist`'s `Mutex` cannot be poisoned
+                        // because it doesn't leave the current thread
+                        let artist_albums = unsafe { &mut artist.lock().unwrap_unchecked().albums };
                         let album = Arc::new(Mutex::new(Album {
                             title: song_info.album.clone(),
                             year: song_info.year,
@@ -388,7 +393,6 @@ impl Library {
 
                         // Add the album to `albums` and the artist's albums
                         albums.insert(album_index, Arc::clone(&album));
-                        let artist_albums = &mut artist.lock().unwrap().albums;
                         let album_index = artist_albums.find_artist_album(song_info);
                         match album_index {
                             Err(album_index) | Ok(album_index) => {
@@ -413,7 +417,11 @@ impl Library {
                     }));
 
                     // Add the album to `albums` and the artist's albums
-                    artist.lock().unwrap().albums.push(Arc::clone(&album));
+                    // SAFETY: `artist`'s `Mutex` cannot be poisoned
+                    // because it doesn't leave the current thread
+                    unsafe { artist.lock().unwrap_unchecked() }
+                        .albums
+                        .push(Arc::clone(&album));
                     match album_index {
                         Err(album_index) | Ok(album_index) => {
                             albums.insert(album_index, Arc::clone(&album));
