@@ -267,9 +267,12 @@ impl Library {
         }
     }
 
-    /// Assigns `self.songs` by loading the serialized data (if any) and
-    /// inserts any new audio files found within the configured libraries,
-    /// then runs `create_connections()` in a background process
+    /// Locates song files within the configured directories, assigns
+    /// them to `self.songs`, inserts any new files into `self.songs`,
+    /// then runs `create_connections()` in a background process. If
+    /// uninitialized, the data from disk is used first. Song entries
+    /// already present in `self.songs` are preserved, and only new
+    /// songs are added.
     ///
     /// # Panics
     /// The function panics if `create_connections()` fails
@@ -934,7 +937,7 @@ impl Library {
             )
         }) {
             Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
-            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: {e}"),
+            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: \n{e}"),
         }
     }
 

@@ -31,8 +31,7 @@ impl Rating {
     /// Connects a closure to run when a new rating is set
     pub fn connect_rating_set<F>(&self, f: F)
     where
-        F: Fn(u8) + 'static,
-        F: Into<Box<F>>,
+        F: Fn(u8) + Into<Box<F>> + 'static,
     {
         self.imp().on_rating_set.replace(Some(f.into()));
     }
