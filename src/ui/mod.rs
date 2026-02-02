@@ -1,6 +1,6 @@
 use adw::{self, Application, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
-use gtk::{self, gdk, glib};
+use gtk::{self, gdk, gio, glib};
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -71,8 +71,12 @@ pub enum UpdateUI {
 
 /// Starts the application and initializes `UI_TX`
 #[inline]
-pub fn init(app: &Application, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
-    let window = Window::new(app);
+pub fn init(
+    app: &Application,
+    settings: gio::Settings,
+    ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
+) {
+    let window = Window::new(app, settings);
     window.set_title(Some(about::app_name()));
     window.set_icon_name(Some(about::app_id()));
     window.present();

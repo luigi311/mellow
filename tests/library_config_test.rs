@@ -51,13 +51,10 @@ mod tests {
         }
 
         fn test_set_libraries(&mut self) {
-            self.config.set_libraries(
-                &[
-                    "/some/directory".to_string(),
-                    "/some/other/directory".to_string(),
-                ],
-                &UI_TX.get().unwrap(),
-            );
+            self.config.set_libraries(&[
+                "/some/directory".to_string(),
+                "/some/other/directory".to_string(),
+            ]);
             assert_eq!(
                 self.config.directories,
                 ["/some/directory", "/some/other/directory",],
@@ -137,10 +134,8 @@ mod tests {
         }
 
         fn test_uri_opt_remainder_special_chars(&mut self) {
-            self.config.set_libraries(
-                &["/test/🤷/".to_string(), "/test/🦀/".to_string()],
-                UI_TX.get().unwrap(),
-            );
+            self.config
+                .set_libraries(&["/test/🤷/".to_string(), "/test/🦀/".to_string()]);
             for (first_half, _) in self.uri_opt_split() {
                 assert_eq!(
                     first_half, "file:///test/",
@@ -150,10 +145,8 @@ mod tests {
         }
 
         fn test_uri_opt_remainder_common_special_chars(&mut self) {
-            self.config.set_libraries(
-                &["/test/🤷/🦀".to_string(), "/test/🤷/🤷".to_string()],
-                UI_TX.get().unwrap(),
-            );
+            self.config
+                .set_libraries(&["/test/🤷/🦀".to_string(), "/test/🤷/🤷".to_string()]);
             assert!(self.config.uri_opt() <= "file:///test/%F0%9F%A4%B7/".len());
             // NOTE: The below test is currently failing, but as long as the
             // `uri_opt` value is less than the common part length, it shouln't
@@ -186,7 +179,7 @@ mod tests {
             let (library_tx, library_rx) = mpsc::channel::<LibraryRequest>();
             LIBRARY_TX.get_or_init(|| library_tx.clone());
             ConfigTester {
-                config: LibraryConfig::default(),
+                config: LibraryConfig::new(vec![]),
                 _ui_rx: ui_rx,
                 _library_rx: library_rx,
             }

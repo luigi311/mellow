@@ -40,8 +40,6 @@ pub struct Library {
     pub missing_songs: Songs,
 
     config: LibraryConfig,
-    config_dir: String,
-
     tasks: Runner,
     player_tx: mpsc::Sender<PlayerRequest>,
     ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
@@ -170,7 +168,6 @@ pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
 pub enum LibraryRequest {
     Rebuild,
 
-    InitQueue,
     QueueFromPaths(Box<[String]>),
 
     // TODO: Filter and start the queue directly from the UI instead
@@ -188,7 +185,6 @@ pub enum LibraryRequest {
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
-    SetLibraries(Box<[String]>),
 
     SetSongs(Songs),
     SetAlbums(Albums),
@@ -204,11 +200,13 @@ impl Library {
     #[inline]
     #[must_use]
     pub fn init(
+        config: LibraryConfig,
         player_tx: mpsc::Sender<PlayerRequest>,
         ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
         LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
+        let _ = ui_tx.send(UpdateUI::LibraryDirs(config.directories.clone().into()));
 
         Library {
             songs: Vec::new(),
@@ -216,9 +214,7 @@ impl Library {
             artists: Vec::new(),
             missing_songs: Vec::new(),
 
-            config: LibraryConfig::default(),
-            config_dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
-
+            config,
             tasks: Runner::new(4),
             player_tx,
             ui_tx,
@@ -248,7 +244,6 @@ impl Library {
                 LibraryRequest::SetArtists(artists) => self.set_artists(artists),
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
 
-                LibraryRequest::InitQueue => self.init_queue()?,
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
                 LibraryRequest::PlayAllSongs(query) => self.play_all_songs(&query)?,
                 LibraryRequest::PlayAllAlbums(query) => self.play_all_albums(&query)?,
@@ -264,7 +259,6 @@ impl Library {
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
-                LibraryRequest::SetLibraries(dirs) => self.config.set_libraries(&dirs, &self.ui_tx),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
@@ -643,7 +637,7 @@ impl Library {
         }
 
         // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string([&self.config_dir, "queue"].concat())
+        if let Ok(queue) = fs::read_to_string([&self.config.dir, "queue"].concat())
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
             && let queue = self.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
@@ -926,7 +920,7 @@ impl Library {
     /// Serializes `songs` and writes the data to disk,
     /// so the library can be loaded faster next time
     ///
-    /// Creates a file called `songs` in `self.config.config_dir`
+    /// Writes to a file called `songs` in `self.config.dir`
     #[inline]
     fn serialize_songs(songs: &Songs) {
         let serialized = songs
@@ -935,7 +929,7 @@ impl Library {
             .collect::<String>();
         match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
             fs::write(
-                CONFIG_DIR.get().expect(EXP_INIT).clone() + "songs",
+                [&CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
                 serialized.trim(),
             )
         }) {
@@ -947,10 +941,10 @@ impl Library {
     /// Reads the serialized song info from disk and returns them,
     /// so they can be assigned directly to `self.songs`
     ///
-    /// Reads from a file called `songs` in `self.config.config_dir`
+    /// Reads from a file called `songs` in `self.config.dir`
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
-        let Ok(data) = fs::read_to_string(self.config_dir.clone() + "songs") else {
+        let Ok(data) = fs::read_to_string([&self.config.dir, "songs"].concat()) else {
             return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
         data.split("\n\n")

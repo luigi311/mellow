@@ -11,8 +11,6 @@ use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::SongQueue;
-use crate::serializer::serialize_list;
-use crate::{MUSIC_DIR, unescaped_split};
 
 mod imp;
 
@@ -26,7 +24,7 @@ glib::wrapper! {
 
 impl Window {
     #[must_use]
-    pub fn new(app: &Application) -> Self {
+    pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
         imp.css_provider
@@ -39,14 +37,10 @@ impl Window {
                 210,
             );
         }
+        imp.settings.set(settings).expect(INIT_ERR);
         imp.init_ui_elements();
         window.load_state();
         window
-    }
-
-    fn setup_settings(&self) {
-        let settings = Settings::new(about::app_id());
-        self.imp().settings.set(settings).expect(INIT_ERR);
     }
 
     fn settings(&self) -> &Settings {
@@ -248,7 +242,6 @@ impl Window {
         let volume = settings_page.volume();
         let gapless = settings_page.gapless();
         let remember_queue = settings_page.remembers_queue();
-        let directories = settings_page.directories();
 
         self.settings().set_int("window-width", width)?;
         self.settings().set_int("window-height", height)?;
@@ -256,8 +249,6 @@ impl Window {
         self.settings().set_boolean("gapless", gapless)?;
         self.settings()
             .set_boolean("remember-queue", remember_queue)?;
-        self.settings()
-            .set_string("directories", &serialize_list(&directories))?;
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let remember = imp.settings_page.remembers_queue();
@@ -278,24 +269,14 @@ impl Window {
 
     pub fn load_state(&self) {
         let settings = self.settings();
-        let mut directories = unescaped_split(&settings.string("directories"), ',');
-        if directories.is_empty() {
-            directories.push(MUSIC_DIR.get().unwrap().clone());
-        }
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx
-            .send(LibraryRequest::SetLibraries(directories.into()))
-            .expect(EXP_RX);
-        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-        library_tx.send(LibraryRequest::InitQueue).expect(EXP_RX);
-
         let settings_page = &self.imp().settings_page;
+
         let volume = settings.double("volume");
         let gapless = settings.boolean("gapless");
         let remember_queue = settings.boolean("remember-queue");
 
         // Slider callback `change_value` doesn't work for `set_value()`,
-        // so the volume has to be manually updated before the slider
+        // so the volume has to be set manually before setting the slider
         settings_page
             .imp()
             .handle_set_volume(gtk::ScrollType::Jump, volume);

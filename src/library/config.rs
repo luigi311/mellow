@@ -1,8 +1,8 @@
 use gio::prelude::FileExt;
 use gtk::gio;
 use std::str::Chars;
-use tokio::sync::mpsc::UnboundedSender;
 
+use crate::CONFIG_DIR;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::ui::{UI_TX, UpdateUI};
@@ -14,27 +14,35 @@ pub const FILE_SUPPORT: &[&str] = &[
     "ape", "mpc", "ogg",
 ];
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
+    pub dir: String,
     uri_opt: usize,
 }
 
 impl LibraryConfig {
+    /// Creates a new instance of `LibraryConfig`
+    /// and assigns the provided `directories`
+    pub fn new(directories: Vec<String>) -> Self {
+        let mut config = LibraryConfig {
+            directories,
+            dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
+            uri_opt: 0,
+        };
+        config.update_trim_uri();
+        config
+    }
+
     /// Replaces the configured directories with `dirs`
-    ///
-    /// # Panics
-    /// The function panics if the UI channel receiver is closed
-    pub fn set_libraries(&mut self, dirs: &[String], ui_tx: &UnboundedSender<UpdateUI>) {
+    pub fn set_libraries(&mut self, dirs: &[String]) {
         self.directories = dirs.into();
         self.directories.sort();
         println!(
             "Library directories updated\nLibraries: {:?}",
             self.directories
         );
-        ui_tx
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
+        self.update_library();
         self.update_trim_uri();
     }
 

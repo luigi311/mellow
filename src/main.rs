@@ -1,11 +1,12 @@
 use adw::{Application, prelude::*};
 use gtk::{gio, glib};
+use mellow::library::config::LibraryConfig;
 use std::thread;
 
-use mellow::about;
 use mellow::excuses::INIT_ERR;
 use mellow::library::Library;
 use mellow::player::Player;
+use mellow::{MUSIC_DIR, about, unescaped_split};
 
 // FIX: Crashes when opening a second instance (with %F in `.desktop`)
 
@@ -14,6 +15,7 @@ pub fn main() -> glib::ExitCode {
     glib::set_program_name(Some(about::app_name().to_lowercase()));
 
     register_resources();
+    mellow::init_globals();
 
     let app = Application::builder()
         .application_id(mellow::about::app_id())
@@ -38,18 +40,30 @@ fn register_resources() {
 
 #[inline]
 fn init(app: &Application) {
-    mellow::init_globals();
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init();
-    let mut library = Library::init(player_tx, ui_tx);
-
-    thread::Builder::new()
-        .name("library".to_string())
-        .spawn(move || library.request_handler().unwrap())
-        .expect(INIT_ERR);
     thread::Builder::new()
         .name("player".to_string())
         .spawn(move || player.controller().unwrap())
         .expect(INIT_ERR);
 
-    mellow::ui::init(app, ui_rx);
+    let settings = gio::Settings::new(about::app_id());
+    let mut library = Library::init(
+        LibraryConfig::new(match &settings.string("directories")[..] {
+            ":" => vec![MUSIC_DIR.get().unwrap().clone()],
+            dirs => unescaped_split(dirs, ','),
+        }),
+        player_tx,
+        ui_tx,
+    );
+
+    thread::Builder::new()
+        .name("library".to_string())
+        .spawn(move || {
+            library.discover_files();
+            library.init_queue().unwrap();
+            library.request_handler().unwrap();
+        })
+        .expect(INIT_ERR);
+
+    mellow::ui::init(app, settings, ui_rx);
 }
