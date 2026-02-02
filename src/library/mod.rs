@@ -227,6 +227,14 @@ impl Library {
     }
 
     /// Main loop for handling library requests
+    ///
+    /// # Errors
+    /// The function may error upon handling a request,
+    /// in most cases due to a closed channel receiver
+    ///
+    /// # Panics
+    /// The function may panic upon handling a request if
+    /// a poisoned `Mutex` is passe
     #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         // FIX: Library requests blocked while building the library?
@@ -268,6 +276,9 @@ impl Library {
     /// Assigns `self.songs` by loading the serialized data (if any) and
     /// inserts any new audio files found within the configured libraries,
     /// then runs `create_connections()` in a background process
+    ///
+    /// # Panics
+    /// The function panics if `create_connections()` fails
     pub fn discover_files(&mut self) {
         let mut songs = match self.songs.is_empty() {
             false => mem::take(&mut self.songs),
@@ -288,7 +299,7 @@ impl Library {
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
         }
-        self.songs = songs.clone();
+        self.songs.clone_from(&songs);
 
         self.tasks.run({
             let config = self.config.clone();
@@ -302,6 +313,9 @@ impl Library {
     ///
     /// # Errors
     /// The function errors if either the library or UI channel receiver is closed
+    ///
+    /// # Panics
+    /// The function panics if a `song`'s `Mutex` is in a poisoned state
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
@@ -312,9 +326,6 @@ impl Library {
 
         let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-
-        let mut albums = Vec::with_capacity(songs.len() / 16);
-        let mut artists = Vec::with_capacity(songs.len() / 64);
 
         // Spawning more tasks than there are workers,
         // in case some finish sooner than others
@@ -332,9 +343,13 @@ impl Library {
 
         Library::merge_moved_entries(&songs, possibly_moved, config);
 
-        // TODO: Allow users to cancel, but serialize so it can continue later
+        let mut albums = Vec::with_capacity(songs.len() / 16);
+        let mut artists = Vec::with_capacity(songs.len() / 64);
+
         let mut progress = 0.0;
         let step_size = 1.0 / songs.len() as f64;
+
+        // TODO: Allow cancellation
         for song in &songs {
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
@@ -432,6 +447,10 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
+    ///
+    /// # Panics
+    /// The function panics if a `Mutex` in `songs` or `missing`
+    /// is in a poisoned state
     pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
@@ -520,7 +539,22 @@ impl Library {
 
     /// Attempts to locate missing files if they were moved and merges
     /// them with the existing song entries so their info is preserved
+    ///
+    /// # Panics
+    /// The function may panic if:
+    /// - The UI channel receiver is unititialized or closed
+    /// - A `Mutex` in `songs` or `possibly_moved` is in a poisoned state
     pub fn merge_moved_entries(songs: &Songs, possibly_moved: Songs, config: &LibraryConfig) {
+        fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
+            if cmp_info.inspect_basic() == Some(info.basic()) {
+                // Copy the user-assigned song info to the new entry
+                println!("Found moved file: {}", cmp_info.filename());
+                info.user_mut().merge_with(cmp_info.user());
+                return true;
+            }
+            false
+        }
+
         if possibly_moved.is_empty() {
             return;
         }
@@ -538,15 +572,6 @@ impl Library {
                 Err(index) | Ok(index) => index,
             };
             let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
-            fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
-                if cmp_info.inspect_basic() == Some(info.basic()) {
-                    // Copy the user-assigned song info to the new entry
-                    println!("Found moved file: {}", cmp_info.filename());
-                    info.user_mut().merge_with(cmp_info.user());
-                    return true;
-                }
-                false
-            }
             loop {
                 let (left, right) = (left.next_back(), right.next());
                 if right.is_some_and(|song| {
@@ -565,6 +590,9 @@ impl Library {
     }
 
     /// Replaces `self.songs` with `songs`
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
@@ -572,6 +600,9 @@ impl Library {
         self.songs = songs;
     }
     /// Replaces `self.albums` with `albums`
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::LibraryAlbums(albums.clone()))
@@ -579,6 +610,9 @@ impl Library {
         self.albums = albums;
     }
     /// Replaces `self.artists` with `artists`
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::LibraryArtists(artists.clone()))
@@ -591,6 +625,10 @@ impl Library {
     }
 
     /// Starts the initial player queue
+    ///
+    /// # Errors
+    /// Function may error if the player
+    /// or UI channel receiver is closed
     pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
         let mut args = std::env::args();
         args.next();
@@ -827,6 +865,10 @@ impl Library {
     }
 
     /// Takes a list of file or directory paths and returns a queue
+    ///
+    /// # Panics
+    /// The function panics if passed a directory containing files
+    /// whose paths are not valid UTF-8
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Vec<QueueItem> {
         let mut queue = Vec::with_capacity(paths.len());

@@ -166,6 +166,11 @@ impl Player {
     }
 
     /// Main controller loop which handles player requests
+    ///
+    /// # Errors
+    /// The function may error upon handling a request:
+    /// - If a required channel receiver is closed
+    /// - Due to an unhandled `GStreamer` error
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {
         let player_tx = self.player_tx.clone();
 

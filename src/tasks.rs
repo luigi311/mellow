@@ -15,6 +15,9 @@ pub struct Runner {
 impl Runner {
     /// Creates a new instance of with a specified number
     /// of worker threads (must be at least 1)
+    ///
+    /// # Panics
+    /// The function panics if any threads fail to spawn
     #[must_use]
     pub fn new(count: usize) -> Self {
         debug_assert!(count > 0, "Cannot create a thread pool with no threads");

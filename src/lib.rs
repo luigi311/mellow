@@ -21,7 +21,7 @@ pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 /// (does nothing if already initialized)
 ///
 /// # Panics
-/// The function panics if a variable fails to initialize
+/// The function panics if user directories are not valid UTF-8
 pub fn init_globals() {
     let _ = CONFIG_DIR.set(user_config_dir().to_str().unwrap().to_string() + "/mellow/");
     let _ = MUSIC_DIR.set(user_special_dir(UserDirectory::Music).map_or_else(
@@ -159,6 +159,9 @@ pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
 ///
 /// Adapted from the official Rust documentation:
 /// <https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples>
+///
+/// # Errors
+/// The function errors if a file or directory cannot be read
 pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {

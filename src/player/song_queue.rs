@@ -156,6 +156,9 @@ impl SongQueue {
 
     /// Restarts the queue from the beginning
     /// Playback state has to be manually updated
+    ///
+    /// # Panics
+    /// The function panics if the player channel receiver is closed
     pub fn restart_queue(&mut self) {
         self.player_tx.send(PlayerRequest::SkipTo(0)).expect(EXP_RX);
     }
@@ -170,8 +173,8 @@ impl SongQueue {
         self.ui_update_queue();
     }
 
-    /// Randomizes indexes for the shuffle mode
-    /// without changing the currently playing track
+    /// Randomizes the shuffled queue without
+    /// changing the currently playing track
     fn update_shuffled_queue(&mut self) {
         if self.is_empty() {
             return;
@@ -378,6 +381,10 @@ impl SongQueue {
         self.repeat
     }
 
+    /// Updates the UI with the current queue shuffle mode setting
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn ui_update_shuffle(&self) {
         println!("ui_update_shuffle({})", self.shuffle);
         self.ui_tx
@@ -385,6 +392,10 @@ impl SongQueue {
             .expect(EXP_RX);
     }
 
+    /// Updates the UI with the current queue repeat mode setting
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn ui_update_repeat(&self) {
         println!("ui_update_repeat({})", self.repeat);
         self.ui_tx
@@ -392,6 +403,10 @@ impl SongQueue {
             .expect(EXP_RX);
     }
 
+    /// Updates the UI with the current queue
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     fn ui_update_queue(&self) {
         println!("ui_update_queue()");
         self.ui_update_queue_index();
@@ -400,6 +415,10 @@ impl SongQueue {
             .expect(EXP_RX);
     }
 
+    /// Updates the UI with the current queue index
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
     pub fn ui_update_queue_index(&self) {
         println!("ui_update_queue_index({})", self.index);
         self.ui_tx
@@ -409,6 +428,9 @@ impl SongQueue {
 
     /// Saves the provided queue to a file on disk, or removes
     /// the file if `remember` is `false`
+    ///
+    /// # Panics
+    /// The function panics if `CONFIG_DIR` is unititialized
     pub fn save_queue(remember: bool, song_queue: &[QueueItem], playing_index: usize) {
         let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
         let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
