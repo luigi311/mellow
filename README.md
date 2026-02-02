@@ -96,7 +96,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ### [Meson](https://mesonbuild.com/SimpleStart.html#installing-meson):
 ```bash
-dnf install meson ninja-build
+dnf install meson
 ```
 
 > [!TIP]
@@ -110,11 +110,11 @@ dnf install meson ninja-build
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
-Running the following commands will install Mellow on your system:
+Clone the source code and run the following command to build and
+install Mellow on your system:
 
 ```bash
-meson setup builddir --prefix=~/.local
-meson install -C builddir
+meson setup builddir --prefix=~/.local && meson install -C builddir
 ```
 
 The following files and directories will be created:
