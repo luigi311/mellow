@@ -17,8 +17,7 @@
                 <property name="child">
                   <object class="AdwStatusPage">
                     <property name="icon-name">applications-multimedia-symbolic</property>
-                    <property name="title" translatable="yes">Library</property>
-                    <property name="description" translatable="yes">The library is currently loading</property>
+                    <property name="title" translatable="yes">Loading...</property>
                     <child>
                       <object class="AdwClamp">
                         <child>
@@ -26,26 +25,7 @@
                             <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkProgressBar" id="progress_bar">
-                                <!-- <property name="width_request">360</property> -->
                                 <property name="height_request">12</property>
-                                <property name="visible">True</property>
-                                <property name="fraction">0.5</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="label">Test Button</property>
-                                <style>
-                                  <class name="pill"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="label">Test Button</property>
-                                <style>
-                                  <class name="pill"/>
-                                </style>
                               </object>
                             </child>
                           </object>
