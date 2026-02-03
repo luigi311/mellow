@@ -12,6 +12,7 @@ use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::song_queue::SongQueue;
+use crate::serializer::serialize_list;
 
 mod imp;
 
@@ -258,6 +259,8 @@ impl Window {
         settings.set_double("volume", settings_page.volume())?;
         settings.set_boolean("gapless", settings_page.gapless())?;
         settings.set_boolean("remember-queue", remember_queue)?;
+        self.settings()
+            .set_string("directories", &serialize_list(&settings_page.directories()))?;
 
         rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
