@@ -213,14 +213,14 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
             // [++i---t++] => [++---tt++]
             unsafe { ptr::copy(ptr.add(index + 1), ptr.add(index), target - index) };
             // Write the old element to the position at `target`:
-            // [++i---t++] => [++---ti++]
+            // [++---tt++] => [++---ti++]
             unsafe { ptr::write(ptr.add(target), elem) };
         } else {
             // Copy everything before `target` up to (including) `index` one to the right:
             // [++t---i++] => [++tt---++]
             unsafe { ptr::copy(ptr.add(target), ptr.add(target + 1), index - target) };
             // Write the old element to the position at `target`:
-            // [++t---i++] => [++it---++]
+            // [++tt---++] => [++it---++]
             unsafe { ptr::write(ptr.add(target), elem) };
         }
     }
