@@ -212,14 +212,14 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
             // Copy everything after `from` up to and including `to` one to the left:
             // [++f---t++] => [++---tt++]
             unsafe { ptr::copy(ptr.add(from + 1), ptr.add(from), to - from) };
-            // Write the old element to the position at `target`:
+            // Overwrite the position at `to` with the old value of `from`:
             // [++---tt++] => [++---tf++]
             unsafe { ptr::write(ptr.add(to), elem) };
         } else {
             // Copy everything before `to` up to and including `from` one to the right:
             // [++t---f++] => [++tt---++]
             unsafe { ptr::copy(ptr.add(to), ptr.add(to + 1), from - to) };
-            // Write the old element to the position at `target`:
+            // Overwrite the position at `to` with the old value of `from`:
             // [++tt---++] => [++ft---++]
             unsafe { ptr::write(ptr.add(to), elem) };
         }
