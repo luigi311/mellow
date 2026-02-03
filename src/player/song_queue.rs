@@ -206,20 +206,19 @@ impl SongQueue {
         self.ui_update_queue();
     }
 
-    /// Moves a song in the queue from `index` to `target`
-    /// Index depends on shuffle mode (use `ordered_queue()` index)
-    pub fn reorder(&mut self, index: usize, target: usize) {
+    /// Moves a song in the queue from `from` to `to`
+    pub fn reorder(&mut self, from: usize, to: usize) {
         if self.shuffle {
-            self.shuffled.reorder(index, target);
+            self.shuffled.reorder(from, to);
         } else {
-            self.songs.reorder(index, target);
+            self.songs.reorder(from, to);
         }
 
-        if self.index == index {
-            self.index = target;
-        } else if index < target && (index..=target).contains(&self.index) {
+        if self.index == from {
+            self.index = to;
+        } else if from < to && (from..=to).contains(&self.index) {
             self.index -= 1;
-        } else if index > target && (target..index).contains(&self.index) {
+        } else if from > to && (to..from).contains(&self.index) {
             self.index += 1;
         }
 
