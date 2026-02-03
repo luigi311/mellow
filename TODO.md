@@ -49,7 +49,7 @@ Music library:
     - TODO: **Show album artworks**
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
-    - [ ] Interactive rating widget (or non-interactive average?)
+    - [ ] **Interactive rating widget**
       - TODO: Decide how ratings should be handled and how to store them
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button

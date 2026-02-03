@@ -29,8 +29,11 @@ Song Queue:
 Music Library:
 
 - [ ] The 'Songs' page and its subpages do not have performance issues
+  - FIX: Artwork loading on the song subpage blocks the main thread
 - [ ] The 'Albums' page and its subpages do not have performance issues
+  - FIX: Artwork loading on the album subpage blocks the main thread
 - [ ] The 'Artists' page and its subpages do not have performance issues
+  - FIX: Artwork loading on the artist subpage blocks the main thread
 - [ ] Library building works in the background and doesn't affect functionality
   - FIX: No way to cancel, simultaneous changes/rebuilds could cause incorrect results
   - FIX: Rebuilding sometimes blocks library requests(?)

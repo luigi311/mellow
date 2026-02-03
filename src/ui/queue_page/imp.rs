@@ -67,7 +67,7 @@ impl QueuePage {
             });
 
         // TODO: Display the list properly (model/factory/view)
-        // TODO: Support reordering queue items
+        // TODO: Support reordering queue items (needs UI)
         // TODO: Display the entire queue
         self.list_box.remove_all();
         let start = index.saturating_sub(45);
@@ -124,10 +124,6 @@ impl QueuePage {
 
                     // IDEA: Draw a pause icon in place of the album cover
                     // queue_entry.set_prefix_image();
-
-                    // TODO: Open a page for stoppers as well
-                    // TODO: Allow removing stoppers
-                    // TODO: Allow reordering stoppers
 
                     self.list_box.append(&entry);
                 }

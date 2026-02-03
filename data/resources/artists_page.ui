@@ -94,6 +94,7 @@
             <child>
               <object class="AdwViewStackPage">
                 <property name="name">artists_placeholder</property>
+                  <!-- IDEA: Button to scroll to the currently playing artist -->
                 <property name="child">
                   <object class="AdwStatusPage">
                     <property name="icon-name">avatar-default-symbolic</property>

@@ -5,6 +5,8 @@ use crate::library::artist::ArtistMutex;
 use crate::library::{Song, SongInfo, ToQueue};
 use crate::player::queue_item::QueueItem;
 
+// TODO: Save/load album info (such as ratings)
+
 pub struct Album {
     pub title: String,
     pub year: u32,

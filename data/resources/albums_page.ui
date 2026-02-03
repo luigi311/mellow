@@ -72,6 +72,7 @@
               <object class="AdwViewStackPage">
                 <property name="name">albums</property>
                 <property name="child">
+                  <!-- IDEA: Button to scroll to the currently playing album -->
                   <object class="GtkScrolledWindow">
                     <child>
                       <object class="GtkGridView" id="albums_grid">
