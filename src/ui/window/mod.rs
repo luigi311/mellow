@@ -77,70 +77,70 @@ impl Window {
             gio::ActionEntry::builder("play_all_songs")
                 .activate(clone!(
                     #[weak(rename_to=songs_page)]
-                    self.imp().library_songs_page.imp(),
+                    self.imp().songs_page.imp(),
                     move |_, _, _| songs_page.handle_play_sequential()
                 ))
                 .build(),
             gio::ActionEntry::builder("shuffle_all_songs")
                 .activate(clone!(
                     #[weak(rename_to=songs_page)]
-                    self.imp().library_songs_page.imp(),
+                    self.imp().songs_page.imp(),
                     move |_, _, _| songs_page.handle_play_shuffled()
                 ))
                 .build(),
             gio::ActionEntry::builder("play_visible_album")
                 .activate(clone!(
                     #[weak(rename_to=album_page)]
-                    self.imp().library_album_page.imp(),
+                    self.imp().album_page.imp(),
                     move |_, _, _| album_page.handle_play_sequential()
                 ))
                 .build(),
             gio::ActionEntry::builder("shuffle_visible_album")
                 .activate(clone!(
                     #[weak(rename_to=album_page)]
-                    self.imp().library_album_page.imp(),
+                    self.imp().album_page.imp(),
                     move |_, _, _| album_page.handle_play_shuffled()
                 ))
                 .build(),
             gio::ActionEntry::builder("play_visible_artist")
                 .activate(clone!(
                     #[weak(rename_to=artist_page)]
-                    self.imp().library_artist_page.imp(),
+                    self.imp().artist_page.imp(),
                     move |_, _, _| artist_page.handle_play_sequential()
                 ))
                 .build(),
             gio::ActionEntry::builder("shuffle_visible_artist")
                 .activate(clone!(
                     #[weak(rename_to=artist_page)]
-                    self.imp().library_artist_page.imp(),
+                    self.imp().artist_page.imp(),
                     move |_, _, _| artist_page.handle_play_shuffled()
                 ))
                 .build(),
             gio::ActionEntry::builder("play_all_albums")
                 .activate(clone!(
                     #[weak(rename_to=albums_page)]
-                    self.imp().library_albums_page.imp(),
+                    self.imp().albums_page.imp(),
                     move |_, _, _| albums_page.handle_play_sequential()
                 ))
                 .build(),
             gio::ActionEntry::builder("shuffle_all_albums")
                 .activate(clone!(
                     #[weak(rename_to=albums_page)]
-                    self.imp().library_albums_page.imp(),
+                    self.imp().albums_page.imp(),
                     move |_, _, _| albums_page.handle_play_shuffled()
                 ))
                 .build(),
             gio::ActionEntry::builder("play_all_artists")
                 .activate(clone!(
                     #[weak(rename_to=artists_page)]
-                    self.imp().library_artists_page.imp(),
+                    self.imp().artists_page.imp(),
                     move |_, _, _| artists_page.handle_play_sequential()
                 ))
                 .build(),
             gio::ActionEntry::builder("shuffle_all_artists")
                 .activate(clone!(
                     #[weak(rename_to=artists_page)]
-                    self.imp().library_artists_page.imp(),
+                    self.imp().artists_page.imp(),
                     move |_, _, _| artists_page.handle_play_shuffled()
                 ))
                 .build(),
@@ -170,7 +170,7 @@ impl Window {
                     self.imp(),
                     move |_, _, tag| {
                         let tag = tag.unwrap().get::<String>().unwrap();
-                        ui.playing_navigation_view.push_by_tag(&tag);
+                        ui.playing.push_by_tag(&tag);
                     }
                 ))
                 .build(),
@@ -179,7 +179,7 @@ impl Window {
                     #[weak(rename_to=ui)]
                     self.imp(),
                     move |_, _, _| {
-                        ui.playing_navigation_view.pop();
+                        ui.playing.pop();
                     }
                 ))
                 .build(),
@@ -190,7 +190,7 @@ impl Window {
                     self.imp(),
                     move |_, _, tag| {
                         let tag = tag.unwrap().get::<String>().unwrap();
-                        ui.library_navigation_view.push_by_tag(&tag);
+                        ui.library.push_by_tag(&tag);
                     }
                 ))
                 .build(),
@@ -199,7 +199,7 @@ impl Window {
                     #[weak(rename_to=ui)]
                     self.imp(),
                     move |_, _, _| {
-                        ui.library_navigation_view.pop();
+                        ui.library.pop();
                     }
                 ))
                 .build(),

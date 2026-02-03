@@ -86,11 +86,11 @@
                     <property name="use-underline">True</property>
 
                     <property name="child">
-                      <object class="AdwNavigationView" id="library_navigation_view">
+                      <object class="AdwNavigationView" id="library">
 
                         Library home page
                         <child>
-                          <object class="MellowLibraryPage" id="library_home_page">
+                          <object class="MellowLibraryPage" id="library_page">
                             <property name="title" translatable="yes">Library</property>
                             <property name="tag">library</property>
                           </object>
@@ -98,14 +98,14 @@
 
                         Songs
                         <child>
-                          <object class="MellowSongsPage" id="library_songs_page">
+                          <object class="MellowSongsPage" id="songs_page">
                             <property name="title" translatable="yes">Songs</property>
                             <property name="tag">library_songs</property>
                           </object>
                         </child>
                         Song Page
                         <child>
-                          <object class="MellowSongPage" id="library_song_page">
+                          <object class="MellowSongPage" id="song_page">
                             <property name="title" translatable="yes">Song</property>
                             <property name="tag">song</property>
                           </object>
@@ -113,14 +113,14 @@
 
                         Albums
                         <child>
-                          <object class="MellowAlbumsPage" id="library_albums_page">
+                          <object class="MellowAlbumsPage" id="albums_page">
                             <property name="title" translatable="yes">Albums</property>
                             <property name="tag">library_albums</property>
                           </object>
                         </child>
                         Album Page
                         <child>
-                          <object class="MellowAlbumPage" id="library_album_page">
+                          <object class="MellowAlbumPage" id="album_page">
                             <property name="title" translatable="yes">Album</property>
                             <property name="tag">album</property>
                           </object>
@@ -128,14 +128,14 @@
 
                         Artists
                         <child>
-                          <object class="MellowArtistsPage" id="library_artists_page">
+                          <object class="MellowArtistsPage" id="artists_page">
                             <property name="title" translatable="yes">Artists</property>
                             <property name="tag">library_artists</property>
                           </object>
                         </child>
                         Artist Page
                         <child>
-                          <object class="MellowArtistPage" id="library_artist_page">
+                          <object class="MellowArtistPage" id="artist_page">
                             <property name="title" translatable="yes">Artist</property>
                             <property name="tag">artist</property>
                           </object>
@@ -154,7 +154,7 @@
                     <property name="icon-name">media-playback-start-symbolic</property>
                     <property name="use-underline">True</property>
                     <property name="child">
-                      <object class="AdwNavigationView" id="playing_navigation_view">
+                      <object class="AdwNavigationView" id="playing">
 
                         Queue page
                         <child>

@@ -47,31 +47,31 @@ pub struct Window {
 
     // View stack "Library" tab
     #[template_child]
-    pub library_home_page: TemplateChild<LibraryPage>,
+    pub library: TemplateChild<adw::NavigationView>,
     #[template_child]
-    pub library_songs_page: TemplateChild<SongsPage>,
+    pub library_page: TemplateChild<LibraryPage>,
     #[template_child]
-    pub library_song_page: TemplateChild<SongPage>,
+    pub songs_page: TemplateChild<SongsPage>,
     #[template_child]
-    pub library_albums_page: TemplateChild<AlbumsPage>,
+    pub song_page: TemplateChild<SongPage>,
     #[template_child]
-    pub library_album_page: TemplateChild<AlbumPage>,
+    pub albums_page: TemplateChild<AlbumsPage>,
     #[template_child]
-    pub library_artists_page: TemplateChild<ArtistsPage>,
+    pub album_page: TemplateChild<AlbumPage>,
     #[template_child]
-    pub library_artist_page: TemplateChild<ArtistPage>,
+    pub artists_page: TemplateChild<ArtistsPage>,
     #[template_child]
-    pub library_navigation_view: TemplateChild<adw::NavigationView>,
+    pub artist_page: TemplateChild<ArtistPage>,
 
     // View stack "Playing" tab
+    #[template_child]
+    pub playing: TemplateChild<adw::NavigationView>,
     #[template_child]
     queue_page: TemplateChild<QueuePage>,
     #[template_child]
     queue_song_page: TemplateChild<QueueSubpage>,
     #[template_child]
     lyrics_page: TemplateChild<LyricsPage>,
-    #[template_child]
-    pub playing_navigation_view: TemplateChild<adw::NavigationView>,
 
     // View stack "Settings" tab
     #[template_child]
@@ -83,18 +83,18 @@ pub struct Window {
     pub song_queue: RefCell<Box<[QueueItem]>>,
     pub song_queue_index: Cell<usize>,
 
-    pub library_songs: RefCell<Songs>,
-    pub library_albums: RefCell<Albums>,
-    pub library_artists: RefCell<Artists>,
+    pub songs: RefCell<Songs>,
+    pub albums: RefCell<Albums>,
+    pub artists: RefCell<Artists>,
 }
 
 impl Window {
     pub fn init_ui_elements(&self) {
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
-        self.library_songs_page.init_search();
-        self.library_albums_page.init_search();
-        self.library_artists_page.init_search();
+        self.songs_page.init_search();
+        self.albums_page.init_search();
+        self.artists_page.init_search();
     }
 
     #[allow(clippy::future_not_send)]
@@ -269,7 +269,7 @@ impl Window {
     }
 
     fn update_progress(&self, progress: Option<f64>) {
-        self.library_home_page.update_progress(progress);
+        self.library_page.update_progress(progress);
         if let Some(progress) = progress {
             self.progress_bar.set_visible(true);
             self.progress_bar.set_fraction(progress);
@@ -296,42 +296,42 @@ impl Window {
     }
 
     fn load_library_songs(&self, songs: &Songs) {
-        self.library_home_page.set_empty(songs.is_empty());
-        self.library_songs.replace(songs.clone());
-        self.library_songs_page.load_songs(songs);
+        self.library_page.set_empty(songs.is_empty());
+        self.songs.replace(songs.clone());
+        self.songs_page.load_songs(songs);
     }
     fn load_library_albums(&self, albums: &Albums) {
-        self.library_albums.replace(albums.clone());
-        self.library_albums_page.load_albums(albums);
+        self.albums.replace(albums.clone());
+        self.albums_page.load_albums(albums);
     }
     fn load_library_artists(&self, artists: &Artists) {
-        self.library_artists.replace(artists.clone());
-        self.library_artists_page.load_artists(artists);
+        self.artists.replace(artists.clone());
+        self.artists_page.load_artists(artists);
     }
 
     // TODO: Reset the scroll position when opening song/album/artist page
 
     fn open_song_page_by_index(&self, index: usize) {
-        let songs: Songs = self.library_songs.borrow().clone();
+        let songs: Songs = self.songs.borrow().clone();
         self.open_song_page(index, Arc::clone(&songs[index]), Box::new(songs));
     }
     fn open_song_page(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
-        self.library_song_page.update(index, song, to_queue);
-        self.library_navigation_view.push_by_tag("song");
+        self.song_page.update(index, song, to_queue);
+        self.library.push_by_tag("song");
     }
     fn open_artist_page_by_index(&self, index: usize) {
-        self.open_artist_page(&self.library_artists.borrow()[index]);
+        self.open_artist_page(&self.artists.borrow()[index]);
     }
     fn open_artist_page(&self, artist: &ArtistMutex) {
-        self.library_artist_page.update(artist);
-        self.library_navigation_view.push_by_tag("artist");
+        self.artist_page.update(artist);
+        self.library.push_by_tag("artist");
     }
     fn open_album_page_by_index(&self, index: usize) {
-        self.open_album_page(&self.library_albums.borrow()[index]);
+        self.open_album_page(&self.albums.borrow()[index]);
     }
     fn open_album_page(&self, album: &AlbumMutex) {
-        self.library_album_page.update(album);
-        self.library_navigation_view.push_by_tag("album");
+        self.album_page.update(album);
+        self.library.push_by_tag("album");
     }
 }
 
