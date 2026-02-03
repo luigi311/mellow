@@ -209,10 +209,18 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
         let elem = self[index].clone();
         let ptr = self.as_mut_ptr();
         if index < target {
+            // Copy everything after `index` up to (including) `target` one to the left:
+            // [++i---t++] => [++---tt++]
             unsafe { ptr::copy(ptr.add(index + 1), ptr.add(index), target - index) };
+            // Write the old element to the position at `target`:
+            // [++i---t++] => [++---ti++]
             unsafe { ptr::write(ptr.add(target), elem) };
         } else {
+            // Copy everything before `target` up to (including) `index` one to the right:
+            // [++t---i++] => [++tt---++]
             unsafe { ptr::copy(ptr.add(target), ptr.add(target + 1), index - target) };
+            // Write the old element to the position at `target`:
+            // [++t---i++] => [++it---++]
             unsafe { ptr::write(ptr.add(target), elem) };
         }
     }
