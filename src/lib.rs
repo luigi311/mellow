@@ -1,10 +1,10 @@
 use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
 use gtk::glib;
 use std::fs::{self, DirEntry};
-use std::io;
 use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
+use std::{io, ptr};
 
 pub mod about;
 pub mod excuses;
@@ -72,39 +72,6 @@ pub fn format_duration(duration: &Duration) -> String {
 pub fn approx_eq(left: f64, right: f64) -> bool {
     const TOLERANCE: f64 = 0.0005;
     (left - right).abs() < TOLERANCE
-}
-
-/// Moves an element of `Vec<T>` from `index` to `target`,
-/// preserving the order of other elements. Elements in
-/// between are shifted towards `index` by one.
-///
-/// # Panics
-///
-/// Panics if either `index` or `target` is out of bounds
-///
-/// # Example
-/// ```rust
-/// use mellow::reorder_vec;
-///
-/// let mut vec = vec![1, 2, 3, 4, 5];
-///
-/// reorder_vec(&mut vec, 1, 4);
-/// assert_eq!(vec, vec![1, 3, 4, 5, 2]);
-///
-/// reorder_vec(&mut vec, 4, 1);
-/// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
-/// ```
-#[inline]
-pub fn reorder_vec<T>(vec: &mut [T], index: usize, target: usize) {
-    if target > index {
-        for i in index..target {
-            vec.swap(i, i + 1);
-        }
-    } else {
-        for i in (target + 1..=index).rev() {
-            vec.swap(i, i - 1);
-        }
-    }
 }
 
 /// Splits the input string at every occurence of a character,
@@ -175,4 +142,78 @@ pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+pub trait ReorderVecSafe {
+    fn reorder(&mut self, index: usize, target: usize);
+}
+impl<T> ReorderVecSafe for Vec<T> {
+    /// Moves an element of `Vec<T>` from `index` to `target`,
+    /// preserving the order of other elements. Elements in
+    /// between are shifted towards `index` by one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either `index` or `target` is out of bounds
+    ///
+    /// # Example
+    /// ```rust
+    /// use mellow::UnsafeReorderVec;
+    ///
+    /// let mut vec = vec![1, 2, 3, 4, 5];
+    ///
+    /// vec.reorder(1, 4);
+    /// assert_eq!(vec, vec![1, 3, 4, 5, 2]);
+    ///
+    /// vec.reorder(4, 1);
+    /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
+    /// ```
+    fn reorder(&mut self, index: usize, target: usize) {
+        if target > index {
+            for i in index..target {
+                self.swap(i, i + 1);
+            }
+        } else {
+            for i in (target + 1..=index).rev() {
+                self.swap(i, i - 1);
+            }
+        }
+    }
+}
+
+pub trait ReorderVecRaw {
+    fn reorder(&mut self, index: usize, target: usize);
+}
+impl<T: Clone> ReorderVecRaw for Vec<T> {
+    /// Moves an element of `Vec<T>` from `index` to `target`,
+    /// preserving the order and shifting the elements in-between
+    ///
+    /// # Panics
+    ///
+    /// Panics if either `index` or `target` is out of bounds
+    ///
+    /// # Example
+    /// ```rust
+    /// use mellow::UnsafeReorderVec;
+    ///
+    /// let mut vec = vec![1, 2, 3, 4, 5];
+    ///
+    /// vec.reorder(1, 4);
+    /// assert_eq!(vec, vec![1, 3, 4, 5, 2]);
+    ///
+    /// vec.reorder(4, 1);
+    /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
+    /// ```
+    fn reorder(&mut self, index: usize, target: usize) {
+        assert!(index < self.len() && target < self.len());
+        let elem = self[index].clone();
+        let ptr = self.as_mut_ptr();
+        if index < target {
+            unsafe { ptr::copy(ptr.add(index + 1), ptr.add(index), target - index) };
+            unsafe { ptr::write(ptr.add(target), elem) };
+        } else {
+            unsafe { ptr::copy(ptr.add(target), ptr.add(target + 1), index - target) };
+            unsafe { ptr::write(ptr.add(target), elem) };
+        }
+    }
 }

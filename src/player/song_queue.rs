@@ -6,7 +6,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
-use crate::{CONFIG_DIR, reorder_vec};
+use crate::{CONFIG_DIR, ReorderVecSafe};
 
 pub struct SongQueue {
     repeat: bool,
@@ -196,23 +196,23 @@ impl SongQueue {
             let rand_index = random_range(start..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
-        self.ui_update_queue();
     }
 
     /// Removes all upcomming songs from the queue
     pub fn clear_queue(&mut self) {
         let current_song = self.remove(self.current_index());
         self.songs = vec![current_song];
-        self.update_shuffled_queue();
+        self.shuffled = vec![0];
+        self.ui_update_queue();
     }
 
     /// Moves a song in the queue from `index` to `target`
     /// Index depends on shuffle mode (use `ordered_queue()` index)
     pub fn reorder(&mut self, index: usize, target: usize) {
         if self.shuffle {
-            reorder_vec(&mut self.shuffled, index, target);
+            self.shuffled.reorder(index, target);
         } else {
-            reorder_vec(&mut self.songs, index, target);
+            self.songs.reorder(index, target);
         }
         // TODO: Test if this works
         if self.index == index {
