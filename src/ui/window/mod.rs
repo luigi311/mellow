@@ -1,5 +1,6 @@
 use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
+use core::error::Error;
 use gdk::{DragAction, FileList};
 use gio::Settings;
 use glib::{Object, clone};
@@ -23,6 +24,7 @@ glib::wrapper! {
 }
 
 impl Window {
+    #[inline]
     #[must_use]
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
@@ -234,36 +236,30 @@ impl Window {
 
     /// Saves all settings and the player state
     /// Note that `song_queue` will be uninitialized
-    pub fn save_state(&self) -> Result<(), glib::BoolError> {
+    pub fn save_state(&self) -> Result<(), Box<dyn Error>> {
         let imp = self.imp();
-        let width = self.size(Orientation::Horizontal);
-        let height = self.size(Orientation::Vertical);
         let settings_page = &imp.settings_page;
-        let volume = settings_page.volume();
-        let gapless = settings_page.gapless();
-        let remember_queue = settings_page.remembers_queue();
 
-        self.settings().set_int("window-width", width)?;
-        self.settings().set_int("window-height", height)?;
-        self.settings().set_double("volume", volume)?;
-        self.settings().set_boolean("gapless", gapless)?;
-        self.settings()
-            .set_boolean("remember-queue", remember_queue)?;
-
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let remember = imp.settings_page.remembers_queue();
         let song_queue = imp.song_queue.take();
         let playing_index = imp.song_queue_index.get();
-        library_tx
-            .send(LibraryRequest::RunTask(Box::new(move || {
-                SongQueue::save_queue(remember, &song_queue, playing_index);
-            })))
-            .expect(EXP_RX);
+        let remember_queue = settings_page.remembers_queue();
+
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        library_tx.send(LibraryRequest::RunTask(Box::new(move || {
+            SongQueue::save_queue(remember_queue, &song_queue, playing_index);
+        })))?;
 
         let (tx, rx) = mpsc::channel();
-        library_tx.send(LibraryRequest::Shutdown(tx)).expect(EXP_RX);
-        let _ = rx.recv_timeout(Duration::from_millis(1500));
+        library_tx.send(LibraryRequest::Shutdown(tx))?;
 
+        let settings = self.settings();
+        settings.set_int("window-width", self.size(Orientation::Horizontal))?;
+        settings.set_int("window-height", self.size(Orientation::Vertical))?;
+        settings.set_double("volume", settings_page.volume())?;
+        settings.set_boolean("gapless", settings_page.gapless())?;
+        settings.set_boolean("remember-queue", remember_queue)?;
+
+        rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
 
@@ -271,22 +267,16 @@ impl Window {
         let settings = self.settings();
         let settings_page = &self.imp().settings_page;
 
-        let volume = settings.double("volume");
-        let gapless = settings.boolean("gapless");
-        let remember_queue = settings.boolean("remember-queue");
-
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be set manually before setting the slider
+        let volume = settings.double("volume");
         settings_page
             .imp()
             .handle_set_volume(gtk::ScrollType::Jump, volume);
-
         settings_page.set_volume(volume);
-        settings_page.set_gapless(gapless);
-        settings_page.set_remember_queue(remember_queue);
+        settings_page.set_gapless(settings.boolean("gapless"));
+        settings_page.set_remember_queue(settings.boolean("remember-queue"));
 
-        let width = settings.int("window-width");
-        let height = settings.int("window-height");
-        self.set_default_size(width, height);
+        self.set_default_size(settings.int("window-width"), settings.int("window-height"));
     }
 }
