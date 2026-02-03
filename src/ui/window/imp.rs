@@ -39,7 +39,7 @@ pub struct Window {
     #[template_child]
     progress_bar: TemplateChild<gtk::ProgressBar>,
     #[template_child]
-    bottom_bar: TemplateChild<gtk::CenterBox>,
+    bottom_bar: TemplateChild<gtk::Box>,
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]

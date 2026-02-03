@@ -19,14 +19,6 @@
                 <property name="show-title">False</property>
               </object>
             </child>
-            <child type="top">
-              <object class="GtkProgressBar" id="progress_bar">
-                <property name="visible">False</property>
-                <style>
-                  <class name="osd"/>
-                </style>
-              </object>
-            </child>
 
             Main player view
             <property name="content">
@@ -47,21 +39,50 @@
 
         Bottom bar / drag handle
         <property name="bottom-bar">
-          <object class="GtkCenterBox" id="bottom_bar">
+          <object class="GtkBox" id="bottom_bar">
             <style>
               <class name="view"/>
               <class name="flat"/>
             </style>
             <property name="height-request">30</property>
-            <property name="center-widget">
+            <property name="hexpand">True</property>
+            <property name="orientation">vertical</property>
+            <child>
               <object class="GtkImage">
+                <property name="halign">center</property>
                 <property name="icon_name">view-more-horizontal-symbolic</property>
                 <style>
                   <class name="dimmed"/>
                 </style>
               </object>
-            </property>
+            </child>
+            <child>
+              <object class="GtkProgressBar" id="progress_bar">
+                <property name="visible">True</property>
+                <property name="fraction">0.0</property>
+                <property name="margin_start">8</property>
+                <property name="margin_end">8</property>
+                <style>
+                  <class name="osd"/>
+                </style>
+              </object>
+            </child>
           </object>
+          <!-- <object class="GtkCenterBox" id="bottom_bar"> -->
+            <!-- <style> -->
+              <!-- <class name="view"/> -->
+              <!-- <class name="flat"/> -->
+            <!-- </style> -->
+            <!-- <property name="height-request">30</property> -->
+            <!-- <property name="center-widget"> -->
+              <!-- <object class="GtkImage"> -->
+                <!-- <property name="icon_name">view-more-horizontal-symbolic</property> -->
+                <!-- <style> -->
+                  <!-- <class name="dimmed"/> -->
+                <!-- </style> -->
+              <!-- </object> -->
+            <!-- </property> -->
+          <!-- </object> -->
         </property>
 
         <!-- TODO: Organize views into separate files/widgets -->
