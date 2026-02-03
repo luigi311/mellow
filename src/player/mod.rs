@@ -97,6 +97,7 @@ pub struct Player {
 
     current_state: State,
     pending_state: Option<State>,
+    /// Note: When the next song is loaded, `self.queue.index()` returns the next track index
     next_song_loaded: bool,
     seeking: bool,
 
@@ -225,7 +226,7 @@ impl Player {
 
                 PlayerRequest::LoadQueue(queue, index) => self.load_queue(queue, index) == (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
-                PlayerRequest::Reorder(from, to) => self.queue.reorder(from, to) == (),
+                PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {
                     self.insert_to_queue(
@@ -480,6 +481,7 @@ impl Player {
     ///
     /// Note that this might cause an audible stutter, so use it sparingly
     pub fn unload_gapless(&mut self) {
+        println!("---- Unloading gapless track ----");
         let Some(pos) = self.backend.query_position::<ClockTime>() else {
             eprintln!("Could not determine playback time, skipping...");
             self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
@@ -505,6 +507,18 @@ impl Player {
     /// Sets the playback volume
     fn set_volume(&self, volume: f64) {
         self.backend.set_property("volume", volume);
+    }
+
+    fn reorder(&mut self, from: usize, to: usize) {
+        if self.next_song_loaded
+            && (from == self.queue.index() - 1
+                || from == self.queue.index()
+                || (from < to && to == self.queue.index() - 1)
+                || (from > to && to == self.queue.index()))
+        {
+            self.unload_gapless();
+        }
+        self.queue.reorder(from, to);
     }
 
     /// Inserts a `QueueItem` into the current queue at the specified `index`

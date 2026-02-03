@@ -20,8 +20,7 @@ Song Queue:
   - FIX: Starting an empty queue does not unload the currently playing song
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [ ] Reordering the queue works as expected
-  - TODO: Unload gapless track if needed
+- [x] Reordering the queue works as expected
   - TODO: Reorder using drag & drop
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
