@@ -75,6 +75,34 @@ impl QueueSubpage {
             .send(PlayerRequest::RemoveAt(self.index.get()))
             .expect(EXP_RX);
     }
+    #[template_callback]
+    pub fn handle_move_up(&self) {
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
+        PLAYER_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::Reorder(
+                self.index.get(),
+                self.index.get() - 1,
+            ))
+            .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_move_down(&self) {
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
+        PLAYER_TX
+            .get()
+            .expect(EXP_INIT)
+            .send(PlayerRequest::Reorder(
+                self.index.get(),
+                self.index.get() + 1,
+            ))
+            .expect(EXP_RX);
+    }
 }
 
 #[glib::object_subclass]

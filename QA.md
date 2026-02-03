@@ -21,6 +21,8 @@ Song Queue:
 - [x] Adding items works as expected
 - [x] Removing items works as expected
 - [ ] Reordering the queue works as expected
+  - TODO: Unload gapless track if needed
+  - TODO: Reorder using drag & drop
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
 - [ ] Scrolling works without issues

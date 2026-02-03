@@ -6,7 +6,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
-use crate::{CONFIG_DIR, ReorderVecSafe};
+use crate::{CONFIG_DIR, ReorderVecRaw};
 
 pub struct SongQueue {
     repeat: bool,
@@ -214,7 +214,7 @@ impl SongQueue {
         } else {
             self.songs.reorder(index, target);
         }
-        // TODO: Test if this works
+
         if self.index == index {
             self.index = target;
         } else if index < target && (index..=target).contains(&self.index) {
@@ -222,6 +222,8 @@ impl SongQueue {
         } else if index > target && (target..index).contains(&self.index) {
             self.index += 1;
         }
+
+        self.ui_update_queue();
     }
 
     /// Inserts an item into the queue at the specified index

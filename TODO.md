@@ -8,7 +8,7 @@ than shown on the page, or even try to index out of bounds)
   - TODO: Draw the entire queue (using a more performant approach)
   - FIX: Memory leak when toggling shuffle
 - [-] **Allow reordering the queue**
-> Untested, needs UI
+  - TODO: Reorder using drag & drop
 - [ ] **Multi-selection mode**
   - [ ] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once

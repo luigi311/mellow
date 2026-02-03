@@ -112,6 +112,35 @@
               </object>
             </child>
 
+            <child>
+              <object class="AdwPreferencesGroup">
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_move_up" swapped="true"/>
+                    <property name="title" translatable="yes">Move Up</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-up-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_move_down" swapped="true"/>
+                    <property name="title" translatable="yes">Move Down</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-down-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+
           </object>
         </property>
       </object>

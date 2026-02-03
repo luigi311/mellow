@@ -185,12 +185,12 @@ pub trait ReorderVecRaw {
     fn reorder(&mut self, index: usize, target: usize);
 }
 impl<T: Clone> ReorderVecRaw for Vec<T> {
-    /// Moves an element of `Vec<T>` from `index` to `target`,
+    /// Moves an element of `Vec<T>` from index `from` to `to`,
     /// preserving the order and shifting the elements in-between
     ///
     /// # Panics
     ///
-    /// Panics if either `index` or `target` is out of bounds
+    /// Panics if either `from` or `to` is out of bounds
     ///
     /// # Example
     /// ```rust
@@ -204,24 +204,24 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
     /// vec.reorder(4, 1);
     /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
     /// ```
-    fn reorder(&mut self, index: usize, target: usize) {
-        assert!(index < self.len() && target < self.len());
-        let elem = self[index].clone();
+    fn reorder(&mut self, from: usize, to: usize) {
+        assert!(from < self.len() && to < self.len());
+        let elem = self[from].clone();
         let ptr = self.as_mut_ptr();
-        if index < target {
-            // Copy everything after `index` up to (including) `target` one to the left:
-            // [++i---t++] => [++---tt++]
-            unsafe { ptr::copy(ptr.add(index + 1), ptr.add(index), target - index) };
+        if from < to {
+            // Copy everything after `from` up to and including `to` one to the left:
+            // [++f---t++] => [++---tt++]
+            unsafe { ptr::copy(ptr.add(from + 1), ptr.add(from), to - from) };
             // Write the old element to the position at `target`:
-            // [++---tt++] => [++---ti++]
-            unsafe { ptr::write(ptr.add(target), elem) };
+            // [++---tt++] => [++---tf++]
+            unsafe { ptr::write(ptr.add(to), elem) };
         } else {
-            // Copy everything before `target` up to (including) `index` one to the right:
-            // [++t---i++] => [++tt---++]
-            unsafe { ptr::copy(ptr.add(target), ptr.add(target + 1), index - target) };
+            // Copy everything before `to` up to and including `from` one to the right:
+            // [++t---f++] => [++tt---++]
+            unsafe { ptr::copy(ptr.add(to), ptr.add(to + 1), from - to) };
             // Write the old element to the position at `target`:
-            // [++tt---++] => [++it---++]
-            unsafe { ptr::write(ptr.add(target), elem) };
+            // [++tt---++] => [++ft---++]
+            unsafe { ptr::write(ptr.add(to), elem) };
         }
     }
 }
