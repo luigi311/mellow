@@ -68,21 +68,6 @@
               </object>
             </child>
           </object>
-          <!-- <object class="GtkCenterBox" id="bottom_bar"> -->
-            <!-- <style> -->
-              <!-- <class name="view"/> -->
-              <!-- <class name="flat"/> -->
-            <!-- </style> -->
-            <!-- <property name="height-request">30</property> -->
-            <!-- <property name="center-widget"> -->
-              <!-- <object class="GtkImage"> -->
-                <!-- <property name="icon_name">view-more-horizontal-symbolic</property> -->
-                <!-- <style> -->
-                  <!-- <class name="dimmed"/> -->
-                <!-- </style> -->
-              <!-- </object> -->
-            <!-- </property> -->
-          <!-- </object> -->
         </property>
 
         <!-- TODO: Organize views into separate files/widgets -->
