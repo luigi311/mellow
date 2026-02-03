@@ -184,7 +184,7 @@ impl<T> ReorderVecSafe for Vec<T> {
 pub trait ReorderVecRaw {
     fn reorder(&mut self, index: usize, target: usize);
 }
-impl<T: Clone + ?Sized> ReorderVecRaw for Vec<T> {
+impl<T: Clone + Sized> ReorderVecRaw for Vec<T> {
     /// Moves an element of `Vec<T>` from index `from` to `to`,
     /// preserving the order and shifting the elements in-between
     ///
