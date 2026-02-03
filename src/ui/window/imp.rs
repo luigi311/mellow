@@ -13,7 +13,7 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
 use crate::library::artist::ArtistMutex;
 use crate::library::song::SongMutex;
-use crate::library::{Albums, Artists, LIBRARY_TX, LibraryRequest, Songs, ToQueue};
+use crate::library::{Albums, Artists, LIBRARY_TX, Library, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
 use crate::ui::albums_page::AlbumsPage;
@@ -210,13 +210,9 @@ impl Window {
                     song.lock().unwrap().info().load_detailed();
                     ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
                 });
-                LIBRARY_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(LibraryRequest::RunTask(Box::new(move || {
-                        load_artwork_handle.join().unwrap();
-                    })))
-                    .expect(EXP_RX);
+                Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
+                    load_artwork_handle.join().unwrap();
+                });
                 None
             }
         };

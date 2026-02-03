@@ -321,22 +321,20 @@ impl Library {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
         let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
-        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
 
         // Spawning more tasks than there are workers,
         // in case some finish sooner than others
         let chunk_size = songs.len() / 64;
         for i in 0..64 {
             let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
-            library_tx
-                .send(LibraryRequest::RunTask(Box::new(move || {
-                    for song in songs {
-                        let _ = song.try_lock().map(|mut song| song.info().load_basic());
-                    }
-                })))
-                .expect(EXP_RX);
+            Library::run_task(&library_tx, move || {
+                for song in songs {
+                    let _ = song.try_lock().map(|mut song| song.info().load_basic());
+                }
+            });
         }
 
+        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
         Library::merge_moved_entries(&songs, possibly_moved, config);
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
@@ -583,6 +581,22 @@ impl Library {
             progress += step_size;
             let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
         }
+    }
+
+    /// Uses `library_tx` to send the `task` to run on the thread pool.
+    /// If idle threads are available, the `task` will run when the
+    /// library processes the request, otherwise, it will wait in a queue.
+    ///
+    /// # Panics
+    /// The function panics if the library channel receiver is closed
+    #[inline]
+    pub fn run_task<T>(library_tx: &mpsc::Sender<LibraryRequest>, task: T)
+    where
+        T: FnOnce() + Into<Box<T>> + Send + 'static,
+    {
+        library_tx
+            .send(LibraryRequest::RunTask(task.into()))
+            .expect(EXP_RX);
     }
 
     /// Replaces `self.songs` with `songs`

@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::song_queue::SongQueue;
 use crate::serializer::serialize_list;
 
@@ -246,9 +246,9 @@ impl Window {
         let remember_queue = settings_page.remembers_queue();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx.send(LibraryRequest::RunTask(Box::new(move || {
+        Library::run_task(&library_tx, move || {
             SongQueue::save_queue(remember_queue, &song_queue, playing_index);
-        })))?;
+        });
 
         let (tx, rx) = mpsc::channel();
         library_tx.send(LibraryRequest::Shutdown(tx))?;

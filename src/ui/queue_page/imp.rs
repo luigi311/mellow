@@ -5,7 +5,7 @@ use std::cell::OnceCell;
 use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::queue_subpage::QueueSubpage;
@@ -135,22 +135,19 @@ impl QueuePage {
             .vadjustment()
             .set_value(scroll_target as f64);
 
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         if !needs_loading {
             let songs = queue.to_vec();
-            library_tx
-                .send(LibraryRequest::RunTask(Box::new(move || {
-                    // Garbage collection
-                    for (index, song) in songs.iter().enumerate() {
-                        if !(start..end).contains(&index)
-                            && let QueueItem::Song(song) = song
-                            && let Ok(mut song) = song.try_lock()
-                        {
-                            song.info().unload_detailed();
-                        }
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                // Garbage collection
+                for (index, song) in songs.iter().enumerate() {
+                    if !(start..end).contains(&index)
+                        && let QueueItem::Song(song) = song
+                        && let Ok(mut song) = song.try_lock()
+                    {
+                        song.info().unload_detailed();
                     }
-                })))
-                .expect(EXP_RX);
+                }
+            });
 
             return; // Skip loading artworks
         }
@@ -171,11 +168,9 @@ impl QueuePage {
                     .expect(EXP_RX);
             }
         });
-        library_tx
-            .send(LibraryRequest::RunTask(Box::new(move || {
-                let _ = load_artworks_handle.join();
-            })))
-            .expect(EXP_RX);
+        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            let _ = load_artworks_handle.join();
+        });
     }
 }
 
