@@ -4,7 +4,7 @@ use std::fs::{self, DirEntry};
 use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
-use std::{io, ptr};
+use std::{io, mem, ptr};
 
 pub mod about;
 pub mod excuses;
@@ -184,13 +184,15 @@ impl<T> ReorderVecSafe for Vec<T> {
 pub trait ReorderVecRaw {
     fn reorder(&mut self, index: usize, target: usize);
 }
-impl<T: Clone> ReorderVecRaw for Vec<T> {
+impl<T: Clone + ?Sized> ReorderVecRaw for Vec<T> {
     /// Moves an element of `Vec<T>` from index `from` to `to`,
     /// preserving the order and shifting the elements in-between
     ///
     /// # Panics
     ///
-    /// Panics if either `from` or `to` is out of bounds
+    /// Panics if:
+    /// - Either `from` or `to` is out of bounds
+    /// - Type `T` is zero-sized
     ///
     /// # Example
     /// ```rust
@@ -205,7 +207,9 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
     /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
     /// ```
     fn reorder(&mut self, from: usize, to: usize) {
+        assert!(mem::size_of::<T>() != 0, "Zero-sized types are unsupported");
         assert!(from < self.len() && to < self.len());
+
         let elem = self[from].clone();
         let ptr = self.as_mut_ptr();
         if from < to {
