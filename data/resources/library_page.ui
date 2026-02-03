@@ -24,9 +24,7 @@
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkProgressBar" id="progress_bar">
-                                <property name="height_request">12</property>
-                              </object>
+                              <object class="GtkProgressBar" id="progress_bar"/>
                             </child>
                           </object>
                         </child>

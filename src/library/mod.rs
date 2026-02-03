@@ -29,7 +29,6 @@ use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
 
-// TODO: Support album ratings
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc
 
@@ -449,6 +448,7 @@ impl Library {
     /// The function panics if a `Mutex` in `songs` or `missing`
     /// is in a poisoned state
     pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
+        // TODO: The current approach is slow and might be worth optimizing
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
         let mut possibly_moved = Vec::new();
@@ -583,7 +583,6 @@ impl Library {
             progress += step_size;
             let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
         }
-        ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
     }
 
     /// Replaces `self.songs` with `songs`

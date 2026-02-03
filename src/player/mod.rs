@@ -189,10 +189,10 @@ impl Player {
         });
 
         loop {
-            const LOOP_RATE: f64 = 60.2; // IDEA: Could be calculated using widget width and track length
+            const UPDATE_RATE: f64 = 60.2; // IDEA: Could be calculated using widget width and track length
             #[allow(clippy::cast_sign_loss)]
             #[allow(clippy::cast_possible_truncation)]
-            const UPDATE_INTERVAL: Duration = Duration::from_millis((1000.0 / LOOP_RATE) as u64);
+            const UPDATE_INTERVAL: Duration = Duration::from_millis((1000.0 / UPDATE_RATE) as u64);
 
             self.handle_gst_events();
             let Ok(player_request) = self.rx.recv_timeout(UPDATE_INTERVAL) else {
