@@ -158,7 +158,7 @@ impl<T> ReorderVecSafe for Vec<T> {
     ///
     /// # Example
     /// ```rust
-    /// use mellow::UnsafeReorderVec;
+    /// use mellow::ReorderVecSafe;
     ///
     /// let mut vec = vec![1, 2, 3, 4, 5];
     ///
@@ -194,7 +194,7 @@ impl<T: Clone> ReorderVecRaw for Vec<T> {
     ///
     /// # Example
     /// ```rust
-    /// use mellow::UnsafeReorderVec;
+    /// use mellow::ReorderVecRaw;
     ///
     /// let mut vec = vec![1, 2, 3, 4, 5];
     ///
