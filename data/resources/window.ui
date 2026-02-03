@@ -90,7 +90,7 @@
 
                         Library home page
                         <child>
-                          <object class="MellowLibraryPage">
+                          <object class="MellowLibraryPage" id="library_home_page">
                             <property name="title" translatable="yes">Library</property>
                             <property name="tag">library</property>
                           </object>

@@ -4,7 +4,14 @@ use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/library_page.ui")]
-pub struct LibraryPage;
+pub struct LibraryPage {
+    #[template_child]
+    pub progress_bar: TemplateChild<gtk::ProgressBar>,
+    #[template_child]
+    pub view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    pub ready_stack: TemplateChild<adw::ViewStack>,
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for LibraryPage {

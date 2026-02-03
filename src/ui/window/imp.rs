@@ -47,6 +47,8 @@ pub struct Window {
 
     // View stack "Library" tab
     #[template_child]
+    pub library_home_page: TemplateChild<LibraryPage>,
+    #[template_child]
     pub library_songs_page: TemplateChild<SongsPage>,
     #[template_child]
     pub library_song_page: TemplateChild<SongPage>,
@@ -267,6 +269,7 @@ impl Window {
     }
 
     fn update_progress(&self, progress: Option<f64>) {
+        self.library_home_page.update_progress(progress);
         if let Some(progress) = progress {
             self.progress_bar.set_visible(true);
             self.progress_bar.set_fraction(progress);
@@ -293,6 +296,7 @@ impl Window {
     }
 
     fn load_library_songs(&self, songs: &Songs) {
+        self.library_home_page.set_empty(songs.is_empty());
         self.library_songs.replace(songs.clone());
         self.library_songs_page.load_songs(songs);
     }
