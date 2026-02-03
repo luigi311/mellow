@@ -55,7 +55,6 @@ fn init(app: &Application) {
         player_tx,
         ui_tx,
     );
-
     thread::Builder::new()
         .name("library".to_string())
         .spawn(move || {

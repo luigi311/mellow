@@ -62,7 +62,7 @@ impl PartialEq for SongInfo {
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
     pub modified: i64,
-    pub play_count: u8,
+    pub play_count: usize,
     pub rating: u8,
 }
 
@@ -70,9 +70,9 @@ impl UserSongInfo {
     #[must_use]
     pub const fn default() -> Self {
         Self {
+            modified: 0,
             play_count: 0,
             rating: 0,
-            modified: 0,
         }
     }
 

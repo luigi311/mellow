@@ -259,8 +259,7 @@ impl Window {
         settings.set_double("volume", settings_page.volume())?;
         settings.set_boolean("gapless", settings_page.gapless())?;
         settings.set_boolean("remember-queue", remember_queue)?;
-        self.settings()
-            .set_string("directories", &serialize_list(&settings_page.directories()))?;
+        settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
         rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
