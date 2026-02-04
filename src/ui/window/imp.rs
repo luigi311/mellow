@@ -231,7 +231,7 @@ impl Window {
             .set_info(&title, &album, &artist, artwork, song_duration);
 
         if let Some(artwork) = &artwork {
-            let pixbuf = Pixbuf::from_bytes(
+            let colors = Pixbuf::from_bytes(
                 &artwork.save_to_tiff_bytes(),
                 gtk::gdk_pixbuf::Colorspace::Rgb,
                 false,
@@ -240,11 +240,33 @@ impl Window {
                 artwork.height(),
                 8,
             )
-            .scale_simple(1, 1, gtk::gdk_pixbuf::InterpType::Bilinear)
-            .unwrap();
-            let pixels = pixbuf.read_pixel_bytes();
+            .read_pixel_bytes();
 
-            self.set_background_color(pixels[0], pixels[1], pixels[2]);
+            let num_pixels = (artwork.width() * artwork.height()) as usize;
+            let byte_offset = colors.len() - num_pixels * 3;
+            let mut r = 0;
+            let mut g = 0;
+            let mut b = 0;
+            let mut component = 0u8;
+
+            for c in &colors[byte_offset..] {
+                match component {
+                    0 => r += *c as usize,
+                    1 => g += *c as usize,
+                    2 => b += *c as usize,
+                    _ => unreachable!(),
+                }
+                component += 1;
+                if component == 3 {
+                    component = 0;
+                }
+            }
+
+            self.set_background_color(
+                (r / num_pixels) as u8,
+                (g / num_pixels) as u8,
+                (b / num_pixels) as u8,
+            );
         } else {
             self.reset_background_color();
         }
