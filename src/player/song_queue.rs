@@ -6,7 +6,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
-use crate::{CONFIG_DIR, ReorderVecRaw};
+use crate::{CONFIG_DIR, ReorderVecExt};
 
 pub struct SongQueue {
     repeat: bool,

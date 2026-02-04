@@ -144,47 +144,10 @@ pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     Ok(())
 }
 
-pub trait ReorderVecSafe {
+pub trait ReorderVecExt {
     fn reorder(&mut self, index: usize, target: usize);
 }
-impl<T> ReorderVecSafe for Vec<T> {
-    /// Moves an element of `Vec<T>` from `index` to `target`,
-    /// preserving the order of other elements. Elements in
-    /// between are shifted towards `index` by one.
-    ///
-    /// # Panics
-    ///
-    /// Panics if either `index` or `target` is out of bounds
-    ///
-    /// # Example
-    /// ```rust
-    /// use mellow::ReorderVecSafe;
-    ///
-    /// let mut vec = vec![1, 2, 3, 4, 5];
-    ///
-    /// vec.reorder(1, 4);
-    /// assert_eq!(vec, vec![1, 3, 4, 5, 2]);
-    ///
-    /// vec.reorder(4, 1);
-    /// assert_eq!(vec, vec![1, 2, 3, 4, 5]);
-    /// ```
-    fn reorder(&mut self, index: usize, target: usize) {
-        if target > index {
-            for i in index..target {
-                self.swap(i, i + 1);
-            }
-        } else {
-            for i in (target + 1..=index).rev() {
-                self.swap(i, i - 1);
-            }
-        }
-    }
-}
-
-pub trait ReorderVecRaw {
-    fn reorder(&mut self, index: usize, target: usize);
-}
-impl<T> ReorderVecRaw for Vec<T> {
+impl<T> ReorderVecExt for Vec<T> {
     /// Moves an element of `Vec<T>` from index `from` to `to`,
     /// preserving the order and shifting the elements in-between
     ///
@@ -196,7 +159,7 @@ impl<T> ReorderVecRaw for Vec<T> {
     ///
     /// # Example
     /// ```rust
-    /// use mellow::ReorderVecRaw;
+    /// use mellow::ReorderVecExt;
     ///
     /// let mut numbers = vec![1, 2, 3, 4, 5];
     ///
@@ -223,6 +186,19 @@ impl<T> ReorderVecRaw for Vec<T> {
     ///         "c".to_string(),
     ///     ]
     /// );
+    /// ```
+    ///
+    /// Reference counted types behave as expected:
+    /// ```rust
+    /// use mellow::ReorderVecExt;
+    /// use std::rc::Rc;
+    ///
+    /// let mut rcs = vec![Rc::new(1), Rc::new(2)];
+    ///
+    /// rcs.reorder(0, 1);
+    /// assert_eq!(rcs, [2.into(), 1.into()]);
+    /// assert_eq!(Rc::strong_count(&rcs[0]), 1);
+    /// assert_eq!(Rc::strong_count(&rcs[1]), 1);
     /// ```
     fn reorder(&mut self, from: usize, to: usize) {
         assert!(mem::size_of::<T>() != 0, "Zero-sized types are unsupported");
