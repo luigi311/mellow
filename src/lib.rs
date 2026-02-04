@@ -184,7 +184,7 @@ impl<T> ReorderVecSafe for Vec<T> {
 pub trait ReorderVecRaw {
     fn reorder(&mut self, index: usize, target: usize);
 }
-impl<T: Clone + Sized> ReorderVecRaw for Vec<T> {
+impl<T> ReorderVecRaw for Vec<T> {
     /// Moves an element of `Vec<T>` from index `from` to `to`,
     /// preserving the order and shifting the elements in-between
     ///
@@ -210,22 +210,22 @@ impl<T: Clone + Sized> ReorderVecRaw for Vec<T> {
         assert!(mem::size_of::<T>() != 0, "Zero-sized types are unsupported");
         assert!(from < self.len() && to < self.len());
 
-        let elem = self[from].clone();
         let ptr = self.as_mut_ptr();
+        let buf = unsafe { ptr::read(ptr.add(from)) };
         if from < to {
             // Copy everything after `from` up to and including `to` one to the left:
             // [++f---t++] => [++---tt++]
             unsafe { ptr::copy(ptr.add(from + 1), ptr.add(from), to - from) };
             // Overwrite the position at `to` with the old value of `from`:
             // [++---tt++] => [++---tf++]
-            unsafe { ptr::write(ptr.add(to), elem) };
+            unsafe { ptr::write(ptr.add(to), buf) };
         } else {
             // Copy everything before `to` up to and including `from` one to the right:
             // [++t---f++] => [++tt---++]
             unsafe { ptr::copy(ptr.add(to), ptr.add(to + 1), from - to) };
             // Overwrite the position at `to` with the old value of `from`:
             // [++tt---++] => [++ft---++]
-            unsafe { ptr::write(ptr.add(to), elem) };
+            unsafe { ptr::write(ptr.add(to), buf) };
         }
     }
 }
