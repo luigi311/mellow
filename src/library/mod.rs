@@ -344,11 +344,13 @@ impl Library {
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
 
+        const PROGRESS_BAR_STEPS: usize = 320;
+        let progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
+        let progress_step = progress_interval as f64 / songs.len() as f64;
         let mut progress = 0.0;
-        let step_size = 1.0 / songs.len() as f64;
 
         // TODO: Allow cancellation
-        for song in &songs {
+        for (i, song) in songs.iter().enumerate() {
             let mut song_locked = song.lock().unwrap();
             let mut info = song_locked.info();
             let song_info = info.basic();
@@ -427,8 +429,10 @@ impl Library {
             }
             drop(song_locked);
 
-            progress += step_size;
-            let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+            if i % progress_interval == 0 {
+                progress += progress_step;
+                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+            }
         }
 
         library_tx.send(LibraryRequest::SetArtists(artists))?;
@@ -559,10 +563,13 @@ impl Library {
         }
 
         let ui_tx = UI_TX.get().expect(EXP_INIT);
-        let mut progress = 0.0;
-        let step_size = 1.0 / possibly_moved.len() as f64;
 
-        for missing in possibly_moved {
+        const PROGRESS_BAR_STEPS: usize = 320;
+        let progress_interval = possibly_moved.len() / PROGRESS_BAR_STEPS + 1;
+        let progress_step = progress_interval as f64 / possibly_moved.len() as f64;
+        let mut progress = 0.0;
+
+        for (i, missing) in possibly_moved.into_iter().enumerate() {
             let mut missing_locked = missing.lock().unwrap();
             let old_info = missing_locked.info();
 
@@ -582,8 +589,11 @@ impl Library {
                     break;
                 }
             }
-            progress += step_size;
-            let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+
+            if i % progress_interval == 0 {
+                progress += progress_step;
+                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+            }
         }
     }
 
