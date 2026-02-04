@@ -8,10 +8,11 @@ glib::wrapper! {
 }
 
 impl SongObject {
-    pub fn new(song: &str, artist: &str) -> Self {
+    pub fn new(song: &str, artist: &str, artwork: Option<gdk::Texture>) -> Self {
         Object::builder()
             .property("song", song)
             .property("artist", artist)
+            .property("artwork", artwork)
             .build()
     }
 }
@@ -20,5 +21,5 @@ impl SongObject {
 pub struct SongData {
     song: String,
     artist: String,
-    artwork: Option<gdk::Paintable>,
+    artwork: Option<gdk::Texture>,
 }

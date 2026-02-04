@@ -10,7 +10,7 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::album_object::AlbumObject;
 use crate::ui::item_tile::ItemTile;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/albums_page.ui")]
@@ -93,10 +93,21 @@ impl AlbumsPage {
         self.view_stack.set_visible_child_name("albums");
 
         let model = gio::ListStore::new::<AlbumObject>();
+        // TODO: Load (or unload) `artwork` whenever an item becomes (in)visible
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
                 let album = albums[index].lock().unwrap();
-                AlbumObject::new(&album.title, &album.artist.lock().unwrap().name)
+                AlbumObject::new(
+                    &album.title,
+                    &album.artist.lock().unwrap().name,
+                    album.songs[0]
+                        .lock()
+                        .unwrap()
+                        .info()
+                        .inspect_detailed()
+                        .map(|info| info.artwork.clone())
+                        .unwrap_or(None),
+                )
             })
             .collect();
         model.extend_from_slice(&albums);
@@ -118,6 +129,7 @@ impl AlbumsPage {
                 .expect("Needs to be AlbumObject");
             let album_tile = ItemTile::builder()
                 .titles(&object.album(), &object.artist())
+                .artwork(&object.artwork().unwrap_or_else(|| fallback_album_image()))
                 .build();
             list_item.set_child(Some(&album_tile));
         });
