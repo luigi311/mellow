@@ -91,5 +91,5 @@ Misc:
 Improvements:
 
 - [ ] Marquee long titles
-- [ ] Background color(s) matching the album cover
+- [x] Background color(s) matching the album cover
   - [ ] Bonus: alter the colors differently for dark/light theme

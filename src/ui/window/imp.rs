@@ -1,6 +1,7 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
+use gtk::gdk_pixbuf::Pixbuf;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
@@ -140,7 +141,15 @@ impl Window {
         }
     }
 
-    fn set_background_color(&self, r: u8, g: u8, b: u8) {
+    fn set_background_color(&self, mut r: u8, mut g: u8, mut b: u8) {
+        fn scale_color_dark(comp: u8) -> u8 {
+            ((1.0 - (1.0 - comp as f64 / 255.0 / 2.0).powi(2)) * 255.0 / 3.0) as u8
+        }
+
+        r = scale_color_dark(r);
+        g = scale_color_dark(g);
+        b = scale_color_dark(b);
+
         let css_provider = self.css_provider.get().expect(EXP_INIT);
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(&display, css_provider, 210);
@@ -222,8 +231,20 @@ impl Window {
             .set_info(&title, &album, &artist, artwork, song_duration);
 
         if let Some(artwork) = &artwork {
-            // TODO: Set window background to match artwork colors
-            self.set_background_color(16, 16, 16);
+            let pixbuf = Pixbuf::from_bytes(
+                &artwork.save_to_tiff_bytes(),
+                gtk::gdk_pixbuf::Colorspace::Rgb,
+                false,
+                8,
+                artwork.width(),
+                artwork.height(),
+                8,
+            )
+            .scale_simple(1, 1, gtk::gdk_pixbuf::InterpType::Bilinear)
+            .unwrap();
+            let pixels = pixbuf.read_pixel_bytes();
+
+            self.set_background_color(pixels[0], pixels[1], pixels[2]);
         } else {
             self.reset_background_color();
         }
