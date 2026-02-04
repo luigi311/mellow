@@ -152,10 +152,8 @@ impl<T> ReorderVecExt for Vec<T> {
     /// preserving the order and shifting the elements in-between
     ///
     /// # Panics
-    ///
-    /// Panics if:
-    /// - Either `from` or `to` is out of bounds
-    /// - Type `T` is zero-sized
+    /// - If either `from` or `to` is out of bounds
+    /// - If type `T` is zero-sized
     ///
     /// # Example
     /// ```rust
