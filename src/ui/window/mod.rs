@@ -246,7 +246,7 @@ impl Window {
         let remember_queue = settings_page.remembers_queue();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        Library::run_task(&library_tx, move || {
+        Library::run_task(library_tx, move || {
             SongQueue::save_queue(remember_queue, &song_queue, playing_index);
         });
 

@@ -196,6 +196,10 @@ pub enum LibraryRequest {
 
 impl Library {
     /// Returns a new `Library` instance and initializes `LIBRARY_TX`
+    ///
+    /// # Panics
+    /// The function panics if `LIBRARY_TX` has already been set
+    /// prior to calling this function
     #[inline]
     #[must_use]
     pub fn init(
@@ -327,7 +331,7 @@ impl Library {
         let chunk_size = songs.len() / 64;
         for i in 0..64 {
             let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
-            Library::run_task(&library_tx, move || {
+            Library::run_task(library_tx, move || {
                 for song in songs {
                     let _ = song.try_lock().map(|mut song| song.info().load_basic());
                 }
@@ -943,7 +947,7 @@ impl Library {
             .collect::<String>();
         match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
             fs::write(
-                [&CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
+                [CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
                 serialized.trim(),
             )
         }) {

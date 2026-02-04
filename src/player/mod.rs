@@ -484,7 +484,7 @@ impl Player {
         println!("---- Unloading gapless track ----");
         let Some(pos) = self.backend.query_position::<ClockTime>() else {
             eprintln!("Could not determine playback time, skipping...");
-            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+            let _ = self.player_tx.send(PlayerRequest::SkipNext);
             return;
         };
 
@@ -500,7 +500,7 @@ impl Player {
         // Seek to the same time the player was at before, or skip the song
         if self.seek_to_time(pos).is_err() {
             self.queue.current().map(|mut song| song.info().played());
-            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+            let _ = self.player_tx.send(PlayerRequest::SkipNext);
         }
     }
 
