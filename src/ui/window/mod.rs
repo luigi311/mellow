@@ -9,7 +9,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::about;
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::song_queue::SongQueue;
 use crate::serializer::serialize_list;
@@ -30,9 +30,7 @@ impl Window {
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
-        imp.css_provider
-            .set(gtk::CssProvider::new())
-            .expect(INIT_ERR);
+        let _ = imp.css_provider.set(gtk::CssProvider::new());
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(
                 &display,
@@ -40,7 +38,7 @@ impl Window {
                 210,
             );
         }
-        imp.settings.set(settings).expect(INIT_ERR);
+        let _ = imp.settings.set(settings);
         imp.init_ui_elements();
         window.load_state();
         window
