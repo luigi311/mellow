@@ -36,6 +36,7 @@ Music library:
 - [ ] Allow initiating a full library rebuild
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
+    - TOOD: Improve dropdown behavior
   - [-] Show all artists
     - TODO: **Show images (and/or other visual improvements)**
   - [-] Artist subpage, accessed from each item
@@ -45,6 +46,7 @@ Music library:
     - [ ] Add to Queue button
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
+    - TOOD: Improve dropdown behavior
   - [-] Show all albums
     - TODO: **Show album artworks**
   - [-] Album subpage, accessed from each item
@@ -58,6 +60,7 @@ Music library:
     - [ ] **Go to artist button**
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
+    - TOOD: Improve dropdown behavior
   - [-] Show all songs
     - TODO: **Show album artworks**
   - [-] Song subpage, accessed from each item
@@ -91,5 +94,3 @@ Misc:
 Improvements:
 
 - [ ] Marquee long titles
-- [x] Background color(s) matching the album cover
-  - [x] Alter the colors differently for dark/light theme

@@ -59,7 +59,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  6  | Music library search/filters              | ⚠️ WIP: Play button filters by query, no UI yet |
 |  7  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, play counts are not shown anywhere yet |
 |  8  | Tag-like playlists                        | ❌ TODO |
-|  9  | Media controller support (MPRIS)          | ❌ TODO |
+|  9  | D-Bus media integration (MPRIS)           | ❌ TODO |
 | 10  | Adaptive background/colors                | ✅ Done |
 
 # Building from source

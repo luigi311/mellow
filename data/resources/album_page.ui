@@ -14,13 +14,16 @@
   </menu>
   <template class="MellowAlbumPage" parent="AdwNavigationPage">
 
-    <!-- TODO: Create the album page according to the mockup -->
-
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">
           <object class="AdwHeaderBar">
             <property name="show_title">False</property>
+
+            <!-- TODO: Change how these buttons work -->
+            <!-- Ideally, they would work like a regular dropdown to select the -->
+            <!-- behavior of the play button, rather than start a queue directly -->
+
             <child type="end">
               <object class="AdwSplitButton" id="play_button">
                 <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
