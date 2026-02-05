@@ -142,7 +142,7 @@ impl Window {
 
     fn set_background_color(&self, r: f64, g: f64, b: f64) {
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-            const SATURATION: f64 = 2.5;
+            const SATURATION: f64 = 2.0;
 
             r = 1.0 - (1.0 - r / 2.0).powi(2);
             g = 1.0 - (1.0 - g / 2.0).powi(2);
@@ -155,9 +155,9 @@ impl Window {
             b = lerp(lum, b, SATURATION);
 
             (
-                (r * 255.0 / 3.0) as u8,
-                (g * 255.0 / 3.0) as u8,
-                (b * 255.0 / 3.0) as u8,
+                (r * 255.0 / 2.0) as u8,
+                (g * 255.0 / 2.0) as u8,
+                (b * 255.0 / 2.0) as u8,
             )
         }
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
