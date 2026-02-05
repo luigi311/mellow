@@ -72,7 +72,7 @@
         Bottom sheet overlay
         <property name="show-drag-handle">False</property>
         <property name="sheet">
-          <object class="AdwToolbarView">
+          <object class="AdwToolbarView" id="sheet_content">
             <style>
               <class name="osd"/>
             </style>

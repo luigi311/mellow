@@ -43,6 +43,8 @@ pub struct Window {
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
     #[template_child]
+    sheet_content: TemplateChild<adw::ToolbarView>,
+    #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
 
     // View stack "Library" tab
@@ -94,8 +96,13 @@ impl Window {
         self.songs_page.init_search();
         self.albums_page.init_search();
         self.artists_page.init_search();
-        self.settings_page
-            .init(style_manager, self.bottom_bar.get(), self.sheet.get());
+        self.settings_page.init(
+            style_manager,
+            self.sheet_content.get(),
+            self.main_player.imp().media_controls.get(),
+            self.sheet.get(),
+            self.bottom_bar.get(),
+        );
     }
 
     #[allow(clippy::future_not_send)]

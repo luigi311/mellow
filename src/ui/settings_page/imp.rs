@@ -38,8 +38,10 @@ pub struct SettingsPage {
     pub style_manager: OnceCell<adw::StyleManager>,
     current_color: Cell<Option<(f64, f64, f64)>>,
 
+    pub sheet_content: OnceCell<adw::ToolbarView>,
+    pub player_controls: OnceCell<gtk::Box>,
+    pub window_content: OnceCell<adw::BottomSheet>,
     pub bottom_bar: OnceCell<gtk::Box>,
-    pub sheet: OnceCell<adw::BottomSheet>,
 }
 
 #[gtk::template_callbacks]
@@ -109,23 +111,54 @@ impl SettingsPage {
 
     pub fn enable_background_color(&self) {
         if self.current_color.get().is_none()
-            || self.sheet.get().expect(EXP_INIT).has_css_class("window")
+            || self
+                .window_content
+                .get()
+                .expect(EXP_INIT)
+                .has_css_class("window")
         {
             return;
         }
 
-        self.sheet.get().expect(EXP_INIT).add_css_class("window");
+        self.sheet_content
+            .get()
+            .expect(EXP_INIT)
+            .add_css_class("overlay");
+        self.player_controls
+            .get()
+            .expect(EXP_INIT)
+            .add_css_class("overlay");
+        self.window_content
+            .get()
+            .expect(EXP_INIT)
+            .add_css_class("window");
         self.bottom_bar
             .get()
             .expect(EXP_INIT)
             .add_css_class("window");
     }
     pub fn disable_background_color(&self) {
-        if !self.sheet.get().expect(EXP_INIT).has_css_class("window") {
+        if !self
+            .window_content
+            .get()
+            .expect(EXP_INIT)
+            .has_css_class("window")
+        {
             return;
         }
 
-        self.sheet.get().expect(EXP_INIT).remove_css_class("window");
+        self.sheet_content
+            .get()
+            .expect(EXP_INIT)
+            .remove_css_class("overlay");
+        self.player_controls
+            .get()
+            .expect(EXP_INIT)
+            .remove_css_class("overlay");
+        self.window_content
+            .get()
+            .expect(EXP_INIT)
+            .remove_css_class("window");
         self.bottom_bar
             .get()
             .expect(EXP_INIT)
@@ -217,7 +250,18 @@ impl SettingsPage {
                  border-right: 0px none;
                  border-left: 0px none;
                  border-top: 0px none;
-             }}"
+             }}
+             .overlay {{
+                 background-color: rgba({}, {}, {}, 1);
+                 border-bottom: 0px none;
+                 border-right: 0px none;
+                 border-left: 0px none;
+                 border-top: 0px none;
+             }}
+            ",
+            (r / 2).saturating_sub(4),
+            (g / 2).saturating_sub(4),
+            (b / 2).saturating_sub(4),
         ));
 
         self.handle_match_colors_switch();

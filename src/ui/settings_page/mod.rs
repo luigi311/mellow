@@ -16,12 +16,16 @@ impl SettingsPage {
     pub fn init(
         &self,
         style_manager: adw::StyleManager,
+        sheet_content: adw::ToolbarView,
+        player_controls: gtk::Box,
+        window_content: adw::BottomSheet,
         bottom_bar: gtk::Box,
-        sheet: adw::BottomSheet,
     ) {
         let imp = self.imp();
+        imp.player_controls.set(player_controls).expect(INIT_ERR);
         imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
-        imp.sheet.set(sheet).expect(INIT_ERR);
+        imp.window_content.set(window_content).expect(INIT_ERR);
+        imp.sheet_content.set(sheet_content).expect(INIT_ERR);
         // TODO: Detect color cheme
         // let style_preference = style_manager.color_scheme();
         let _ = imp.css.set(gtk::CssProvider::new());
