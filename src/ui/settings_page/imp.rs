@@ -253,10 +253,6 @@ impl SettingsPage {
              }}
              .overlay {{
                  background-color: rgba({}, {}, {}, 1);
-                 border-bottom: 0px none;
-                 border-right: 0px none;
-                 border-left: 0px none;
-                 border-top: 0px none;
              }}
             ",
             (r / 2).saturating_sub(4),
