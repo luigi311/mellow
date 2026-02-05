@@ -75,7 +75,7 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_theme_dropdown(&self) {
-        self.set_theme_preference(match self.theme.selected() {
+        self.set_theme(match self.theme.selected() {
             0 => adw::ColorScheme::ForceDark,
             1 => adw::ColorScheme::ForceLight,
             2 => adw::ColorScheme::Default,
@@ -83,7 +83,7 @@ impl SettingsPage {
         });
     }
 
-    pub fn set_theme_preference(&self, preference: adw::ColorScheme) {
+    pub fn set_theme(&self, preference: adw::ColorScheme) {
         self.css
             .get()
             .unwrap()
@@ -132,11 +132,18 @@ impl SettingsPage {
             .remove_css_class("window");
     }
     pub fn reset_background_color(&self) {
+        match self.css.get().unwrap().prefers_color_scheme() {
+            InterfaceColorScheme::Default => self.set_theme(adw::ColorScheme::Default),
+            _ => (),
+        }
         self.current_color.set(None);
         self.disable_background_color();
     }
 
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        fn lum(r: f64, g: f64, b: f64) -> f64 {
+            (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
+        }
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.0;
 
@@ -144,7 +151,7 @@ impl SettingsPage {
             g = 1.0 - (1.0 - g / 2.0).powi(2);
             b = 1.0 - (1.0 - b / 2.0).powi(2);
 
-            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+            let lum = lum(r, g, b);
 
             r = lerp(lum, r, SATURATION);
             g = lerp(lum, g, SATURATION);
@@ -163,7 +170,7 @@ impl SettingsPage {
             g = 2.0 - (1.0 - g / 2.0).powi(3);
             b = 2.0 - (1.0 - b / 2.0).powi(3);
 
-            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+            let lum = lum(r, g, b);
 
             r = lerp(lum, r, SATURATION);
             g = lerp(lum, g, SATURATION);
@@ -183,12 +190,22 @@ impl SettingsPage {
         let (r, g, b) = match css.prefers_color_scheme() {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),
             InterfaceColorScheme::Light => process_color_light(r, g, b),
-            _ => {
-                // TODO: Use light or dark based on system theme?
-                // IDEA: For the auto mode, use the full brightness range
-                // and set the light/dark theme accordingly instead
-                process_color_dark(r, g, b)
-            }
+            _ => match lum(r, g, b) < 0.4 {
+                true => {
+                    self.style_manager
+                        .get()
+                        .unwrap()
+                        .set_color_scheme(adw::ColorScheme::ForceDark);
+                    process_color_dark(r, g, b)
+                }
+                false => {
+                    self.style_manager
+                        .get()
+                        .unwrap()
+                        .set_color_scheme(adw::ColorScheme::ForceLight);
+                    process_color_light(r, g, b)
+                }
+            },
         };
 
         dbg!((r, g, b));

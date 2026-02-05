@@ -27,7 +27,7 @@ impl SettingsPage {
         let _ = imp.css.set(gtk::CssProvider::new());
         let css = imp.css.get().expect(INIT_ERR);
         imp.style_manager.set(style_manager).expect(INIT_ERR);
-        imp.set_theme_preference(adw::ColorScheme::ForceDark);
+        imp.set_theme(adw::ColorScheme::ForceDark);
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(&display, css, 210);
         }
