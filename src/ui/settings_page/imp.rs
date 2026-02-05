@@ -1,8 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
-use std::cell::OnceCell;
-use std::cell::RefCell;
+use std::cell::{Cell, OnceCell, RefCell};
 
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -37,6 +36,7 @@ pub struct SettingsPage {
 
     pub css: OnceCell<gtk::CssProvider>,
     pub style_manager: OnceCell<adw::StyleManager>,
+    current_color: Cell<Option<(f64, f64, f64)>>,
 
     pub bottom_bar: OnceCell<gtk::Box>,
     pub sheet: OnceCell<adw::BottomSheet>,
@@ -95,17 +95,27 @@ impl SettingsPage {
             .get()
             .unwrap()
             .set_color_scheme(preference);
+        let color = self.current_color.get();
+        dbg!(color);
+        match color {
+            Some((r, g, b)) => self.set_background_color(r, g, b),
+            None => self.disable_background_color(),
+        }
     }
 
     pub fn enable_background_color(&self) {
-        // FIX: Toggling the setting sets the background even if no artwork is available
+        if self.current_color.get().is_none()
+            || self.sheet.get().expect(EXP_INIT).has_css_class("window")
+        {
+            return;
+        }
+
         self.sheet.get().expect(EXP_INIT).add_css_class("window");
         self.bottom_bar
             .get()
             .expect(EXP_INIT)
             .add_css_class("window");
     }
-
     pub fn disable_background_color(&self) {
         if !self.sheet.get().expect(EXP_INIT).has_css_class("window") {
             return;
@@ -116,6 +126,12 @@ impl SettingsPage {
             .get()
             .expect(EXP_INIT)
             .remove_css_class("window");
+    }
+    pub fn reset_background_color(&self) {
+        println!("Resetting background");
+        self.current_color.set(None);
+        dbg!(self.current_color.get());
+        self.disable_background_color();
     }
 
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
@@ -160,6 +176,7 @@ impl SettingsPage {
 
         dbg!((r, g, b));
 
+        self.current_color.set(Some((r, g, b)));
         let css = self.css.get().expect(EXP_INIT);
         let (r, g, b) = match css.prefers_color_scheme() {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),

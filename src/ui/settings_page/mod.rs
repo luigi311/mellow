@@ -20,17 +20,17 @@ impl SettingsPage {
         sheet: adw::BottomSheet,
     ) {
         let imp = self.imp();
+        imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
+        imp.sheet.set(sheet).expect(INIT_ERR);
         // TODO: Detect color cheme
         // let style_preference = style_manager.color_scheme();
         let _ = imp.css.set(gtk::CssProvider::new());
         let css = imp.css.get().expect(INIT_ERR);
         imp.style_manager.set(style_manager).expect(INIT_ERR);
-        imp.set_theme_preference(adw::ColorScheme::ForceLight);
+        imp.set_theme_preference(adw::ColorScheme::ForceDark);
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(&display, css, 210);
         }
-        imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
-        imp.sheet.set(sheet).expect(INIT_ERR);
     }
 
     pub fn volume(&self) -> f64 {
@@ -67,6 +67,10 @@ impl SettingsPage {
     pub fn disable_background_color(&self) {
         self.imp().disable_background_color();
     }
+    pub fn reset_background_color(&self) {
+        self.imp().reset_background_color();
+    }
+
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
         self.imp().set_background_color(r, g, b);
     }

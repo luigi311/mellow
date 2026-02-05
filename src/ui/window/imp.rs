@@ -165,12 +165,12 @@ impl Window {
         let mut info = song_locked.info();
 
         let song_info = info.basic();
-        let (title, album, artist, duration_ms) = (
+        let (title, album, artist) = (
             song_info.title.clone(),
             song_info.album.clone(),
             song_info.artist.clone(),
-            song_info.duration.mseconds(),
         );
+        *song_duration = Duration::from_millis(song_info.duration.mseconds());
 
         let detailed_info = info.inspect_detailed();
         let artwork = match detailed_info {
@@ -193,13 +193,12 @@ impl Window {
             }
         };
 
-        *song_duration = Duration::from_millis(duration_ms);
         self.main_player
             .set_info(&title, &album, &artist, artwork, song_duration);
 
         match artwork {
             Some(artwork) => self.settings_page.set_background_from_artwork(artwork),
-            None => self.settings_page.disable_background_color(),
+            None => self.settings_page.reset_background_color(),
         }
     }
 
