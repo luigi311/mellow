@@ -24,9 +24,9 @@ pub struct SettingsPage {
 
     // Appearance settings
     #[template_child]
-    pub theme: TemplateChild<adw::ComboRow>,
+    pub adaptive_colors: TemplateChild<adw::SwitchRow>,
     #[template_child]
-    pub match_colors: TemplateChild<adw::SwitchRow>,
+    pub color_scheme: TemplateChild<adw::ComboRow>,
 
     // Directory Settings
     #[template_child]
@@ -68,8 +68,8 @@ impl SettingsPage {
     }
 
     #[template_callback]
-    pub fn handle_match_colors_switch(&self) {
-        match self.match_colors.is_active() {
+    pub fn handle_adaptive_colors_switch(&self) {
+        match self.adaptive_colors.is_active() {
             true => self.enable_background_color(),
             false => self.disable_background_color(),
         }
@@ -77,7 +77,7 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_theme_dropdown(&self) {
-        self.set_theme(match self.theme.selected() {
+        self.set_theme(match self.color_scheme.selected() {
             0 => adw::ColorScheme::ForceDark,
             1 => adw::ColorScheme::ForceLight,
             2 => adw::ColorScheme::Default,
@@ -264,7 +264,7 @@ impl SettingsPage {
             (b / 2).saturating_sub(4),
         ));
 
-        self.handle_match_colors_switch();
+        self.handle_adaptive_colors_switch();
     }
 
     pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {

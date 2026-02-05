@@ -96,18 +96,18 @@
         <property name="title" translatable="yes">Appearance</property>
 
         <child>
-          <object class="AdwSwitchRow" id="match_colors">
-            <signal name="notify::active" handler="handle_match_colors_switch" swapped="true"/>
-            <property name="title" translatable="yes">Match Artwork Colors</property>
-            <property name="tooltip-text" translatable="yes">When enabled, the window background color will change depending on the currently playing song's artwork image</property>
+          <object class="AdwSwitchRow" id="adaptive_colors">
+            <signal name="notify::active" handler="handle_adaptive_colors_switch" swapped="true"/>
+            <property name="title" translatable="yes">Adaptive Colors</property>
+            <property name="tooltip-text" translatable="yes">When enabled, the window colors adapt to the song artwork</property>
             <property name="active">True</property>
           </object>
         </child>
 
         <child>
-          <object class="AdwComboRow" id="theme">
+          <object class="AdwComboRow" id="color_scheme">
             <signal name="notify::selected-item" handler="handle_theme_dropdown" swapped="true"/>
-            <property name="title" translatable="yes">Theme Preference</property>
+            <property name="title" translatable="yes">Color Scheme</property>
             <property name="tooltip-text" translatable="yes">Changes the appearance of the application window</property>
             <property name="model">
               <object class="GtkStringList">

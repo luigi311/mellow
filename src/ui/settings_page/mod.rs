@@ -58,6 +58,20 @@ impl SettingsPage {
         self.imp().remember_queue.set_active(remember_queue);
     }
 
+    pub fn adaptive_colors(&self) -> bool {
+        self.imp().adaptive_colors.is_active()
+    }
+    pub fn set_adaptive_colors(&self, adaptive_colors: bool) {
+        self.imp().adaptive_colors.set_active(adaptive_colors);
+    }
+
+    pub fn color_scheme(&self) -> u32 {
+        self.imp().color_scheme.selected()
+    }
+    pub fn set_color_scheme(&self, id: u32) {
+        self.imp().color_scheme.set_selected(id);
+    }
+
     pub fn directories(&self) -> Vec<String> {
         self.imp().directories.borrow().clone()
     }
