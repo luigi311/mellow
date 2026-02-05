@@ -141,28 +141,51 @@ impl Window {
         }
     }
 
-    fn scale_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-        r = 1.0 - (1.0 - r / 2.0).powi(2);
-        g = 1.0 - (1.0 - g / 2.0).powi(2);
-        b = 1.0 - (1.0 - b / 2.0).powi(2);
-
-        let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
-
-        const SATURATION: f64 = 2.5;
-        r = lerp(lum, r, SATURATION);
-        g = lerp(lum, g, SATURATION);
-        b = lerp(lum, b, SATURATION);
-
-        (
-            (r.max(0.0) * 255.0 / 3.0) as u8,
-            (g.max(0.0) * 255.0 / 3.0) as u8,
-            (b.max(0.0) * 255.0 / 3.0) as u8,
-        )
-    }
-
     fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            const SATURATION: f64 = 2.5;
+
+            r = 1.0 - (1.0 - r / 2.0).powi(2);
+            g = 1.0 - (1.0 - g / 2.0).powi(2);
+            b = 1.0 - (1.0 - b / 2.0).powi(2);
+
+            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+
+            r = lerp(lum, r, SATURATION);
+            g = lerp(lum, g, SATURATION);
+            b = lerp(lum, b, SATURATION);
+
+            (
+                (r * 255.0 / 3.0) as u8,
+                (g * 255.0 / 3.0) as u8,
+                (b * 255.0 / 3.0) as u8,
+            )
+        }
+        fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            const SATURATION: f64 = 2.5;
+
+            r = 2.0 - (1.0 - r / 2.0).powi(3);
+            g = 2.0 - (1.0 - g / 2.0).powi(3);
+            b = 2.0 - (1.0 - b / 2.0).powi(3);
+
+            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+
+            r = lerp(lum, r, SATURATION);
+            g = lerp(lum, g, SATURATION);
+            b = lerp(lum, b, SATURATION);
+
+            (
+                (r * 255.0 * 0.57143) as u8,
+                (g * 255.0 * 0.57143) as u8,
+                (b * 255.0 * 0.57143) as u8,
+            )
+        }
+
         dbg!((r, g, b));
-        let (r, g, b) = Self::scale_color_dark(r, g, b);
+
+        // TODO: Use light or dark based on system theme
+        let (r, g, b) = process_color_dark(r, g, b);
+
         dbg!((r, g, b));
 
         let css_provider = self.css_provider.get().expect(EXP_INIT);
