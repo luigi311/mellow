@@ -88,14 +88,14 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn init_ui_elements(&self) {
+    pub fn init_ui_elements(&self, style_manager: adw::StyleManager) {
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
         self.songs_page.init_search();
         self.albums_page.init_search();
         self.artists_page.init_search();
         self.settings_page
-            .init(self.bottom_bar.get(), self.sheet.get());
+            .init(style_manager, self.bottom_bar.get(), self.sheet.get());
     }
 
     #[allow(clippy::future_not_send)]

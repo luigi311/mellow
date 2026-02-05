@@ -31,7 +31,7 @@ impl Window {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
         let _ = imp.settings.set(settings);
-        imp.init_ui_elements();
+        imp.init_ui_elements(app.style_manager());
         window.load_state();
         window
     }

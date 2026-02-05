@@ -1,5 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
-use gtk::CompositeTemplate;
+use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
 use std::cell::OnceCell;
 use std::cell::RefCell;
@@ -35,7 +35,9 @@ pub struct SettingsPage {
 
     pub directories: RefCell<Vec<String>>,
 
-    pub css_provider: OnceCell<gtk::CssProvider>,
+    pub css: OnceCell<gtk::CssProvider>,
+    pub style_manager: OnceCell<adw::StyleManager>,
+
     pub bottom_bar: OnceCell<gtk::Box>,
     pub sheet: OnceCell<adw::BottomSheet>,
 }
@@ -76,7 +78,27 @@ impl SettingsPage {
         println!("TODO");
     }
 
+    pub fn set_theme_preference(&self, preference: adw::ColorScheme) {
+        self.css
+            .get()
+            .unwrap()
+            .set_prefers_color_scheme(match preference {
+                adw::ColorScheme::ForceDark | adw::ColorScheme::PreferDark => {
+                    InterfaceColorScheme::Dark
+                }
+                adw::ColorScheme::ForceLight | adw::ColorScheme::PreferLight => {
+                    InterfaceColorScheme::Light
+                }
+                _ => InterfaceColorScheme::Default,
+            });
+        self.style_manager
+            .get()
+            .unwrap()
+            .set_color_scheme(preference);
+    }
+
     pub fn enable_background_color(&self) {
+        // FIX: Toggling the setting sets the background even if no artwork is available
         self.sheet.get().expect(EXP_INIT).add_css_class("window");
         self.bottom_bar
             .get()
@@ -138,20 +160,23 @@ impl SettingsPage {
 
         dbg!((r, g, b));
 
-        // TODO: Use light or dark based on system theme
-        let (r, g, b) = process_color_dark(r, g, b);
+        let css = self.css.get().expect(EXP_INIT);
+        let (r, g, b) = match css.prefers_color_scheme() {
+            InterfaceColorScheme::Dark => process_color_dark(r, g, b),
+            InterfaceColorScheme::Light => process_color_light(r, g, b),
+            _ => todo!("TODO: Use light or dark based on system theme"),
+        };
 
         dbg!((r, g, b));
 
-        self.css_provider.get().unwrap().load_from_string(&format!(
+        css.load_from_string(&format!(
             ".window {{
                  background-color: rgba({r}, {g}, {b}, 1);
                  border-bottom: 0px none;
                  border-right: 0px none;
                  border-left: 0px none;
                  border-top: 0px none;
-             }}
-"
+             }}"
         ));
 
         self.handle_match_colors_switch();

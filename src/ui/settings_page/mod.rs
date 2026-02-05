@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gdk, glib};
 
-use crate::excuses::{EXP_INIT, INIT_ERR};
+use crate::excuses::INIT_ERR;
 
 mod imp;
 
@@ -13,15 +13,21 @@ glib::wrapper! {
 }
 
 impl SettingsPage {
-    pub fn init(&self, bottom_bar: gtk::Box, sheet: adw::BottomSheet) {
+    pub fn init(
+        &self,
+        style_manager: adw::StyleManager,
+        bottom_bar: gtk::Box,
+        sheet: adw::BottomSheet,
+    ) {
         let imp = self.imp();
-        let _ = imp.css_provider.set(gtk::CssProvider::new());
+        // TODO: Detect color cheme
+        // let style_preference = style_manager.color_scheme();
+        let _ = imp.css.set(gtk::CssProvider::new());
+        let css = imp.css.get().expect(INIT_ERR);
+        imp.style_manager.set(style_manager).expect(INIT_ERR);
+        imp.set_theme_preference(adw::ColorScheme::ForceLight);
         if let Some(display) = gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(
-                &display,
-                imp.css_provider.get().expect(EXP_INIT),
-                210,
-            );
+            gtk::style_context_add_provider_for_display(&display, css, 210);
         }
         imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
         imp.sheet.set(sheet).expect(INIT_ERR);
