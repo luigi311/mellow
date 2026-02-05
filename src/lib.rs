@@ -57,6 +57,24 @@ pub fn format_duration(duration: &Duration) -> String {
     )
 }
 
+/// Returns a value between `left` and `right` at point `mid`
+/// The `mid` point maps values between 0 and 1 such that 0 is `left`
+/// and 1 is `right`. Values outside the 0 to 1 range are also allowed
+///
+/// # Example
+/// ```rust
+/// use mellow::lerp;
+///
+/// assert_eq!(lerp(5.0, 10.0, 0.0), 5.0);
+/// assert_eq!(lerp(5.0, 10.0, 1.0), 10.0);
+/// assert_eq!(lerp(5.0, 10.0, 0.5), 7.5);
+/// assert_eq!(lerp(5.0, 10.0, 2.0), 15.0);
+/// assert_eq!(lerp(5.0, 10.0, -1.0), 0.0);
+/// ```
+pub fn lerp(left: f64, right: f64, mid: f64) -> f64 {
+    (right - left) * mid + left
+}
+
 /// Checks if two float numbers are similar
 ///
 /// # Example

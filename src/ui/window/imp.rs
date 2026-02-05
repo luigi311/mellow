@@ -9,7 +9,6 @@ use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
 use crate::library::artist::ArtistMutex;
@@ -30,6 +29,7 @@ use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
 use crate::ui::{UI_TX, UpdateUI};
+use crate::{MUSIC_DIR, lerp};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -141,14 +141,29 @@ impl Window {
         }
     }
 
-    fn set_background_color(&self, mut r: u8, mut g: u8, mut b: u8) {
-        fn scale_color_dark(comp: u8) -> u8 {
-            ((1.0 - (1.0 - comp as f64 / 255.0 / 2.0).powi(2)) * 255.0 / 3.0) as u8
-        }
+    fn scale_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+        r = 1.0 - (1.0 - r / 2.0).powi(2);
+        g = 1.0 - (1.0 - g / 2.0).powi(2);
+        b = 1.0 - (1.0 - b / 2.0).powi(2);
 
-        r = scale_color_dark(r);
-        g = scale_color_dark(g);
-        b = scale_color_dark(b);
+        let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+
+        const SATURATION: f64 = 2.5;
+        r = lerp(lum, r, SATURATION);
+        g = lerp(lum, g, SATURATION);
+        b = lerp(lum, b, SATURATION);
+
+        (
+            (r.max(0.0) * 255.0 / 3.0) as u8,
+            (g.max(0.0) * 255.0 / 3.0) as u8,
+            (b.max(0.0) * 255.0 / 3.0) as u8,
+        )
+    }
+
+    fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        dbg!((r, g, b));
+        let (r, g, b) = Self::scale_color_dark(r, g, b);
+        dbg!((r, g, b));
 
         let css_provider = self.css_provider.get().expect(EXP_INIT);
         if let Some(display) = gdk::Display::default() {
@@ -231,8 +246,9 @@ impl Window {
             .set_info(&title, &album, &artist, artwork, song_duration);
 
         if let Some(artwork) = &artwork {
+            let tiff_bytes = artwork.save_to_tiff_bytes();
             let colors = Pixbuf::from_bytes(
-                &artwork.save_to_tiff_bytes(),
+                &glib::Bytes::from(&tiff_bytes[8..]),
                 gtk::gdk_pixbuf::Colorspace::Rgb,
                 false,
                 8,
@@ -242,18 +258,16 @@ impl Window {
             )
             .read_pixel_bytes();
 
-            let num_pixels = (artwork.width() * artwork.height()) as usize;
-            let byte_offset = colors.len() - num_pixels * 3;
-            let mut r = 0;
-            let mut g = 0;
-            let mut b = 0;
+            let mut r = 0.0;
+            let mut g = 0.0;
+            let mut b = 0.0;
             let mut component = 0u8;
 
-            for c in &colors[byte_offset..] {
+            for c in &colors[..] {
                 match component {
-                    0 => r += *c as usize,
-                    1 => g += *c as usize,
-                    2 => b += *c as usize,
+                    0 => r += *c as f64,
+                    1 => g += *c as f64,
+                    2 => b += *c as f64,
                     _ => unreachable!(),
                 }
                 component += 1;
@@ -262,10 +276,11 @@ impl Window {
                 }
             }
 
+            let num_pixels = (artwork.width() * artwork.height()) as usize;
             self.set_background_color(
-                (r / num_pixels) as u8,
-                (g / num_pixels) as u8,
-                (b / num_pixels) as u8,
+                r / num_pixels as f64 / 255.0,
+                g / num_pixels as f64 / 255.0,
+                b / num_pixels as f64 / 255.0,
             );
         } else {
             self.reset_background_color();
