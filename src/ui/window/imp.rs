@@ -1,7 +1,6 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
-use gtk::gdk_pixbuf::Pixbuf;
 use gtk::{CompositeTemplate, gdk, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
@@ -269,41 +268,42 @@ impl Window {
             .set_info(&title, &album, &artist, artwork, song_duration);
 
         if let Some(artwork) = &artwork {
-            let tiff_bytes = artwork.save_to_tiff_bytes();
-            let colors = Pixbuf::from_bytes(
-                &glib::Bytes::from(&tiff_bytes[8..]),
-                gtk::gdk_pixbuf::Colorspace::Rgb,
-                false,
-                8,
-                artwork.width(),
-                artwork.height(),
-                8,
-            )
-            .read_pixel_bytes();
-
             let mut r = 0.0;
             let mut g = 0.0;
             let mut b = 0.0;
-            let mut component = 0u8;
 
-            for c in &colors[..] {
+            // ARGB32
+            let mut image_data = vec![0u8; (artwork.width() * artwork.height()) as usize * 4];
+            artwork.download(&mut image_data, 4 * artwork.width() as usize);
+
+            // Pixels will be skipped to match the below target resolution
+            const SAMPLE_RES: usize = 32;
+            let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
+            step_size -= step_size % 4;
+            step_size += 1;
+
+            let mut component = 0u8;
+            // Each color component is 4 bytes (u32)
+            for u32_bytes in image_data.windows(4).step_by(step_size) {
+                let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
                 match component {
-                    0 => r += *c as f64,
-                    1 => g += *c as f64,
-                    2 => b += *c as f64,
+                    0 => (),
+                    1 => b += c as f64 / u32::MAX as f64,
+                    2 => g += c as f64 / u32::MAX as f64,
+                    3 => r += c as f64 / u32::MAX as f64,
                     _ => unreachable!(),
                 }
                 component += 1;
-                if component == 3 {
+                if component == 4 {
                     component = 0;
                 }
             }
 
-            let num_pixels = (artwork.width() * artwork.height()) as usize;
+            let num_pixels = image_data.len() / (step_size * 4);
             self.set_background_color(
-                r / num_pixels as f64 / 255.0,
-                g / num_pixels as f64 / 255.0,
-                b / num_pixels as f64 / 255.0,
+                r / num_pixels as f64,
+                g / num_pixels as f64,
+                b / num_pixels as f64,
             );
         } else {
             self.reset_background_color();
