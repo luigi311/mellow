@@ -75,7 +75,12 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_theme_dropdown(&self) {
-        println!("TODO");
+        self.set_theme_preference(match self.theme.selected() {
+            0 => adw::ColorScheme::ForceDark,
+            1 => adw::ColorScheme::ForceLight,
+            2 => adw::ColorScheme::Default,
+            _ => todo!("Unhandled dropdown item"),
+        });
     }
 
     pub fn set_theme_preference(&self, preference: adw::ColorScheme) {
@@ -178,7 +183,12 @@ impl SettingsPage {
         let (r, g, b) = match css.prefers_color_scheme() {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),
             InterfaceColorScheme::Light => process_color_light(r, g, b),
-            _ => todo!("TODO: Use light or dark based on system theme"),
+            _ => {
+                // TODO: Use light or dark based on system theme?
+                // IDEA: For the auto mode, use the full brightness range
+                // and set the light/dark theme accordingly instead
+                process_color_dark(r, g, b)
+            }
         };
 
         dbg!((r, g, b));

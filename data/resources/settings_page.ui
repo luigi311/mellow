@@ -106,8 +106,7 @@
 
         <child>
           <object class="AdwComboRow" id="theme">
-            <!-- TODO: Find out which signal to use, or create an action -->
-            <signal name="activated" handler="handle_theme_dropdown" swapped="true"/>
+            <signal name="notify::selected-item" handler="handle_theme_dropdown" swapped="true"/>
             <property name="title" translatable="yes">Theme Preference</property>
             <property name="tooltip-text" translatable="yes">Changes the appearance of the application window</property>
             <property name="model">

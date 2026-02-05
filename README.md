@@ -60,7 +60,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  7  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, play counts are not shown anywhere yet |
 |  8  | Tag-like playlists                        | ❌ TODO |
 |  9  | Media controller support (MPRIS)          | ❌ TODO |
-| 10  | Adaptive background/colors                | ⚠️ WIP: No light mode support yet |
+| 10  | Adaptive background/colors                | ✅ Done |
 
 # Building from source
 

@@ -92,4 +92,4 @@ Improvements:
 
 - [ ] Marquee long titles
 - [x] Background color(s) matching the album cover
-  - [ ] Bonus: alter the colors differently for dark/light theme
+  - [x] Alter the colors differently for dark/light theme
