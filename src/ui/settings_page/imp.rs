@@ -96,7 +96,6 @@ impl SettingsPage {
             .unwrap()
             .set_color_scheme(preference);
         let color = self.current_color.get();
-        dbg!(color);
         match color {
             Some((r, g, b)) => self.set_background_color(r, g, b),
             None => self.disable_background_color(),
@@ -128,9 +127,7 @@ impl SettingsPage {
             .remove_css_class("window");
     }
     pub fn reset_background_color(&self) {
-        println!("Resetting background");
         self.current_color.set(None);
-        dbg!(self.current_color.get());
         self.disable_background_color();
     }
 
