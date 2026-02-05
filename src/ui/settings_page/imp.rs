@@ -143,11 +143,7 @@ impl SettingsPage {
 
         dbg!((r, g, b));
 
-        let css_provider = self.css_provider.get().expect(EXP_INIT);
-        if let Some(display) = gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(&display, css_provider, 210);
-        }
-        css_provider.load_from_string(&format!(
+        self.css_provider.get().unwrap().load_from_string(&format!(
             ".window {{
                  background-color: rgba({r}, {g}, {b}, 1);
                  border-bottom: 0px none;
