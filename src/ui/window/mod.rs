@@ -30,14 +30,6 @@ impl Window {
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
-        let _ = imp.css_provider.set(gtk::CssProvider::new());
-        if let Some(display) = gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(
-                &display,
-                imp.css_provider.get().expect(EXP_INIT),
-                210,
-            );
-        }
         let _ = imp.settings.set(settings);
         imp.init_ui_elements();
         window.load_state();

@@ -1,10 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::glib;
+use gtk::{gdk, glib};
+use std::cell::OnceCell;
 use std::cell::RefCell;
 
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::lerp;
 use crate::library::LIBRARY_TX;
 use crate::library::LibraryRequest;
 use crate::player::PLAYER_TX;
@@ -21,11 +23,21 @@ pub struct SettingsPage {
     #[template_child]
     pub remember_queue: TemplateChild<adw::SwitchRow>,
 
+    // Appearance settings
+    #[template_child]
+    pub theme: TemplateChild<adw::ComboRow>,
+    #[template_child]
+    pub match_colors: TemplateChild<adw::SwitchRow>,
+
     // Directory Settings
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
 
     pub directories: RefCell<Vec<String>>,
+
+    pub css_provider: OnceCell<gtk::CssProvider>,
+    pub bottom_bar: OnceCell<gtk::Box>,
+    pub sheet: OnceCell<adw::BottomSheet>,
 }
 
 #[gtk::template_callbacks]
@@ -49,6 +61,143 @@ impl SettingsPage {
             .expect(EXP_INIT)
             .send(PlayerRequest::SetGapless(self.gapless.is_active()))
             .expect(EXP_RX);
+    }
+
+    #[template_callback]
+    pub fn handle_match_colors_switch(&self) {
+        match self.match_colors.is_active() {
+            true => self.enable_background_color(),
+            false => self.disable_background_color(),
+        }
+    }
+
+    #[template_callback]
+    pub fn handle_theme_dropdown(&self) {
+        println!("TODO");
+    }
+
+    pub fn enable_background_color(&self) {
+        self.sheet.get().expect(EXP_INIT).add_css_class("window");
+        self.bottom_bar
+            .get()
+            .expect(EXP_INIT)
+            .add_css_class("window");
+    }
+
+    pub fn disable_background_color(&self) {
+        if !self.sheet.get().expect(EXP_INIT).has_css_class("window") {
+            return;
+        }
+
+        self.sheet.get().expect(EXP_INIT).remove_css_class("window");
+        self.bottom_bar
+            .get()
+            .expect(EXP_INIT)
+            .remove_css_class("window");
+    }
+
+    pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            const SATURATION: f64 = 2.0;
+
+            r = 1.0 - (1.0 - r / 2.0).powi(2);
+            g = 1.0 - (1.0 - g / 2.0).powi(2);
+            b = 1.0 - (1.0 - b / 2.0).powi(2);
+
+            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+
+            r = lerp(lum, r, SATURATION);
+            g = lerp(lum, g, SATURATION);
+            b = lerp(lum, b, SATURATION);
+
+            (
+                (r * 255.0 / 2.0) as u8,
+                (g * 255.0 / 2.0) as u8,
+                (b * 255.0 / 2.0) as u8,
+            )
+        }
+        fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            const SATURATION: f64 = 2.5;
+
+            r = 2.0 - (1.0 - r / 2.0).powi(3);
+            g = 2.0 - (1.0 - g / 2.0).powi(3);
+            b = 2.0 - (1.0 - b / 2.0).powi(3);
+
+            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+
+            r = lerp(lum, r, SATURATION);
+            g = lerp(lum, g, SATURATION);
+            b = lerp(lum, b, SATURATION);
+
+            (
+                (r * 255.0 * 0.57143) as u8,
+                (g * 255.0 * 0.57143) as u8,
+                (b * 255.0 * 0.57143) as u8,
+            )
+        }
+
+        dbg!((r, g, b));
+
+        // TODO: Use light or dark based on system theme
+        let (r, g, b) = process_color_dark(r, g, b);
+
+        dbg!((r, g, b));
+
+        let css_provider = self.css_provider.get().expect(EXP_INIT);
+        if let Some(display) = gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(&display, css_provider, 210);
+        }
+        css_provider.load_from_string(&format!(
+            ".window {{
+                 background-color: rgba({r}, {g}, {b}, 1);
+                 border-bottom: 0px none;
+                 border-right: 0px none;
+                 border-left: 0px none;
+                 border-top: 0px none;
+             }}
+"
+        ));
+
+        self.handle_match_colors_switch();
+    }
+
+    pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
+        let mut r = 0.0;
+        let mut g = 0.0;
+        let mut b = 0.0;
+
+        // ARGB32
+        let mut image_data = vec![0u8; (artwork.width() * artwork.height()) as usize * 4];
+        artwork.download(&mut image_data, 4 * artwork.width() as usize);
+
+        // Pixels will be skipped to match the below target resolution
+        const SAMPLE_RES: usize = 128;
+        let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
+        step_size -= step_size % 4 - 1;
+
+        let mut component = 0u8;
+        // Each color component is 4 bytes (u32)
+        for u32_bytes in image_data.windows(4).step_by(step_size) {
+            let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
+            match component {
+                0 => (),
+                1 => b += c as f64 / u32::MAX as f64,
+                2 => g += c as f64 / u32::MAX as f64,
+                3 => r += c as f64 / u32::MAX as f64,
+                _ => unreachable!(),
+            }
+            component += 1;
+            if component == 4 {
+                component = 0;
+            }
+        }
+
+        let num_pixels = image_data.len() / (step_size * 4);
+        self.set_background_color(
+            r / num_pixels as f64,
+            g / num_pixels as f64,
+            b / num_pixels as f64,
+        );
     }
 
     pub fn set_directories(&self, directories: &[String]) {

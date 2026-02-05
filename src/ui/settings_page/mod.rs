@@ -1,5 +1,7 @@
-use adw::subclass::prelude::*;
-use gtk::{glib, prelude::RangeExt};
+use adw::{prelude::*, subclass::prelude::*};
+use gtk::{gdk, glib};
+
+use crate::excuses::{EXP_INIT, INIT_ERR};
 
 mod imp;
 
@@ -11,6 +13,20 @@ glib::wrapper! {
 }
 
 impl SettingsPage {
+    pub fn init(&self, bottom_bar: gtk::Box, sheet: adw::BottomSheet) {
+        let imp = self.imp();
+        let _ = imp.css_provider.set(gtk::CssProvider::new());
+        if let Some(display) = gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(
+                &display,
+                imp.css_provider.get().expect(EXP_INIT),
+                210,
+            );
+        }
+        imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
+        imp.sheet.set(sheet).expect(INIT_ERR);
+    }
+
     pub fn volume(&self) -> f64 {
         self.imp().volume.value()
     }
@@ -37,5 +53,18 @@ impl SettingsPage {
     }
     pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
+    }
+
+    pub fn enable_background_color(&self) {
+        self.imp().enable_background_color();
+    }
+    pub fn disable_background_color(&self) {
+        self.imp().disable_background_color();
+    }
+    pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        self.imp().set_background_color(r, g, b);
+    }
+    pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
+        self.imp().set_background_from_artwork(artwork);
     }
 }

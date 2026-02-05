@@ -1,13 +1,14 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
-use gtk::{CompositeTemplate, gdk, gio, glib};
+use gtk::{CompositeTemplate, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
+use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::AlbumMutex;
 use crate::library::artist::ArtistMutex;
@@ -28,7 +29,6 @@ use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
 use crate::ui::{UI_TX, UpdateUI};
-use crate::{MUSIC_DIR, lerp};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -78,7 +78,6 @@ pub struct Window {
     pub settings_page: TemplateChild<SettingsPage>,
 
     pub settings: OnceCell<gio::Settings>,
-    pub css_provider: OnceCell<gtk::CssProvider>,
 
     pub song_queue: RefCell<Box<[QueueItem]>>,
     pub song_queue_index: Cell<usize>,
@@ -95,6 +94,8 @@ impl Window {
         self.songs_page.init_search();
         self.albums_page.init_search();
         self.artists_page.init_search();
+        self.settings_page
+            .init(self.bottom_bar.get(), self.sheet.get());
     }
 
     #[allow(clippy::future_not_send)]
@@ -138,77 +139,6 @@ impl Window {
                 UpdateUI::OpenSheet(open) => self.open_sheet(open),
             }
         }
-    }
-
-    fn set_background_color(&self, r: f64, g: f64, b: f64) {
-        fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-            const SATURATION: f64 = 2.0;
-
-            r = 1.0 - (1.0 - r / 2.0).powi(2);
-            g = 1.0 - (1.0 - g / 2.0).powi(2);
-            b = 1.0 - (1.0 - b / 2.0).powi(2);
-
-            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
-
-            r = lerp(lum, r, SATURATION);
-            g = lerp(lum, g, SATURATION);
-            b = lerp(lum, b, SATURATION);
-
-            (
-                (r * 255.0 / 2.0) as u8,
-                (g * 255.0 / 2.0) as u8,
-                (b * 255.0 / 2.0) as u8,
-            )
-        }
-        fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-            const SATURATION: f64 = 2.5;
-
-            r = 2.0 - (1.0 - r / 2.0).powi(3);
-            g = 2.0 - (1.0 - g / 2.0).powi(3);
-            b = 2.0 - (1.0 - b / 2.0).powi(3);
-
-            let lum = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
-
-            r = lerp(lum, r, SATURATION);
-            g = lerp(lum, g, SATURATION);
-            b = lerp(lum, b, SATURATION);
-
-            (
-                (r * 255.0 * 0.57143) as u8,
-                (g * 255.0 * 0.57143) as u8,
-                (b * 255.0 * 0.57143) as u8,
-            )
-        }
-
-        dbg!((r, g, b));
-
-        // TODO: Use light or dark based on system theme
-        let (r, g, b) = process_color_dark(r, g, b);
-
-        dbg!((r, g, b));
-
-        let css_provider = self.css_provider.get().expect(EXP_INIT);
-        if let Some(display) = gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(&display, css_provider, 210);
-        }
-        css_provider.load_from_string(&format!(
-            ".window {{
-                 background-color: rgba({r}, {g}, {b}, 1);
-                 border-top: 0px none;
-                 border-left: 0px none;
-                 border-right: 0px none;
-                 border-bottom: 0px none;
-             }}"
-        ));
-        if !self.sheet.has_css_class("window") {
-            self.sheet.add_css_class("window");
-            self.bottom_bar.add_css_class("window");
-        }
-    }
-
-    fn reset_background_color(&self) {
-        self.sheet.remove_css_class("window");
-        self.bottom_bar.remove_css_class("window");
     }
 
     fn update_song_info(&self, song_duration: &mut Duration) {
@@ -267,46 +197,9 @@ impl Window {
         self.main_player
             .set_info(&title, &album, &artist, artwork, song_duration);
 
-        if let Some(artwork) = &artwork {
-            let mut r = 0.0;
-            let mut g = 0.0;
-            let mut b = 0.0;
-
-            // ARGB32
-            let mut image_data = vec![0u8; (artwork.width() * artwork.height()) as usize * 4];
-            artwork.download(&mut image_data, 4 * artwork.width() as usize);
-
-            // Pixels will be skipped to match the below target resolution
-            const SAMPLE_RES: usize = 32;
-            let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
-            step_size -= step_size % 4;
-            step_size += 1;
-
-            let mut component = 0u8;
-            // Each color component is 4 bytes (u32)
-            for u32_bytes in image_data.windows(4).step_by(step_size) {
-                let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
-                match component {
-                    0 => (),
-                    1 => b += c as f64 / u32::MAX as f64,
-                    2 => g += c as f64 / u32::MAX as f64,
-                    3 => r += c as f64 / u32::MAX as f64,
-                    _ => unreachable!(),
-                }
-                component += 1;
-                if component == 4 {
-                    component = 0;
-                }
-            }
-
-            let num_pixels = image_data.len() / (step_size * 4);
-            self.set_background_color(
-                r / num_pixels as f64,
-                g / num_pixels as f64,
-                b / num_pixels as f64,
-            );
-        } else {
-            self.reset_background_color();
+        match artwork {
+            Some(artwork) => self.settings_page.set_background_from_artwork(artwork),
+            None => self.settings_page.disable_background_color(),
         }
     }
 
