@@ -194,7 +194,8 @@ impl SettingsPage {
         // Pixels will be skipped to match the below target resolution
         const SAMPLE_RES: usize = 128;
         let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
-        step_size -= step_size % 4 - 1;
+        step_size -= step_size % 4;
+        step_size += 1;
 
         let mut component = 0u8;
         // Each color component is 4 bytes (u32)
