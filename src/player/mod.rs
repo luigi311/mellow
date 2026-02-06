@@ -214,7 +214,7 @@ impl Player {
                 },
                 PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
                 PlayerRequest::SkipNext => self.skip_next()? == (),
-                PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
+                PlayerRequest::SkipTo(index) => self.skip_to(index)? == (),
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
                 PlayerRequest::LoadNext if self.seeking => continue,
@@ -356,10 +356,14 @@ impl Player {
     }
 
     /// Skips to the track in the queue at specified `index`
-    fn skip_to(&mut self, index: usize) {
+    fn skip_to(&mut self, index: usize) -> Result<(), gst::StateChangeError> {
+        if self.queue.index() == index {
+            return self.repeat_song();
+        }
         self.backend.set_property("instant-uri", true);
         self.queue.pending_track = true;
         self.queue.set_index(index);
+        Ok(())
     }
 
     /// Skips to previous track
