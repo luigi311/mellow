@@ -174,9 +174,6 @@ impl SettingsPage {
     }
 
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
-        fn lum(r: f64, g: f64, b: f64) -> f64 {
-            (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
-        }
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.0;
 
@@ -228,6 +225,9 @@ impl SettingsPage {
                 ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8),
                 lum,
             )
+        }
+        fn lum(r: f64, g: f64, b: f64) -> f64 {
+            (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
         }
 
         dbg!((r, g, b));
@@ -293,26 +293,29 @@ impl SettingsPage {
         step_size += 1;
         step_size = step_size.max(5);
 
-        let mut component = 0u8;
+        let mut channel = 0u8;
         // Each color component is 4 bytes (u32)
         // FIX: This `step_by` is actually sampling different pixels per color component
         for u32_bytes in image_data.windows(4).step_by(step_size) {
             let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
-            match component {
+            match channel {
                 0 => (),
                 1 => b += c as f64 / u32::MAX as f64,
                 2 => g += c as f64 / u32::MAX as f64,
                 3 => r += c as f64 / u32::MAX as f64,
                 _ => unreachable!(),
             }
-            component += 1;
-            if component == 4 {
-                component = 0;
+            channel += 1;
+            if channel == 4 {
+                channel = 0;
             }
         }
 
-        if component != 0 {
-            eprintln!("FIX: {component} color component(s) were sampled more times than others");
+        if channel != 0 {
+            eprintln!(
+                "FIX: {} color channels were sampled more times than others",
+                channel - 1
+            );
         }
 
         // A failed attempt at a rewrite...
@@ -328,12 +331,11 @@ impl SettingsPage {
         //     num_pixels += 1;
 
         //     // FIX: For some reason all components have roughly the same value here
-        //     let a = u32::from_ne_bytes(pixel[0..4].try_into().unwrap()) as f64 / u32::MAX as f64;
         //     dbg!((
-        //         a,
-        //         r / num_pixels as f64,
-        //         g / num_pixels as f64,
-        //         b / num_pixels as f64
+        //         u32::from_ne_bytes(pixel[0..4].try_into().unwrap()) as f64 / u32::MAX as f64,
+        //         u32::from_ne_bytes(pixel[4..8].try_into().unwrap()) as f64 / u32::MAX as f64,
+        //         u32::from_ne_bytes(pixel[8..12].try_into().unwrap()) as f64 / u32::MAX as f64,
+        //         u32::from_ne_bytes(pixel[12..16].try_into().unwrap()) as f64 / u32::MAX as f64
         //     ));
         // }
 
