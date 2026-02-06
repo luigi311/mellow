@@ -46,10 +46,13 @@
             </style>
             <property name="height-request">30</property>
             <property name="hexpand">True</property>
+            <property name="valign">center</property>
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkImage">
                 <property name="icon_name">view-more-horizontal-symbolic</property>
+                <property name="margin_top">7</property>
+                <property name="valign">center</property>
                 <style>
                   <class name="dimmed"/>
                 </style>
@@ -57,8 +60,8 @@
             </child>
             <child>
               <object class="GtkProgressBar" id="progress_bar">
-                <property name="margin_start">8</property>
-                <property name="margin_end">8</property>
+                <property name="visible">False</property>
+                <property name="margin_top">5</property>
                 <style>
                   <class name="osd"/>
                 </style>
