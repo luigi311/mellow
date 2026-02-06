@@ -216,11 +216,11 @@ impl SettingsPage {
             )
         }
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
-            const SATURATION: f64 = 1.5;
+            const SATURATION: f64 = 1.25;
 
-            r = lerp(r, 1.0 - (r - 1.0).powi(2), 0.6);
-            g = lerp(r, 1.0 - (g - 1.0).powi(2), 0.6);
-            b = lerp(r, 1.0 - (b - 1.0).powi(2), 0.6);
+            r = lerp(1.0 - (r - 1.0).powi(2), r, 0.42126);
+            g = lerp(1.0 - (g - 1.0).powi(2), r, 0.57152);
+            b = lerp(1.0 - (b - 1.0).powi(2), r, 0.30722);
 
             let lum = lum(r, g, b);
 
