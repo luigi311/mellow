@@ -199,9 +199,9 @@ impl SettingsPage {
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.5;
 
-            r = 2.0 - (1.0 - r / 2.0).powi(2);
-            g = 2.0 - (1.0 - g / 2.0).powi(2);
-            b = 2.0 - (1.0 - b / 2.0).powi(2);
+            r = lerp(1.0, 1.0 - (1.0 - r / 2.0).powi(3), 0.55);
+            g = lerp(1.0, 1.0 - (1.0 - g / 2.0).powi(3), 0.55);
+            b = lerp(1.0, 1.0 - (1.0 - b / 2.0).powi(3), 0.55);
 
             let lum = lum(r, g, b);
 
@@ -209,11 +209,7 @@ impl SettingsPage {
             g = lerp(lum, g, SATURATION);
             b = lerp(lum, b, SATURATION);
 
-            (
-                (r * 255.0 * 0.57143) as u8,
-                (g * 255.0 * 0.57143) as u8,
-                (b * 255.0 * 0.57143) as u8,
-            )
+            ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
         }
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
             const SATURATION: f64 = 1.35;
