@@ -199,9 +199,9 @@ impl SettingsPage {
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.5;
 
-            r = 2.0 - (1.0 - r / 2.0).powi(3);
-            g = 2.0 - (1.0 - g / 2.0).powi(3);
-            b = 2.0 - (1.0 - b / 2.0).powi(3);
+            r = 2.0 - (1.0 - r / 2.0).powi(2);
+            g = 2.0 - (1.0 - g / 2.0).powi(2);
+            b = 2.0 - (1.0 - b / 2.0).powi(2);
 
             let lum = lum(r, g, b);
 
