@@ -106,9 +106,7 @@ impl SongQueue {
         self.ordered_index(self.index)
     }
 
-    /// Returns the current index used internally by the queue
-    /// When indexing into a shuffled or sequential list (such as
-    /// for display by the UI), use `ordered_index()` instead
+    /// Returns the current queue position index
     #[must_use]
     pub const fn index(&self) -> usize {
         self.index
@@ -119,7 +117,7 @@ impl SongQueue {
     pub fn shuffled_index(&self, index: usize) -> Option<usize> {
         for i in 0..self.shuffled.len() {
             if self.shuffled[i] == index {
-                return Some(index);
+                return Some(i);
             }
         }
         None
