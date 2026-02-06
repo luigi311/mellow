@@ -215,6 +215,24 @@ impl SettingsPage {
                 (b * 255.0 * 0.57143) as u8,
             )
         }
+        fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
+            const SATURATION: f64 = 1.5;
+
+            r = lerp(r, 1.0 - (r - 1.0).powi(2), 0.6);
+            g = lerp(r, 1.0 - (g - 1.0).powi(2), 0.6);
+            b = lerp(r, 1.0 - (b - 1.0).powi(2), 0.6);
+
+            let lum = lum(r, g, b);
+
+            r = lerp(lum, r, SATURATION);
+            g = lerp(lum, g, SATURATION);
+            b = lerp(lum, b, SATURATION);
+
+            (
+                ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8),
+                lum,
+            )
+        }
 
         dbg!((r, g, b));
 
@@ -223,20 +241,20 @@ impl SettingsPage {
         let (r, g, b) = match css.prefers_color_scheme() {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),
             InterfaceColorScheme::Light => process_color_light(r, g, b),
-            _ => match lum(r, g, b) < 0.4 {
-                true => {
+            _ => match process_color_auto(r, g, b) {
+                (color, lum) if lum < 0.5 => {
                     self.style_manager
                         .get()
                         .unwrap()
                         .set_color_scheme(adw::ColorScheme::ForceDark);
-                    process_color_dark(r, g, b)
+                    color
                 }
-                false => {
+                (color, _) => {
                     self.style_manager
                         .get()
                         .unwrap()
                         .set_color_scheme(adw::ColorScheme::ForceLight);
-                    process_color_light(r, g, b)
+                    color
                 }
             },
         };
