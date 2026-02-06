@@ -297,9 +297,9 @@ impl SettingsPage {
             }
         }
 
-        // FIX: Component should end at 0, otherwise it means some color components are being
-        // samlped more times than others (issues become more apparent at lower `SAMPLE_RES`)
-        dbg!(component);
+        if component != 0 {
+            eprintln!("FIX: {component} color component(s) were sampled more times than others");
+        }
 
         // A failed attempt at a rewrite...
         // let mut num_pixels = 0;
