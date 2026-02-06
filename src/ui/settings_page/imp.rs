@@ -277,9 +277,11 @@ impl SettingsPage {
         let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
         step_size -= step_size % 4;
         step_size += 1;
+        step_size = step_size.max(5);
 
         let mut component = 0u8;
         // Each color component is 4 bytes (u32)
+        // FIX: This `step_by` is actually sampling different pixels per color component
         for u32_bytes in image_data.windows(4).step_by(step_size) {
             let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
             match component {
@@ -294,6 +296,32 @@ impl SettingsPage {
                 component = 0;
             }
         }
+
+        // FIX: Component should end at 0, otherwise it means some color components are being
+        // samlped more times than others (issues become more apparent at lower `SAMPLE_RES`)
+        dbg!(component);
+
+        // A failed attempt at a rewrite...
+        // let mut num_pixels = 0;
+        // // NOTE: `take(8)` is just for debugging purposes
+        // for pixel in image_data.chunks(4 * 4).step_by(step_size / 5).take(8) {
+        //     assert!(pixel.len() == 16);
+
+        //     r += u32::from_ne_bytes(pixel[4..8].try_into().unwrap()) as f64 / u32::MAX as f64;
+        //     g += u32::from_ne_bytes(pixel[8..12].try_into().unwrap()) as f64 / u32::MAX as f64;
+        //     b += u32::from_ne_bytes(pixel[12..16].try_into().unwrap()) as f64 / u32::MAX as f64;
+
+        //     num_pixels += 1;
+
+        //     // FIX: For some reason all components have roughly the same value here
+        //     let a = u32::from_ne_bytes(pixel[0..4].try_into().unwrap()) as f64 / u32::MAX as f64;
+        //     dbg!((
+        //         a,
+        //         r / num_pixels as f64,
+        //         g / num_pixels as f64,
+        //         b / num_pixels as f64
+        //     ));
+        // }
 
         let num_pixels = image_data.len() / (step_size * 4);
         self.set_background_color(
