@@ -219,8 +219,8 @@ impl SettingsPage {
             const SATURATION: f64 = 1.35;
 
             r = lerp(r, 1.0 - (r - 1.0).powi(2), 0.6);
-            g = lerp(r, 1.0 - (g - 1.0).powi(2), 0.6);
-            b = lerp(r, 1.0 - (b - 1.0).powi(2), 0.6);
+            g = lerp(g, 1.0 - (g - 1.0).powi(2), 0.6);
+            b = lerp(b, 1.0 - (b - 1.0).powi(2), 0.6);
 
             let lum = lum(r, g, b);
 
