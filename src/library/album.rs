@@ -11,7 +11,7 @@ pub struct Album {
     pub title: String,
     pub year: u32,
     pub songs: AlbumSongs,
-    pub artist: ArtistMutex,
+    pub artist: SharedArtist,
 }
 
 impl ToQueue for Album {
