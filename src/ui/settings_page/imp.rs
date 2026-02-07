@@ -165,9 +165,8 @@ impl SettingsPage {
             .remove_css_class("window");
     }
     pub fn reset_background_color(&self) {
-        match self.css.get().unwrap().prefers_color_scheme() {
-            InterfaceColorScheme::Default => self.set_theme(adw::ColorScheme::Default),
-            _ => (),
+        if self.css.get().unwrap().prefers_color_scheme() == InterfaceColorScheme::Default {
+            self.set_theme(adw::ColorScheme::Default);
         }
         self.current_color.set(None);
         self.disable_background_color();
@@ -227,7 +226,7 @@ impl SettingsPage {
             )
         }
         fn lum(r: f64, g: f64, b: f64) -> f64 {
-            (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
+            r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
         }
 
         dbg!((r, g, b));

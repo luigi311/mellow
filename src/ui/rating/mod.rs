@@ -12,6 +12,7 @@ glib::wrapper! {
 
 impl Rating {
     /// Returns the current rating assigned to the widget
+    #[must_use]
     pub fn get_rating(&self) -> u8 {
         self.imp().rating.get()
     }

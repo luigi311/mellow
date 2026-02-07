@@ -72,7 +72,7 @@ pub fn format_duration(duration: &Duration) -> String {
 /// assert_eq!(lerp(5.0, 10.0, -1.0), 0.0);
 /// ```
 pub fn lerp(left: f64, right: f64, mid: f64) -> f64 {
-    (right - left) * mid + left
+    (right - left).mul_add(mid, left)
 }
 
 /// Checks if two float numbers are similar

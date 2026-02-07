@@ -105,8 +105,7 @@ impl AlbumsPage {
                         .unwrap()
                         .info()
                         .inspect_detailed()
-                        .map(|info| info.artwork.clone())
-                        .unwrap_or(None),
+                        .and_then(|info| info.artwork.clone()),
                 )
             })
             .collect();
@@ -129,7 +128,7 @@ impl AlbumsPage {
                 .expect("Needs to be AlbumObject");
             let album_tile = ItemTile::builder()
                 .titles(&object.album(), &object.artist())
-                .artwork(&object.artwork().unwrap_or_else(|| fallback_album_image()))
+                .artwork(&object.artwork().unwrap_or_else(fallback_album_image))
                 .build();
             list_item.set_child(Some(&album_tile));
         });

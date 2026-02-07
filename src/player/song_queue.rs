@@ -115,12 +115,7 @@ impl SongQueue {
     /// Locates a song within the `shuffled` vec and returns its index
     #[must_use]
     pub fn shuffled_index(&self, index: usize) -> Option<usize> {
-        for i in 0..self.shuffled.len() {
-            if self.shuffled[i] == index {
-                return Some(i);
-            }
-        }
-        None
+        (0..self.shuffled.len()).find(|i| self.shuffled[*i] == index)
     }
 
     /// Turns an index from `shuffled` into one which can be used with `songs`.
