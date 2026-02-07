@@ -378,7 +378,7 @@ impl Player {
 
     /// Skips to previous track or restarts the current one if above the time threshold
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
-        const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(10);
+        const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(8);
         match self.current_time() {
             Some(time)
                 if !self.next_song_loaded
