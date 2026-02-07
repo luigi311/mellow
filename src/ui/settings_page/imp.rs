@@ -176,9 +176,9 @@ impl SettingsPage {
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.0;
 
-            r = 1.0 - (1.0 - r / 2.0).powi(2);
-            g = 1.0 - (1.0 - g / 2.0).powi(2);
-            b = 1.0 - (1.0 - b / 2.0).powi(2);
+            r = (1.0 - r / 2.0).mul_add(-(1.0 - r / 2.0), 1.0);
+            g = (1.0 - g / 2.0).mul_add(-(1.0 - g / 2.0), 1.0);
+            b = (1.0 - b / 2.0).mul_add(-(1.0 - b / 2.0), 1.0);
 
             let lum = lum(r, g, b);
 
@@ -210,9 +210,9 @@ impl SettingsPage {
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
             const SATURATION: f64 = 1.35;
 
-            r = lerp(r, 1.0 - (r - 1.0).powi(2), 0.6);
-            g = lerp(g, 1.0 - (g - 1.0).powi(2), 0.6);
-            b = lerp(b, 1.0 - (b - 1.0).powi(2), 0.6);
+            r = lerp(r, (r - 1.0).mul_add(-(r - 1.0), 1.0), 0.6);
+            g = lerp(g, (g - 1.0).mul_add(-(g - 1.0), 1.0), 0.6);
+            b = lerp(b, (b - 1.0).mul_add(-(b - 1.0), 1.0), 0.6);
 
             let lum = lum(r, g, b);
 

@@ -71,6 +71,7 @@ pub fn format_duration(duration: &Duration) -> String {
 /// assert_eq!(lerp(5.0, 10.0, 2.0), 15.0);
 /// assert_eq!(lerp(5.0, 10.0, -1.0), 0.0);
 /// ```
+#[must_use]
 pub fn lerp(left: f64, right: f64, mid: f64) -> f64 {
     (right - left).mul_add(mid, left)
 }

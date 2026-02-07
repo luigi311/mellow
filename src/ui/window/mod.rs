@@ -250,7 +250,7 @@ impl Window {
         settings.set_boolean("gapless", settings_page.gapless())?;
         settings.set_boolean("remember-queue", remember_queue)?;
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
-        settings.set_enum("color-scheme", settings_page.color_scheme() as i32)?;
+        settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
         rx.recv_timeout(Duration::from_millis(1500))?;
@@ -271,7 +271,7 @@ impl Window {
         settings_page.set_gapless(settings.boolean("gapless"));
         settings_page.set_remember_queue(settings.boolean("remember-queue"));
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));
-        settings_page.set_color_scheme(settings.enum_("color-scheme") as u32);
+        settings_page.set_color_scheme(settings.enum_("color-scheme").cast_unsigned());
 
         self.set_default_size(settings.int("window-width"), settings.int("window-height"));
     }
