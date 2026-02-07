@@ -227,23 +227,27 @@ impl<T> ReorderVecExt for Vec<T> {
         if from < to {
             // Copy everything after `from` up to and including `to` one to the left:
             // [++f---t++] => [++---tt++]
+
             // SAFETY: Because `from` and `to` are checked to be within bounds
             // and `from` < `to`, the following cannot exceed the allocation
             unsafe { ptr::copy(ptr.add(from + 1), ptr.add(from), to - from) };
-            // Overwrite the position at `to` with the old value of `from`:
+
+            // Then overwrite the duplicate item using the original `from` value:
             // [++---tt++] => [++---tf++]
-            // SAFETY: Assert at the top ensures `to` is within bounds
-            unsafe { ptr::write(ptr.add(to), old) };
         } else {
             // Copy everything before `to` up to and including `from` one to the right:
             // [++t---f++] => [++tt---++]
+
             // SAFETY: Because `from` and `to` are checked to be within bounds
             // and `from` >= `to`, the following cannot exceed the allocation
             unsafe { ptr::copy(ptr.add(to), ptr.add(to + 1), from - to) };
-            // Overwrite the position at `to` with the old value of `from`:
-            // [++tt---++] => [++ft---++]
-            // SAFETY: Assert at the top ensures `to` is within bounds
-            unsafe { ptr::write(ptr.add(to), old) };
+
+            // Then overwrite the duplicate item using the original `from` value:
+            // [++---tt++] => [++---tf++]
         }
+
+        // Overwrite the position at `to` using the original value of `from`
+        // SAFETY: Assert at the top ensures `to` is within bounds
+        unsafe { ptr::write(ptr.add(to), old) };
     }
 }
