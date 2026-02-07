@@ -311,10 +311,7 @@ impl SettingsPage {
         }
 
         if channel != 0 {
-            eprintln!(
-                "FIX: {} color channels were sampled more times than others",
-                channel - 1
-            );
+            eprintln!("FIX: {channel} color channels were sampled more times than others");
         }
 
         // A failed attempt at a rewrite...
