@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
 
-use crate::library::song::SongMutex;
+use crate::library::song::SharedSong;
 
 mod imp;
 
@@ -13,7 +13,7 @@ glib::wrapper! {
 }
 
 impl QueueSubpage {
-    pub fn update(&self, index: usize, song: SongMutex) {
+    pub fn update(&self, index: usize, song: SharedSong) {
         let song_page = self.imp();
         song_page.index.set(index);
         let mut song_locked = song.lock().unwrap();

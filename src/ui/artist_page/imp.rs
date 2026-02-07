@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::artist::ArtistMutex;
+use crate::library::artist::SharedArtist;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::song_row::SongRow;
@@ -13,7 +13,7 @@ use crate::ui::song_row::SongRow;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artist_page.ui")]
 pub struct ArtistPage {
-    pub artist: RefCell<Option<ArtistMutex>>,
+    pub artist: RefCell<Option<SharedArtist>>,
 
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,

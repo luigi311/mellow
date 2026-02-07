@@ -27,9 +27,9 @@ mod songs_page;
 mod window;
 
 use crate::about;
-use crate::library::album::AlbumMutex;
-use crate::library::artist::ArtistMutex;
-use crate::library::song::SongMutex;
+use crate::library::album::SharedAlbum;
+use crate::library::artist::SharedArtist;
+use crate::library::song::SharedSong;
 use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::window::Window;
@@ -54,14 +54,14 @@ pub enum UpdateUI {
     LibraryArtists(Artists),
 
     ArtistPageByIndex(usize),
-    ArtistPage(ArtistMutex),
+    ArtistPage(SharedArtist),
     AlbumPageByIndex(usize),
-    AlbumPage(AlbumMutex),
+    AlbumPage(SharedAlbum),
     SongPageByIndex(usize),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field
-    SongPage(Box<(usize, SongMutex, Box<dyn ToQueue + Send>)>),
+    SongPage(Box<(usize, SharedSong, Box<dyn ToQueue + Send>)>),
 
     FocusLibrary,
     FocusPlaying,

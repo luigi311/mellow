@@ -19,8 +19,8 @@ pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::album::{AlbumMutex, SortedAlbumSongs};
-use crate::library::artist::{ArtistMutex, SortedArtistAlbums};
+use crate::library::album::{SharedAlbum, SortedAlbumSongs};
+use crate::library::artist::{SharedArtist, SortedArtistAlbums};
 use crate::library::config::{FILE_SUPPORT, LibraryConfig};
 use crate::library::song::SongInfoLoader;
 use crate::player::PlayerRequest;
@@ -177,9 +177,9 @@ pub enum LibraryRequest {
     PlayAllArtists(String),
     ShuffleAllArtists(String),
 
-    PlayAlbum(AlbumMutex),
-    PlayArtist(ArtistMutex),
-    ShuffleArtist(ArtistMutex),
+    PlayAlbum(SharedAlbum),
+    PlayArtist(SharedArtist),
+    ShuffleArtist(SharedArtist),
 
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),

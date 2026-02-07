@@ -10,9 +10,9 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::album::AlbumMutex;
-use crate::library::artist::ArtistMutex;
-use crate::library::song::SongMutex;
+use crate::library::album::SharedAlbum;
+use crate::library::artist::SharedArtist;
+use crate::library::song::SharedSong;
 use crate::library::{Albums, Artists, LIBRARY_TX, Library, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
@@ -291,21 +291,21 @@ impl Window {
         let songs: Songs = self.songs.borrow().clone();
         self.open_song_page(index, Arc::clone(&songs[index]), Box::new(songs));
     }
-    fn open_song_page(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
+    fn open_song_page(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
         self.song_page.update(index, song, to_queue);
         self.library.push_by_tag("song");
     }
     fn open_artist_page_by_index(&self, index: usize) {
         self.open_artist_page(&self.artists.borrow()[index]);
     }
-    fn open_artist_page(&self, artist: &ArtistMutex) {
+    fn open_artist_page(&self, artist: &SharedArtist) {
         self.artist_page.update(artist);
         self.library.push_by_tag("artist");
     }
     fn open_album_page_by_index(&self, index: usize) {
         self.open_album_page(&self.albums.borrow()[index]);
     }
-    fn open_album_page(&self, album: &AlbumMutex) {
+    fn open_album_page(&self, album: &SharedAlbum) {
         self.album_page.update(album);
         self.library.push_by_tag("album");
     }

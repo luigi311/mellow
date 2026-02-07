@@ -3,7 +3,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::album::AlbumMutex;
+use crate::library::album::SharedAlbum;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
@@ -17,7 +17,7 @@ glib::wrapper! {
 }
 
 impl AlbumPage {
-    pub fn update(&self, album: &AlbumMutex) {
+    pub fn update(&self, album: &SharedAlbum) {
         let ui = self.imp();
         let album_locked = album.lock().unwrap();
         let songs = &album_locked.songs;
@@ -78,7 +78,7 @@ impl AlbumPage {
                         .send(UpdateUI::SongPage(Box::new((
                             i,
                             song.clone(),
-                            Box::new(album.clone() as AlbumMutex),
+                            Box::new(album.clone() as SharedAlbum),
                         ))))
                         .expect(EXP_RX);
                 }

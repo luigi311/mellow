@@ -1,7 +1,7 @@
 use adw::subclass::prelude::*;
 use gtk::glib;
 
-use crate::library::{ToQueue, song::SongMutex};
+use crate::library::{ToQueue, song::SharedSong};
 
 mod imp;
 
@@ -13,7 +13,7 @@ glib::wrapper! {
 }
 
 impl SongPage {
-    pub fn update(&self, index: usize, song: SongMutex, to_queue: Box<dyn ToQueue + Send>) {
+    pub fn update(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
         let song_page = self.imp();
 
         song_page.index.set(index);

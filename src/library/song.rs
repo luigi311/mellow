@@ -8,14 +8,14 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
-use crate::library::album::AlbumMutex;
+use crate::library::album::SharedAlbum;
 use crate::{deserialize, serialize};
 
-pub type SongMutex = Arc<Mutex<Song>>;
+pub type SharedSong = Arc<Mutex<Song>>;
 
 #[derive(Clone)]
 pub struct Song {
-    pub album: Option<AlbumMutex>,
+    pub album: Option<SharedAlbum>,
     file: gio::File,
     info: Option<SongInfo>,
     user_info: UserSongInfo,

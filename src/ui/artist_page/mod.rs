@@ -3,7 +3,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::artist::ArtistMutex;
+use crate::library::artist::SharedArtist;
 use crate::ui::album_row::AlbumRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
@@ -17,7 +17,7 @@ glib::wrapper! {
 }
 
 impl ArtistPage {
-    pub fn update(&self, artist: &ArtistMutex) {
+    pub fn update(&self, artist: &SharedArtist) {
         let ui = self.imp();
         ui.artist.replace(Some(Arc::clone(artist)));
         let artist = artist.lock().unwrap();

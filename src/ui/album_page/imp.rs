@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::album::AlbumMutex;
+use crate::library::album::SharedAlbum;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::rating::Rating;
@@ -14,7 +14,7 @@ use crate::ui::song_row::SongRow;
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/album_page.ui")]
 pub struct AlbumPage {
-    pub album: RefCell<Option<AlbumMutex>>,
+    pub album: RefCell<Option<SharedAlbum>>,
 
     #[template_child]
     pub album_cover: TemplateChild<gtk::Picture>,
