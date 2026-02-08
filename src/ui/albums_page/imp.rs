@@ -159,7 +159,7 @@ impl AlbumsPage {
                 .expect("Needs to be ItemTile");
 
             album_tile.reset_bindings();
-            object.unload_artwork();
+            // object.unload_artwork();
         });
 
         self.albums_grid

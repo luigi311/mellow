@@ -214,6 +214,9 @@ impl<'s> Song {
     }
 }
 
+// TODO: Could this be refactored to not require references to `Song`?
+// Maybe it would be better to implement this as a trait on `SharedSong`,
+// so the inner `Mutex` does not need to stay locked while performing IO
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
     info: &'i mut Option<SongInfo>,

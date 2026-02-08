@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use adw::subclass::prelude::*;
 use glib::Object;
+use gst::glib::object::ObjectExt;
 use gtk::{gdk, glib};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -35,10 +36,14 @@ impl AlbumObject {
     }
 
     pub fn load_artwork(&self) {
+        if self.artwork().is_some() {
+            return;
+        }
+        // TODO: Don't load if already loading
         let index = self.index() as usize;
         let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            println!("Loading artwork");
+            // TODO: Load in a way that allows cancellation in `unbind`
             song.lock().expect(EXP_INIT).info().load_detailed();
             UI_TX
                 .get()
@@ -54,7 +59,7 @@ impl AlbumObject {
             .unwrap()
             .info()
             .unload_detailed();
-        // TODO: Unassign artwork from `self`
+        self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 }
 
