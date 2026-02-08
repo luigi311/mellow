@@ -30,8 +30,9 @@ Song Queue:
 Music Library:
 
 - [ ] The 'Songs' page and its subpages do not have performance issues
-  - FIX: Artwork loading on the song subpage blocks the main thread
+  - FIX: Artworks on the main page consume way too much memory
 - [ ] The 'Albums' page and its subpages do not have performance issues
+  - FIX: Artworks on the main page consume way too much memory
   - FIX: Artwork loading on the album subpage blocks the main thread
 - [ ] The 'Artists' page and its subpages do not have performance issues
   - FIX: Artwork loading on the artist subpage blocks the main thread

@@ -56,8 +56,9 @@ Music library:
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all albums (shuffled/sequential)
     - TODO: Improve dropdown behavior
-  - [-] Show all albums
-    - TODO: **Show album artworks**
+  - [x] Show all albums
+    - FIX: **Artworks consume too much memory**
+    > The most elegant solution would be to generate downscaled thumbnails
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
     - [ ] **Interactive rating widget**
@@ -74,7 +75,8 @@ Music library:
   - [x] Buttons to play all songs (shuffled/sequential)
     - TODO: Improve dropdown behavior
   - [-] Show all songs
-    - TODO: **Show album artworks**
+    - FIX: **Artworks consume too much memory (currently disabled)**
+    > The most elegant solution would be to generate downscaled thumbnails
   - [-] Song subpage, accessed from each item
     - [-] Display song info (title/album/artist, maybe album cover)
     - [x] Interactive rating widget

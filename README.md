@@ -54,7 +54,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
 |  5  | Music library                             | ⚠️ WIP: Basics are done, but see below |
 | 5.1 | Artists page                              | ⚠️ WIP: Missing artworks and some functionality |
-| 5.2 | Albums page                               | ⚠️ WIP: Artwork loading is WIP, subpage missing go-to functionality |
+| 5.2 | Albums page                               | ⚠️ WIP: Artworks consume too much memory, subpage is missing go-to functionality |
 | 5.3 | Songs page                                | ⚠️ WIP: Missing artworks and some functionality |
 | 5.4 | Search/filters                            | ⚠️ WIP: Play button filters by query, no UI yet |
 |  6  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, no album ratings, play counts are not shown anywhere yet |
