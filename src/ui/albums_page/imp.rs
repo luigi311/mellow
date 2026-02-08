@@ -175,11 +175,10 @@ impl ObjectImpl for AlbumsPage {
                 fallback_album_image()
             }));
 
-            // TODO: Update the widget contents when artwork is assigned
-            // album_tile.add_bindings(&[object
-            //     .bind_property("artwork", &album_tile, "artwork")
-            //     .sync_create()
-            //     .build()]);
+            album_tile.add_bindings(&[object
+                .bind_property("artwork", &album_tile.imp().image.get(), "paintable")
+                .sync_create()
+                .build()]);
         });
         factory.connect_unbind(|_, list_item| {
             let list_item = list_item
@@ -197,7 +196,7 @@ impl ObjectImpl for AlbumsPage {
                 .expect("Needs to be ItemTile");
 
             album_tile.reset_bindings();
-            // object.unload_artwork();
+            object.unload_artwork();
         });
 
         self.albums_grid.set_factory(Some(&factory));

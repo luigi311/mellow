@@ -54,11 +54,10 @@ impl AlbumObject {
     }
 
     pub fn unload_artwork(&self) {
-        Arc::clone(self.imp().first_song.get().expect(EXP_INIT))
-            .lock()
-            .unwrap()
-            .info()
-            .unload_detailed();
+        // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
+        if let Ok(mut song) = self.imp().first_song.get().expect(EXP_INIT).try_lock() {
+            song.info().unload_detailed();
+        }
         self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 }

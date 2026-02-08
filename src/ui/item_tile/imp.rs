@@ -1,8 +1,8 @@
-use std::cell::RefCell;
-
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
+
+use std::cell::RefCell;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/item_tile.ui")]
@@ -31,7 +31,6 @@ impl ObjectSubclass for ItemTile {
         obj.init_template();
     }
 }
-
 impl ObjectImpl for ItemTile {}
 impl WidgetImpl for ItemTile {}
 impl BoxImpl for ItemTile {}
