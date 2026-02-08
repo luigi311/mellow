@@ -10,7 +10,7 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::artist_object::ArtistObject;
 use crate::ui::item_tile::ItemTile;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UI_TX, UpdateUI, fallback_artist_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]
@@ -92,6 +92,8 @@ impl ArtistsPage {
         }
         self.view_stack.set_visible_child_name("artists");
 
+        // TODO: Most of this does not need to happen every time
+
         let model = gio::ListStore::new::<ArtistObject>();
         let albums: Vec<ArtistObject> = (0..artsits.len())
             .map(|index| {
@@ -106,7 +108,9 @@ impl ArtistsPage {
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
-                .set_child(Some(&ItemTile::default()));
+                .set_child(Some(
+                    &ItemTile::builder().image_css_classes(&["circular"]).build(),
+                ));
         });
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
@@ -116,11 +120,20 @@ impl ArtistsPage {
                 .item()
                 .and_downcast::<ArtistObject>()
                 .expect("Needs to be ArtistObject");
-            let artist_tile = ItemTile::builder()
-                .titles(&object.artist(), &format!("Albums: {}", object.albums()))
-                .image_css_classes(&["circular"])
-                .build();
-            list_item.set_child(Some(&artist_tile));
+            let artist_tile = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<ItemTile>()
+                .expect("Needs to be ItemTile");
+            artist_tile.set_info(&object.artist(), &format!("Albums: {}", object.albums()));
+            artist_tile.set_artwork(&object.artwork().unwrap_or_else(|| {
+                // TODO: Load artwork in the background and send a signal to assign the artwork
+                fallback_artist_image()
+            }));
+        });
+        factory.connect_unbind(|_, list_item| {
+            // TODO: Unload artwork and unassign it from the object
         });
 
         self.artists_grid

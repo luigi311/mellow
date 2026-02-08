@@ -87,6 +87,13 @@ pub fn init(
 // IDEA: The fallback images could be cached somehow
 // (might be tricky since `gdk::Paintable` cannot be const)
 
+// Returns a fallback image intended for artists with missing artwork
+#[must_use]
+pub fn fallback_artist_image() -> gdk::Paintable {
+    // TODO: Fallback image for albums (maybe a symbolic disc icon?)
+    gdk::Paintable::new_empty(1, 1)
+}
+
 // Returns a fallback image intended for albums with missing artwork
 #[must_use]
 pub fn fallback_album_image() -> gdk::Paintable {

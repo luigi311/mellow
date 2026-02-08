@@ -33,7 +33,7 @@ impl ItemTile {
         self.imp().image.set_paintable(Some(artwork));
     }
 
-    pub fn set_titles(&self, title: &str, subtitle: &str) {
+    pub fn set_info(&self, title: &str, subtitle: &str) {
         let ui = self.imp();
         ui.title.set_label(title);
         ui.subtitle.set_label(subtitle);
@@ -50,8 +50,8 @@ impl ItemTileBuilder {
         self
     }
 
-    pub fn titles(self, title: &str, subtitle: &str) -> Self {
-        self.item_tile.set_titles(title, subtitle);
+    pub fn info(self, title: &str, subtitle: &str) -> Self {
+        self.item_tile.set_info(title, subtitle);
         self
     }
 

@@ -92,8 +92,9 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
+        // TODO: Most of this does not need to happen every time
+
         let model = gio::ListStore::new::<AlbumObject>();
-        // TODO: Load (or unload) `artwork` whenever an item becomes (in)visible
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
                 let album = albums[index].lock().unwrap();
@@ -126,11 +127,20 @@ impl AlbumsPage {
                 .item()
                 .and_downcast::<AlbumObject>()
                 .expect("Needs to be AlbumObject");
-            let album_tile = ItemTile::builder()
-                .titles(&object.album(), &object.artist())
-                .artwork(&object.artwork().unwrap_or_else(fallback_album_image))
-                .build();
-            list_item.set_child(Some(&album_tile));
+            let album_tile = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<ItemTile>()
+                .expect("Needs to be ItemTile");
+            album_tile.set_info(&object.album(), &object.artist());
+            album_tile.set_artwork(&object.artwork().unwrap_or_else(|| {
+                // TODO: Load artwork in the background and send a signal to assign the artwork
+                fallback_album_image()
+            }));
+        });
+        factory.connect_unbind(|_, list_item| {
+            // TODO: Unload artwork and unassign it from the object
         });
 
         self.albums_grid
