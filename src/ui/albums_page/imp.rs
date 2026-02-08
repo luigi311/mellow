@@ -1,7 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gio, glib};
+use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
@@ -99,14 +100,10 @@ impl AlbumsPage {
             .map(|index| {
                 let album = albums[index].lock().unwrap();
                 AlbumObject::new(
+                    index as u32,
                     &album.title,
                     &album.artist.lock().unwrap().name,
-                    album.songs[0]
-                        .lock()
-                        .unwrap()
-                        .info()
-                        .inspect_detailed()
-                        .and_then(|info| info.artwork.clone()),
+                    Arc::clone(&album.songs[0]),
                 )
             })
             .collect();
@@ -133,19 +130,51 @@ impl AlbumsPage {
                 .child()
                 .and_downcast::<ItemTile>()
                 .expect("Needs to be ItemTile");
+
             album_tile.set_info(&object.album(), &object.artist());
             album_tile.set_artwork(&object.artwork().unwrap_or_else(|| {
-                // TODO: Load artwork in the background and send a signal to assign the artwork
+                object.load_artwork();
                 fallback_album_image()
             }));
+
+            // TODO: Update the widget contents when artwork is assigned
+            // album_tile.add_bindings(&[object
+            //     .bind_property("artwork", &album_tile, "artwork")
+            //     .sync_create()
+            //     .build()]);
         });
         factory.connect_unbind(|_, list_item| {
-            // TODO: Unload artwork and unassign it from the object
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            let object = list_item
+                .item()
+                .and_downcast::<AlbumObject>()
+                .expect("Needs to be AlbumObject");
+            let album_tile = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<ItemTile>()
+                .expect("Needs to be ItemTile");
+
+            album_tile.reset_bindings();
+            object.unload_artwork();
         });
 
         self.albums_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.albums_grid.set_factory(Some(&factory));
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+        self.albums_grid
+            .model()
+            .unwrap()
+            .item(index)
+            .and_downcast::<AlbumObject>()
+            .unwrap()
+            .set_property("artwork", artwork);
     }
 }
 

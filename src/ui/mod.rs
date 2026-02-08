@@ -53,6 +53,10 @@ pub enum UpdateUI {
     LibraryAlbums(Albums),
     LibraryArtists(Artists),
 
+    LibrarySongLoaded(usize),
+    LibraryAlbumLoaded(usize),
+    LibraryArtistLoaded(usize),
+
     ArtistPageByIndex(usize),
     ArtistPage(SharedArtist),
     AlbumPageByIndex(usize),

@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
@@ -11,6 +13,8 @@ pub struct ItemTile {
     pub title: TemplateChild<gtk::Label>,
     #[template_child]
     pub subtitle: TemplateChild<gtk::Label>,
+
+    pub bindings: RefCell<Vec<glib::Binding>>,
 }
 
 #[glib::object_subclass]

@@ -10,7 +10,7 @@ use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::ui::item_row::ItemRow;
 use crate::ui::song_object::SongObject;
-use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
@@ -136,7 +136,7 @@ impl SongsPage {
             song_row.set_info(&object.song(), &object.artist());
             song_row.set_artwork(&object.artwork().unwrap_or_else(|| {
                 // TODO: Load artwork in the background and send a signal to assign the artwork
-                fallback_album_image()
+                fallback_song_image()
             }));
         });
         factory.connect_unbind(|_, list_item| {

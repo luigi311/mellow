@@ -28,7 +28,7 @@ use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -130,6 +130,10 @@ impl Window {
                 UpdateUI::LibrarySongs(songs) => self.load_library_songs(&songs),
                 UpdateUI::LibraryAlbums(albums) => self.load_library_albums(&albums),
                 UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
+
+                UpdateUI::LibrarySongLoaded(index) => self.song_loaded(index),
+                UpdateUI::LibraryAlbumLoaded(index) => self.album_loaded(index),
+                UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
 
                 UpdateUI::ArtistPageByIndex(index) => self.open_artist_page_by_index(index),
                 UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
@@ -283,6 +287,25 @@ impl Window {
     fn load_library_artists(&self, artists: &Artists) {
         self.artists.replace(artists.clone());
         self.artists_page.load_artists(artists);
+    }
+
+    fn song_loaded(&self, index: usize) {
+        todo!()
+    }
+    fn album_loaded(&self, index: usize) {
+        self.albums_page.assign_artwork(
+            index as u32,
+            self.albums.borrow()[index].lock().unwrap().songs[0]
+                .lock()
+                .unwrap()
+                .info()
+                .detailed()
+                .artwork
+                .clone(),
+        );
+    }
+    fn artist_loaded(&self, index: usize) {
+        todo!()
     }
 
     // TODO: Reset the scroll position when opening song/album/artist page
