@@ -1,5 +1,5 @@
 use adw::subclass::prelude::*;
-use gtk::glib;
+use gtk::{gdk, glib};
 
 use crate::library::Artists;
 
@@ -20,5 +20,9 @@ impl ArtistsPage {
     pub fn load_artists(&self, artists: &Artists) {
         println!("load_artists()");
         self.imp().load_artists(artists);
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+        self.imp().assign_artwork(index, artwork);
     }
 }

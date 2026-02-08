@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gio, glib};
+use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -103,6 +103,16 @@ impl ArtistsPage {
 
         self.artists_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+        self.artists_grid
+            .model()
+            .unwrap()
+            .item(index)
+            .and_downcast::<ArtistObject>()
+            .unwrap()
+            .set_property("artwork", artwork);
     }
 }
 

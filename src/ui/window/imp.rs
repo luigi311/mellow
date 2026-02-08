@@ -28,7 +28,7 @@ use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
-use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/window.ui")]
@@ -314,7 +314,11 @@ impl Window {
         );
     }
     fn artist_loaded(&self, index: usize) {
-        todo!()
+        self.artists_page.assign_artwork(
+            index as u32,
+            // TODO: Decide what to show
+            None,
+        );
     }
 
     // TODO: Reset the scroll position when opening song/album/artist page
