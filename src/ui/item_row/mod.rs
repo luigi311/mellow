@@ -38,6 +38,15 @@ impl ItemRow {
         ui.title.set_label(title);
         ui.subtitle.set_label(subtitle);
     }
+
+    pub fn add_bindings(&self, bindings: &[glib::Binding]) {
+        self.imp().bindings.borrow_mut().extend_from_slice(bindings);
+    }
+    pub fn reset_bindings(&self) {
+        for binding in self.imp().bindings.borrow_mut().drain(..) {
+            binding.unbind();
+        }
+    }
 }
 
 pub struct ItemRowBuilder {

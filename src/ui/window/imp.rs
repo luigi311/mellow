@@ -290,7 +290,16 @@ impl Window {
     }
 
     fn song_loaded(&self, index: usize) {
-        todo!()
+        self.songs_page.assign_artwork(
+            index as u32,
+            self.songs.borrow()[index]
+                .lock()
+                .unwrap()
+                .info()
+                .detailed()
+                .artwork
+                .clone(),
+        );
     }
     fn album_loaded(&self, index: usize) {
         self.albums_page.assign_artwork(

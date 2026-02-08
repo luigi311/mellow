@@ -2,6 +2,8 @@ use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
 
+use std::cell::RefCell;
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/item_row.ui")]
 pub struct ItemRow {
@@ -11,6 +13,8 @@ pub struct ItemRow {
     pub title: TemplateChild<gtk::Label>,
     #[template_child]
     pub subtitle: TemplateChild<gtk::Label>,
+
+    pub bindings: RefCell<Vec<glib::Binding>>,
 }
 
 #[glib::object_subclass]

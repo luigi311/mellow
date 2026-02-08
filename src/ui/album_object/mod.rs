@@ -21,15 +21,6 @@ impl AlbumObject {
             .property("index", index)
             .property("album", album)
             .property("artist", artist)
-            .property(
-                "artwork",
-                first_song
-                    .lock()
-                    .unwrap()
-                    .info()
-                    .inspect_detailed()
-                    .and_then(|info| info.artwork.clone()),
-            )
             .build();
         let _ = album_object.imp().first_song.set(first_song);
         album_object
@@ -56,9 +47,9 @@ impl AlbumObject {
     pub fn unload_artwork(&self) {
         // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
         if let Ok(mut song) = self.imp().first_song.get().expect(EXP_INIT).try_lock() {
+            self.set_property("artwork", Option::<gdk::Texture>::None);
             song.info().unload_detailed();
         }
-        self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 }
 

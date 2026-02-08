@@ -158,7 +158,7 @@ impl ObjectImpl for AlbumsPage {
             let list_item = list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem");
-            let object = list_item
+            let album_object = list_item
                 .item()
                 .and_downcast::<AlbumObject>()
                 .expect("Needs to be AlbumObject");
@@ -169,13 +169,14 @@ impl ObjectImpl for AlbumsPage {
                 .and_downcast::<ItemTile>()
                 .expect("Needs to be ItemTile");
 
-            album_tile.set_info(&object.album(), &object.artist());
-            album_tile.set_artwork(&object.artwork().unwrap_or_else(|| {
-                object.load_artwork();
+            album_tile.set_info(&album_object.album(), &album_object.artist());
+            // TODO: Set this on the object instead?
+            album_tile.set_artwork(&album_object.artwork().unwrap_or_else(|| {
+                album_object.load_artwork();
                 fallback_album_image()
             }));
 
-            album_tile.add_bindings(&[object
+            album_tile.add_bindings(&[album_object
                 .bind_property("artwork", &album_tile.imp().image.get(), "paintable")
                 .sync_create()
                 .build()]);

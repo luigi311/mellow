@@ -144,7 +144,7 @@ impl ObjectImpl for ArtistsPage {
             let list_item = list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem");
-            let object = list_item
+            let artist_object = list_item
                 .item()
                 .and_downcast::<ArtistObject>()
                 .expect("Needs to be ArtistObject");
@@ -154,14 +154,38 @@ impl ObjectImpl for ArtistsPage {
                 .child()
                 .and_downcast::<ItemTile>()
                 .expect("Needs to be ItemTile");
-            artist_tile.set_info(&object.artist(), &format!("Albums: {}", object.albums()));
-            artist_tile.set_artwork(&object.artwork().unwrap_or_else(|| {
-                // TODO: Load artwork in the background and send a signal to assign the artwork
+
+            artist_tile.set_info(
+                &artist_object.artist(),
+                &format!("Albums: {}", artist_object.albums()),
+            );
+            artist_tile.set_artwork(&artist_object.artwork().unwrap_or_else(|| {
+                artist_object.load_artwork();
                 fallback_artist_image()
             }));
+
+            artist_tile.add_bindings(&[artist_object
+                .bind_property("artwork", &artist_tile.imp().image.get(), "paintable")
+                .sync_create()
+                .build()]);
         });
         factory.connect_unbind(|_, list_item| {
-            // TODO: Unload artwork and unassign it from the object
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            let artist_object = list_item
+                .item()
+                .and_downcast::<ArtistObject>()
+                .expect("Needs to be AlbumObject");
+            let artist_tile = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<ItemTile>()
+                .expect("Needs to be ItemTile");
+
+            artist_tile.reset_bindings();
+            artist_object.unload_artwork();
         });
 
         self.artists_grid.set_factory(Some(&factory));

@@ -1,7 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gio, glib};
+use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
@@ -94,24 +95,22 @@ impl SongsPage {
 
         let model = gio::ListStore::new::<SongObject>();
         let songs: Vec<SongObject> = (0..songs.len())
-            .map(|index| {
-                let mut song = songs[index].lock().unwrap();
-                let mut info = song.info();
-                let basic = info.basic();
-                let title = basic.title.clone();
-                let artist = basic.artist.clone();
-                SongObject::new(
-                    &title,
-                    &artist,
-                    info.inspect_detailed()
-                        .and_then(|info| info.artwork.clone()),
-                )
-            })
+            .map(|index| SongObject::new(index as u32, Arc::clone(&songs[index])))
             .collect();
         model.extend_from_slice(&songs);
 
         self.songs_grid
             .set_model(Some(&gtk::NoSelection::new(Some(model))));
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+        self.songs_grid
+            .model()
+            .unwrap()
+            .item(index)
+            .and_downcast::<SongObject>()
+            .unwrap()
+            .set_property("artwork", artwork);
     }
 }
 
@@ -151,7 +150,7 @@ impl ObjectImpl for SongsPage {
             let list_item = list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem");
-            let object = list_item
+            let song_object = list_item
                 .item()
                 .and_downcast::<SongObject>()
                 .expect("Needs to be SongObject");
@@ -161,14 +160,36 @@ impl ObjectImpl for SongsPage {
                 .child()
                 .and_downcast::<ItemRow>()
                 .expect("Needs to be ItemRow");
-            song_row.set_info(&object.song(), &object.artist());
-            song_row.set_artwork(&object.artwork().unwrap_or_else(|| {
-                // TODO: Load artwork in the background and send a signal to assign the artwork
+
+            song_row.set_info(&song_object.song(), &song_object.artist());
+            song_row.set_artwork(&song_object.artwork().unwrap_or_else(|| {
+                // TODO: Disabled until unloading works properly (high memory usage)
+                // song_object.load_artwork();
                 fallback_song_image()
             }));
+
+            song_row.add_bindings(&[song_object
+                .bind_property("artwork", &song_row.imp().image.get(), "paintable")
+                .sync_create()
+                .build()]);
         });
         factory.connect_unbind(|_, list_item| {
-            // TODO: Unload artwork and unassign it from the object
+            let list_item = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem");
+            let song_object = list_item
+                .item()
+                .and_downcast::<SongObject>()
+                .expect("Needs to be AlbumObject");
+            let song_row = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<ItemRow>()
+                .expect("Needs to be ItemTile");
+
+            song_row.reset_bindings();
+            song_object.unload_artwork();
         });
 
         self.songs_grid.set_factory(Some(&factory));
