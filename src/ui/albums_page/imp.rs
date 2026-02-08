@@ -93,8 +93,6 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
-        // TODO: Most of this does not need to happen every time
-
         let model = gio::ListStore::new::<AlbumObject>();
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
@@ -108,6 +106,46 @@ impl AlbumsPage {
             })
             .collect();
         model.extend_from_slice(&albums);
+
+        self.albums_grid
+            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+        self.albums_grid
+            .model()
+            .unwrap()
+            .item(index)
+            .and_downcast::<AlbumObject>()
+            .unwrap()
+            .set_property("artwork", artwork);
+    }
+}
+
+#[glib::object_subclass]
+impl ObjectSubclass for AlbumsPage {
+    const NAME: &str = "MellowAlbumsPage";
+    type Type = super::AlbumsPage;
+    type ParentType = adw::NavigationPage;
+
+    fn class_init(class: &mut Self::Class) {
+        class.bind_template();
+        class.bind_template_callbacks();
+    }
+
+    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+        obj.init_template();
+    }
+}
+impl ObjectImpl for AlbumsPage {
+    fn constructed(&self) {
+        self.albums_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .expect(EXP_INIT)
+                .send(UpdateUI::AlbumPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
@@ -162,46 +200,7 @@ impl AlbumsPage {
             // object.unload_artwork();
         });
 
-        self.albums_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.albums_grid.set_factory(Some(&factory));
-    }
-
-    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
-        self.albums_grid
-            .model()
-            .unwrap()
-            .item(index)
-            .and_downcast::<AlbumObject>()
-            .unwrap()
-            .set_property("artwork", artwork);
-    }
-}
-
-#[glib::object_subclass]
-impl ObjectSubclass for AlbumsPage {
-    const NAME: &str = "MellowAlbumsPage";
-    type Type = super::AlbumsPage;
-    type ParentType = adw::NavigationPage;
-
-    fn class_init(class: &mut Self::Class) {
-        class.bind_template();
-        class.bind_template_callbacks();
-    }
-
-    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
-        obj.init_template();
-    }
-}
-impl ObjectImpl for AlbumsPage {
-    fn constructed(&self) {
-        self.albums_grid.connect_activate(|_, index| {
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
-                .send(UpdateUI::AlbumPageByIndex(index as usize))
-                .expect(EXP_RX);
-        });
     }
 }
 impl WidgetImpl for AlbumsPage {}

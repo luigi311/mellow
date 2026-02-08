@@ -92,8 +92,6 @@ impl ArtistsPage {
         }
         self.view_stack.set_visible_child_name("artists");
 
-        // TODO: Most of this does not need to happen every time
-
         let model = gio::ListStore::new::<ArtistObject>();
         let albums: Vec<ArtistObject> = (0..artsits.len())
             .map(|index| {
@@ -102,6 +100,36 @@ impl ArtistsPage {
             })
             .collect();
         model.extend_from_slice(&albums);
+
+        self.artists_grid
+            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+    }
+}
+
+#[glib::object_subclass]
+impl ObjectSubclass for ArtistsPage {
+    const NAME: &str = "MellowArtistsPage";
+    type Type = super::ArtistsPage;
+    type ParentType = adw::NavigationPage;
+
+    fn class_init(class: &mut Self::Class) {
+        class.bind_template();
+        class.bind_template_callbacks();
+    }
+
+    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+        obj.init_template();
+    }
+}
+impl ObjectImpl for ArtistsPage {
+    fn constructed(&self) {
+        self.artists_grid.connect_activate(|_, index| {
+            UI_TX
+                .get()
+                .expect(EXP_INIT)
+                .send(UpdateUI::ArtistPageByIndex(index as usize))
+                .expect(EXP_RX);
+        });
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
@@ -136,36 +164,7 @@ impl ArtistsPage {
             // TODO: Unload artwork and unassign it from the object
         });
 
-        self.artists_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(model))));
         self.artists_grid.set_factory(Some(&factory));
-    }
-}
-
-#[glib::object_subclass]
-impl ObjectSubclass for ArtistsPage {
-    const NAME: &str = "MellowArtistsPage";
-    type Type = super::ArtistsPage;
-    type ParentType = adw::NavigationPage;
-
-    fn class_init(class: &mut Self::Class) {
-        class.bind_template();
-        class.bind_template_callbacks();
-    }
-
-    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
-        obj.init_template();
-    }
-}
-impl ObjectImpl for ArtistsPage {
-    fn constructed(&self) {
-        self.artists_grid.connect_activate(|_, index| {
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
-                .send(UpdateUI::ArtistPageByIndex(index as usize))
-                .expect(EXP_RX);
-        });
     }
 }
 impl WidgetImpl for ArtistsPage {}
