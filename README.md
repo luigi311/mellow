@@ -53,14 +53,14 @@ When the overlay is closed, it is time to enjoy the music.
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
 |  5  | Music library                             | ⚠️ WIP: Basics are done, but see below |
-| 5.1 | Library artists page                      | ⚠️ WIP: Missing artworks and some functionality |
-| 5.2 | Library albums page                       | ⚠️ WIP: Missing artworks and some functionality |
-| 5.3 | Library songs page                        | ⚠️ WIP: Missing artworks and some functionality |
-|  6  | Music library search/filters              | ⚠️ WIP: Play button filters by query, no UI yet |
-|  7  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, play counts are not shown anywhere yet |
-|  8  | Tag-like playlists                        | ❌ TODO |
-|  9  | D-Bus media integration (MPRIS)           | ❌ TODO |
-| 10  | Adaptive background/colors                | ✅ Done |
+| 5.1 | Artists page                              | ⚠️ WIP: Missing artworks and some functionality |
+| 5.2 | Albums page                               | ⚠️ WIP: Artwork loading is WIP, subpage missing go-to functionality |
+| 5.3 | Songs page                                | ⚠️ WIP: Missing artworks and some functionality |
+| 5.4 | Search/filters                            | ⚠️ WIP: Play button filters by query, no UI yet |
+|  6  | Play counts and ratings                   | ⚠️ WIP: Song ratings are done, no album ratings, play counts are not shown anywhere yet |
+|  7  | Tag-like playlists                        | ❌ TODO |
+|  8  | D-Bus media integration (MPRIS)           | ❌ TODO |
+|  9  | Adaptive background/colors                | ✅ Done |
 
 # Building from source
 

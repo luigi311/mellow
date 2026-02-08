@@ -38,6 +38,8 @@ Music Library:
 - [ ] Library building works in the background and doesn't affect functionality
   - FIX: No way to cancel, simultaneous changes/rebuilds could cause incorrect results
   - FIX: Rebuilding sometimes blocks library requests(?)
+- [ ] Album grouping works as expected
+  - FIX: Songs with different year tags are considered to be from different albums
 - [ ] Searching is quick and works as expected
   - TODO: Search results for songs/albums/artists
   - TODO: Filters for songs/albums/artists

@@ -31,12 +31,19 @@ Music library:
 
 - [ ] Save/load user settings (such as library directories)
   - TODO: Save/load shuffle preference for individual views
-- [x] Serialize the library to disk
-- [x] Incremental library rebuilding
 - [ ] Allow initiating a full library rebuild
+- [-] **Search/filtering for songs/albums/artists pages**
+  - TODO: Show the search results
+  - FIX: Cannot drag-select text because it drags the header bar
+  - FIX: Spacebar-to-play shortcut interferes with library search
+- [ ] More complex filtering
+  - [ ] Filter by tags, ratings, year, etc
+  - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
 - [ ] Artists page
+  - [ ] **Search query filtering**
+  - [ ] Sort modes & custom filters
   - [x] Buttons to play all artists (shuffled/sequential)
-    - TOOD: Improve dropdown behavior
+    - TODO: Improve dropdown behavior
   - [-] Show all artists
     - TODO: **Show images (and/or other visual improvements)**
   - [-] Artist subpage, accessed from each item
@@ -45,8 +52,10 @@ Music library:
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
 - [ ] Albums page
+  - [ ] **Search query filtering**
+  - [ ] Sort modes & custom filters
   - [x] Buttons to play all albums (shuffled/sequential)
-    - TOOD: Improve dropdown behavior
+    - TODO: Improve dropdown behavior
   - [-] Show all albums
     - TODO: **Show album artworks**
   - [-] Album subpage, accessed from each item
@@ -56,11 +65,14 @@ Music library:
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
+    - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags
     - [ ] **Go to artist button**
 - [ ] Songs page
+  - [ ] **Search query filtering**
+  - [ ] Sort modes & custom filters
   - [x] Buttons to play all songs (shuffled/sequential)
-    - TOOD: Improve dropdown behavior
+    - TODO: Improve dropdown behavior
   - [-] Show all songs
     - TODO: **Show album artworks**
   - [-] Song subpage, accessed from each item
@@ -74,23 +86,23 @@ Music library:
     - [ ] **Go to artist button**
 - [x] Play counting
 > Works, but the counting logic could be improved
-- [-] **Search/filtering for songs/albums/artists pages**
-  - TODO: Show the search results
-  - FIX: Cannot drag-select text because it drags the header bar
-  - FIX: Spacebar-to-play shortcut interferes with library search
-- [ ] More complex filtering
-  - [ ] Filter by tags, ratings, year, etc
-  - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
-- [ ] Ability to disable library directories(?)
-> Disabled directories would still retain song data (play counts, etc),
-> but be excluded from the actual `songs`/`albums`/`artists` used by the
-> `Library` (design needed for enabling/disabling libraries)
 
 Misc:
 
 - [-] Load song info without blocking the UI
   - TODO: Library songs/albums/artists
 
-Improvements:
+Ideas for improvements:
 
-- [ ] Marquee long titles
+- Marquee long titles
+- Ability to disable library directories(?)
+> Disabled directories would still retain song data (play counts, etc),
+> but be excluded from the actual `songs`/`albums`/`artists` used by the
+> `Library` (design needed for enabling/disabling libraries)
+- Queue page design improvements
+  - Each row could also show duration and track number
+- Song page design improvements
+  - The library song page and queue subpage could display more information
+    about the song, such as track number, disc, year, duration, play count,
+    format/sample rate, filename, etc.
+  - An 'Open With' or 'Show on Disk' button
