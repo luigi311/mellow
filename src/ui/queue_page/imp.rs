@@ -143,6 +143,11 @@ impl QueuePage {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
                         && let Ok(mut song) = song.try_lock()
+                        && song.info().inspect_detailed().is_some_and(|info| {
+                            info.artwork
+                                .as_ref()
+                                .is_some_and(|artwork| artwork.ref_count() == 1)
+                        })
                     {
                         song.info().unload_detailed();
                     }
