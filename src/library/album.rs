@@ -9,7 +9,7 @@ use crate::player::queue_item::QueueItem;
 
 pub struct Album {
     pub title: String,
-    pub year: u32,
+    pub year: u16,
     pub songs: AlbumSongs,
     pub artist: SharedArtist,
 }

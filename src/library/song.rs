@@ -30,7 +30,7 @@ pub struct SongInfo {
     pub album_artist: String,
     pub track: u32,
     pub disc: u32,
-    pub year: u32,
+    pub year: u16,
     pub duration: ClockTime,
 }
 
@@ -388,13 +388,13 @@ impl SongInfoLoader<'_> {
             ),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
-            album_artist: tag.get_string(&ItemKey::AlbumArtist).map_or_else(
+            album_artist: tag.get_string(ItemKey::AlbumArtist).map_or_else(
                 || tag.artist().unwrap_or_default().to_string(),
                 |album_artist| album_artist.to_string(),
             ),
             track: tag.track().unwrap_or_default(),
             disc: tag.disk().unwrap_or(1),
-            year: tag.year().unwrap_or_default(),
+            year: tag.date().unwrap_or_default().year,
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
         }))
@@ -474,7 +474,7 @@ impl SongInfoLoader<'_> {
             .ok_or("No tags found")?;
         Ok(Some(DetailedSongInfo {
             lyrics: tag
-                .get_string(&ItemKey::Lyrics)
+                .get_string(ItemKey::Lyrics)
                 .unwrap_or_default()
                 .to_string(),
             // TODO: Look for a `cover` file in the song directroy
