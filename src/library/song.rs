@@ -583,7 +583,7 @@ impl SongInfoLoader<'_> {
 }
 
 impl<T: Clone> LoadState<T> {
-    // Most of these were pretty much copied from the standard library
+    // Most of these were pretty much copied from the Rust core library
 
     // TODO: Add documentation
 
