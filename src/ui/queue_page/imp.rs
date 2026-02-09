@@ -5,6 +5,7 @@ use std::cell::OnceCell;
 use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -163,7 +164,7 @@ impl QueuePage {
                 println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {
                     if let QueueItem::Song(song) = song {
-                        let _ = song.try_lock().map(|mut song| song.info().load_detailed());
+                        let _ = song.try_load_detailed_info();
                     }
                 }
                 UI_TX

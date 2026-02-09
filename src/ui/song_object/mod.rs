@@ -5,6 +5,7 @@ use gtk::{gdk, glib};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -38,7 +39,7 @@ impl SongObject {
         let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             // TODO: Load in a way that allows cancellation in `unbind`
-            song.lock().expect(EXP_INIT).info().load_detailed();
+            let _ = song.load_detailed_info();
             UI_TX
                 .get()
                 .expect(EXP_INIT)

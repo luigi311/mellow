@@ -12,7 +12,7 @@ use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::SharedAlbum;
 use crate::library::artist::SharedArtist;
-use crate::library::song::SharedSong;
+use crate::library::song::{LoadState, SharedSong, SharedSongExt};
 use crate::library::{Albums, Artists, LIBRARY_TX, Library, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
@@ -185,16 +185,16 @@ impl Window {
 
         let detailed_info = info.inspect_detailed();
         let artwork = match detailed_info {
-            Some(detailed) => {
+            LoadState::Loaded(detailed) => {
                 self.lyrics_page.set_content(&title, &detailed.lyrics);
                 detailed.artwork.as_ref()
             }
-            None => {
+            _ => {
                 drop(song_locked);
                 let song = Arc::clone(song);
                 let ui_tx = UI_TX.get().expect(EXP_INIT);
                 let load_artwork_handle = thread::spawn(move || {
-                    song.lock().unwrap().info().load_detailed();
+                    let _ = song.load_detailed_info();
                     ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
                 });
                 Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {

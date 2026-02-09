@@ -22,7 +22,7 @@ use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::album::{SharedAlbum, SortedAlbumSongs};
 use crate::library::artist::{SharedArtist, SortedArtistAlbums};
 use crate::library::config::{FILE_SUPPORT, LibraryConfig};
-use crate::library::song::SongInfoLoader;
+use crate::library::song::{SharedSong, SharedSongExt, SongInfoLoader};
 use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
 use crate::tasks::{BoxedTask, Runner};
@@ -294,7 +294,7 @@ impl Library {
 
                 // Add song to library if it is not already there
                 if let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) {
-                    songs.insert(index, Arc::new(Mutex::new(Song::new(file))));
+                    songs.insert(index, SharedSong::from_file(file));
                 }
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
@@ -942,7 +942,7 @@ impl Library {
                 }
             }
         }
-        QueueItem::Song(Arc::new(Mutex::new(Song::new_from_path(file))))
+        QueueItem::Song(SharedSong::from_path(file))
     }
 
     /// Serializes `songs` and writes the data to disk,

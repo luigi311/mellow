@@ -2,6 +2,7 @@ use core::error::Error;
 use gio::prelude::*;
 use gst::ClockTime;
 use gtk::{gdk, gio, glib};
+use std::mem;
 use std::sync::{Arc, Mutex};
 
 use lofty::file::TaggedFile;
@@ -12,6 +13,75 @@ use crate::library::album::SharedAlbum;
 use crate::{deserialize, serialize};
 
 pub type SharedSong = Arc<Mutex<Song>>;
+pub trait SharedSongExt {
+    fn from_file(file: gio::File) -> SharedSong;
+    fn from_path(path: &str) -> SharedSong;
+    fn load_detailed_info(&self) -> Result<(), Box<dyn Error>>;
+    fn try_load_detailed_info(&self) -> Result<(), Box<dyn Error>>;
+    fn detailed_info_from_tags(&self, tagged: &TaggedFile) -> Option<DetailedSongInfo>;
+}
+impl SharedSongExt for SharedSong {
+    /// Constructs a new `SharedSong` from a `gio::File`
+    #[inline]
+    fn from_file(file: gio::File) -> SharedSong {
+        Arc::new(Mutex::new(Song::from_file(file)))
+    }
+    /// Constructs a new `SharedSong` from a file path
+    #[inline]
+    fn from_path(path: &str) -> SharedSong {
+        Arc::new(Mutex::new(Song::from_path(path)))
+    }
+    /// Loads detailed song info so it is ready to be used later.
+    /// Does nothing if info is already loading.
+    #[inline]
+    fn load_detailed_info(&self) -> Result<(), Box<dyn Error>> {
+        let mut locked = self.lock().unwrap();
+        if !locked.detailed_info.can_load() {
+            return Ok(());
+        }
+        locked.detailed_info = LoadState::Loading;
+        let tagged = Probe::open(locked.file.path().unwrap())?.read()?;
+        drop(locked);
+        let info = self.detailed_info_from_tags(&tagged);
+        self.lock().unwrap().detailed_info = LoadState::Loaded(info.unwrap());
+        Ok(())
+    }
+    /// Loads detailed song info so it is ready to be used later,
+    /// Does nothing if info is already loading, or if the `Mutex`
+    /// is currently locked.
+    #[inline]
+    fn try_load_detailed_info(&self) -> Result<(), Box<dyn Error>> {
+        let Ok(mut locked) = self.try_lock() else {
+            return Ok(());
+        };
+        if !locked.detailed_info.can_load() {
+            return Ok(());
+        }
+        locked.detailed_info = LoadState::Loading;
+        let tagged = Probe::open(locked.file.path().unwrap())?.read()?;
+        drop(locked);
+        let info = self.detailed_info_from_tags(&tagged);
+        self.lock().unwrap().detailed_info = LoadState::Loaded(info.unwrap());
+        Ok(())
+    }
+    /// Loads the detailed song info from `tagged`
+    #[inline]
+    fn detailed_info_from_tags(&self, tagged: &TaggedFile) -> Option<DetailedSongInfo> {
+        match SongInfoLoader::load_tags_detailed(tagged) {
+            Ok(result) => result,
+            Err(e) => {
+                eprintln!(
+                    "Problem loading tags (detailed): {:?}: {e}",
+                    self.lock().unwrap().file.path().unwrap_or_default()
+                );
+                Some(DetailedSongInfo {
+                    lyrics: String::new(),
+                    artwork: None,
+                })
+            }
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct Song {
@@ -19,7 +89,7 @@ pub struct Song {
     file: gio::File,
     info: Option<SongInfo>,
     user_info: UserSongInfo,
-    detailed_info: Option<DetailedSongInfo>,
+    detailed_info: LoadState<DetailedSongInfo>,
 }
 
 #[derive(Clone)]
@@ -104,29 +174,36 @@ pub struct DetailedSongInfo {
     pub artwork: Option<gdk::Texture>,
 }
 
+#[derive(Clone)]
+pub enum LoadState<T: Clone> {
+    Loaded(T),
+    NotLoaded,
+    Loading,
+}
+
 impl<'s> Song {
     /// Constructs a new `Song` from a `gio::File`
     #[inline]
     #[must_use]
-    pub const fn new(file: gio::File) -> Song {
+    const fn from_file(file: gio::File) -> Song {
         Song {
             album: None,
             file,
             info: None,
             user_info: UserSongInfo::default(),
-            detailed_info: None,
+            detailed_info: LoadState::NotLoaded,
         }
     }
     /// Constructs a new `Song` from a file path
     #[inline]
     #[must_use]
-    pub fn new_from_path(file: &str) -> Song {
+    fn from_path(file: &str) -> Song {
         Song {
             album: None,
             file: gio::File::for_path(file),
             info: None,
             user_info: UserSongInfo::default(),
-            detailed_info: None,
+            detailed_info: LoadState::NotLoaded,
         }
     }
 
@@ -194,7 +271,7 @@ impl<'s> Song {
             file: gio::File::for_uri(uri),
             info: Some(info),
             user_info,
-            detailed_info: None,
+            detailed_info: LoadState::NotLoaded,
         })
     }
 
@@ -214,14 +291,11 @@ impl<'s> Song {
     }
 }
 
-// TODO: Could this be refactored to not require references to `Song`?
-// Maybe it would be better to implement this as a trait on `SharedSong`,
-// so the inner `Mutex` does not need to stay locked while performing IO
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
     info: &'i mut Option<SongInfo>,
     user_info: &'i mut UserSongInfo,
-    detailed_info: &'i mut Option<DetailedSongInfo>,
+    detailed_info: &'i mut LoadState<DetailedSongInfo>,
     tagged: Option<TaggedFile>,
 }
 
@@ -400,12 +474,14 @@ impl SongInfoLoader<'_> {
         }))
     }
 
+    // TODO: Remove the `detailed` load methods in favor of `SharedSongExt` ones
+
     /// Loads detailed song info if needed, then returns it
     #[inline]
     #[must_use]
     pub fn detailed(&mut self) -> &DetailedSongInfo {
         self.load_detailed();
-        // SAFETY: `load_detailed()` ensures the value is `Some`
+        // SAFETY: Relies on `load_detailed()` above to ensure the value is `Loaded`,
         unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
     }
     /// Loads detailed song info if needed, and runs the provided closure
@@ -414,11 +490,11 @@ impl SongInfoLoader<'_> {
     #[inline]
     #[must_use]
     pub fn detailed_and<F: FnOnce()>(&mut self, run_if_not_loaded: F) -> &DetailedSongInfo {
-        if self.detailed_info.is_none() {
+        if !self.detailed_info.is_loaded() {
             self.load_detailed();
             run_if_not_loaded();
         }
-        // SAFETY: `load_basic()` ensures the value is `Some`
+        // SAFETY: Relies on `load_detailed()` above to ensure the value is `Loaded`,
         unsafe { self.detailed_info.as_ref().unwrap_unchecked() }
     }
     /// Loads detailed song info if needed, then returns and unloads it
@@ -426,48 +502,65 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         self.load_detailed();
-        // SAFETY: `load_detailed()` ensures the value is `Some`
+        // SAFETY: Relies on `load_detailed()` above to ensure the value is `Loaded`,
         unsafe { self.detailed_info.take().unwrap_unchecked() }
     }
     /// Returns the detailed song info if loaded, but does not load it
     #[inline]
     #[must_use]
-    pub const fn inspect_detailed(&self) -> Option<&DetailedSongInfo> {
+    pub const fn inspect_detailed(&self) -> LoadState<&DetailedSongInfo> {
         self.detailed_info.as_ref()
     }
     /// Loads detailed song info so it is ready to be used later
-    /// This method call can be chained
     #[inline]
     pub fn load_detailed(&mut self) {
-        if self.detailed_info.is_some() {
+        // SAFETY: Ignoring the `Loading` state and just loading over it is intended,
+        // because some other functions rely on `load_detailed` to always assign a
+        // `Loaded` value to `self.detailed_info` which can be safely unwrapped with
+        // `unwrap_unchecked`. Changing this could result in undefined behavior.
+        if self.detailed_info.is_loaded() {
             return;
         }
-        *self.detailed_info = self
-            .load_detailed_from_file()
-            .inspect_err(|e| {
+        *self.detailed_info = match self
+            .tagged_file()
+            .map(|tagged| Self::load_tags_detailed(tagged))
+        {
+            Ok(Ok(result)) => result.map_or(
+                LoadState::Loaded(DetailedSongInfo {
+                    lyrics: String::new(),
+                    artwork: None,
+                }),
+                LoadState::Loaded,
+            ),
+            Err(e) | Ok(Err(e)) => {
                 eprintln!(
                     "Problem loading tags (detailed): {:?}: {e}",
                     self.file.path().unwrap_or_default()
                 );
-            })
-            .unwrap_or_else(|_| {
-                Some(DetailedSongInfo {
+                LoadState::Loaded(DetailedSongInfo {
                     lyrics: String::new(),
                     artwork: None,
                 })
-            });
+            }
+        };
     }
     /// Unloads detailed song info
     #[inline]
     pub fn unload_detailed(&mut self) {
-        *self.detailed_info = None;
+        *self.detailed_info = LoadState::NotLoaded;
     }
+
+    /// Returns a new `TaggedFile` for reading song tags
     #[inline]
-    fn load_detailed_from_file(&mut self) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
+    fn tagged_file(&mut self) -> Result<&TaggedFile, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
-        let tagged = self.tagged.as_ref().unwrap();
+        Ok(self.tagged.as_ref().unwrap())
+    }
+
+    #[inline]
+    fn load_tags_detailed(tagged: &TaggedFile) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
@@ -486,5 +579,87 @@ impl SongInfoLoader<'_> {
                 None
             },
         }))
+    }
+}
+
+impl<T: Clone> LoadState<T> {
+    // Most of these were pretty much copied from the standard library
+
+    // TODO: Add documentation
+
+    #[inline]
+    pub const fn is_loaded(&self) -> bool {
+        matches!(self, LoadState::Loaded(_))
+    }
+    #[inline]
+    pub const fn is_loading(&self) -> bool {
+        matches!(self, LoadState::Loading)
+    }
+    #[inline]
+    pub const fn can_load(&self) -> bool {
+        matches!(self, LoadState::NotLoaded)
+    }
+    #[inline]
+    pub fn is_some_and<F: FnOnce(T) -> bool>(self, f: F) -> bool {
+        match self {
+            LoadState::Loaded(x) => f(x),
+            _ => false,
+        }
+    }
+    #[inline]
+    pub const fn as_ref(&self) -> LoadState<&T> {
+        match self {
+            LoadState::Loaded(x) => LoadState::Loaded(x),
+            LoadState::Loading => LoadState::Loading,
+            LoadState::NotLoaded => LoadState::NotLoaded,
+        }
+    }
+    #[inline]
+    pub fn map<R: Clone, F: FnOnce(&T) -> R>(&self, f: F) -> LoadState<R> {
+        match self {
+            LoadState::Loaded(x) => LoadState::Loaded(f(x)),
+            LoadState::Loading => LoadState::Loading,
+            LoadState::NotLoaded => LoadState::NotLoaded,
+        }
+    }
+    pub fn map_or_else<U, D, F>(self, default: D, f: F) -> U
+    where
+        D: FnOnce() -> U,
+        F: FnOnce(T) -> U,
+    {
+        match self {
+            LoadState::Loaded(t) => f(t),
+            _ => default(),
+        }
+    }
+    /// Assumes the value is `Loaded` and unwraps it
+    ///
+    /// # Panics
+    /// The function panics if the value is `Loading` or `NotLoaded`
+    #[inline]
+    pub fn unwrap(self) -> T {
+        match self {
+            LoadState::Loaded(x) => x,
+            _ => panic!("called `LoadState::unwrap()` on a value which was not `Ready`"),
+        }
+    }
+    /// Assumes the value is `Loaded` and unwraps it without checking
+    ///
+    /// # Safety
+    /// Caller must ensure to **never** call this on a `Loading`
+    /// or `NotLoaded` value, as doing so is undefined behavior
+    #[inline]
+    pub unsafe fn unwrap_unchecked(self) -> T {
+        match self {
+            LoadState::Loaded(x) => x,
+            // SAFETY: the safety contract must be upheld by the caller.
+            _ => unsafe { std::hint::unreachable_unchecked() },
+        }
+    }
+    /// Takes ownership of and returns the owned original value,
+    /// leaving the field in `NotLoaded` state
+    #[inline]
+    pub const fn take(&mut self) -> LoadState<T> {
+        mem::replace(self, LoadState::NotLoaded)
     }
 }
