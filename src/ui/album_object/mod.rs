@@ -45,10 +45,13 @@ impl AlbumObject {
     }
 
     pub fn unload_artwork(&self) {
-        // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
-        let song = self.imp().first_song.get().expect(EXP_INIT);
         self.set_property("artwork", Option::<gdk::Texture>::None);
-        song.info().unload_detailed();
+        let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
+        // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
+        // NOTE: Unloading in the background because the info mutex could be locked
+        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            song.info().unload_detailed();
+        });
     }
 }
 
