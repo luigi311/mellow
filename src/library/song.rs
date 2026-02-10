@@ -2,6 +2,7 @@ use core::error::Error;
 use gio::prelude::*;
 use gst::ClockTime;
 use gtk::{gdk, gio, glib};
+use std::backtrace::Backtrace;
 use std::mem;
 use std::sync::{Arc, Mutex};
 
@@ -31,6 +32,13 @@ impl SharedSongExt for SharedSong {
     fn from_path(path: &str) -> SharedSong {
         Arc::new(Mutex::new(Song::from_path(path)))
     }
+
+    // NOTE: This loading solution is not ideal, because it doesn't provide
+    // a good way to coordinate status with `SongInfoLoader`. It would be
+    // possible to remove this implementation and use the loader by using
+    // individual mutexes for each info field and returning their guards,
+    // but then `album` will need to be wrapped in another `Mutex` as well.
+
     /// Loads detailed song info so it is ready to be used later.
     /// Does nothing if info is already loading.
     #[inline]
@@ -280,7 +288,14 @@ impl<'s> Song {
     /// memory until the respective `unload` or `take` method is called.
     #[inline]
     #[must_use]
-    pub const fn info(&'s mut self) -> SongInfoLoader<'s> {
+    pub fn info(&'s mut self) -> SongInfoLoader<'s> {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.is_loading() {
+            eprintln!(
+                "WARNING: Mutex lock obtained while loading\n{}",
+                Backtrace::capture()
+            );
+        }
         SongInfoLoader {
             file: &self.file,
             info: &mut self.info,
@@ -521,6 +536,13 @@ impl SongInfoLoader<'_> {
         if self.detailed_info.is_loaded() {
             return;
         }
+        #[cfg(debug_assertions)]
+        if self.detailed_info.is_loading() {
+            eprintln!(
+                "WARNING: Loading while another loading operation is ongoing. Will proceed because the other operation cannot complete due to the mutex lock.\n{}",
+                Backtrace::capture()
+            );
+        }
         *self.detailed_info = match self
             .tagged_file()
             .map(|tagged| Self::load_tags_detailed(tagged))
@@ -547,6 +569,13 @@ impl SongInfoLoader<'_> {
     /// Unloads detailed song info
     #[inline]
     pub fn unload_detailed(&mut self) {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.is_loading() {
+            eprintln!(
+                "WARNING: Unloading while a loading operation is ongoing will result in the info being reassigned afterwards.\n{}",
+                Backtrace::capture()
+            );
+        }
         *self.detailed_info = LoadState::NotLoaded;
     }
 
@@ -583,7 +612,7 @@ impl SongInfoLoader<'_> {
 }
 
 impl<T: Clone> LoadState<T> {
-    // Most of these were pretty much copied from the Rust core library
+    // Most of these were pretty much copied from Rust's `Option` source code
 
     // TODO: Add documentation
 
