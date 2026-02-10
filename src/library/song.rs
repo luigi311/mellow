@@ -16,8 +16,7 @@ pub struct Song {
     file: gio::File,
     info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
-    // TODO: Would it be worth using `RwLock` for detailed info as well?
-    detailed_info: Mutex<Option<DetailedSongInfo>>,
+    detailed_info: RwLock<Option<DetailedSongInfo>>,
 }
 
 pub type SharedSong = Arc<Song>;
@@ -70,7 +69,7 @@ impl<'s> Song {
             file,
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
-            detailed_info: Mutex::new(None),
+            detailed_info: RwLock::new(None),
         }
     }
     /// Constructs a new `Song` from a file path
@@ -82,7 +81,7 @@ impl<'s> Song {
             file: gio::File::for_path(file),
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
-            detailed_info: Mutex::new(None),
+            detailed_info: RwLock::new(None),
         }
     }
 
@@ -152,7 +151,7 @@ impl<'s> Song {
             file: gio::File::for_uri(uri),
             info: RwLock::new(Some(info)),
             user_info: Mutex::new(user_info),
-            detailed_info: Mutex::new(None),
+            detailed_info: RwLock::new(None),
         })
     }
 
@@ -178,7 +177,7 @@ pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
     info: &'i RwLock<Option<SongInfo>>,
     user_info: &'i Mutex<UserSongInfo>,
-    detailed_info: &'i Mutex<Option<DetailedSongInfo>>,
+    detailed_info: &'i RwLock<Option<DetailedSongInfo>>,
     tagged: Option<TaggedFile>,
 }
 
@@ -363,23 +362,30 @@ impl SongInfoLoader<'_> {
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         drop(self.load_detailed());
         // SAFETY: `load_detailed()` ensures the value is `Some`
-        unsafe { self.detailed_info.lock().unwrap().take().unwrap_unchecked() }
+        unsafe {
+            self.detailed_info
+                .write()
+                .unwrap()
+                .take()
+                .unwrap_unchecked()
+        }
     }
     /// Returns the detailed song info if loaded, but does not load it
     #[inline]
-    pub fn inspect_detailed(&self) -> MutexGuard<'_, Option<DetailedSongInfo>> {
-        self.detailed_info.lock().unwrap()
+    pub fn inspect_detailed(&self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
+        self.detailed_info.read().unwrap()
     }
     /// Loads detailed song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.
     #[inline]
-    pub fn load_detailed(&mut self) -> MutexGuard<'_, Option<DetailedSongInfo>> {
-        let mut detailed_info = self.detailed_info.lock().unwrap();
+    pub fn load_detailed(&mut self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
+        let detailed_info = self.detailed_info.read().unwrap();
         if detailed_info.is_some() {
             return detailed_info;
         }
-        *detailed_info = self.detailed_or_default();
-        detailed_info
+        drop(detailed_info);
+        *self.detailed_info.write().unwrap() = self.detailed_or_default();
+        self.detailed_info.read().unwrap()
     }
     /// Tries to obtain the mutex lock then ether loads and returns the detailed
     /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
@@ -390,15 +396,15 @@ impl SongInfoLoader<'_> {
     #[inline]
     pub fn try_load_detailed(
         &mut self,
-    ) -> Result<MutexGuard<'_, Option<DetailedSongInfo>>, TryLockError> {
-        let Ok(mut detailed_info) = self.detailed_info.try_lock() else {
+    ) -> Result<RwLockReadGuard<'_, Option<DetailedSongInfo>>, TryLockError> {
+        let Ok(detailed_info) = self.detailed_info.try_read() else {
             return Err(TryLockError);
         };
         if detailed_info.is_some() {
             return Ok(detailed_info);
         }
-        *detailed_info = self.detailed_or_default();
-        Ok(detailed_info)
+        *self.detailed_info.write().unwrap() = self.detailed_or_default();
+        Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
     /// or returns a default value if it cannot
@@ -430,7 +436,7 @@ impl SongInfoLoader<'_> {
     /// Unloads detailed song info
     #[inline]
     pub fn unload_detailed(&self) {
-        *self.detailed_info.lock().unwrap() = None;
+        *self.detailed_info.write().unwrap() = None;
     }
 
     /// Returns a new `TaggedFile` for reading song tags
