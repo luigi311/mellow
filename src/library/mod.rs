@@ -331,8 +331,7 @@ impl Library {
             let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
             Library::run_task(library_tx, move || {
                 for song in songs {
-                    // TODO: Add `try_load_basic` and use it here
-                    drop(song.info().load_basic());
+                    drop(song.info().try_load_basic());
                 }
             });
         }

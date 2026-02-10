@@ -339,8 +339,28 @@ impl SongInfoLoader<'_> {
         if info.is_some() {
             return info;
         }
-        *info = self
-            .load_basic_from_file()
+        *info = self.basic_or_default();
+        info
+    }
+    /// Tries to obtain the mutex lock then ether loads and returns the basic
+    /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
+    /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
+    ///
+    /// # Errors
+    /// The function returns an error if the mutex is currently busy
+    #[inline]
+    pub fn try_load_basic(&mut self) -> Result<MutexGuard<'_, Option<SongInfo>>, ()> {
+        let Ok(mut info) = self.info.try_lock() else {
+            return Err(());
+        };
+        if info.is_some() {
+            return Ok(info);
+        }
+        *info = self.basic_or_default();
+        Ok(info)
+    }
+    fn basic_or_default(&mut self) -> Option<SongInfo> {
+        self.load_basic_from_file()
             .inspect_err(|e| {
                 eprintln!(
                     "Problem loading tags (basic): {:?}: {e}",
@@ -352,8 +372,7 @@ impl SongInfoLoader<'_> {
                     title: self.filename(),
                     ..SongInfo::default()
                 })
-            });
-        info
+            })
     }
     /// Unloads basic song info
     #[inline]
@@ -416,7 +435,30 @@ impl SongInfoLoader<'_> {
         if detailed_info.is_some() {
             return detailed_info;
         }
-        *detailed_info = match self
+        *detailed_info = self.detailed_or_default();
+        detailed_info
+    }
+    /// Tries to obtain the mutex lock then ether loads and returns the detailed
+    /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
+    /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
+    ///
+    /// # Errors
+    /// The function returns an error if the mutex is currently busy
+    #[inline]
+    pub fn try_load_detailed(&mut self) -> Result<MutexGuard<'_, Option<DetailedSongInfo>>, ()> {
+        let Ok(mut detailed_info) = self.detailed_info.try_lock() else {
+            return Err(());
+        };
+        if detailed_info.is_some() {
+            return Ok(detailed_info);
+        }
+        *detailed_info = self.detailed_or_default();
+        Ok(detailed_info)
+    }
+    /// Attempts to read detailed info from tags and returns it,
+    /// or returns a default value if it cannot
+    fn detailed_or_default(&mut self) -> Option<DetailedSongInfo> {
+        match self
             .tagged_file()
             .map(|tagged| Self::load_tags_detailed(tagged))
         {
@@ -437,9 +479,9 @@ impl SongInfoLoader<'_> {
                     artwork: None,
                 })
             }
-        };
-        detailed_info
+        }
     }
+
     /// Unloads detailed song info
     #[inline]
     pub fn unload_detailed(&self) {

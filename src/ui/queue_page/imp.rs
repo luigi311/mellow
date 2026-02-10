@@ -163,8 +163,7 @@ impl QueuePage {
                 println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {
                     if let QueueItem::Song(song) = song {
-                        // TODO: Add `try_load_detailed` and use it here
-                        drop(song.info().load_detailed());
+                        drop(song.info().try_load_detailed());
                     }
                 }
                 UI_TX
