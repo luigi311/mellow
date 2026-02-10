@@ -359,8 +359,12 @@ impl Player {
     fn skip_to(&mut self, index: usize) {
         self.backend.set_property("instant-uri", true);
         self.queue.pending_track = true;
-        // FIX: Sometimes skipping to same song skips it instead of restarting
-        // (only seems to happen with one specific album)
+        if self.queue.index() == index {
+            if matches!(self.backend.current_state(), State::Playing | State::Paused) {
+                let _ = self.repeat_song();
+            }
+            return;
+        }
         self.queue.set_index(index);
     }
 
