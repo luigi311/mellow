@@ -157,21 +157,19 @@ impl QueuePage {
             return; // Skip loading artworks
         }
 
-        let load_artworks_handle = thread::spawn({
-            let songs = queue[start..end].to_vec();
-            move || {
-                println!("Loading artworks for queued songs");
-                for song in songs.iter().rev() {
-                    if let QueueItem::Song(song) = song {
-                        drop(song.info().try_load_detailed());
-                    }
+        let songs = queue[start..end].to_vec();
+        let load_artworks_handle = thread::spawn(move || {
+            println!("Loading artworks for queued songs");
+            for song in songs.iter().rev() {
+                if let QueueItem::Song(song) = song {
+                    drop(song.info().load_detailed());
                 }
-                UI_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(UpdateUI::RedrawQueue)
-                    .expect(EXP_RX);
             }
+            UI_TX
+                .get()
+                .expect(EXP_INIT)
+                .send(UpdateUI::RedrawQueue)
+                .expect(EXP_RX);
         });
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             let _ = load_artworks_handle.join();
