@@ -2,7 +2,7 @@ use core::error::Error;
 use gio::prelude::*;
 use gst::ClockTime;
 use gtk::{gdk, gio, glib};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
 
 use lofty::file::TaggedFile;
 use lofty::prelude::*;
@@ -45,8 +45,7 @@ impl SharedSongExt for SharedSong {
 pub struct Song {
     album: Mutex<Option<SharedAlbum>>,
     file: gio::File,
-    // IDEA: Info fields might benefit from `RwLock`
-    info: Mutex<Option<SongInfo>>,
+    info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
     detailed_info: Mutex<Option<DetailedSongInfo>>,
 }
@@ -133,7 +132,7 @@ impl<'s> Song {
         Song {
             album: Mutex::new(None),
             file,
-            info: Mutex::new(None),
+            info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: Mutex::new(None),
         }
@@ -145,7 +144,7 @@ impl<'s> Song {
         Song {
             album: Mutex::new(None),
             file: gio::File::for_path(file),
-            info: Mutex::new(None),
+            info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: Mutex::new(None),
         }
@@ -215,7 +214,7 @@ impl<'s> Song {
         Ok(Song {
             album: Mutex::new(None),
             file: gio::File::for_uri(uri),
-            info: Mutex::new(Some(info)),
+            info: RwLock::new(Some(info)),
             user_info: Mutex::new(user_info),
             detailed_info: Mutex::new(None),
         })
@@ -226,7 +225,7 @@ impl<'s> Song {
     /// memory until the respective `unload` or `take` method is called.
     #[inline]
     #[must_use]
-    pub fn info(&'s self) -> SongInfoLoader<'s> {
+    pub const fn info(&'s self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
             info: &self.info,
@@ -241,7 +240,7 @@ pub struct TryLockError;
 
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
-    info: &'i Mutex<Option<SongInfo>>,
+    info: &'i RwLock<Option<SongInfo>>,
     user_info: &'i Mutex<UserSongInfo>,
     detailed_info: &'i Mutex<Option<DetailedSongInfo>>,
     tagged: Option<TaggedFile>,
@@ -326,23 +325,24 @@ impl SongInfoLoader<'_> {
     pub fn take_basic(&mut self) -> SongInfo {
         drop(self.load_basic());
         // SAFETY: `load_basic()` ensures the value is `Some`
-        unsafe { self.info.lock().unwrap().take().unwrap_unchecked() }
+        unsafe { self.info.write().unwrap().take().unwrap_unchecked() }
     }
     /// Returns the basic song info if loaded, but does not load it
     #[inline]
-    pub fn inspect_basic(&self) -> MutexGuard<'_, Option<SongInfo>> {
-        self.info.lock().unwrap()
+    pub fn inspect_basic(&self) -> RwLockReadGuard<'_, Option<SongInfo>> {
+        self.info.read().unwrap()
     }
     /// Loads basic song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.
     #[inline]
-    pub fn load_basic(&mut self) -> MutexGuard<'_, Option<SongInfo>> {
-        let mut info = self.info.lock().unwrap();
+    pub fn load_basic(&mut self) -> RwLockReadGuard<'_, Option<SongInfo>> {
+        let info = self.info.read().unwrap();
         if info.is_some() {
             return info;
         }
-        *info = self.basic_or_default();
-        info
+        drop(info);
+        *self.info.write().unwrap() = self.basic_or_default();
+        self.info.read().unwrap()
     }
     /// Tries to obtain the mutex lock then ether loads and returns the basic
     /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
@@ -351,15 +351,18 @@ impl SongInfoLoader<'_> {
     /// # Errors
     /// The function returns an error if the mutex is currently busy
     #[inline]
-    pub fn try_load_basic(&mut self) -> Result<MutexGuard<'_, Option<SongInfo>>, TryLockError> {
-        let Ok(mut info) = self.info.try_lock() else {
+    pub fn try_load_basic(
+        &mut self,
+    ) -> Result<RwLockReadGuard<'_, Option<SongInfo>>, TryLockError> {
+        let Ok(info) = self.info.try_read() else {
             return Err(TryLockError);
         };
         if info.is_some() {
             return Ok(info);
         }
-        *info = self.basic_or_default();
-        Ok(info)
+        drop(info);
+        *self.info.write().unwrap() = self.basic_or_default();
+        Ok(self.info.read().unwrap())
     }
     fn basic_or_default(&mut self) -> Option<SongInfo> {
         self.load_basic_from_file()
@@ -379,7 +382,7 @@ impl SongInfoLoader<'_> {
     /// Unloads basic song info
     #[inline]
     pub fn unload_basic(&mut self) {
-        *self.info.lock().unwrap() = None;
+        *self.info.write().unwrap() = None;
     }
     #[inline]
     fn load_basic_from_file(&mut self) -> Result<Option<SongInfo>, Box<dyn Error>> {
