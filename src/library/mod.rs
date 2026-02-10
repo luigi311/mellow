@@ -517,7 +517,7 @@ impl Library {
                         }
                         // Duplicate missing song entry
                         Ok(index) => {
-                            info.user_mut().merge_with(&missing[index].info().user());
+                            info.user().merge_with(&missing[index].info().user());
                             drop(info);
                             drop(song);
                         }
@@ -526,7 +526,7 @@ impl Library {
                 // Duplicate entry
                 Ok(index) => {
                     println!("Resolving duplicate entry: {}", info.filename());
-                    info.user_mut().merge_with(&songs[index].info().user());
+                    info.user().merge_with(&songs[index].info().user());
                     drop(info);
                     drop(song);
                 }
@@ -547,7 +547,7 @@ impl Library {
             if cmp_info.inspect_basic().eq(&info.load_basic()) {
                 // Copy the user-assigned song info to the new entry
                 println!("Found moved file: {}", cmp_info.filename());
-                info.user_mut().merge_with(&cmp_info.user());
+                info.user().merge_with(&cmp_info.user());
                 return true;
             }
             false

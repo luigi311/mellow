@@ -30,10 +30,12 @@ impl SharedSongExt for SharedSong {
         Arc::new(Song::from_path(path))
     }
 
+    /// Returns the currently assigned album's `MutexGuard`
     #[inline]
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>> {
         self.album.lock().unwrap()
     }
+    // Sets `self.album` to the given `album`
     #[inline]
     fn set_album(&self, album: SharedAlbum) {
         *self.album.lock().unwrap() = Some(album)
@@ -117,15 +119,7 @@ impl UserSongInfo {
     }
 }
 
-// IDEA: Make all fields optional, and load or access them on-demand
-// using dedicated loader functions (e.g. `song.info().artwork()`)
-// This might be useful once downscaled thumbnails are implemented
-// However, there is an issue with that, because if there is no
-// artwork assigned, the `artwork()` function would try to load it
-// every time it is accessed, even though it does not exist
-// One possible solution might be a nested `Option`
 /// Fields which do not need to be held in memory at all times
-#[derive(Clone)]
 pub struct DetailedSongInfo {
     pub lyrics: String,
     pub artwork: Option<gdk::Texture>,
@@ -252,8 +246,6 @@ pub struct SongInfoLoader<'i> {
 }
 
 impl SongInfoLoader<'_> {
-    // TODO: Info in doc comments is most likely outdated
-
     /// Returns a reference to the `gio::File`
     #[must_use]
     pub const fn file(&self) -> &gio::File {
@@ -306,13 +298,8 @@ impl SongInfoLoader<'_> {
         self.user_info.lock().unwrap().modified = self.file_modification_time();
     }
 
-    #[must_use]
+    /// Returns the user song info `MutexGuard`
     pub fn user(&self) -> MutexGuard<'_, UserSongInfo> {
-        self.user_info.lock().unwrap()
-    }
-
-    #[must_use]
-    pub fn user_mut(&self) -> MutexGuard<'_, UserSongInfo> {
         self.user_info.lock().unwrap()
     }
 
@@ -341,12 +328,11 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the basic song info if loaded, but does not load it
     #[inline]
-    #[must_use]
     pub fn inspect_basic(&self) -> MutexGuard<'_, Option<SongInfo>> {
         self.info.lock().unwrap()
     }
     /// Loads basic song info and returns its `MutexGuard`.
-    /// The inner `Option` is always safe to unwrap.
+    /// The returned inner `Option` is always safe to unwrap.
     #[inline]
     pub fn load_basic(&mut self) -> MutexGuard<'_, Option<SongInfo>> {
         let mut info = self.info.lock().unwrap();
@@ -414,23 +400,19 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         drop(self.load_detailed());
-        // SAFETY: Relies on `load_detailed()` above to ensure the value is `Loaded`,
+        // SAFETY: `load_detailed()` ensures the value is `Some`
         unsafe { self.detailed_info.lock().unwrap().take().unwrap_unchecked() }
     }
     /// Returns the detailed song info if loaded, but does not load it
     #[inline]
-    #[must_use]
     pub fn inspect_detailed(&self) -> MutexGuard<'_, Option<DetailedSongInfo>> {
         self.detailed_info.lock().unwrap()
     }
-    /// Loads detailed song info so it is ready to be used later
+    /// Loads detailed song info and returns its `MutexGuard`.
+    /// The returned inner `Option` is always safe to unwrap.
     #[inline]
     pub fn load_detailed(&mut self) -> MutexGuard<'_, Option<DetailedSongInfo>> {
         let mut detailed_info = self.detailed_info.lock().unwrap();
-        // SAFETY: Ignoring the `Loading` state and just loading over it is intended,
-        // because some other functions rely on `load_detailed` to always assign a
-        // `Loaded` value to `self.detailed_info` which can be safely unwrapped with
-        // `unwrap_unchecked`. Changing this could result in undefined behavior.
         if detailed_info.is_some() {
             return detailed_info;
         }
