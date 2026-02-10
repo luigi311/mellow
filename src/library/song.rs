@@ -285,8 +285,7 @@ impl SongInfoLoader<'_> {
     /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
     ///
     /// # Errors
-    /// - If the info is not loaded, and the write lock could not be obtained
-    /// - If the info is loaded, but the read lock could not be obtained
+    /// - If the info is loaded, but cannot be read without blocking
     #[inline]
     pub fn try_load_basic(
         &mut self,
@@ -393,8 +392,7 @@ impl SongInfoLoader<'_> {
     /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
     ///
     /// # Errors
-    /// - If the info is not loaded, and the write lock could not be obtained
-    /// - If the info is loaded, but the read lock could not be obtained
+    /// - If the info is loaded, but cannot be read without blocking
     #[inline]
     pub fn try_load_detailed(
         &mut self,
