@@ -280,12 +280,13 @@ impl SongInfoLoader<'_> {
         *self.info.write().unwrap() = self.basic_or_default();
         self.info.read().unwrap()
     }
-    /// Tries to obtain the mutex lock then ether loads and returns the basic
-    /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
+    /// Returns the basic song info if it is currently accessible without
+    /// blocking the thread.
     /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
     ///
     /// # Errors
-    /// The function returns an error if the mutex is currently busy
+    /// - If the info is not loaded, and the write lock could not be obtained
+    /// - If the info is loaded, but the read lock could not be obtained
     #[inline]
     pub fn try_load_basic(
         &mut self,
@@ -297,7 +298,10 @@ impl SongInfoLoader<'_> {
             return Ok(info);
         }
         drop(info);
-        *self.info.write().unwrap() = self.basic_or_default();
+        let Ok(mut info) = self.info.try_write() else {
+            return Err(TryLockError);
+        };
+        *info = self.basic_or_default();
         Ok(self.info.read().unwrap())
     }
     #[inline]
@@ -387,12 +391,13 @@ impl SongInfoLoader<'_> {
         *self.detailed_info.write().unwrap() = self.detailed_or_default();
         self.detailed_info.read().unwrap()
     }
-    /// Tries to obtain the mutex lock then ether loads and returns the detailed
-    /// song info `MutexGuard` in the `Ok` variant, or `Err` if it cannot.
+    /// Returns the detailed song info if it is currently accessible without
+    /// blocking the thread.
     /// The returned inner `Option` of the `Ok` variant is always safe to unwrap.
     ///
     /// # Errors
-    /// The function returns an error if the mutex is currently busy
+    /// - If the info is not loaded, and the write lock could not be obtained
+    /// - If the info is loaded, but the read lock could not be obtained
     #[inline]
     pub fn try_load_detailed(
         &mut self,
@@ -403,7 +408,10 @@ impl SongInfoLoader<'_> {
         if detailed_info.is_some() {
             return Ok(detailed_info);
         }
-        *self.detailed_info.write().unwrap() = self.detailed_or_default();
+        let Ok(mut detailed_info) = self.detailed_info.try_write() else {
+            return Err(TryLockError);
+        };
+        *detailed_info = self.detailed_or_default();
         Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
