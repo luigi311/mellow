@@ -298,10 +298,7 @@ impl SongInfoLoader<'_> {
             return Ok(info);
         }
         drop(info);
-        let Ok(mut info) = self.info.try_write() else {
-            return Err(TryLockError);
-        };
-        *info = self.basic_or_default();
+        *self.info.write().unwrap() = self.basic_or_default();
         Ok(self.info.read().unwrap())
     }
     #[inline]
@@ -408,10 +405,7 @@ impl SongInfoLoader<'_> {
         if detailed_info.is_some() {
             return Ok(detailed_info);
         }
-        let Ok(mut detailed_info) = self.detailed_info.try_write() else {
-            return Err(TryLockError);
-        };
-        *detailed_info = self.detailed_or_default();
+        *self.detailed_info.write().unwrap() = self.detailed_or_default();
         Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
