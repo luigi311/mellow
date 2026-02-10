@@ -11,6 +11,15 @@ use lofty::probe::Probe;
 use crate::library::album::SharedAlbum;
 use crate::{deserialize, serialize};
 
+pub struct Song {
+    album: Mutex<Option<SharedAlbum>>,
+    file: gio::File,
+    info: RwLock<Option<SongInfo>>,
+    user_info: Mutex<UserSongInfo>,
+    // TODO: Would it be worth using `RwLock` for detailed info as well?
+    detailed_info: Mutex<Option<DetailedSongInfo>>,
+}
+
 pub type SharedSong = Arc<Song>;
 pub trait SharedSongExt {
     fn from_file(file: gio::File) -> SharedSong;
@@ -29,7 +38,6 @@ impl SharedSongExt for SharedSong {
     fn from_path(path: &str) -> SharedSong {
         Arc::new(Song::from_path(path))
     }
-
     /// Returns the currently assigned album's `MutexGuard`
     #[inline]
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>> {
@@ -40,88 +48,6 @@ impl SharedSongExt for SharedSong {
     fn set_album(&self, album: SharedAlbum) {
         *self.album.lock().unwrap() = Some(album);
     }
-}
-
-pub struct Song {
-    album: Mutex<Option<SharedAlbum>>,
-    file: gio::File,
-    info: RwLock<Option<SongInfo>>,
-    user_info: Mutex<UserSongInfo>,
-    detailed_info: Mutex<Option<DetailedSongInfo>>,
-}
-
-#[derive(Clone)]
-pub struct SongInfo {
-    pub title: String,
-    pub album: String,
-    pub artist: String,
-    pub album_artist: String,
-    pub track: u32,
-    pub disc: u32,
-    pub year: u16,
-    pub duration: ClockTime,
-}
-
-impl Default for SongInfo {
-    #[inline]
-    fn default() -> Self {
-        SongInfo {
-            title: String::new(),
-            album: String::new(),
-            artist: String::new(),
-            album_artist: String::new(),
-            track: 0,
-            disc: 1,
-            year: 0,
-            duration: ClockTime::ZERO,
-        }
-    }
-}
-
-impl PartialEq for SongInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.title == other.title
-            && self.album == other.album
-            && self.artist == other.artist
-            && self.track == other.track
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct UserSongInfo {
-    pub modified: i64,
-    pub play_count: usize,
-    pub rating: u8,
-}
-
-impl UserSongInfo {
-    #[must_use]
-    pub const fn default() -> Self {
-        Self {
-            modified: 0,
-            play_count: 0,
-            rating: 0,
-        }
-    }
-
-    /// Copies info from `other` and merges into `self`:
-    /// - Play counts are summed up
-    /// - Ratings are averaged, or whichever one is non-zero is used
-    /// - Modification time remains unchanged
-    pub const fn merge_with(&mut self, other: &UserSongInfo) {
-        self.play_count += other.play_count;
-        if self.rating == 0 {
-            self.rating = other.rating;
-        } else if other.rating > 0 {
-            self.rating = (self.rating + other.rating) / 2;
-        }
-    }
-}
-
-/// Fields which do not need to be held in memory at all times
-pub struct DetailedSongInfo {
-    pub lyrics: String,
-    pub artwork: Option<gdk::Texture>,
 }
 
 impl<'s> Song {
@@ -524,5 +450,76 @@ impl SongInfoLoader<'_> {
                 None
             },
         }))
+    }
+}
+
+#[derive(Clone)]
+pub struct SongInfo {
+    pub title: String,
+    pub album: String,
+    pub artist: String,
+    pub album_artist: String,
+    pub track: u32,
+    pub disc: u32,
+    pub year: u16,
+    pub duration: ClockTime,
+}
+#[derive(Clone, Debug)]
+pub struct UserSongInfo {
+    pub modified: i64,
+    pub play_count: usize,
+    pub rating: u8,
+}
+/// Fields which do not need to be held in memory at all times
+pub struct DetailedSongInfo {
+    pub lyrics: String,
+    pub artwork: Option<gdk::Texture>,
+}
+
+impl PartialEq for SongInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.title == other.title
+            && self.album == other.album
+            && self.artist == other.artist
+            && self.track == other.track
+    }
+}
+impl Default for SongInfo {
+    #[inline]
+    fn default() -> Self {
+        SongInfo {
+            title: String::new(),
+            album: String::new(),
+            artist: String::new(),
+            album_artist: String::new(),
+            track: 0,
+            disc: 1,
+            year: 0,
+            duration: ClockTime::ZERO,
+        }
+    }
+}
+
+impl UserSongInfo {
+    #[must_use]
+    pub const fn default() -> Self {
+        Self {
+            modified: 0,
+            play_count: 0,
+            rating: 0,
+        }
+    }
+
+    /// Copies info from `other` and merges into `self`:
+    /// - Play counts are summed up
+    /// - Ratings are averaged, or whichever one is non-zero is used
+    /// - Modification time remains unchanged
+    pub const fn merge_with(&mut self, other: &UserSongInfo) {
+        self.play_count += other.play_count;
+        if self.rating == 0 {
+            self.rating = other.rating;
+        } else if other.rating > 0 {
+            self.rating = (self.rating + other.rating) / 2;
+        }
     }
 }
