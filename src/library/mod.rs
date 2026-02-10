@@ -53,7 +53,7 @@ pub trait ToShuffledQueue {
     fn to_shuffled_queue(&self) -> Vec<QueueItem>;
 }
 
-pub type Songs = Vec<Arc<Mutex<Song>>>;
+pub type Songs = Vec<Arc<Song>>;
 pub trait SortedSongs {
     /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize>;
@@ -61,9 +61,7 @@ pub trait SortedSongs {
 impl SortedSongs for Songs {
     #[inline]
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize> {
-        self.binary_search_by(|song| {
-            song.lock().unwrap().info().file_uri()[trim_start..].cmp(&uri[trim_start..])
-        })
+        self.binary_search_by(|song| song.info().file_uri()[trim_start..].cmp(&uri[trim_start..]))
     }
 }
 impl ToQueue for Songs {
@@ -333,7 +331,8 @@ impl Library {
             let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
             Library::run_task(library_tx, move || {
                 for song in songs {
-                    let _ = song.try_lock().map(|mut song| song.info().load_basic());
+                    // TODO: Add `try_load_basic` and use it here
+                    drop(song.info().load_basic());
                 }
             });
         }
@@ -351,9 +350,9 @@ impl Library {
 
         // TODO: Allow cancellation
         for (i, song) in songs.iter().enumerate() {
-            let mut song_locked = song.lock().unwrap();
-            let mut info = song_locked.info();
-            let song_info = info.basic();
+            let mut info = song.info();
+            let song_info = info.load_basic();
+            let song_info = song_info.as_ref().unwrap();
 
             let album_index = albums.find_album(song_info);
             let artist_index = artists.find_artist(song_info);
@@ -374,7 +373,7 @@ impl Library {
                         }
 
                         // Associate the song with its album
-                        song_locked.album = Some(Arc::clone(album));
+                        song.set_album(Arc::clone(album));
                     }
                     Err(album_index) => {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
@@ -397,7 +396,7 @@ impl Library {
                         }
 
                         // Associate the song with its album
-                        song_locked.album = Some(Arc::clone(&album));
+                        song.set_album(Arc::clone(&album));
                     }
                 },
                 Err(artist_index) => {
@@ -424,10 +423,9 @@ impl Library {
                     artists.insert(artist_index, artist);
 
                     // Associate the song with its album
-                    song_locked.album = Some(album);
+                    song.set_album(album);
                 }
             }
-            drop(song_locked);
 
             if i % progress_interval == 0 {
                 progress += progress_step;
@@ -459,8 +457,7 @@ impl Library {
         old_songs.append(missing);
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs {
-            let mut song_locked = song.lock().unwrap();
-            let mut info = song_locked.info();
+            let mut info = song.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {
                 match fs::exists(dir).unwrap_or(false) {
                     false => Some(gio::File::for_path(dir).uri()),
@@ -487,12 +484,12 @@ impl Library {
                             }
                             info.unload_basic();
                         }
-                        drop(song_locked);
+                        drop(info);
                         songs.insert(index, song);
                         continue 'iter;
                     }
                     // IDEA: To disable libraries, move `songs` into `disabled_songs`
-                    drop(song_locked);
+                    drop(info);
                     drop(song);
                 }
                 // Missing file
@@ -510,19 +507,18 @@ impl Library {
                                         "Remembering {} because its library is missing",
                                         info.filename()
                                     );
-                                    drop(song_locked);
+                                    drop(info);
                                     missing.insert(index, song);
                                     continue 'iter;
                                 }
                             }
-                            drop(song_locked);
+                            drop(info);
                             possibly_moved.push(song);
                         }
                         // Duplicate missing song entry
                         Ok(index) => {
-                            info.user_mut()
-                                .merge_with(missing[index].lock().unwrap().info().user());
-                            drop(song_locked);
+                            info.user_mut().merge_with(&missing[index].info().user());
+                            drop(info);
                             drop(song);
                         }
                     }
@@ -530,9 +526,8 @@ impl Library {
                 // Duplicate entry
                 Ok(index) => {
                     println!("Resolving duplicate entry: {}", info.filename());
-                    info.user_mut()
-                        .merge_with(songs[index].lock().unwrap().info().user());
-                    drop(song_locked);
+                    info.user_mut().merge_with(&songs[index].info().user());
+                    drop(info);
                     drop(song);
                 }
             }
@@ -549,10 +544,10 @@ impl Library {
     /// - A `Mutex` in `songs` or `possibly_moved` is in a poisoned state
     pub fn merge_moved_entries(songs: &Songs, possibly_moved: Songs, config: &LibraryConfig) {
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
-            if cmp_info.inspect_basic() == Some(info.basic()) {
+            if cmp_info.inspect_basic().eq(&info.load_basic()) {
                 // Copy the user-assigned song info to the new entry
                 println!("Found moved file: {}", cmp_info.filename());
-                info.user_mut().merge_with(cmp_info.user());
+                info.user_mut().merge_with(&cmp_info.user());
                 return true;
             }
             false
@@ -570,8 +565,7 @@ impl Library {
         let mut progress = 0.0;
 
         for (i, missing) in possibly_moved.into_iter().enumerate() {
-            let mut missing_locked = missing.lock().unwrap();
-            let old_info = missing_locked.info();
+            let old_info = missing.info();
 
             // Optimization: start with an initial guess and expand outwards
             let guess = match songs.find_song(&old_info.file_uri(), config.uri_opt()) {
@@ -580,11 +574,9 @@ impl Library {
             let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
             loop {
                 let (left, right) = (left.next_back(), right.next());
-                if right.is_some_and(|song| {
-                    merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
-                }) || left.is_some_and(|song| {
-                    merge_if_matching(&mut song.lock().unwrap().info(), &old_info)
-                }) || (left.is_none() && right.is_none())
+                if right.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
+                    || left.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
+                    || (left.is_none() && right.is_none())
                 {
                     break;
                 }
@@ -700,7 +692,13 @@ impl Library {
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
         // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
         search::query_items(&self.songs, query, |song, query| {
-            search::query_score(query, &song.lock().unwrap().info().basic().title)
+            let mut info = song.info();
+            let info = info.load_basic();
+            search::query_score(
+                query,
+                // SAFETY: `load_basic` is always safe to unwrap
+                unsafe { &info.as_ref().unwrap_unchecked().title },
+            )
         })
         .to_queue()
     }
@@ -953,7 +951,7 @@ impl Library {
     fn serialize_songs(songs: &Songs) {
         let serialized = songs
             .iter()
-            .map(|song| song.lock().unwrap().serlialize() + "\n")
+            .map(|song| song.serlialize() + "\n")
             .collect::<String>();
         match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
             fs::write(
@@ -977,7 +975,7 @@ impl Library {
         };
         data.split("\n\n")
             .filter_map(|data| match Song::deserialize(data) {
-                Ok(song) => Some(Arc::new(Mutex::new(song))),
+                Ok(song) => Some(Arc::new(song)),
                 Err(_) => None,
             })
             .collect()
@@ -992,10 +990,9 @@ impl Library {
         let mut songs = mem::take(&mut self.songs);
         for missing_song in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
-            let Err(index) = songs.find_song(
-                &missing_song.lock().unwrap().info().file_uri(),
-                self.config.uri_opt(),
-            ) else {
+            let Err(index) =
+                songs.find_song(&missing_song.info().file_uri(), self.config.uri_opt())
+            else {
                 continue;
             };
             songs.insert(index, missing_song);

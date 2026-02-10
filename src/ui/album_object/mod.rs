@@ -6,7 +6,6 @@ use gst::glib::object::ObjectExt;
 use gtk::{gdk, glib};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -36,7 +35,7 @@ impl AlbumObject {
         let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             // TODO: Load in a way that allows cancellation in `unbind`
-            let _ = song.load_detailed_info();
+            drop(song.info().load_detailed());
             UI_TX
                 .get()
                 .expect(EXP_INIT)
@@ -47,10 +46,9 @@ impl AlbumObject {
 
     pub fn unload_artwork(&self) {
         // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
-        if let Ok(mut song) = self.imp().first_song.get().expect(EXP_INIT).try_lock() {
-            self.set_property("artwork", Option::<gdk::Texture>::None);
-            song.info().unload_detailed();
-        }
+        let song = self.imp().first_song.get().expect(EXP_INIT);
+        self.set_property("artwork", Option::<gdk::Texture>::None);
+        song.info().unload_detailed();
     }
 }
 

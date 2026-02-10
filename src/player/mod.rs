@@ -275,7 +275,7 @@ impl Player {
         }
 
         let file_uri = match self.queue.current() {
-            QueueItem::Song(song) => song.lock().unwrap().info().file_uri(),
+            QueueItem::Song(song) => song.info().file_uri(),
             QueueItem::Stopper => {
                 self.queue.remove_current();
                 let _ = self.backend.set_state(State::Null);
@@ -501,7 +501,7 @@ impl Player {
 
         // Seek to the same time the player was at before, or skip the song
         if self.seek_to_time(pos).is_err() {
-            self.queue.current().map(|mut song| song.info().played());
+            self.queue.current().map(|song| song.info().played());
             let _ = self.player_tx.send(PlayerRequest::SkipNext);
         }
     }

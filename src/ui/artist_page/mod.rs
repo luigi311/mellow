@@ -34,10 +34,10 @@ impl ArtistPage {
                 _ => String::new(),
             });
 
-            let mut first_song = album_locked.songs[0].lock().unwrap();
-            let mut info = first_song.info();
-            let info = info.detailed();
-            let artwork = info.artwork.as_ref();
+            let mut info = album_locked.songs[0].info();
+            let info = info.load_detailed();
+            // SAFETY: `load_detailed` is always safe to unwrap
+            let artwork = unsafe { info.as_ref().unwrap_unchecked().artwork.as_ref() };
             if artwork.is_some() {
                 entry.set_prefix_image(artwork);
             } else {

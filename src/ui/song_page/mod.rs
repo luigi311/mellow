@@ -17,18 +17,24 @@ impl SongPage {
         let song_page = self.imp();
 
         song_page.index.set(index);
-        let mut song_locked = song.lock().unwrap();
-        let mut info = song_locked.info();
-        let song_info = info.basic();
+        let mut info = song.info();
+
+        let song_info_temp = info.load_basic();
+        // SAFETY: `load_basic` is always safe to unwrap
+        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         song_page.song_title.set_label(&song_info.title);
         song_page.album_title.set_label(&song_info.album);
         song_page.artist_name.set_label(&song_info.artist);
         song_page.context.replace(Some(to_queue));
+        drop(song_info_temp);
+
         let user_info = info.user();
         song_page.rating.set_rating_silent(user_info.rating);
-        drop(song_locked);
+        drop(user_info);
+        drop(info);
+
         song_page.rating.connect_rating_set(move |rating| {
-            song.lock().unwrap().info().set_rating(rating);
+            song.info().set_rating(rating);
         });
     }
 }

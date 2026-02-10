@@ -5,7 +5,6 @@ use std::cell::OnceCell;
 use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -77,22 +76,25 @@ impl QueuePage {
         for (i, item) in queue.iter().enumerate().take(end).skip(start) {
             match item {
                 QueueItem::Song(song) => {
-                    let mut song = song.lock().unwrap();
                     let mut info = song.info();
 
-                    let song_info = info.basic();
+                    let song_info_temp = info.load_basic();
+                    // SAFETY: `load_basic` is always safe to unwrap
+                    let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
                     let is_playing = i == index;
 
                     let entry = SongRow::default();
-                    entry.set_title(&song_info.title);
-                    entry.set_subtitle(&song_info.artist);
+                    entry.set_title(&song_info.title.clone());
+                    entry.set_subtitle(&song_info.artist.clone());
+                    drop(song_info_temp);
                     if is_playing {
                         entry.add_css_class("heading");
                         entry.add_css_class("card");
                     }
 
                     // TODO: Cached low-res album covers
-                    let artwork = info.inspect_detailed().map_or_else(
+                    let detailed_info = info.inspect_detailed();
+                    let artwork = detailed_info.as_ref().map_or_else(
                         || {
                             needs_loading = true;
                             None
@@ -104,8 +106,6 @@ impl QueuePage {
                     } else {
                         entry.set_prefix_image(Some(&fallback_song_image()));
                     }
-
-                    drop(song);
 
                     entry.connect_activated(move |_| {
                         UI_TX
@@ -143,8 +143,7 @@ impl QueuePage {
                 for (index, song) in songs.iter().enumerate() {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
-                        && let Ok(mut song) = song.try_lock()
-                        && song.info().inspect_detailed().is_some_and(|info| {
+                        && song.info().inspect_detailed().as_ref().is_some_and(|info| {
                             info.artwork
                                 .as_ref()
                                 .is_some_and(|artwork| artwork.ref_count() == 1)
@@ -164,7 +163,8 @@ impl QueuePage {
                 println!("Loading artworks for queued songs");
                 for song in songs.iter().rev() {
                     if let QueueItem::Song(song) = song {
-                        let _ = song.try_load_detailed_info();
+                        // TODO: Add `try_load_detailed` and use it here
+                        drop(song.info().load_detailed());
                     }
                 }
                 UI_TX

@@ -1,4 +1,4 @@
-use std::sync::{Arc, MutexGuard};
+use std::sync::Arc;
 
 use crate::library::{Song, song::SharedSong};
 
@@ -14,14 +14,12 @@ impl QueueItem {
     ///
     /// # Panics
     /// The function panics if the `QueueItem` is not a `Song`
-    /// or if its `Mutex` is in a poisoned state
     ///
     /// Note: Since each `Stopper` is removed when encountered,
     /// this method is safe when chained with `Song::current()`
-    /// (provided that the `Mutex` is in a valid state)
-    pub fn as_song(&self) -> MutexGuard<'_, Song> {
+    pub fn as_song(&self) -> &Song {
         match self {
-            Self::Song(song) => song.lock().unwrap(),
+            Self::Song(song) => song,
             Self::Stopper => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
         }
     }
@@ -45,10 +43,10 @@ impl QueueItem {
     /// `Mutex` is in a poisoned state
     pub fn map<F, T>(&self, f: F) -> Option<T>
     where
-        F: FnOnce(MutexGuard<'_, Song>) -> T,
+        F: FnOnce(&Song) -> T,
     {
         match self {
-            QueueItem::Song(song) => Some(f(song.lock().unwrap())),
+            QueueItem::Song(song) => Some(f(song)),
             _ => None,
         }
     }

@@ -27,7 +27,7 @@ impl ToQueue for SharedAlbum {
     }
 }
 
-pub type AlbumSongs = Vec<Arc<Mutex<Song>>>;
+pub type AlbumSongs = Vec<Arc<Song>>;
 pub trait SortedAlbumSongs {
     /// Returns `Ok(index)` if found, or `Err(index)` if not
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize>;
@@ -36,9 +36,10 @@ impl SortedAlbumSongs for AlbumSongs {
     #[inline]
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize> {
         self.binary_search_by(|song| {
-            let mut song = song.lock().unwrap();
             let mut new_info = song.info();
-            let new_info = new_info.basic();
+            let new_info = new_info.load_basic();
+            // SAFETY: `load_basic` is always safe to unwrap
+            let new_info = unsafe { new_info.as_ref().unwrap_unchecked() };
 
             match new_info.disc.cmp(&info.disc) {
                 Ordering::Equal => new_info.track.cmp(&info.track),

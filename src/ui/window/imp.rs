@@ -12,7 +12,7 @@ use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::album::SharedAlbum;
 use crate::library::artist::SharedArtist;
-use crate::library::song::{LoadState, SharedSong, SharedSongExt};
+use crate::library::song::SharedSong;
 use crate::library::{Albums, Artists, LIBRARY_TX, Library, LibraryRequest, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
 use crate::ui::album_page::AlbumPage;
@@ -172,29 +172,31 @@ impl Window {
             QueueItem::Song(song) => song,
             QueueItem::Stopper => unreachable!(),
         };
-        let mut song_locked = song.lock().unwrap();
-        let mut info = song_locked.info();
+        let mut info = song.info();
 
-        let song_info = info.basic();
+        let song_info_temp = info.load_basic();
+        // SAFETY: `load_basic` is always safe to unwrap
+        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         let (title, album, artist) = (
             song_info.title.clone(),
             song_info.album.clone(),
             song_info.artist.clone(),
         );
         *song_duration = Duration::from_millis(song_info.duration.mseconds());
+        drop(song_info_temp);
 
         let detailed_info = info.inspect_detailed();
-        let artwork = match detailed_info {
-            LoadState::Loaded(detailed) => {
+        let artwork = match detailed_info.as_ref() {
+            Some(detailed) => {
                 self.lyrics_page.set_content(&title, &detailed.lyrics);
                 detailed.artwork.as_ref()
             }
             _ => {
-                drop(song_locked);
+                drop(detailed_info);
                 let song = Arc::clone(song);
                 let ui_tx = UI_TX.get().expect(EXP_INIT);
                 let load_artwork_handle = thread::spawn(move || {
-                    let _ = song.load_detailed_info();
+                    drop(song.info().load_detailed());
                     ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
                 });
                 Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
@@ -290,28 +292,23 @@ impl Window {
     }
 
     fn song_loaded(&self, index: usize) {
-        self.songs_page.assign_artwork(
-            index as u32,
-            self.songs.borrow()[index]
-                .lock()
-                .unwrap()
-                .info()
-                .detailed()
-                .artwork
-                .clone(),
-        );
+        let song = &self.songs.borrow()[index];
+        let info = song.info();
+        let Some(ref info) = *info.inspect_detailed() else {
+            return;
+        };
+        self.songs_page
+            .assign_artwork(index as u32, info.artwork.clone());
     }
     fn album_loaded(&self, index: usize) {
-        self.albums_page.assign_artwork(
-            index as u32,
-            self.albums.borrow()[index].lock().unwrap().songs[0]
-                .lock()
-                .unwrap()
-                .info()
-                .detailed()
-                .artwork
-                .clone(),
-        );
+        let album = &self.albums.borrow()[index];
+        let album = album.lock().unwrap();
+        let info = album.songs[0].info();
+        let Some(ref info) = *info.inspect_detailed() else {
+            return;
+        };
+        self.albums_page
+            .assign_artwork(index as u32, info.artwork.clone());
     }
     fn artist_loaded(&self, index: usize) {
         self.artists_page.assign_artwork(

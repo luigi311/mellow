@@ -22,18 +22,15 @@ impl AlbumPage {
         let album_locked = album.lock().unwrap();
         let songs = &album_locked.songs;
 
-        let mut first_song = songs[0].lock().unwrap();
-        let mut info = first_song.info();
-        let artwork = info
-            .detailed() // IDEA: Load artwork in the background?
-            .artwork
-            .as_ref();
+        let mut info = songs[0].info(); // IDEA: Load artwork in the background?
+        let detailed_info = info.load_detailed();
+        // SAFETY: `load_detailed` is always safe to unwrap
+        let artwork = unsafe { detailed_info.as_ref().unwrap_unchecked().artwork.as_ref() };
         if artwork.is_some() {
             ui.album_cover.set_paintable(artwork);
         } else {
             ui.album_cover.set_paintable(Some(&fallback_album_image()));
         }
-        drop(first_song);
 
         ui.album.replace(Some(Arc::clone(album)));
         ui.album_title.set_label(&album_locked.title);
@@ -55,9 +52,10 @@ impl AlbumPage {
             let entry = SongRow::new();
 
             let song = &album_locked.songs[i];
-            let mut song_locked = song.lock().unwrap();
-            let mut info = song_locked.info();
-            let info = info.basic();
+            let mut info = song.info();
+            let info = info.load_basic();
+            // SAFETY: `unload_basic` is always safe to unwrap
+            let info = unsafe { info.as_ref().unwrap_unchecked() };
             entry.add_prefix(
                 &gtk::Label::builder()
                     .width_chars(2)

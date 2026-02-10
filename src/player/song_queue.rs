@@ -438,7 +438,7 @@ impl SongQueue {
             + song_queue
                 .iter()
                 .map(|item| match item {
-                    QueueItem::Song(song) => song.lock().unwrap().info().file_path() + "\n",
+                    QueueItem::Song(song) => song.info().file_path() + "\n",
                     QueueItem::Stopper => String::from("Stopper\n"),
                 })
                 .collect::<String>()
