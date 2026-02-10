@@ -211,6 +211,7 @@ impl SongInfoLoader<'_> {
         )
     }
     /// Returns the song file modification time
+    #[inline]
     #[must_use]
     pub fn file_modification_time(&self) -> i64 {
         self.file()
@@ -300,6 +301,7 @@ impl SongInfoLoader<'_> {
         *self.info.write().unwrap() = self.basic_or_default();
         Ok(self.info.read().unwrap())
     }
+    #[inline]
     fn basic_or_default(&mut self) -> Option<SongInfo> {
         self.load_basic_from_file()
             .inspect_err(|e| {
@@ -400,6 +402,7 @@ impl SongInfoLoader<'_> {
     }
     /// Attempts to read detailed info from tags and returns it,
     /// or returns a default value if it cannot
+    #[inline]
     fn detailed_or_default(&mut self) -> Option<DetailedSongInfo> {
         match self
             .tagged_file()
@@ -424,7 +427,6 @@ impl SongInfoLoader<'_> {
             }
         }
     }
-
     /// Unloads detailed song info
     #[inline]
     pub fn unload_detailed(&self) {
