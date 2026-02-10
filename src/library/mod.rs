@@ -973,10 +973,7 @@ impl Library {
             return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
         data.split("\n\n")
-            .filter_map(|data| match Song::deserialize(data) {
-                Ok(song) => Some(Arc::new(song)),
-                Err(_) => None,
-            })
+            .filter_map(SharedSong::deserialize)
             .collect()
     }
 

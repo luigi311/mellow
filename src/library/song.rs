@@ -24,6 +24,7 @@ pub type SharedSong = Arc<Song>;
 pub trait SharedSongExt {
     fn from_file(file: gio::File) -> SharedSong;
     fn from_path(path: &str) -> SharedSong;
+    fn deserialize(data: &str) -> Option<SharedSong>;
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>>;
     fn set_album(&self, album: SharedAlbum);
 }
@@ -37,6 +38,12 @@ impl SharedSongExt for SharedSong {
     #[inline]
     fn from_path(path: &str) -> SharedSong {
         Arc::new(Song::from_path(path))
+    }
+    /// Constructs a new `SharedSong` using serialized data
+    /// Returns `Some` on successful load, or `None`
+    #[inline]
+    fn deserialize(data: &str) -> Option<SharedSong> {
+        Song::deserialize(data).map(Arc::new).ok()
     }
     /// Returns the currently assigned album's `MutexGuard`
     #[inline]
@@ -111,7 +118,7 @@ impl<'s> Song {
     /// If a value cannot be parsed into the required type,
     /// the function returns an error
     #[inline]
-    pub fn deserialize(data: &str) -> Result<Song, String> {
+    fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
         let mut info = SongInfo::default();
         let mut user_info = UserSongInfo::default();
@@ -453,7 +460,6 @@ impl SongInfoLoader<'_> {
     }
 }
 
-#[derive(Clone)]
 pub struct SongInfo {
     pub title: String,
     pub album: String,
