@@ -17,6 +17,7 @@ impl QueueItem {
     ///
     /// Note: Since each `Stopper` is removed when encountered,
     /// this method is safe when chained with `Song::current()`
+    #[must_use]
     pub fn as_song(&self) -> &Song {
         match self {
             Self::Song(song) => song,

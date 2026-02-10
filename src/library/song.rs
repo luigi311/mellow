@@ -38,7 +38,7 @@ impl SharedSongExt for SharedSong {
     // Sets `self.album` to the given `album`
     #[inline]
     fn set_album(&self, album: SharedAlbum) {
-        *self.album.lock().unwrap() = Some(album)
+        *self.album.lock().unwrap() = Some(album);
     }
 }
 
@@ -237,6 +237,8 @@ impl<'s> Song {
     }
 }
 
+pub struct TryLockError;
+
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
     info: &'i Mutex<Option<SongInfo>>,
@@ -349,9 +351,9 @@ impl SongInfoLoader<'_> {
     /// # Errors
     /// The function returns an error if the mutex is currently busy
     #[inline]
-    pub fn try_load_basic(&mut self) -> Result<MutexGuard<'_, Option<SongInfo>>, ()> {
+    pub fn try_load_basic(&mut self) -> Result<MutexGuard<'_, Option<SongInfo>>, TryLockError> {
         let Ok(mut info) = self.info.try_lock() else {
-            return Err(());
+            return Err(TryLockError);
         };
         if info.is_some() {
             return Ok(info);
@@ -445,9 +447,11 @@ impl SongInfoLoader<'_> {
     /// # Errors
     /// The function returns an error if the mutex is currently busy
     #[inline]
-    pub fn try_load_detailed(&mut self) -> Result<MutexGuard<'_, Option<DetailedSongInfo>>, ()> {
+    pub fn try_load_detailed(
+        &mut self,
+    ) -> Result<MutexGuard<'_, Option<DetailedSongInfo>>, TryLockError> {
         let Ok(mut detailed_info) = self.detailed_info.try_lock() else {
-            return Err(());
+            return Err(TryLockError);
         };
         if detailed_info.is_some() {
             return Ok(detailed_info);
