@@ -210,9 +210,9 @@ impl SettingsPage {
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
             const SATURATION: f64 = 1.35;
 
-            r = lerp(r, (r - 1.0).mul_add(-(r - 1.0), 1.0), 0.6);
-            g = lerp(g, (g - 1.0).mul_add(-(g - 1.0), 1.0), 0.6);
-            b = lerp(b, (b - 1.0).mul_add(-(b - 1.0), 1.0), 0.6);
+            r = lerp(r, r * r, 0.4);
+            g = lerp(g, g * g, 0.4);
+            b = lerp(b, b * b, 0.4);
 
             let lum = lum(r, g, b);
 
@@ -354,7 +354,6 @@ impl SettingsPage {
             let directory_row = adw::ActionRow::builder()
                 .title(directory)
                 .selectable(true)
-                // .activatable(true)
                 .build();
             directory_row.add_prefix(&prefix_icon);
             let remove_button = gtk::Button::builder()
