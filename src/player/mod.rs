@@ -28,9 +28,12 @@ pub enum PlayerRequest {
     /// Skip to the specified index in the queue
     SkipTo(usize),
     /// Seek to a particular point in the song using a 0 to 1 value
+    /// Using this will pause the player; send `SeekDone` to resume
     Seek(f64),
     /// Stop seeking and resume the player state
     SeekDone,
+    /// Seek to a particular point in the song (for interactive seeking, use `Seek` instead)
+    SeekToTime(ClockTime),
     /// Load the next song without clearing the stream
     LoadNext,
     /// Signaled from `GStreamer` to load next track before EOS (for gapless playback)
@@ -80,6 +83,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SkipTo(index) => format!("SkipTo({index})"),
                 Self::Seek(pos) => format!("Seek({pos})"),
                 Self::SeekDone => "SeekDone".to_string(),
+                Self::SeekToTime(time) => format!("SeekToTime({time})"),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
                 Self::LoadQueue(queue, Some(shuffled), index) => format!(
@@ -230,6 +234,7 @@ impl Player {
                 PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
                 PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
                 PlayerRequest::SeekDone => self.seek_done() == (),
+                PlayerRequest::SeekToTime(time) => self.seek_to_time(time)? != (),
                 PlayerRequest::LoadNext if self.seeking => continue,
                 PlayerRequest::SongEnd if !self.can_use_gapless() => match self.seeking {
                     true => println!("Ignoring SongEnd while seeking") != (),
@@ -657,14 +662,17 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    fn shutdown(&mut self, remember_queue: bool, tx: &mpsc::Sender<()>) {
+    fn shutdown(&mut self, save_queue: bool, tx: &mpsc::Sender<()>) {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let (playing_index, song_queue, shuffled_queue, shuffle_mode) = self.queue.uninit();
+        let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
+        // TODO: Make saving the time optional?
+        // 'Remember Queue' option could be an `ExpanderRow` with a nested 'Remember Time'
+        let time = self.current_time().map(ClockTime::mseconds);
         Library::run_task(library_tx, move || {
-            SongQueue::save_queue(remember_queue, playing_index, &song_queue);
+            SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
         });
         Library::run_task(library_tx, move || {
-            SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
+            SongQueue::save_shuffled_queue(save_queue && shuffle, &shuffled_queue);
         });
         let _ = tx.send(());
     }

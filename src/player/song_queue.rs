@@ -1,4 +1,5 @@
 use core::error::Error;
+use gst::ClockTime;
 use rand::random_range;
 use std::sync::mpsc;
 use std::{fs, mem};
@@ -444,19 +445,29 @@ impl SongQueue {
         )
     }
 
-    /// Saves the provided queue to a file on disk, or removes
+    /// Saves the `song_queue` to a file on disk, or removes
     /// the file if `remember` is `false`
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     #[inline]
-    pub fn save_queue(remember: bool, playing_index: usize, song_queue: &[QueueItem]) {
+    pub fn save_queue(
+        remember: bool,
+        playing_index: usize,
+        song_queue: &[QueueItem],
+        shuffle: bool,
+        time: Option<u64>,
+    ) {
         let queue_file = Self::queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
             let _ = fs::remove_file(&queue_file);
             return;
         }
         let contents = playing_index.to_string()
+            + "\n"
+            + &time.map_or_else(|| String::from("-"), |time| time.to_string())
+            + "\n"
+            + &shuffle.to_string()
             + "\n"
             + song_queue
                 .iter()
@@ -521,23 +532,31 @@ impl SongQueue {
         if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
+            && let Some(time) = lines.next().map(str::parse)
+            && let Some(Ok(shuffle)) = lines.next().map(str::parse)
             && let queue =
                 library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
             && !queue.is_empty()
         {
-            let shuffled = fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(
-                None,
-                |shuffled| match shuffled.len() > track {
-                    true => Some(
-                        shuffled
-                            .lines()
-                            .filter_map(|i| i.trim().parse().ok())
-                            .collect(),
-                    ),
-                    false => None,
-                },
-            );
+            let shuffled = if shuffle {
+                fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(None, |shuffled| {
+                    match shuffled.len() > track {
+                        true => Some(
+                            shuffled
+                                .lines()
+                                .filter_map(|i| i.trim().parse().ok())
+                                .collect(),
+                        ),
+                        false => None,
+                    }
+                })
+            } else {
+                None
+            };
             player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track))?;
+            if let Ok(time) = time {
+                player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)))?;
+            }
             return Ok(());
         }
 
