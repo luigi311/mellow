@@ -313,7 +313,7 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "Basic song info already loaded - enable the check for release builds as well"
+                "⚠️ Basic song info already loaded - enable the check for release builds as well"
             );
             drop(info_writer);
             return self.info.read().unwrap();
@@ -348,7 +348,7 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "Basic song info already loaded - enable the check for release builds as well"
+                "⚠️ Basic song info already loaded - enable the check for release builds as well"
             );
             drop(info_writer);
             return Ok(self.info.read().unwrap());
@@ -459,7 +459,7 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "Detailed song info already loaded - enable the check for release builds as well"
+                "⚠️ Detailed song info already loaded - enable the check for release builds as well"
             );
             drop(info_writer);
             return self.detailed_info.read().unwrap();
@@ -493,7 +493,7 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "Detailed song info already loaded - enable the check for release builds as well"
+                "⚠️ Detailed song info already loaded - enable the check for release builds as well"
             );
             drop(info_writer);
             return Ok(self.detailed_info.read().unwrap());
