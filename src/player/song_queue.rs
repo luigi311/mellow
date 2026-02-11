@@ -492,37 +492,6 @@ impl SongQueue {
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
     }
-    #[inline]
-    pub fn load_queue(
-        config_dir: &str,
-        library: &Library,
-        player_tx: &mpsc::Sender<PlayerRequest>,
-    ) -> Result<(), ()> {
-        // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
-            && let mut lines = queue.lines()
-            && let Some(Ok(track)) = lines.next().map(str::parse)
-            && let queue =
-                library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
-            && !queue.is_empty()
-        {
-            let shuffled = fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(
-                None,
-                |shuffled| match shuffled.len() > track {
-                    true => Some(
-                        shuffled
-                            .lines()
-                            .filter_map(|i| i.trim().parse().ok())
-                            .collect(),
-                    ),
-                    false => None,
-                },
-            );
-            let _ = player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track));
-            return Ok(());
-        }
-        Err(())
-    }
     /// Starts the initial player queue, in the following order of priority:
     /// - From file arguments passed to the program
     /// - From the remembered `queue` and `shuffled_queue` files on disk
