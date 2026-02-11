@@ -234,23 +234,17 @@ impl Window {
         let remember_queue = settings_page.remembers_queue();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let (shutdown_notify_tx, shutdown_notify_rx) = mpsc::channel();
+        let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
-            let (queue_tx, queue_rx) = mpsc::channel();
             let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+            let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             player_tx
-                .send(PlayerRequest::SendBothQueues(queue_tx))
+                .send(PlayerRequest::Shutdown(remember_queue, player_shutdown_tx))
                 .expect(EXP_RX);
-            let (playing_index, song_queue, shuffled_queue, shuffle_mode) =
-                queue_rx.recv().expect(EXP_RX);
-            Library::run_task(library_tx, move || {
-                SongQueue::save_queue(remember_queue, playing_index, &song_queue);
-            });
-            Library::run_task(library_tx, move || {
-                SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
-            });
+            let _ = player_shutdown_rx.recv();
+
             library_tx
-                .send(LibraryRequest::Shutdown(shutdown_notify_tx))
+                .send(LibraryRequest::Shutdown(library_shutdown_tx))
                 .expect(EXP_RX);
         });
 
@@ -264,7 +258,7 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
-        shutdown_notify_rx.recv_timeout(Duration::from_millis(1500))?;
+        library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
 

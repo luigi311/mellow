@@ -5,7 +5,8 @@ use std::sync::{OnceLock, mpsc};
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::library::{LIBRARY_TX, Library};
 use crate::player::{queue_item::QueueItem, song_queue::SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -60,9 +61,10 @@ pub enum PlayerRequest {
     /// Turn gapless playback on or off
     SetGapless(bool),
 
-    /// Responds with both queues using the provided sender
-    /// (song index, sequential queue, shuffled queue, shuffle mode)
-    SendBothQueues(mpsc::Sender<(usize, Vec<QueueItem>, Vec<usize>, bool)>),
+    /// Saves the current queue to disk if the first value is `true`, and responds
+    /// back using the second argument when all tasks have started. Always wait for
+    /// the response before shutting down the library to ensure proper behavior.
+    Shutdown(bool, mpsc::Sender<()>),
 }
 
 // Required by certain variants
@@ -99,7 +101,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
                 Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
-                Self::SendBothQueues(_) => format!("SendBothQueues(…)"),
+                Self::Shutdown(save, _) => format!("SaveQueue({save}, …)"),
             }
         )
     }
@@ -278,7 +280,7 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
-                PlayerRequest::SendBothQueues(tx) => self.queue.send_both_queues(tx) != (),
+                PlayerRequest::Shutdown(save, tx) => self.shutdown(save, tx) != (),
             } {
                 self.update();
                 self.ui_set_state();
@@ -671,5 +673,17 @@ impl Player {
         // self.move_next();
         self.request_state(new_state);
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
+    }
+
+    fn shutdown(&mut self, remember_queue: bool, tx: mpsc::Sender<()>) {
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let (playing_index, song_queue, shuffled_queue, shuffle_mode) = self.queue.uninit();
+        Library::run_task(library_tx, move || {
+            SongQueue::save_queue(remember_queue, playing_index, &song_queue);
+        });
+        Library::run_task(library_tx, move || {
+            SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
+        });
+        let _ = tx.send(());
     }
 }

@@ -1,6 +1,6 @@
 use rand::random_range;
-use std::fs;
 use std::sync::mpsc;
+use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -435,16 +435,15 @@ impl SongQueue {
             .expect(EXP_RX);
     }
 
-    pub fn send_both_queues(&self, tx: mpsc::Sender<(usize, Vec<QueueItem>, Vec<usize>, bool)>) {
-        // NOTE: Could also use `mem::take` instead of `clone`
-        // if this only ever gets called during shutdown
-        tx.send((
+    /// Empties the queues and returns the following info:
+    /// Playback index, sequential queue, shuffled queue, shuffle mode
+    pub fn uninit(&mut self) -> (usize, Vec<QueueItem>, Vec<usize>, bool) {
+        (
             self.index,
-            self.songs.clone(),
-            self.shuffled.clone(),
+            mem::take(&mut self.songs),
+            mem::take(&mut self.shuffled),
             self.shuffle,
-        ))
-        .expect(EXP_RX);
+        )
     }
 
     /// Saves the provided queue to a file on disk, or removes
@@ -473,9 +472,14 @@ impl SongQueue {
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
     }
-    pub fn save_shuffled_queue(shuffle_mode: bool, shuffled_queue: &[usize]) {
+    /// Saves the provided shuffled queue to a file on disk, or
+    /// removes the file if `remember` is `false`
+    ///
+    /// # Panics
+    /// The function panics if `CONFIG_DIR` is unititialized
+    pub fn save_shuffled_queue(remember: bool, shuffled_queue: &[usize]) {
         let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
-        if !shuffle_mode {
+        if !remember {
             let _ = fs::remove_file(&shuffled_file);
             return;
         }
