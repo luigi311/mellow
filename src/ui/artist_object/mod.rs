@@ -17,11 +17,11 @@ impl ArtistObject {
     }
 
     pub fn load_artwork(&self) {
-        if self.artwork().is_some() {
-            return;
-        }
         // TODO: Decide what kind of image to show for library artists and construct it
         // Maybe 4 artworks composed in a grid with a circular cutout might look good
+        // if self.artwork().is_some() {
+        //     return;
+        // }
         // let index = self.index() as usize;
         // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
         //     UI_TX

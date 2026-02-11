@@ -152,7 +152,7 @@ impl SongQueue {
                 match shuffled.is_empty() {
                     false => self.shuffled = shuffled,
                     true => self.new_shuffled_queue(),
-                };
+                }
             }
             None => self.shuffle = false,
         }

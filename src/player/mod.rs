@@ -276,7 +276,7 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
-                PlayerRequest::Shutdown(save, tx) => self.shutdown(save, tx) != (),
+                PlayerRequest::Shutdown(save, tx) => self.shutdown(save, &tx) != (),
             } {
                 self.update();
                 self.ui_set_state();
@@ -657,7 +657,7 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    fn shutdown(&mut self, remember_queue: bool, tx: mpsc::Sender<()>) {
+    fn shutdown(&mut self, remember_queue: bool, tx: &mpsc::Sender<()>) {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (playing_index, song_queue, shuffled_queue, shuffle_mode) = self.queue.uninit();
         Library::run_task(library_tx, move || {

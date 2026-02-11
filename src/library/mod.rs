@@ -231,6 +231,10 @@ impl Library {
     /// # Errors
     /// The function may error upon handling a request,
     /// in most cases due to a closed channel receiver
+    ///
+    /// # Panics
+    /// The function may panic upon handling a request if
+    /// a poisoned `Mutex` is passed
     #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         // FIX: Library requests blocked while building the library?

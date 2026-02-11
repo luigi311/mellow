@@ -42,10 +42,7 @@ impl SharedSongExt for SharedSong {
     /// Returns `Some` on successful load, or `None`
     #[inline]
     fn deserialize(data: &str) -> Option<SharedSong> {
-        match Song::deserialize(data) {
-            Ok(song) => Some(Arc::new(song)),
-            Err(_) => None,
-        }
+        Song::deserialize(data).map_or_else(|_| None, |song| Some(Arc::new(song)))
     }
     /// Returns the currently assigned album's `MutexGuard`
     #[inline]
