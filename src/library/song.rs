@@ -475,6 +475,7 @@ impl SongInfoLoader<'_> {
             return Ok(self.detailed_info.read().unwrap());
         }
         *info_writer = self.detailed_or_default();
+        drop(info_writer);
         Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
