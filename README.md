@@ -39,10 +39,12 @@ When the overlay is closed, it is time to enjoy the music.
 
 # Features
 
-- ✨ Sleek and minimal interface - less clutter, more music
-- 📀 Music library - browse and play your local music collection
+- ✨ Sleek and minimal interface - less for the eyes, more for the ears
+- 🌈 Adaptive colors - interface colors adapt to match the album cover
 - 📋 Song queue - view or edit the list of playing songs
-- 🌈 Gapless playback - uninterrupted transitions between songs
+- 📀 Music library - browse and play your local music collection
+- 📂 File discovery - detects modified, moved, and removed song files
+- 🌊 Gapless playback - enjoy stutter-free transitions between songs
 
 # Roadmap
 
