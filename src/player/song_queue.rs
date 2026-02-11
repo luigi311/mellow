@@ -434,6 +434,7 @@ impl SongQueue {
 
     /// Empties the queues and returns the following info:
     /// Playback index, sequential queue, shuffled queue, shuffle mode
+    #[inline]
     pub fn uninit(&mut self) -> (usize, Vec<QueueItem>, Vec<usize>, bool) {
         (
             self.index,
@@ -448,6 +449,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
+    #[inline]
     pub fn save_queue(remember: bool, playing_index: usize, song_queue: &[QueueItem]) {
         let queue_file = Self::queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
@@ -474,6 +476,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
+    #[inline]
     pub fn save_shuffled_queue(remember: bool, shuffled_queue: &[usize]) {
         let shuffled_file = Self::shuffled_queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
