@@ -228,10 +228,6 @@ impl Library {
     /// # Errors
     /// The function may error upon handling a request,
     /// in most cases due to a closed channel receiver
-    ///
-    /// # Panics
-    /// The function may panic upon handling a request if
-    /// a poisoned `Mutex` is passed
     #[inline]
     pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
         // FIX: Library requests blocked while building the library?
@@ -313,7 +309,7 @@ impl Library {
     /// The function errors if either the library or UI channel receiver is closed
     ///
     /// # Panics
-    /// The function panics if a `song`'s `Mutex` is in a poisoned state
+    /// The function panics if a `song`'s info field is in a poisoned state
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
@@ -446,10 +442,6 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
-    ///
-    /// # Panics
-    /// The function panics if a `Mutex` in `songs` or `missing`
-    /// is in a poisoned state
     pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
         // TODO: The current approach is slow and might be worth optimizing
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
@@ -538,9 +530,7 @@ impl Library {
     /// them with the existing song entries so their info is preserved
     ///
     /// # Panics
-    /// The function may panic if:
-    /// - The UI channel receiver is unititialized or closed
-    /// - A `Mutex` in `songs` or `possibly_moved` is in a poisoned state
+    /// The function may panic if the UI channel receiver is unititialized or closed
     pub fn merge_moved_entries(songs: &Songs, possibly_moved: Songs, config: &LibraryConfig) {
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
             if cmp_info.inspect_basic().eq(&info.load_basic()) {
@@ -686,7 +676,7 @@ impl Library {
     /// Returns a queue of all songs in the library matching the given `query`
     ///
     /// # Panics
-    /// The function panics if any song's `Mutex` is in a poisoned state
+    /// The function panics if any song's info field is in a poisoned state
     #[must_use]
     pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
         // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)

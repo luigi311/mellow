@@ -176,7 +176,6 @@ impl Player {
     /// # Panics
     /// The function may panic when handling a request
     /// in some cases, such as:
-    /// - A `QueueItem` contains a poisoned `Mutex`
     /// - A required channel receiver is closed
     /// - A crash occurs in `GStreamer`
     pub fn controller(&mut self) -> Result<(), Box<dyn Error>> {

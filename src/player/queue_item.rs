@@ -38,10 +38,6 @@ impl QueueItem {
     /// Runs a closure on the `QueueItem` if it is a `Song`,
     /// and returns the output of the closure inside an `Option`.
     /// If the `QueueItem` is not a `Song`, `None` is returned.
-    ///
-    /// # Panics
-    /// The function panics if the item is of type `Song` and its
-    /// `Mutex` is in a poisoned state
     pub fn map<F, T>(&self, f: F) -> Option<T>
     where
         F: FnOnce(&Song) -> T,

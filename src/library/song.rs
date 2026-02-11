@@ -201,6 +201,9 @@ impl SongInfoLoader<'_> {
         self.file.path().unwrap().to_str().unwrap().to_string()
     }
     /// Returns the song filename, including the file extestion
+    ///
+    /// # Panics
+    /// The function panics if the filename is not valid UTF-8
     #[inline]
     #[must_use]
     pub fn filename(&self) -> String {
@@ -226,36 +229,57 @@ impl SongInfoLoader<'_> {
     }
     /// Last known modification time (Unix format); compare with
     /// `file_modification_time()` to detect modifications
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
     #[must_use]
     pub fn known_modification_time(&self) -> i64 {
         self.user_info.lock().unwrap().modified
     }
     /// Updates the modification time to the current one from the file
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
     pub fn update_modification_time(&mut self) {
         self.user_info.lock().unwrap().modified = self.file_modification_time();
     }
 
     /// Returns the user song info `MutexGuard`
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
     pub fn user(&self) -> MutexGuard<'_, UserSongInfo> {
         self.user_info.lock().unwrap()
     }
 
     /// Increases the play count by 1
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
     pub fn played(&mut self) {
         self.user_info.lock().unwrap().play_count += 1;
     }
 
     /// Decreases the play count by 1
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
     pub fn deduct_played(&mut self) {
         self.user_info.lock().unwrap().play_count -= 1;
     }
 
     /// Sets the song rating
+    ///
+    /// # Panics
+    /// The function panics if the user info `RwLock` is poisoned
     pub fn set_rating(&mut self, rating: u8) {
         self.user_info.lock().unwrap().rating = rating;
     }
 
     /// Loads basic song info if needed, then returns and unloads it
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     #[must_use]
     pub fn take_basic(&mut self) -> SongInfo {
@@ -264,12 +288,18 @@ impl SongInfoLoader<'_> {
         unsafe { self.info.write().unwrap().take().unwrap_unchecked() }
     }
     /// Returns the basic song info if loaded, but does not load it
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn inspect_basic(&self) -> RwLockReadGuard<'_, Option<SongInfo>> {
         self.info.read().unwrap()
     }
     /// Loads basic song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn load_basic(&mut self) -> RwLockReadGuard<'_, Option<SongInfo>> {
         let info = self.info.read().unwrap();
@@ -286,6 +316,9 @@ impl SongInfoLoader<'_> {
     ///
     /// # Errors
     /// - If the info is loaded, but cannot be read without blocking
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn try_load_basic(
         &mut self,
@@ -329,6 +362,9 @@ impl SongInfoLoader<'_> {
             })
     }
     /// Unloads basic song info
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn unload_basic(&mut self) {
         *self.info.write().unwrap() = None;
@@ -369,6 +405,9 @@ impl SongInfoLoader<'_> {
     }
 
     /// Loads detailed song info if needed, then returns and unloads it
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     #[must_use]
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
@@ -383,12 +422,18 @@ impl SongInfoLoader<'_> {
         }
     }
     /// Returns the detailed song info if loaded, but does not load it
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn inspect_detailed(&self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
         self.detailed_info.read().unwrap()
     }
     /// Loads detailed song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn load_detailed(&mut self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
         let detailed_info = self.detailed_info.read().unwrap();
@@ -405,6 +450,9 @@ impl SongInfoLoader<'_> {
     ///
     /// # Errors
     /// - If the info is loaded, but cannot be read without blocking
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn try_load_detailed(
         &mut self,
@@ -457,6 +505,9 @@ impl SongInfoLoader<'_> {
         }
     }
     /// Unloads detailed song info
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_detailed(&self) {
         *self.detailed_info.write().unwrap() = None;
