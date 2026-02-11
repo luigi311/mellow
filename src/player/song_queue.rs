@@ -1,9 +1,11 @@
+use core::error::Error;
 use rand::random_range;
 use std::sync::mpsc;
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::library::Library;
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
 use crate::{CONFIG_DIR, ReorderVecExt};
@@ -452,7 +454,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     pub fn save_queue(remember: bool, playing_index: usize, song_queue: &[QueueItem]) {
-        let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
+        let queue_file = Self::queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
             let _ = fs::remove_file(&queue_file);
             return;
@@ -478,7 +480,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     pub fn save_shuffled_queue(remember: bool, shuffled_queue: &[usize]) {
-        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "shuffled_queue";
+        let shuffled_file = Self::shuffled_queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
             let _ = fs::remove_file(&shuffled_file);
             return;
@@ -491,5 +493,106 @@ impl SongQueue {
             Ok(()) => println!("Shuffled song queue successfully written to disk"),
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
+    }
+    #[inline]
+    pub fn load_queue(
+        config_dir: &str,
+        library: &Library,
+        player_tx: &mpsc::Sender<PlayerRequest>,
+    ) -> Result<(), ()> {
+        // Load the previous queue if file exists
+        if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
+            && let mut lines = queue.lines()
+            && let Some(Ok(track)) = lines.next().map(str::parse)
+            && let queue =
+                library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
+            && !queue.is_empty()
+        {
+            let shuffled = fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(
+                None,
+                |shuffled| match shuffled.len() > track {
+                    true => Some(
+                        shuffled
+                            .lines()
+                            .filter_map(|i| i.trim().parse().ok())
+                            .collect(),
+                    ),
+                    false => None,
+                },
+            );
+            let _ = player_tx.send(PlayerRequest::InitQueue(queue, shuffled, track));
+            return Ok(());
+        }
+        Err(())
+    }
+    /// Starts the initial player queue, in the following order of priority:
+    /// - From file arguments passed to the program
+    /// - From the remembered `queue` and `shuffled_queue` files on disk
+    /// - Using all songs from the library, unless none are available
+    ///
+    /// # Errors
+    /// Function may error if the player or UI channel receiver is closed
+    pub fn init_queue(
+        config_dir: &str,
+        library: &Library,
+        player_tx: &mpsc::Sender<PlayerRequest>,
+        ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,
+    ) -> Result<(), Box<dyn Error>> {
+        let mut args = std::env::args();
+        args.next();
+
+        // Start a queue from arguments, if they contain any supported files
+        if args.len() > 0 {
+            let queue = library.songs_from_paths(&args.collect::<Box<[String]>>());
+            if !queue.is_empty() {
+                player_tx.send(PlayerRequest::LoadQueue(queue, 0))?;
+                return Ok(());
+            }
+        }
+
+        // Load the previous queue if file exists
+        if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
+            && let mut lines = queue.lines()
+            && let Some(Ok(track)) = lines.next().map(str::parse)
+            && let queue =
+                library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
+            && !queue.is_empty()
+        {
+            let shuffled = fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(
+                None,
+                |shuffled| match shuffled.len() > track {
+                    true => Some(
+                        shuffled
+                            .lines()
+                            .filter_map(|i| i.trim().parse().ok())
+                            .collect(),
+                    ),
+                    false => None,
+                },
+            );
+            player_tx.send(PlayerRequest::InitQueue(queue, shuffled, track))?;
+            return Ok(());
+        }
+
+        if library.songs.is_empty() {
+            // Maybe open the settings page and focus on the directory options?
+            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
+            ui_tx.send(UpdateUI::OpenSheet(true))?;
+            return Ok(());
+        }
+
+        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
+        library.play_all_songs("")?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
+        Ok(())
+    }
+
+    #[inline]
+    fn queue_file(config_dir: &str) -> String {
+        [config_dir, "queue"].concat()
+    }
+    #[inline]
+    fn shuffled_queue_file(config_dir: &str) -> String {
+        [config_dir, "shuffled_queue"].concat()
     }
 }

@@ -25,6 +25,7 @@ use crate::library::config::{FILE_SUPPORT, LibraryConfig};
 use crate::library::song::{SharedSong, SharedSongExt, SongInfoLoader};
 use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
+use crate::player::song_queue::SongQueue;
 use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
@@ -630,58 +631,13 @@ impl Library {
         self.missing_songs = missing_songs;
     }
 
-    /// Starts the initial player queue
+    /// Starts the initial player queue (see `SongQueue::init_queue` for more details)
     ///
     /// # Errors
-    /// Function may error if the player
-    /// or UI channel receiver is closed
+    /// Function may error if the player or UI channel receiver is closed
+    #[inline]
     pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
-        let mut args = std::env::args();
-        args.next();
-
-        // Start a queue from arguments, if they contain any supported files
-        if args.len() > 0 {
-            let queue = self.songs_from_paths(&args.collect::<Box<[String]>>());
-            if !queue.is_empty() {
-                self.player_tx.send(PlayerRequest::LoadQueue(queue, 0))?;
-                return Ok(());
-            }
-        }
-
-        // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string([&self.config.dir, "queue"].concat())
-            && let mut lines = queue.lines()
-            && let Some(Ok(track)) = lines.next().map(str::parse)
-            && let queue = self.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
-            && !queue.is_empty()
-        {
-            let shuffled = fs::read_to_string([&self.config.dir, "shuffled_queue"].concat())
-                .map_or(None, |shuffled| match shuffled.len() > track {
-                    true => Some(
-                        shuffled
-                            .lines()
-                            .filter_map(|i| i.trim().parse().ok())
-                            .collect(),
-                    ),
-                    false => None,
-                });
-            self.player_tx
-                .send(PlayerRequest::InitQueue(queue, shuffled, track))?;
-            return Ok(());
-        }
-
-        if self.songs.is_empty() {
-            // Maybe open the settings page and focus on the directory options?
-            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
-            self.ui_tx.send(UpdateUI::OpenSheet(true))?;
-            return Ok(());
-        }
-
-        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        self.play_all_songs("")?;
-        self.player_tx
-            .send(PlayerRequest::TogglePlay(Some(false)))?;
-        Ok(())
+        SongQueue::init_queue(&self.config.dir, self, &self.player_tx, &self.ui_tx)
     }
 
     /// Returns a queue of all songs in the library matching the given `query`
