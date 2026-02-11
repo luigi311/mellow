@@ -43,7 +43,7 @@ When the overlay is closed, it is time to enjoy the music.
 - 🌈 Adaptive colors - interface colors adapt to match the album cover
 - 📋 Song queue - view or edit the list of playing songs
 - 📀 Music library - browse and play your local music collection
-- 📂 File discovery - detects modified, moved, and removed song files
+- 📂 File discovery - detects changed, moved, and removed song files
 - 🌊 Gapless playback - enjoy stutter-free transitions between songs
 
 # Roadmap
