@@ -307,7 +307,19 @@ impl SongInfoLoader<'_> {
             return info;
         }
         drop(info);
-        *self.info.write().unwrap() = self.basic_or_default();
+        let mut info_writer = self.info.write().unwrap();
+        // Check if the info was already loaded by another
+        // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
+        if info_writer.is_some() {
+            println!(
+                "Basic song info already loaded - enable the check for release builds as well"
+            );
+            drop(info_writer);
+            return self.info.read().unwrap();
+        }
+        *info_writer = self.basic_or_default();
+        drop(info_writer);
         self.info.read().unwrap()
     }
     /// Returns the basic song info if it is currently accessible without
@@ -441,7 +453,19 @@ impl SongInfoLoader<'_> {
             return detailed_info;
         }
         drop(detailed_info);
-        *self.detailed_info.write().unwrap() = self.detailed_or_default();
+        let mut info_writer = self.detailed_info.write().unwrap();
+        // Check if the info was already loaded by another
+        // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
+        if info_writer.is_some() {
+            println!(
+                "Detailed song info already loaded - enable the check for release builds as well"
+            );
+            drop(info_writer);
+            return self.detailed_info.read().unwrap();
+        }
+        *info_writer = self.detailed_or_default();
+        drop(info_writer);
         self.detailed_info.read().unwrap()
     }
     /// Returns the detailed song info if it is currently accessible without
