@@ -661,7 +661,6 @@ impl Library {
                         .lines()
                         .filter_map(|i| i.trim().parse().ok())
                         .collect::<Vec<usize>>();
-                    dbg!(&shuffled);
                     match shuffled.len() > track {
                         true => Some(shuffled),
                         false => None,
