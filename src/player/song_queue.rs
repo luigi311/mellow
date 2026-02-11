@@ -487,7 +487,7 @@ impl SongQueue {
             .iter()
             .map(|i| i.to_string() + "\n")
             .collect::<String>();
-        match fs::write(&shuffled_file, contents) {
+        match fs::write(&shuffled_file, contents.trim()) {
             Ok(()) => println!("Shuffled song queue successfully written to disk"),
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
