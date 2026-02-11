@@ -139,6 +139,22 @@ impl SongQueue {
     }
 
     /// Replaces the current queue with the provided one
+    /// and optionally enables shuffle mode and sets the
+    /// arrangement as provided by `shuffled`
+    pub fn init_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
+        self.songs = queue;
+        match shuffled {
+            Some(shuffled) => {
+                self.shuffle = true;
+                self.shuffled = shuffled;
+            }
+            None => self.shuffle = false,
+        }
+        self.ui_update_shuffle();
+        self.ui_update_queue();
+    }
+
+    /// Replaces the current queue with the provided one
     pub fn load_new(&mut self, queue: Vec<QueueItem>) {
         self.songs = queue;
         match self.shuffle {
@@ -420,17 +436,27 @@ impl SongQueue {
             .expect(EXP_RX);
     }
 
+    pub fn send_both_queues(&self, tx: mpsc::Sender<(usize, Vec<QueueItem>, Vec<usize>, bool)>) {
+        // NOTE: Could also use `mem::take` instead of `clone`
+        // if this only ever gets called during shutdown
+        tx.send((
+            self.index,
+            self.songs.clone(),
+            self.shuffled.clone(),
+            self.shuffle,
+        ))
+        .expect(EXP_RX);
+    }
+
     /// Saves the provided queue to a file on disk, or removes
     /// the file if `remember` is `false`
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
-    pub fn save_queue(remember: bool, song_queue: &[QueueItem], playing_index: usize) {
+    pub fn save_queue(remember: bool, playing_index: usize, song_queue: &[QueueItem]) {
         let queue_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue";
-        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
         if !remember {
             let _ = fs::remove_file(&queue_file);
-            let _ = fs::remove_file(&shuffled_file);
             return;
         }
         let contents = playing_index.to_string()
@@ -443,14 +469,23 @@ impl SongQueue {
                 })
                 .collect::<String>()
                 .trim();
-        // TODO: Also save the shuffled queue and shuffle setting (new file)
-        // the file contents could look something like this:
-        // /------------------\
-        // | True             | <- Whether shuffle mode is on
-        // | 50,32,67,4,89,22,| <- Shuffled indexes for the player queue
-        // \------------------/
         match fs::write(&queue_file, contents) {
             Ok(()) => println!("Song queue state successfully written to disk"),
+            Err(e) => eprintln!("Problems writing queue state: {e}"),
+        }
+    }
+    pub fn save_shuffled_queue(shuffle_mode: bool, shuffled_queue: &[usize]) {
+        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
+        if !shuffle_mode {
+            let _ = fs::remove_file(&shuffled_file);
+            return;
+        }
+        let contents = shuffled_queue
+            .iter()
+            .map(|i| i.to_string() + "\n")
+            .collect::<String>();
+        match fs::write(&shuffled_file, contents) {
+            Ok(()) => println!("Shuffled song queue successfully written to disk"),
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
     }

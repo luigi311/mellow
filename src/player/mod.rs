@@ -35,6 +35,9 @@ pub enum PlayerRequest {
     /// Signaled from `GStreamer` to load next track before EOS (for gapless playback)
     SongEnd,
 
+    /// Load a new queue and an optional shuffled queue
+    /// If a shuffled queue is provided, shuffle mode is enabled
+    InitQueue(Vec<QueueItem>, Option<Vec<usize>>, usize),
     /// Load a new queue
     LoadQueue(Vec<QueueItem>, usize),
     /// Appends multiple items to the current queue
@@ -56,6 +59,10 @@ pub enum PlayerRequest {
     SetRepeat(bool),
     /// Turn gapless playback on or off
     SetGapless(bool),
+
+    /// Responds with both queues using the provided sender
+    /// (song index, sequential queue, shuffled queue, shuffle mode)
+    SendBothQueues(mpsc::Sender<(usize, Vec<QueueItem>, Vec<usize>, bool)>),
 }
 
 // Required by certain variants
@@ -74,6 +81,13 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
+                Self::InitQueue(queue, Some(shuffled), index) => format!(
+                    "InitQueue((…, Some(), {index})): {} items, {} shuffled",
+                    queue.len(),
+                    shuffled.len()
+                ),
+                Self::InitQueue(queue, None, index) =>
+                    format!("InitQueue((…, None, {index})): {} items", queue.len()),
                 Self::LoadQueue(queue, index) =>
                     format!("LoadQueue((…, {index})): {} items", queue.len()),
                 Self::AppendQueue(queue) => format!("AppendQueue(…): {} items", queue.len()),
@@ -85,6 +99,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
                 Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
+                Self::SendBothQueues(_) => format!("SendBothQueues(…)"),
             }
         )
     }
@@ -223,6 +238,9 @@ impl Player {
                 },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
+                PlayerRequest::InitQueue(queue, shuffled, index) => {
+                    self.init_queue(queue, shuffled, index) == ()
+                }
                 PlayerRequest::LoadQueue(queue, index) => self.load_queue(queue, index) == (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
@@ -259,6 +277,8 @@ impl Player {
                 PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle) != (),
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
+
+                PlayerRequest::SendBothQueues(tx) => self.queue.send_both_queues(tx) != (),
             } {
                 self.update();
                 self.ui_set_state();
@@ -303,6 +323,23 @@ impl Player {
 
         // Re-enable gapless playback (for example after track skip)
         self.backend.set_property("instant-uri", false);
+    }
+
+    /// Replaces the song queue with `queue` and skips to `index`
+    ///
+    /// # Panics
+    /// The function panics if `index` is out of bounds of `queue`,
+    /// except when the `queue` is empty
+    fn init_queue(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>, index: usize) {
+        if queue.is_empty() {
+            let _ = self.backend.set_state(State::Null);
+            self.queue.init_new(queue, shuffled);
+            self.ui_open_playing();
+            return;
+        }
+
+        self.queue.init_new(queue, shuffled);
+        self.skip_to(index);
     }
 
     /// Replaces the song queue with `queue` and skips to `index`

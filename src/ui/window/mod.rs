@@ -12,6 +12,7 @@ use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::song_queue::SongQueue;
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
 
 mod imp;
@@ -230,18 +231,26 @@ impl Window {
     pub fn save_state(&self) -> Result<(), Box<dyn Error>> {
         let imp = self.imp();
         let settings_page = &imp.settings_page;
-
-        let song_queue = imp.song_queue.take();
-        let playing_index = imp.song_queue_index.get();
         let remember_queue = settings_page.remembers_queue();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let (shutdown_notify_tx, shutdown_notify_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
-            SongQueue::save_queue(remember_queue, &song_queue, playing_index);
+            let (queue_tx, queue_rx) = mpsc::channel();
+            let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+            player_tx
+                .send(PlayerRequest::SendBothQueues(queue_tx))
+                .expect(EXP_RX);
+            let (playing_index, song_queue, shuffled_queue, shuffle_mode) =
+                queue_rx.recv().expect(EXP_RX);
+            Library::run_task(library_tx, move || {
+                SongQueue::save_queue(remember_queue, playing_index, &song_queue);
+            });
+            SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
+            library_tx
+                .send(LibraryRequest::Shutdown(shutdown_notify_tx))
+                .expect(EXP_RX);
         });
-
-        let (tx, rx) = mpsc::channel();
-        library_tx.send(LibraryRequest::Shutdown(tx))?;
 
         let settings = self.settings();
         settings.set_int("window-width", self.size(Orientation::Horizontal))?;
@@ -253,7 +262,7 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
-        rx.recv_timeout(Duration::from_millis(1500))?;
+        shutdown_notify_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
 

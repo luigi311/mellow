@@ -655,8 +655,22 @@ impl Library {
             && let queue = self.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
             && !queue.is_empty()
         {
+            let shuffled = match fs::read_to_string([&self.config.dir, "queue_shuffled"].concat()) {
+                Ok(shuffled) => {
+                    let shuffled = shuffled
+                        .lines()
+                        .filter_map(|i| i.trim().parse().ok())
+                        .collect::<Vec<usize>>();
+                    dbg!(&shuffled);
+                    match shuffled.len() > track {
+                        true => Some(shuffled),
+                        false => None,
+                    }
+                }
+                Err(_) => None,
+            };
             self.player_tx
-                .send(PlayerRequest::LoadQueue(queue, track))?;
+                .send(PlayerRequest::InitQueue(queue, shuffled, track))?;
             return Ok(());
         }
 

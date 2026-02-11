@@ -30,8 +30,6 @@ than shown on the page, or even try to index out of bounds)
 Music library:
 
 - [ ] Save/load user settings and application state
-  - TODO: **Save/load both queues when shuffle is enabled**
-  > That way the sequential queue is still accessible after closing in shuffle mode
   - TODO: Save/load shuffle preference for individual views
 - [ ] Allow initiating a full library rebuild
 - [-] **Search/filtering for songs/albums/artists pages**
