@@ -246,7 +246,9 @@ impl Window {
             Library::run_task(library_tx, move || {
                 SongQueue::save_queue(remember_queue, playing_index, &song_queue);
             });
-            SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
+            Library::run_task(library_tx, move || {
+                SongQueue::save_shuffled_queue(remember_queue && shuffle_mode, &shuffled_queue);
+            });
             library_tx
                 .send(LibraryRequest::Shutdown(shutdown_notify_tx))
                 .expect(EXP_RX);
