@@ -297,7 +297,19 @@ impl SongInfoLoader<'_> {
             return Ok(info);
         }
         drop(info);
-        *self.info.write().unwrap() = self.basic_or_default();
+        let mut info_writer = self.info.write().unwrap();
+        // Check if the info was already loaded by another
+        // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
+        if info_writer.is_some() {
+            println!(
+                "Basic song info already loaded - enable the check for release builds as well"
+            );
+            drop(info_writer);
+            return Ok(self.info.read().unwrap());
+        }
+        *info_writer = self.basic_or_default();
+        drop(info_writer);
         Ok(self.info.read().unwrap())
     }
     #[inline]
@@ -403,7 +415,18 @@ impl SongInfoLoader<'_> {
         if detailed_info.is_some() {
             return Ok(detailed_info);
         }
-        *self.detailed_info.write().unwrap() = self.detailed_or_default();
+        let mut info_writer = self.detailed_info.write().unwrap();
+        // Check if the info was already loaded by another
+        // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
+        if info_writer.is_some() {
+            println!(
+                "Detailed song info already loaded - enable the check for release builds as well"
+            );
+            drop(info_writer);
+            return Ok(self.detailed_info.read().unwrap());
+        }
+        *info_writer = self.detailed_or_default();
         Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
