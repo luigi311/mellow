@@ -39,11 +39,9 @@ impl SongPage {
             .expect(ACTION_ERR);
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         player_tx
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
-        player_tx
             .send(PlayerRequest::LoadQueue(
                 self.context.borrow().as_ref().expect(EXP_INIT).to_queue(),
+                None,
                 self.index.get(),
             ))
             .expect(EXP_RX);

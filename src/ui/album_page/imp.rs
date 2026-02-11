@@ -7,7 +7,6 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::album::SharedAlbum;
 use crate::library::{LIBRARY_TX, LibraryRequest};
-use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::rating::Rating;
 use crate::ui::song_row::SongRow;
 
@@ -36,11 +35,6 @@ pub struct AlbumPage {
 impl AlbumPage {
     #[template_callback]
     pub fn handle_play_sequential(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
         LIBRARY_TX
             .get()
             .expect(EXP_INIT)
@@ -51,15 +45,10 @@ impl AlbumPage {
     }
     #[template_callback]
     pub fn handle_play_shuffled(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::SetShuffle(true))
-            .expect(EXP_RX);
         LIBRARY_TX
             .get()
             .expect(EXP_INIT)
-            .send(LibraryRequest::PlayAlbum(Arc::clone(
+            .send(LibraryRequest::ShuffleAlbum(Arc::clone(
                 self.album.borrow().as_ref().expect(EXP_INIT),
             )))
             .expect(EXP_RX);

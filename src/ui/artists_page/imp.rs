@@ -6,8 +6,6 @@ use std::cell::RefCell;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
 use crate::library::{Artists, LibraryRequest};
-use crate::player::PLAYER_TX;
-use crate::player::PlayerRequest;
 use crate::ui::artist_object::ArtistObject;
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI, fallback_artist_image};
@@ -71,10 +69,6 @@ impl ArtistsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let query = self.search_query.borrow().to_string();
         library_tx

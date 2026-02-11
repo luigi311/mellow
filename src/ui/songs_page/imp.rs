@@ -7,8 +7,6 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
 use crate::library::{LibraryRequest, Songs};
-use crate::player::PLAYER_TX;
-use crate::player::PlayerRequest;
 use crate::ui::item_row::ItemRow;
 use crate::ui::song_object::SongObject;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
@@ -74,15 +72,12 @@ impl SongsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::SetShuffle(shuffle))
-            .expect(EXP_RX);
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         library_tx
-            .send(LibraryRequest::PlayAllSongs(
-                self.search_query.borrow().to_string(),
-            ))
+            .send(match shuffle {
+                false => LibraryRequest::PlayAllSongs(self.search_query.borrow().to_string()),
+                true => LibraryRequest::ShuffleAllSongs(self.search_query.borrow().to_string()),
+            })
             .expect(EXP_RX);
     }
 

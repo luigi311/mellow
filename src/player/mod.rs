@@ -36,11 +36,10 @@ pub enum PlayerRequest {
     /// Signaled from `GStreamer` to load next track before EOS (for gapless playback)
     SongEnd,
 
-    /// Load a new queue and an optional shuffled queue
-    /// If a shuffled queue is provided, shuffle mode is enabled
-    InitQueue(Vec<QueueItem>, Option<Vec<usize>>, usize),
-    /// Load a new queue
-    LoadQueue(Vec<QueueItem>, usize),
+    /// Load a new queue and an optional shuffled queue. Shuffle mode is determined
+    /// by whether the second argument (the shuffled queue) is `Some`. If `Some` but
+    /// empty, a new shuffled queue is created.
+    LoadQueue(Vec<QueueItem>, Option<Vec<usize>>, usize),
     /// Appends multiple items to the current queue
     AppendQueue(Vec<QueueItem>),
     /// Move a queue item from the first argument index to the second
@@ -83,15 +82,13 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SeekDone => "SeekDone".to_string(),
                 Self::LoadNext => "LoadNext".to_string(),
                 Self::SongEnd => "SongEnd".to_string(),
-                Self::InitQueue(queue, Some(shuffled), index) => format!(
+                Self::LoadQueue(queue, Some(shuffled), index) => format!(
                     "InitQueue((…, Some(), {index})): {} items, {} shuffled",
                     queue.len(),
                     shuffled.len()
                 ),
-                Self::InitQueue(queue, None, index) =>
+                Self::LoadQueue(queue, None, index) =>
                     format!("InitQueue((…, None, {index})): {} items", queue.len()),
-                Self::LoadQueue(queue, index) =>
-                    format!("LoadQueue((…, {index})): {} items", queue.len()),
                 Self::AppendQueue(queue) => format!("AppendQueue(…): {} items", queue.len()),
                 Self::Reorder(from, to) => format!("Reorder({from}, {to})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
@@ -240,10 +237,9 @@ impl Player {
                 },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
-                PlayerRequest::InitQueue(queue, shuffled, index) => {
-                    self.init_queue(queue, shuffled, index) == ()
+                PlayerRequest::LoadQueue(queue, shuffled, index) => {
+                    self.load_queue(queue, shuffled, index) == ()
                 }
-                PlayerRequest::LoadQueue(queue, index) => self.load_queue(queue, index) == (),
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
@@ -327,37 +323,23 @@ impl Player {
         self.backend.set_property("instant-uri", false);
     }
 
-    /// Replaces the song queue with `queue` and skips to `index`
+    /// Replaces the song queue with `queue` and skips to `index`.
+    /// If `shuffled` is `Some`, shuffle mode is enabled, and the
+    /// provided queue is used. If the `shuffled` queue is empty,
+    /// a new one is created.
     ///
     /// # Panics
     /// The function panics if `index` is out of bounds of `queue`,
     /// except when the `queue` is empty
-    fn init_queue(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>, index: usize) {
+    fn load_queue(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>, index: usize) {
         if queue.is_empty() {
             let _ = self.backend.set_state(State::Null);
-            self.queue.init_new(queue, shuffled);
+            self.queue.load_new(queue, shuffled);
             self.ui_open_playing();
             return;
         }
 
-        self.queue.init_new(queue, shuffled);
-        self.skip_to(index);
-    }
-
-    /// Replaces the song queue with `queue` and skips to `index`
-    ///
-    /// # Panics
-    /// The function panics if `index` is out of bounds of `queue`,
-    /// except when the `queue` is empty
-    fn load_queue(&mut self, queue: Vec<QueueItem>, index: usize) {
-        if queue.is_empty() {
-            let _ = self.backend.set_state(State::Null);
-            self.queue.load_new(queue);
-            self.ui_open_playing();
-            return;
-        }
-
-        self.queue.load_new(queue);
+        self.queue.load_new(queue, shuffled);
         self.skip_to(index);
     }
 

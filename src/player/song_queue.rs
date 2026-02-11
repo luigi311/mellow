@@ -142,26 +142,21 @@ impl SongQueue {
 
     /// Replaces the current queue with the provided one
     /// and optionally enables shuffle mode and sets the
-    /// arrangement as provided by `shuffled`
-    pub fn init_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
+    /// shuffled queue to `shuffled`. If `shuffled` is
+    /// `Some` but empty, a new one is created.
+    pub fn load_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
         self.songs = queue;
         match shuffled {
             Some(shuffled) => {
                 self.shuffle = true;
-                self.shuffled = shuffled;
+                match shuffled.is_empty() {
+                    false => self.shuffled = shuffled,
+                    true => self.new_shuffled_queue(),
+                };
             }
             None => self.shuffle = false,
         }
         self.ui_update_shuffle();
-        self.ui_update_queue();
-    }
-
-    /// Replaces the current queue with the provided one
-    pub fn load_new(&mut self, queue: Vec<QueueItem>) {
-        self.songs = queue;
-        if self.shuffle {
-            self.new_shuffled_queue();
-        }
         self.ui_update_queue();
     }
 
@@ -520,7 +515,7 @@ impl SongQueue {
                     false => None,
                 },
             );
-            let _ = player_tx.send(PlayerRequest::InitQueue(queue, shuffled, track));
+            let _ = player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track));
             return Ok(());
         }
         Err(())
@@ -545,7 +540,7 @@ impl SongQueue {
         if args.len() > 0 {
             let queue = library.songs_from_paths(&args.collect::<Box<[String]>>());
             if !queue.is_empty() {
-                player_tx.send(PlayerRequest::LoadQueue(queue, 0))?;
+                player_tx.send(PlayerRequest::LoadQueue(queue, None, 0))?;
                 return Ok(());
             }
         }
@@ -570,7 +565,7 @@ impl SongQueue {
                     false => None,
                 },
             );
-            player_tx.send(PlayerRequest::InitQueue(queue, shuffled, track))?;
+            player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track))?;
             return Ok(());
         }
 
@@ -582,7 +577,7 @@ impl SongQueue {
         }
 
         // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        library.play_all_songs("")?;
+        library.play_all_songs("", false)?;
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
         Ok(())
     }
