@@ -157,10 +157,10 @@ impl SongQueue {
     /// Replaces the current queue with the provided one
     pub fn load_new(&mut self, queue: Vec<QueueItem>) {
         self.songs = queue;
-        match self.shuffle {
-            true => self.new_shuffled_queue(),
-            false => self.ui_update_queue(),
+        if self.shuffle {
+            self.new_shuffled_queue();
         }
+        self.ui_update_queue();
     }
 
     /// Restarts the queue from the beginning
@@ -179,17 +179,13 @@ impl SongQueue {
             let rand_index = random_range(0..self.shuffled.len());
             self.shuffled.swap(i, rand_index);
         }
-        self.ui_update_queue();
     }
 
     /// Randomizes the shuffled queue without
     /// changing the currently playing track
     fn update_shuffled_queue(&mut self) {
         if self.is_empty() {
-            return;
-        }
-        if !self.shuffle {
-            self.ui_update_queue();
+            self.shuffled = Vec::new();
             return;
         }
         self.shuffled = (0..self.len()).collect();
@@ -367,7 +363,10 @@ impl SongQueue {
         }
         self.shuffle = shuffle;
         self.ui_update_shuffle();
-        self.update_shuffled_queue();
+        if shuffle {
+            self.update_shuffled_queue();
+        }
+        self.ui_update_queue();
     }
 
     /// Returns the current shuffle mode for the queue
