@@ -478,7 +478,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     pub fn save_shuffled_queue(remember: bool, shuffled_queue: &[usize]) {
-        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "queue_shuffled";
+        let shuffled_file = CONFIG_DIR.get().expect(EXP_INIT).to_owned() + "shuffled_queue";
         if !remember {
             let _ = fs::remove_file(&shuffled_file);
             return;
