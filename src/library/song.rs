@@ -237,7 +237,7 @@ impl SongInfoLoader<'_> {
     ///
     /// # Panics
     /// The function panics if the user info `Mutex` is poisoned
-    pub fn update_modification_time(&mut self) {
+    pub fn update_modification_time(&self) {
         self.user_info.lock().unwrap().modified = self.file_modification_time();
     }
 
@@ -253,7 +253,7 @@ impl SongInfoLoader<'_> {
     ///
     /// # Panics
     /// The function panics if the user info `Mutex` is poisoned
-    pub fn played(&mut self) {
+    pub fn played(&self) {
         self.user_info.lock().unwrap().play_count += 1;
     }
 
@@ -261,7 +261,7 @@ impl SongInfoLoader<'_> {
     ///
     /// # Panics
     /// The function panics if the user info `Mutex` is poisoned
-    pub fn deduct_played(&mut self) {
+    pub fn deduct_played(&self) {
         self.user_info.lock().unwrap().play_count -= 1;
     }
 
@@ -269,7 +269,7 @@ impl SongInfoLoader<'_> {
     ///
     /// # Panics
     /// The function panics if the user info `RwLock` is poisoned
-    pub fn set_rating(&mut self, rating: u8) {
+    pub fn set_rating(&self, rating: u8) {
         self.user_info.lock().unwrap().rating = rating;
     }
 
@@ -315,7 +315,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return self.info.read().unwrap();
         }
-        *info_writer = self.basic_or_default();
+        info_writer.replace(self.basic_or_default());
         drop(info_writer);
         self.info.read().unwrap()
     }
@@ -350,25 +350,25 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return Ok(self.info.read().unwrap());
         }
-        *info_writer = self.basic_or_default();
+        info_writer.replace(self.basic_or_default());
         drop(info_writer);
         Ok(self.info.read().unwrap())
     }
     #[inline]
-    fn basic_or_default(&mut self) -> Option<SongInfo> {
-        self.load_basic_from_file()
-            .inspect_err(|e| {
+    fn basic_or_default(&mut self) -> SongInfo {
+        self.load_basic_from_file().map_or_else(
+            |e| {
                 eprintln!(
                     "Problem loading tags (basic): {:?}: {e}",
                     self.file.path().unwrap_or_default()
                 );
-            })
-            .unwrap_or_else(|_| {
-                Some(SongInfo {
+                SongInfo {
                     title: self.filename(),
                     ..SongInfo::default()
-                })
-            })
+                }
+            },
+            |info| info,
+        )
     }
     /// Unloads basic song info
     ///
@@ -379,7 +379,7 @@ impl SongInfoLoader<'_> {
         *self.info.write().unwrap() = None;
     }
     #[inline]
-    fn load_basic_from_file(&mut self) -> Result<Option<SongInfo>, Box<dyn Error>> {
+    fn load_basic_from_file(&mut self) -> Result<SongInfo, Box<dyn Error>> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
@@ -391,7 +391,7 @@ impl SongInfoLoader<'_> {
             .ok_or("No tags found")?;
         let properties = tagged.properties();
 
-        Ok(Some(SongInfo {
+        Ok(SongInfo {
             title: tag.title().map_or_else(
                 || self.filename(),
                 |title| match title.trim().is_empty() {
@@ -410,7 +410,7 @@ impl SongInfoLoader<'_> {
             year: tag.date().unwrap_or_default().year,
             #[allow(clippy::cast_possible_truncation)]
             duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
-        }))
+        })
     }
 
     /// Loads detailed song info if needed, then returns and unloads it
@@ -461,7 +461,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return self.detailed_info.read().unwrap();
         }
-        *info_writer = self.detailed_or_default();
+        info_writer.replace(self.detailed_or_default());
         drop(info_writer);
         self.detailed_info.read().unwrap()
     }
@@ -495,34 +495,28 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return Ok(self.detailed_info.read().unwrap());
         }
-        *info_writer = self.detailed_or_default();
+        info_writer.replace(self.detailed_or_default());
         drop(info_writer);
         Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
     /// or returns a default value if it cannot
     #[inline]
-    fn detailed_or_default(&mut self) -> Option<DetailedSongInfo> {
+    fn detailed_or_default(&mut self) -> DetailedSongInfo {
         match self
             .tagged_file()
             .map(|tagged| Self::load_tags_detailed(tagged))
         {
-            Ok(Ok(result)) => result.map_or(
-                Some(DetailedSongInfo {
-                    lyrics: String::new(),
-                    artwork: None,
-                }),
-                Some,
-            ),
+            Ok(Ok(result)) => result,
             Err(e) | Ok(Err(e)) => {
                 eprintln!(
                     "Problem loading tags (detailed): {:?}: {e}",
                     self.file.path().unwrap_or_default()
                 );
-                Some(DetailedSongInfo {
+                DetailedSongInfo {
                     lyrics: String::new(),
                     artwork: None,
-                })
+                }
             }
         }
     }
@@ -545,12 +539,12 @@ impl SongInfoLoader<'_> {
     }
 
     #[inline]
-    fn load_tags_detailed(tagged: &TaggedFile) -> Result<Option<DetailedSongInfo>, Box<dyn Error>> {
+    fn load_tags_detailed(tagged: &TaggedFile) -> Result<DetailedSongInfo, Box<dyn Error>> {
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
             .ok_or("No tags found")?;
-        Ok(Some(DetailedSongInfo {
+        Ok(DetailedSongInfo {
             lyrics: tag
                 .get_string(ItemKey::Lyrics)
                 .unwrap_or_default()
@@ -563,7 +557,7 @@ impl SongInfoLoader<'_> {
             } else {
                 None
             },
-        }))
+        })
     }
 }
 
