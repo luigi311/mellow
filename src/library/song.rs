@@ -356,19 +356,16 @@ impl SongInfoLoader<'_> {
     }
     #[inline]
     fn basic_or_default(&mut self) -> SongInfo {
-        self.load_basic_from_file().map_or_else(
-            |e| {
-                eprintln!(
-                    "Problem loading tags (basic): {:?}: {e}",
-                    self.file.path().unwrap_or_default()
-                );
-                SongInfo {
-                    title: self.filename(),
-                    ..SongInfo::default()
-                }
-            },
-            |info| info,
-        )
+        self.load_basic_from_file().unwrap_or_else(|e| {
+            eprintln!(
+                "Problem loading tags (basic): {:?}: {e}",
+                self.file.path().unwrap_or_default()
+            );
+            SongInfo {
+                title: self.filename(),
+                ..SongInfo::default()
+            }
+        })
     }
     /// Unloads basic song info
     ///
