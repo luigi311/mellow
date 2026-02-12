@@ -615,7 +615,7 @@ impl SongQueue {
                     })))?;
             }
             StartupQueueChoice::RestoreQueue => {
-                if fs::exists([&library.config.dir, "songs"].concat()).is_ok_and(|exists| exists) {
+                if fs::exists([config_dir, "songs"].concat()).is_ok_and(|exists| exists) {
                     library.ui_tx.send(UpdateUI::OpenSheet(true))?;
                 } else {
                     // Load all songs into queue on first launch
