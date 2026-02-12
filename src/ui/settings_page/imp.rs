@@ -39,15 +39,13 @@ pub struct SettingsPage {
     pub remember_queue: TemplateChild<gtk::CheckButton>,
     #[template_child]
     pub remember_time: TemplateChild<adw::SwitchRow>,
-    // TODO: Make the below actually work
     #[template_child]
     pub new_queue_row: TemplateChild<adw::ExpanderRow>,
     #[template_child]
     pub new_queue: TemplateChild<gtk::CheckButton>,
-    // TODO: Remember shuffle preference
+    // TODO: Remember shuffle preference and queue source even when disabled?
     #[template_child]
     pub shuffle_queue: TemplateChild<adw::SwitchRow>,
-    // TODO: Remember queue source
     #[template_child]
     pub queue_source: TemplateChild<adw::ComboRow>,
     #[template_child]
@@ -150,7 +148,6 @@ impl SettingsPage {
             (1 + self.queue_source.selected() as i32 + (self.shuffle_queue.is_active() as i32 * 3))
                 .into(),
         );
-        dbg!(self.startup_choice.borrow());
     }
 
     pub fn set_theme(&self, preference: adw::ColorScheme) {
