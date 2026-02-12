@@ -49,11 +49,9 @@ fn init(app: &Application) {
     let settings = gio::Settings::new(about::app_id());
     let startup_queue = settings.enum_("startup-queue");
     let mut library = Library::init(
-        LibraryConfig::new(match &settings.string("directories")[..] {
-            ":" => {
-                // The value ":" means this is the first launch
-                vec![MUSIC_DIR.get().unwrap().clone()]
-            }
+        LibraryConfig::new(match &*settings.string("directories") {
+            // The value ":" means "first launch"
+            ":" => vec![MUSIC_DIR.get().unwrap().clone()],
             dirs => unescaped_split(dirs, ','),
         }),
         player_tx,

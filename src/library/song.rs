@@ -140,7 +140,7 @@ impl<'s> Song {
         }
 
         if uri.is_empty() {
-            return Err("Could not initialize `uri`".to_string());
+            return Err("Could not initialize `uri`".to_owned());
         }
 
         Ok(Song {
@@ -195,7 +195,7 @@ impl SongInfoLoader<'_> {
     #[inline]
     #[must_use]
     pub fn file_path(&self) -> String {
-        self.file.path().unwrap().to_str().unwrap().to_string()
+        self.file.path().unwrap().to_str().unwrap().to_owned()
     }
     /// Returns the song filename, including the file extestion
     ///
@@ -205,8 +205,8 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn filename(&self) -> String {
         self.file.basename().map_or_else(
-            || "Unknown".to_string(),
-            |f| f.to_str().unwrap().to_string(),
+            || String::from("Unknown"),
+            |f| f.to_str().unwrap().to_owned(),
         )
     }
     /// Returns the song file modification time
@@ -400,7 +400,7 @@ impl SongInfoLoader<'_> {
             artist: tag.artist().unwrap_or_default().to_string(),
             album_artist: tag.get_string(ItemKey::AlbumArtist).map_or_else(
                 || tag.artist().unwrap_or_default().to_string(),
-                |album_artist| album_artist.to_string(),
+                |album_artist| album_artist.to_owned(),
             ),
             track: tag.track().unwrap_or_default(),
             disc: tag.disk().unwrap_or(1),
@@ -545,7 +545,7 @@ impl SongInfoLoader<'_> {
             lyrics: tag
                 .get_string(ItemKey::Lyrics)
                 .unwrap_or_default()
-                .to_string(),
+                .to_owned(),
             // TODO: Look for a `cover` file in the song directroy
             artwork: if tag.picture_count() > 0 {
                 Some(gdk::Texture::from_bytes(&glib::Bytes::from(

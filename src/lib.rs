@@ -1,3 +1,19 @@
+#![deny(unused_unsafe, clippy::undocumented_unsafe_blocks)]
+#![warn(
+    clippy::clear_with_drain,
+    clippy::deref_by_slicing,
+    clippy::doc_markdown,
+    clippy::fallible_impl_from,
+    clippy::mixed_read_write_in_expression,
+    clippy::must_use_candidate,
+    clippy::needless_collect,
+    clippy::needless_for_each,
+    clippy::needless_pass_by_ref_mut,
+    clippy::needless_pass_by_value,
+    clippy::single_option_map,
+    clippy::str_to_string
+)]
+
 use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
 use gtk::glib;
 use std::fs::{self, DirEntry};
@@ -23,10 +39,10 @@ pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 /// # Panics
 /// The function panics if user directories are not valid UTF-8
 pub fn init_globals() {
-    let _ = CONFIG_DIR.set(user_config_dir().to_str().unwrap().to_string() + "/mellow/");
+    let _ = CONFIG_DIR.set(user_config_dir().to_str().unwrap().to_owned() + "/mellow/");
     let _ = MUSIC_DIR.set(user_special_dir(UserDirectory::Music).map_or_else(
         || [home_dir().to_str().unwrap(), "/Music/"].concat(),
-        |dir| dir.to_str().unwrap().to_string(),
+        |dir| dir.to_str().unwrap().to_owned(),
     ));
 }
 
@@ -41,7 +57,7 @@ pub fn init_globals() {
 /// let duration = Duration::from_secs(83);
 /// let formatted = format_duration(&duration);
 ///
-/// assert_eq!(formatted, "1:23".to_string());
+/// assert_eq!(formatted, "1:23".to_owned());
 /// ```
 #[inline]
 #[must_use]
@@ -129,12 +145,12 @@ pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
                 input[start..i]
                     .replace(&format!("\\{character}"), &character.to_string())
                     .trim()
-                    .to_string(),
+                    .to_owned(),
             );
             start = i + 1;
         }
     }
-    match input[start..].trim().to_string() {
+    match input[start..].trim().to_owned() {
         last if !last.is_empty() => output.push(last),
         _ => (),
     }
@@ -187,20 +203,20 @@ impl<T> ReorderVecExt for Vec<T> {
     /// assert_eq!(numbers, [1, 2, 3, 4, 5]);
     ///
     /// let mut strings =  vec![
-    ///     "a".to_string(),
-    ///     "b".to_string(),
-    ///     "much longer string to test if everything still works regardless".to_string(),
-    ///     "c".to_string(),
+    ///     "a".to_owned(),
+    ///     "b".to_owned(),
+    ///     "much longer string to test if everything still works regardless".to_owned(),
+    ///     "c".to_owned(),
     /// ];
     ///
     /// strings.reorder(2, 1);
     /// assert_eq!(
     ///     strings,
     ///     [
-    ///         "a".to_string(),
-    ///         "much longer string to test if everything still works regardless".to_string(),
-    ///         "b".to_string(),
-    ///         "c".to_string(),
+    ///         "a".to_owned(),
+    ///         "much longer string to test if everything still works regardless".to_owned(),
+    ///         "b".to_owned(),
+    ///         "c".to_owned(),
     ///     ]
     /// );
     /// ```

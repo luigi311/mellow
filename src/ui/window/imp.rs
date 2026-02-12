@@ -400,7 +400,7 @@ impl ObjectSubclass for Window {
                             .unwrap()
                             .to_str()
                             .unwrap()
-                            .to_string(),
+                            .to_owned(),
                     );
                     index += 1;
                 }

@@ -213,7 +213,7 @@ impl Window {
                 .unwrap()
                 .files()
                 .iter()
-                .map(|file| file.path().unwrap().to_str().unwrap().to_string())
+                .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
                 .collect();
             LIBRARY_TX
                 .get()
