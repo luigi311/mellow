@@ -43,7 +43,7 @@
 #[macro_export]
 macro_rules! serialize {
     {$($value:expr => $field:tt,)+} => {
-        [$($field.to_owned() + ": " + &$value.to_string() + "\n",)+].concat()
+        [$($field, ": ", &$value.to_string(), "\n",)+].concat()
     };
 }
 
