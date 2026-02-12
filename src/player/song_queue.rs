@@ -614,7 +614,14 @@ impl SongQueue {
                             .send(PlayerRequest::TogglePlay(Some(false)));
                     })))?;
             }
-            _ => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
+            StartupQueueChoice::RestoreQueue => {
+                if fs::exists([&library.config.dir, "songs"].concat()).is_ok_and(|exists| exists) {
+                    library.ui_tx.send(UpdateUI::OpenSheet(true))?;
+                } else {
+                    // Load all songs into queue on first launch
+                    library.play_all_songs("", false)?;
+                }
+            }
         }
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
 

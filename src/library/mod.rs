@@ -41,11 +41,11 @@ pub struct Library {
     pub artists: Artists,
     pub missing_songs: Songs,
 
-    pub on_albums_set: Vec<LibraryTask>,
-    pub on_artists_set: Vec<LibraryTask>,
+    on_albums_set: Vec<LibraryTask>,
+    on_artists_set: Vec<LibraryTask>,
 
-    config: LibraryConfig,
     tasks: Runner,
+    pub config: LibraryConfig,
     pub player_tx: mpsc::Sender<PlayerRequest>,
     pub ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     rx: mpsc::Receiver<LibraryRequest>,
@@ -228,8 +228,8 @@ impl Library {
             on_albums_set: Vec::new(),
             on_artists_set: Vec::new(),
 
-            config,
             tasks: Runner::new(4),
+            config,
             player_tx,
             ui_tx,
             rx,
