@@ -511,6 +511,10 @@ impl SongQueue {
     ///
     /// # Errors
     /// Function may error if the player or UI channel receiver is closed
+    ///
+    /// # Panics
+    /// The function may panic if `LIBRARY_TX` is uninitialized, or if a
+    /// required channel is closed
     pub fn init_queue(
         config_dir: &str,
         library: &Library,
@@ -570,49 +574,41 @@ impl SongQueue {
             StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
             StartupQueueChoice::QueueFromSongs => library.play_all_songs("", false)?,
             StartupQueueChoice::QueueFromAlbums => {
-                LIBRARY_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
-                        library.play_all_albums("").unwrap();
-                        let _ = library
-                            .player_tx
-                            .send(PlayerRequest::TogglePlay(Some(false)));
-                    })))?;
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                    library.play_all_albums("").unwrap();
+                    let _ = library
+                        .player_tx
+                        .send(PlayerRequest::TogglePlay(Some(false)));
+                })))?;
             }
             StartupQueueChoice::QueueFromArtists => {
-                LIBRARY_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(LibraryRequest::OnArtistsSet(Box::new(|library| {
-                        library.play_all_artists("").unwrap();
-                        let _ = library
-                            .player_tx
-                            .send(PlayerRequest::TogglePlay(Some(false)));
-                    })))?;
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                    library.play_all_artists("").unwrap();
+                    let _ = library
+                        .player_tx
+                        .send(PlayerRequest::TogglePlay(Some(false)));
+                })))?;
             }
             StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs("", true)?,
             StartupQueueChoice::QueueFromAlbumsShuffled => {
-                LIBRARY_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
-                        library.shuffle_all_albums("").unwrap();
-                        let _ = library
-                            .player_tx
-                            .send(PlayerRequest::TogglePlay(Some(false)));
-                    })))?;
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                    library.shuffle_all_albums("").unwrap();
+                    let _ = library
+                        .player_tx
+                        .send(PlayerRequest::TogglePlay(Some(false)));
+                })))?;
             }
             StartupQueueChoice::QueueFromArtistsShuffled => {
-                LIBRARY_TX
-                    .get()
-                    .expect(EXP_INIT)
-                    .send(LibraryRequest::OnArtistsSet(Box::new(|library| {
-                        library.shuffle_all_artists("").unwrap();
-                        let _ = library
-                            .player_tx
-                            .send(PlayerRequest::TogglePlay(Some(false)));
-                    })))?;
+                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+                library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                    library.shuffle_all_artists("").unwrap();
+                    let _ = library
+                        .player_tx
+                        .send(PlayerRequest::TogglePlay(Some(false)));
+                })))?;
             }
             StartupQueueChoice::RestoreQueue => {
                 if fs::exists([config_dir, "songs"].concat()).is_ok_and(|exists| exists) {
