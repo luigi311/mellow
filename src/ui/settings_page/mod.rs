@@ -1,3 +1,5 @@
+use std::cell::Ref;
+
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gdk, glib};
 
@@ -10,6 +12,34 @@ glib::wrapper! {
         @extends adw::PreferencesPage, gtk::Widget,
         @implements
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+pub enum StartupQueueChoice {
+    #[default]
+    RestoreQueue = 0,
+    QueueFromSongs = 1,
+    QueueFromAlbums = 2,
+    QueueFromArtists = 3,
+    QueueFromSongsShuffled = 4,
+    QueueFromAlbumsShuffled = 5,
+    QueueFromArtistsShuffled = 6,
+    EmptyQueue = 7,
+}
+impl From<i32> for StartupQueueChoice {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Self::RestoreQueue,
+            1 => Self::QueueFromSongs,
+            2 => Self::QueueFromAlbums,
+            3 => Self::QueueFromArtists,
+            4 => Self::QueueFromSongsShuffled,
+            5 => Self::QueueFromAlbumsShuffled,
+            6 => Self::QueueFromArtistsShuffled,
+            7 => Self::EmptyQueue,
+            _ => panic!("Invalid input"),
+        }
+    }
 }
 
 impl SettingsPage {
@@ -51,11 +81,37 @@ impl SettingsPage {
         self.imp().gapless.set_active(gapless);
     }
 
-    pub fn remembers_queue(&self) -> bool {
-        self.imp().remember_queue.is_active()
+    pub fn startup_queue(&self) -> Ref<'_, StartupQueueChoice> {
+        self.imp().startup_choice.borrow()
     }
-    pub fn set_remember_queue(&self, remember_queue: bool) {
-        self.imp().remember_queue.set_active(remember_queue);
+    pub fn set_startup_queue(&self, choice: StartupQueueChoice) {
+        let settings = self.imp();
+        settings.startup_choice.replace(choice);
+        match choice {
+            StartupQueueChoice::RestoreQueue => settings.remember_queue.set_active(true),
+            StartupQueueChoice::EmptyQueue => settings.empty_queue.set_active(true),
+            _ => {
+                settings.new_queue.set_active(true);
+                settings.shuffle_queue.set_active(choice as i32 > 3);
+                settings.queue_source.set_selected(match choice as u32 - 1 {
+                    source if source > 2 => source - 3,
+                    source => source,
+                });
+            }
+        }
+    }
+
+    pub fn remembers_queue(&self) -> bool {
+        matches!(
+            *self.imp().startup_choice.borrow(),
+            StartupQueueChoice::RestoreQueue
+        )
+    }
+    pub fn remembers_time(&self) -> bool {
+        self.imp().remember_time.is_active()
+    }
+    pub fn set_remember_time(&self, remember_time: bool) {
+        self.imp().remember_time.set_active(remember_time);
     }
 
     pub fn adaptive_colors(&self) -> bool {

@@ -5,6 +5,16 @@
     <value nick="Light" value="1"/>
     <value nick="Auto" value="2"/>
   </enum>
+  <enum id="com.github.userwithaname.Mellow.startup-queue">
+    <value nick="RestoreQueue" value="0"/>
+    <value nick="QueueFromSongs" value="1"/>
+    <value nick="QueueFromAlbums" value="2"/>
+    <value nick="QueueFromArtists" value="3"/>
+    <value nick="QueueFromSongsShuffled" value="4"/>
+    <value nick="QueueFromAlbumsShuffled" value="5"/>
+    <value nick="QueueFromArtistsShuffled" value="6"/>
+    <value nick="EmptyQueue" value="7"/>
+  </enum>
 
   <schema id="com.github.userwithaname.Mellow" path="/com/github/userwithaname/Mellow/">
     <key name="window-width" type="i">
@@ -23,9 +33,12 @@
       <default>true</default>
       <summary>When enabled, the next song starts loading before the current one ends, to ensure uninterrupted playback</summary>
     </key>
-    <key name="remember-queue" type="b">
+    <key name="startup-queue" enum="com.github.userwithaname.Mellow.startup-queue">
+      <default>'RestoreQueue'</default>
+    </key>
+    <key name="remember-time" type="b">
       <default>true</default>
-      <summary>When enabled, the song queue is preserved between sessions</summary>
+      <summary>When enabled, the playback time is preserved between sessions</summary>
     </key>
     <key name="adaptive-colors" type="b">
       <default>true</default>

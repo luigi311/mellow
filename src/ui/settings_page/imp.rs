@@ -10,6 +10,7 @@ use crate::library::LIBRARY_TX;
 use crate::library::LibraryRequest;
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::ui::settings_page::StartupQueueChoice;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]
@@ -19,8 +20,6 @@ pub struct SettingsPage {
     pub volume: TemplateChild<gtk::Scale>,
     #[template_child]
     pub gapless: TemplateChild<adw::SwitchRow>,
-    #[template_child]
-    pub remember_queue: TemplateChild<adw::SwitchRow>,
 
     // Appearance settings
     #[template_child]
@@ -31,6 +30,28 @@ pub struct SettingsPage {
     // Directory Settings
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
+
+    // Startup Settings
+    pub startup_choice: RefCell<StartupQueueChoice>,
+    #[template_child]
+    pub remember_queue_row: TemplateChild<adw::ExpanderRow>,
+    #[template_child]
+    pub remember_queue: TemplateChild<gtk::CheckButton>,
+    #[template_child]
+    pub remember_time: TemplateChild<adw::SwitchRow>,
+    // TODO: Make the below actually work
+    #[template_child]
+    pub new_queue_row: TemplateChild<adw::ExpanderRow>,
+    #[template_child]
+    pub new_queue: TemplateChild<gtk::CheckButton>,
+    // TODO: Remember shuffle preference
+    #[template_child]
+    pub shuffle_queue: TemplateChild<adw::SwitchRow>,
+    // TODO: Remember queue source
+    #[template_child]
+    pub queue_source: TemplateChild<adw::ComboRow>,
+    #[template_child]
+    pub empty_queue: TemplateChild<gtk::CheckButton>,
 
     pub directories: RefCell<Vec<String>>,
 
@@ -81,8 +102,55 @@ impl SettingsPage {
             0 => adw::ColorScheme::ForceDark,
             1 => adw::ColorScheme::ForceLight,
             2 => adw::ColorScheme::Default,
-            _ => todo!("Unhandled dropdown item"),
+            _ => unimplemented!(),
         });
+    }
+
+    #[template_callback]
+    pub fn handle_select_remember_queue(&self) {
+        let expanded = self.remember_queue_row.is_expanded();
+        if !expanded && !self.remember_queue.is_active() {
+            return;
+        }
+        self.remember_queue.set_active(true);
+        self.startup_choice
+            .replace(StartupQueueChoice::RestoreQueue);
+        self.remember_queue_row.set_expanded(expanded);
+        self.new_queue_row.set_expanded(false);
+    }
+    #[template_callback]
+    pub fn handle_select_new_queue(&self) {
+        let expanded = self.new_queue_row.is_expanded();
+        if !expanded && !self.new_queue.is_active() {
+            return;
+        }
+        self.new_queue.set_active(true);
+        self.remember_queue_row.set_expanded(false);
+        self.new_queue_row.set_expanded(expanded);
+    }
+    #[template_callback]
+    pub fn handle_select_empty_queue(&self) {
+        if self.empty_queue.is_active() {
+            return;
+        }
+        self.empty_queue.set_active(true);
+        self.startup_choice.replace(StartupQueueChoice::EmptyQueue);
+        self.remember_queue_row.set_expanded(false);
+        self.new_queue_row.set_expanded(false);
+    }
+    #[template_callback]
+    pub fn handle_collapse_queue_rows(&self) {
+        self.remember_queue_row
+            .set_expanded(self.remember_queue.is_active());
+        self.new_queue_row.set_expanded(self.new_queue.is_active());
+    }
+    #[template_callback]
+    pub fn handle_update_new_queue_choice(&self) {
+        self.startup_choice.replace(
+            (1 + self.queue_source.selected() as i32 + (self.shuffle_queue.is_active() as i32 * 3))
+                .into(),
+        );
+        dbg!(self.startup_choice.borrow());
     }
 
     pub fn set_theme(&self, preference: adw::ColorScheme) {

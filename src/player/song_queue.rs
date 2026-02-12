@@ -6,9 +6,10 @@ use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::Library;
+use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::{PlayerRequest, queue_item::QueueItem};
 use crate::ui::UpdateUI;
+use crate::ui::settings_page::StartupQueueChoice;
 use crate::{CONFIG_DIR, ReorderVecExt};
 
 pub struct SongQueue {
@@ -513,9 +514,9 @@ impl SongQueue {
     pub fn init_queue(
         config_dir: &str,
         library: &Library,
-        player_tx: &mpsc::Sender<PlayerRequest>,
-        ui_tx: &tokio_mpsc::UnboundedSender<UpdateUI>,
+        queue_startup_choice: StartupQueueChoice,
     ) -> Result<(), Box<dyn Error>> {
+        let player_tx = &library.player_tx;
         let mut args = std::env::args();
         args.next();
 
@@ -560,16 +561,63 @@ impl SongQueue {
             return Ok(());
         }
 
-        if library.songs.is_empty() {
-            // Maybe open the settings page and focus on the directory options?
-            // self.ui_tx.send(UpdateUI::FocusLibrary)?;
-            ui_tx.send(UpdateUI::OpenSheet(true))?;
-            return Ok(());
+        match queue_startup_choice {
+            _ if library.songs.is_empty() => {
+                // Maybe open the settings page and focus on the directory options?
+                // self.ui_tx.send(UpdateUI::FocusLibrary)?;
+                library.ui_tx.send(UpdateUI::OpenSheet(true))?;
+            }
+            StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
+            StartupQueueChoice::QueueFromSongs => library.play_all_songs("", false)?,
+            StartupQueueChoice::QueueFromAlbums => {
+                LIBRARY_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                        library.play_all_albums("").unwrap();
+                        let _ = library
+                            .player_tx
+                            .send(PlayerRequest::TogglePlay(Some(false)));
+                    })))?;
+            }
+            StartupQueueChoice::QueueFromArtists => {
+                LIBRARY_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                        library.play_all_artists("").unwrap();
+                        let _ = library
+                            .player_tx
+                            .send(PlayerRequest::TogglePlay(Some(false)));
+                    })))?;
+            }
+            StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs("", true)?,
+            StartupQueueChoice::QueueFromAlbumsShuffled => {
+                LIBRARY_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                        library.shuffle_all_albums("").unwrap();
+                        let _ = library
+                            .player_tx
+                            .send(PlayerRequest::TogglePlay(Some(false)));
+                    })))?;
+            }
+            StartupQueueChoice::QueueFromArtistsShuffled => {
+                LIBRARY_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                        library.shuffle_all_artists("").unwrap();
+                        let _ = library
+                            .player_tx
+                            .send(PlayerRequest::TogglePlay(Some(false)));
+                    })))?;
+            }
+            _ => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
         }
-
-        // self.player_tx.send(PlayerRequest::SetShuffle(true))?;
-        library.play_all_songs("", false)?;
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
+
         Ok(())
     }
 

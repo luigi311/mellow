@@ -47,6 +47,7 @@ fn init(app: &Application) {
         .expect(INIT_ERR);
 
     let settings = gio::Settings::new(about::app_id());
+    let startup_queue = settings.enum_("startup-queue");
     let mut library = Library::init(
         LibraryConfig::new(match &settings.string("directories")[..] {
             ":" => vec![MUSIC_DIR.get().unwrap().clone()],
@@ -59,7 +60,7 @@ fn init(app: &Application) {
         .name("library".to_string())
         .spawn(move || {
             library.discover_files();
-            library.init_queue().unwrap();
+            library.init_queue(startup_queue).unwrap();
             library.request_handler().unwrap();
         })
         .expect(INIT_ERR);

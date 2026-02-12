@@ -33,16 +33,21 @@ use crate::{CONFIG_DIR, visit_dirs};
 // TODO: Implement song/album/artist search/filtering
 // TODO: Efficient search/filter by tag, rating, titles, etc
 
+type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
+
 pub struct Library {
     pub songs: Songs,
     pub albums: Albums,
     pub artists: Artists,
     pub missing_songs: Songs,
 
+    pub on_albums_set: Vec<LibraryTask>,
+    pub on_artists_set: Vec<LibraryTask>,
+
     config: LibraryConfig,
     tasks: Runner,
-    player_tx: mpsc::Sender<PlayerRequest>,
-    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
+    pub player_tx: mpsc::Sender<PlayerRequest>,
+    pub ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -192,6 +197,8 @@ pub enum LibraryRequest {
     SetMissingSongs(Songs),
 
     RunTask(BoxedTask),
+    OnAlbumsSet(LibraryTask),
+    OnArtistsSet(LibraryTask),
     Shutdown(mpsc::Sender<()>),
 }
 
@@ -217,6 +224,9 @@ impl Library {
             albums: Vec::new(),
             artists: Vec::new(),
             missing_songs: Vec::new(),
+
+            on_albums_set: Vec::new(),
+            on_artists_set: Vec::new(),
 
             config,
             tasks: Runner::new(4),
@@ -272,6 +282,8 @@ impl Library {
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
+                LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
+                LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
                 LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done),
             }
         }
@@ -627,6 +639,9 @@ impl Library {
             .send(UpdateUI::LibraryAlbums(albums.clone()))
             .expect(EXP_RX);
         self.albums = albums;
+        for f in mem::take(&mut self.on_albums_set) {
+            f(self);
+        }
     }
     /// Replaces `self.artists` with `artists`
     ///
@@ -637,6 +652,9 @@ impl Library {
             .send(UpdateUI::LibraryArtists(artists.clone()))
             .expect(EXP_RX);
         self.artists = artists;
+        for f in mem::take(&mut self.on_artists_set) {
+            f(self);
+        }
     }
     /// Replaces `self.missing_songs` with `missing_songs`
     fn set_missing_songs(&mut self, missing_songs: Songs) {
@@ -648,8 +666,8 @@ impl Library {
     /// # Errors
     /// Function may error if the player or UI channel receiver is closed
     #[inline]
-    pub fn init_queue(&self) -> Result<(), Box<dyn Error>> {
-        SongQueue::init_queue(&self.config.dir, self, &self.player_tx, &self.ui_tx)
+    pub fn init_queue(&self, queue_startup_choice: i32) -> Result<(), Box<dyn Error>> {
+        SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into())
     }
 
     /// Returns a queue of all songs in the library matching the given `query`

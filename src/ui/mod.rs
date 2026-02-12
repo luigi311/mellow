@@ -19,12 +19,13 @@ mod main_player;
 mod queue_page;
 mod queue_subpage;
 mod rating;
-mod settings_page;
 mod song_object;
 mod song_page;
 mod song_row;
 mod songs_page;
 mod window;
+
+pub mod settings_page;
 
 use crate::about;
 use crate::library::album::SharedAlbum;

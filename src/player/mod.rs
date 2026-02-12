@@ -66,7 +66,7 @@ pub enum PlayerRequest {
     /// Saves the current queue to disk if the first value is `true`, and responds
     /// back using the second argument when all tasks have started. Always wait for
     /// the response before shutting down the library to ensure proper behavior.
-    Shutdown(bool, mpsc::Sender<()>),
+    Shutdown(bool, bool, mpsc::Sender<()>),
 }
 
 // Required by certain variants
@@ -102,7 +102,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
                 Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
-                Self::Shutdown(save, _) => format!("SaveQueue({save}, …)"),
+                Self::Shutdown(save, time, _) => format!("SaveQueue({save}, {time}, …)"),
             }
         )
     }
@@ -281,7 +281,7 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
-                PlayerRequest::Shutdown(save, tx) => self.shutdown(save, &tx) != (),
+                PlayerRequest::Shutdown(save, time, tx) => self.shutdown(save, time, &tx) != (),
             } {
                 self.update();
                 self.ui_set_state();
@@ -662,12 +662,13 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    fn shutdown(&mut self, save_queue: bool, tx: &mpsc::Sender<()>) {
+    fn shutdown(&mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
-        // TODO: Make saving the time optional?
-        // 'Remember Queue' option could be an `ExpanderRow` with a nested 'Remember Time'
-        let time = self.current_time().map(ClockTime::mseconds);
+        let time = match self.current_time().map(ClockTime::mseconds) {
+            Some(time) if time > 0 && save_time => Some(time),
+            _ => None,
+        };
         Library::run_task(library_tx, move || {
             SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
         });

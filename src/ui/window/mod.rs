@@ -231,6 +231,7 @@ impl Window {
         let imp = self.imp();
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
+        let remember_time = settings_page.remembers_time();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
@@ -238,7 +239,11 @@ impl Window {
             let player_tx = PLAYER_TX.get().expect(EXP_INIT);
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             player_tx
-                .send(PlayerRequest::Shutdown(remember_queue, player_shutdown_tx))
+                .send(PlayerRequest::Shutdown(
+                    remember_queue,
+                    remember_time,
+                    player_shutdown_tx,
+                ))
                 .expect(EXP_RX);
             let _ = player_shutdown_rx.recv();
 
@@ -252,7 +257,8 @@ impl Window {
         settings.set_int("window-height", self.size(Orientation::Vertical))?;
         settings.set_double("volume", settings_page.volume())?;
         settings.set_boolean("gapless", settings_page.gapless())?;
-        settings.set_boolean("remember-queue", remember_queue)?;
+        settings.set_enum("startup-queue", *settings_page.startup_queue() as i32)?;
+        settings.set_boolean("remember-time", remember_time)?;
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
@@ -273,7 +279,8 @@ impl Window {
             .handle_set_volume(gtk::ScrollType::Jump, volume);
         settings_page.set_volume(volume);
         settings_page.set_gapless(settings.boolean("gapless"));
-        settings_page.set_remember_queue(settings.boolean("remember-queue"));
+        settings_page.set_startup_queue(settings.enum_("startup-queue").into());
+        settings_page.set_remember_time(settings.boolean("remember-time"));
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));
         settings_page.set_color_scheme(settings.enum_("color-scheme").cast_unsigned());
 

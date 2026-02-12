@@ -29,6 +29,7 @@ Song Queue:
 
 Music Library:
 
+FIX: Library shutdown stalls until all currently loading artworks are done loading
 - [ ] The 'Songs' page and its subpages do not have performance issues
   - FIX: Artworks on the main page consume way too much memory
 - [ ] The 'Albums' page and its subpages do not have performance issues
