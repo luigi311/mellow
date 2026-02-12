@@ -315,7 +315,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return self.info.read().unwrap();
         }
-        info_writer.replace(self.basic_or_default());
+        *info_writer = Some(self.basic_or_default());
         drop(info_writer);
         self.info.read().unwrap()
     }
@@ -350,7 +350,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return Ok(self.info.read().unwrap());
         }
-        info_writer.replace(self.basic_or_default());
+        *info_writer = Some(self.basic_or_default());
         drop(info_writer);
         Ok(self.info.read().unwrap())
     }
@@ -458,7 +458,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return self.detailed_info.read().unwrap();
         }
-        info_writer.replace(self.detailed_or_default());
+        *info_writer = Some(self.detailed_or_default());
         drop(info_writer);
         self.detailed_info.read().unwrap()
     }
@@ -492,7 +492,7 @@ impl SongInfoLoader<'_> {
             drop(info_writer);
             return Ok(self.detailed_info.read().unwrap());
         }
-        info_writer.replace(self.detailed_or_default());
+        *info_writer = Some(self.detailed_or_default());
         drop(info_writer);
         Ok(self.detailed_info.read().unwrap())
     }
