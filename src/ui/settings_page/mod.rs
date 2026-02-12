@@ -37,7 +37,12 @@ impl From<i32> for StartupQueueChoice {
             5 => Self::QueueFromAlbumsShuffled,
             6 => Self::QueueFromArtistsShuffled,
             7 => Self::EmptyQueue,
-            _ => panic!("Invalid input"),
+            n => {
+                eprintln!(
+                    "WARNING: Value {n} is outside the valid range for `StartupQueueChoice` (default value will be used instead)"
+                );
+                Self::default()
+            }
         }
     }
 }
@@ -67,6 +72,7 @@ impl SettingsPage {
         }
     }
 
+    #[must_use]
     pub fn volume(&self) -> f64 {
         self.imp().volume.value()
     }
@@ -74,6 +80,7 @@ impl SettingsPage {
         self.imp().volume.set_value(volume);
     }
 
+    #[must_use]
     pub fn gapless(&self) -> bool {
         self.imp().gapless.is_active()
     }
@@ -81,6 +88,7 @@ impl SettingsPage {
         self.imp().gapless.set_active(gapless);
     }
 
+    #[must_use]
     pub fn startup_queue(&self) -> Ref<'_, StartupQueueChoice> {
         self.imp().startup_choice.borrow()
     }
@@ -101,12 +109,14 @@ impl SettingsPage {
         }
     }
 
+    #[must_use]
     pub fn remembers_queue(&self) -> bool {
         matches!(
             *self.imp().startup_choice.borrow(),
             StartupQueueChoice::RestoreQueue
         )
     }
+    #[must_use]
     pub fn remembers_time(&self) -> bool {
         self.imp().remember_time.is_active()
     }
@@ -114,6 +124,7 @@ impl SettingsPage {
         self.imp().remember_time.set_active(remember_time);
     }
 
+    #[must_use]
     pub fn adaptive_colors(&self) -> bool {
         self.imp().adaptive_colors.is_active()
     }
@@ -121,6 +132,7 @@ impl SettingsPage {
         self.imp().adaptive_colors.set_active(adaptive_colors);
     }
 
+    #[must_use]
     pub fn color_scheme(&self) -> u32 {
         self.imp().color_scheme.selected()
     }
@@ -128,6 +140,7 @@ impl SettingsPage {
         self.imp().color_scheme.set_selected(id);
     }
 
+    #[must_use]
     pub fn directories(&self) -> Vec<String> {
         self.imp().directories.borrow().clone()
     }
