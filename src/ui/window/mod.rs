@@ -13,6 +13,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
+use crate::ui::actions;
 
 mod imp;
 
@@ -43,156 +44,31 @@ impl Window {
     fn setup_actions(&self) {
         let player_actions = gio::SimpleActionGroup::new();
         player_actions.add_action_entries([
-            gio::ActionEntry::builder("skip_prev")
-                .activate(clone!(
-                    #[weak(rename_to=player)]
-                    self.imp().main_player.imp(),
-                    move |_, _, _| player.handle_skip_prev()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_pause")
-                .activate(clone!(
-                    #[weak(rename_to=player)]
-                    self.imp().main_player.imp(),
-                    move |_, _, _| player.handle_play_pause()
-                ))
-                .build(),
-            gio::ActionEntry::builder("skip_next")
-                .activate(clone!(
-                    #[weak(rename_to=player)]
-                    self.imp().main_player.imp(),
-                    move |_, _, _| player.handle_skip_next()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_all_songs")
-                .activate(clone!(
-                    #[weak(rename_to=songs_page)]
-                    self.imp().songs_page.imp(),
-                    move |_, _, _| songs_page.handle_play_sequential()
-                ))
-                .build(),
-            gio::ActionEntry::builder("shuffle_all_songs")
-                .activate(clone!(
-                    #[weak(rename_to=songs_page)]
-                    self.imp().songs_page.imp(),
-                    move |_, _, _| songs_page.handle_play_shuffled()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_visible_album")
-                .activate(clone!(
-                    #[weak(rename_to=album_page)]
-                    self.imp().album_page.imp(),
-                    move |_, _, _| album_page.handle_play_sequential()
-                ))
-                .build(),
-            gio::ActionEntry::builder("shuffle_visible_album")
-                .activate(clone!(
-                    #[weak(rename_to=album_page)]
-                    self.imp().album_page.imp(),
-                    move |_, _, _| album_page.handle_play_shuffled()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_visible_artist")
-                .activate(clone!(
-                    #[weak(rename_to=artist_page)]
-                    self.imp().artist_page.imp(),
-                    move |_, _, _| artist_page.handle_play_sequential()
-                ))
-                .build(),
-            gio::ActionEntry::builder("shuffle_visible_artist")
-                .activate(clone!(
-                    #[weak(rename_to=artist_page)]
-                    self.imp().artist_page.imp(),
-                    move |_, _, _| artist_page.handle_play_shuffled()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_all_albums")
-                .activate(clone!(
-                    #[weak(rename_to=albums_page)]
-                    self.imp().albums_page.imp(),
-                    move |_, _, _| albums_page.handle_play_sequential()
-                ))
-                .build(),
-            gio::ActionEntry::builder("shuffle_all_albums")
-                .activate(clone!(
-                    #[weak(rename_to=albums_page)]
-                    self.imp().albums_page.imp(),
-                    move |_, _, _| albums_page.handle_play_shuffled()
-                ))
-                .build(),
-            gio::ActionEntry::builder("play_all_artists")
-                .activate(clone!(
-                    #[weak(rename_to=artists_page)]
-                    self.imp().artists_page.imp(),
-                    move |_, _, _| artists_page.handle_play_sequential()
-                ))
-                .build(),
-            gio::ActionEntry::builder("shuffle_all_artists")
-                .activate(clone!(
-                    #[weak(rename_to=artists_page)]
-                    self.imp().artists_page.imp(),
-                    move |_, _, _| artists_page.handle_play_shuffled()
-                ))
-                .build(),
+            actions::player::skip_prev(self),
+            actions::player::play_pause(self),
+            actions::player::skip_next(self),
+            actions::player::play_all_songs(self),
+            actions::player::shuffle_all_songs(self),
+            actions::player::play_visible_album(self),
+            actions::player::shuffle_visible_album(self),
+            actions::player::play_visible_artist(self),
+            actions::player::shuffle_visible_artist(self),
+            actions::player::play_all_albums(self),
+            actions::player::shuffle_all_albums(self),
+            actions::player::play_all_artists(self),
+            actions::player::shuffle_all_artists(self),
         ]);
         self.insert_action_group("player", Some(&player_actions));
 
         let ui_actions = gio::SimpleActionGroup::new();
         ui_actions.add_action_entries([
-            gio::ActionEntry::builder("open_sheet")
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, _| ui.open_sheet(true)
-                ))
-                .build(),
-            gio::ActionEntry::builder("close_sheet")
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, _| ui.open_sheet(false)
-                ))
-                .build(),
-            gio::ActionEntry::builder("playing_nav_push")
-                .parameter_type(Some(&String::static_variant_type()))
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, tag| {
-                        let tag = tag.unwrap().get::<String>().unwrap();
-                        ui.playing.push_by_tag(&tag);
-                    }
-                ))
-                .build(),
-            gio::ActionEntry::builder("playing_nav_pop")
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, _| {
-                        ui.playing.pop();
-                    }
-                ))
-                .build(),
-            gio::ActionEntry::builder("library_nav_push")
-                .parameter_type(Some(&String::static_variant_type()))
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, tag| {
-                        let tag = tag.unwrap().get::<String>().unwrap();
-                        ui.library.push_by_tag(&tag);
-                    }
-                ))
-                .build(),
-            gio::ActionEntry::builder("library_nav_pop")
-                .activate(clone!(
-                    #[weak(rename_to=ui)]
-                    self.imp(),
-                    move |_, _, _| {
-                        ui.library.pop();
-                    }
-                ))
-                .build(),
+            actions::ui::open_sheet(self),
+            actions::ui::close_sheet(self),
+            actions::ui::playing_nav_push(self),
+            actions::ui::playing_nav_pop(self),
+            actions::ui::library_nav_push(self),
+            actions::ui::library_nav_pop(self),
+            actions::ui::library_nav_pop(self),
         ]);
         self.insert_action_group("ui", Some(&ui_actions));
 
