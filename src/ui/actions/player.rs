@@ -4,6 +4,7 @@ use gtk::{gio, glib};
 
 use crate::ui::Window;
 
+#[inline]
 pub fn skip_prev(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("skip_prev")
         .activate(clone!(
@@ -13,6 +14,7 @@ pub fn skip_prev(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
         ))
         .build()
 }
+#[inline]
 pub fn play_pause(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_pause")
         .activate(clone!(
@@ -22,6 +24,7 @@ pub fn play_pause(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
         ))
         .build()
 }
+#[inline]
 pub fn skip_next(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("skip_next")
         .activate(clone!(
@@ -31,6 +34,7 @@ pub fn skip_next(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
         ))
         .build()
 }
+#[inline]
 pub fn play_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_all_songs")
         .activate(clone!(
@@ -40,6 +44,7 @@ pub fn play_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionGrou
         ))
         .build()
 }
+#[inline]
 pub fn shuffle_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("shuffle_all_songs")
         .activate(clone!(
@@ -49,6 +54,7 @@ pub fn shuffle_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionG
         ))
         .build()
 }
+#[inline]
 pub fn play_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_visible_album")
         .activate(clone!(
@@ -58,6 +64,7 @@ pub fn play_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleAction
         ))
         .build()
 }
+#[inline]
 pub fn shuffle_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("shuffle_visible_album")
         .activate(clone!(
@@ -67,6 +74,7 @@ pub fn shuffle_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleAct
         ))
         .build()
 }
+#[inline]
 pub fn play_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_visible_artist")
         .activate(clone!(
@@ -76,6 +84,7 @@ pub fn play_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActio
         ))
         .build()
 }
+#[inline]
 pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("shuffle_visible_artist")
         .activate(clone!(
@@ -85,6 +94,7 @@ pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleAc
         ))
         .build()
 }
+#[inline]
 pub fn play_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_all_albums")
         .activate(clone!(
@@ -94,6 +104,7 @@ pub fn play_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGro
         ))
         .build()
 }
+#[inline]
 pub fn shuffle_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("shuffle_all_albums")
         .activate(clone!(
@@ -103,6 +114,7 @@ pub fn shuffle_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleAction
         ))
         .build()
 }
+#[inline]
 pub fn play_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("play_all_artists")
         .activate(clone!(
@@ -112,6 +124,7 @@ pub fn play_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGr
         ))
         .build()
 }
+#[inline]
 pub fn shuffle_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("shuffle_all_artists")
         .activate(clone!(

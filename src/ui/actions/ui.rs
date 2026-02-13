@@ -4,6 +4,7 @@ use gtk::{gio, glib};
 
 use crate::ui::Window;
 
+#[inline]
 pub fn open_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("open_sheet")
         .activate(clone!(
@@ -13,6 +14,7 @@ pub fn open_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
         ))
         .build()
 }
+#[inline]
 pub fn close_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("close_sheet")
         .activate(clone!(
@@ -22,6 +24,7 @@ pub fn close_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> 
         ))
         .build()
 }
+#[inline]
 pub fn playing_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("playing_nav_push")
         .parameter_type(Some(&String::static_variant_type()))
@@ -35,6 +38,7 @@ pub fn playing_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGr
         ))
         .build()
 }
+#[inline]
 pub fn playing_nav_pop(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("playing_nav_pop")
         .activate(clone!(
@@ -46,6 +50,7 @@ pub fn playing_nav_pop(window: &Window) -> gio::ActionEntry<gio::SimpleActionGro
         ))
         .build()
 }
+#[inline]
 pub fn library_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("library_nav_push")
         .parameter_type(Some(&String::static_variant_type()))
@@ -59,6 +64,7 @@ pub fn library_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGr
         ))
         .build()
 }
+#[inline]
 pub fn library_nav_pop(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("library_nav_pop")
         .activate(clone!(
