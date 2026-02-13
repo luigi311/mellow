@@ -142,9 +142,9 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
-        imp.artists_page.load_artists(&vec![]);
-        imp.albums_page.load_albums(&vec![]);
-        imp.songs_page.load_songs(&vec![]);
+        imp.artists_page.uninit();
+        imp.albums_page.uninit();
+        imp.songs_page.uninit();
 
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())

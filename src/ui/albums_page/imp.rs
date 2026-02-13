@@ -115,6 +115,12 @@ impl AlbumsPage {
             .unwrap()
             .set_property("artwork", artwork);
     }
+
+    pub fn uninit(&self) {
+        self.albums_grid.set_model(None::<&gtk::NoSelection>);
+        self.albums_grid
+            .set_factory(None::<&gtk::SignalListItemFactory>);
+    }
 }
 
 #[glib::object_subclass]

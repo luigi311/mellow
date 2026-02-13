@@ -81,6 +81,7 @@ impl ArtistsPage {
 
     pub fn load_artists(&self, artsits: &Artists) {
         if artsits.is_empty() {
+            self.artists_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
             return;
         }
@@ -107,6 +108,12 @@ impl ArtistsPage {
             .and_downcast::<ArtistObject>()
             .unwrap()
             .set_property("artwork", artwork);
+    }
+
+    pub fn uninit(&self) {
+        self.artists_grid.set_model(None::<&gtk::NoSelection>);
+        self.artists_grid
+            .set_factory(None::<&gtk::SignalListItemFactory>);
     }
 }
 
