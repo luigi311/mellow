@@ -51,7 +51,6 @@ impl Runner {
         T: FnOnce() + Into<Box<T>> + Send + 'static,
     {
         if let Err(e) = self.request.send(task.into()) {
-            #[cfg(debug_assertions)]
             eprintln!("Could not send task to the thread pool: {e}");
         }
     }
