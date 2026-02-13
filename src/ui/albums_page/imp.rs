@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
@@ -117,9 +117,15 @@ impl AlbumsPage {
     }
 
     pub fn uninit(&self) {
-        self.albums_grid.set_model(None::<&gtk::NoSelection>);
-        self.albums_grid
-            .set_factory(None::<&gtk::SignalListItemFactory>);
+        let mut i = 0;
+        while let Some(item) = self.albums_grid.model().unwrap().item(i) {
+            item.downcast_ref::<AlbumObject>()
+                .unwrap()
+                .imp()
+                .is_visible
+                .store(false, Ordering::Relaxed);
+            i += 1;
+        }
     }
 }
 
