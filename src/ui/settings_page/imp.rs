@@ -293,7 +293,8 @@ impl SettingsPage {
         /// Color luminance function:
         /// <https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color/596243#596243>
         fn lum(r: f64, g: f64, b: f64) -> f64 {
-            r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
+            r.mul_add(0.299, g.mul_add(0.587, b * 0.114))
+            // r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
         }
 
         self.current_color.set(Some((r, g, b)));
