@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use adw::subclass::prelude::*;
 use glib::Object;
@@ -30,11 +31,15 @@ impl AlbumObject {
         if self.artwork().is_some() {
             return;
         }
-        // TODO: Don't load if already loading
         let index = self.index() as usize;
-        let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
+        let imp = self.imp();
+        let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
+        let is_visible = Arc::clone(&imp.is_visible);
+        is_visible.store(true, Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            // TODO: Load in a way that allows cancellation in `unbind`
+            if !is_visible.load(Ordering::Relaxed) {
+                return;
+            }
             drop(song.info().load_detailed());
             UI_TX
                 .get()
@@ -46,10 +51,15 @@ impl AlbumObject {
 
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
-        let song = Arc::clone(self.imp().first_song.get().expect(EXP_INIT));
-        // FIX: Info loading can't be cancelled, and can't be unloaded until done loading
-        // NOTE: Unloading in the background because the info mutex could be locked
+        let imp = self.imp();
+        let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
+        let is_visible = Arc::clone(&imp.is_visible);
+        is_visible.store(false, Ordering::Relaxed);
+        // NOTE: Unloading in the background in case the `RwLock` is busy
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            if is_visible.load(Ordering::Relaxed) {
+                return;
+            }
             song.info().unload_detailed();
         });
     }

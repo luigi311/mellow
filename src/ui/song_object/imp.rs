@@ -2,6 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::Properties;
 use gtk::{gdk, glib};
 use std::cell::{OnceCell, RefCell};
+use std::sync::{Arc, atomic::AtomicBool};
 
 use crate::{library::song::SharedSong, ui::song_object::SongData};
 
@@ -14,7 +15,8 @@ pub struct SongObject {
     #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
     pub data: RefCell<SongData>,
 
-    pub first_song: OnceCell<SharedSong>,
+    pub shared_song: OnceCell<SharedSong>,
+    pub is_visible: Arc<AtomicBool>,
 }
 
 #[glib::object_subclass]

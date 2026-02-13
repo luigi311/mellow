@@ -158,8 +158,7 @@ impl ObjectImpl for SongsPage {
 
             song_row.set_info(&song_object.song(), &song_object.artist());
             song_row.set_artwork(&song_object.artwork().unwrap_or_else(|| {
-                // TODO: Disabled until unloading works properly (high memory usage)
-                // song_object.load_artwork();
+                song_object.load_artwork();
                 fallback_song_image()
             }));
 
