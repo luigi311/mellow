@@ -5,7 +5,7 @@ use gtk::{gdk, glib};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -46,11 +46,8 @@ impl SongObject {
                 return;
             }
             drop(song.info().load_detailed());
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
-                .send(UpdateUI::LibrarySongLoaded(index))
-                .expect(EXP_RX);
+            let ui_tx = UI_TX.get().expect(EXP_INIT);
+            let _ = ui_tx.send(UpdateUI::LibrarySongLoaded(index));
         });
     }
 

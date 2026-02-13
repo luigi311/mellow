@@ -151,7 +151,7 @@ impl Window {
 
                 UpdateUI::Shutdown => loop {
                     // Ignore any further requests without closing the channel
-                    let _ = ui_rx.recv().await;
+                    ui_rx.recv().await.unwrap();
                     println!("Note: UI requests are ignored during shutdown");
                 },
             }

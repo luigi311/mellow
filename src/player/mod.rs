@@ -285,7 +285,7 @@ impl Player {
                     self.shutdown(save_queue, save_time, &tx);
                     loop {
                         // Ignore any further requests without closing the channel
-                        let _ = self.rx.recv();
+                        self.rx.recv()?;
                         println!("Note: Player requests are ignored during shutdown");
                     }
                 }

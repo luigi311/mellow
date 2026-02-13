@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 
-use crate::excuses::{EXP_INIT, INIT_ERR};
+use crate::excuses::INIT_ERR;
 
 pub type BoxedTask = Box<dyn FnOnce() + Send + 'static>;
 

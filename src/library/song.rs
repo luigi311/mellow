@@ -310,7 +310,8 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "⚠️ Basic song info already loaded - enable the check for release builds as well"
+                "⚠️ Basic song info already loaded - enable the check for release builds as well ({})",
+                line!()
             );
             drop(info_writer);
             return self.info.read().unwrap();
@@ -345,7 +346,8 @@ impl SongInfoLoader<'_> {
         #[cfg(debug_assertions)]
         if info_writer.is_some() {
             println!(
-                "⚠️ Basic song info already loaded - enable the check for release builds as well"
+                "⚠️ Basic song info already loaded - enable the check for release builds as well ({})",
+                line!()
             );
             drop(info_writer);
             return Ok(self.info.read().unwrap());
@@ -450,10 +452,11 @@ impl SongInfoLoader<'_> {
         let mut info_writer = self.detailed_info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
-        #[cfg(debug_assertions)]
         if info_writer.is_some() {
+            #[cfg(debug_assertions)]
             println!(
-                "⚠️ Detailed song info already loaded - enable the check for release builds as well"
+                "⚠️ Detailed song info already loaded (this is to confirm that this check is necessary) ({})",
+                line!()
             );
             drop(info_writer);
             return self.detailed_info.read().unwrap();
@@ -484,10 +487,11 @@ impl SongInfoLoader<'_> {
         let mut info_writer = self.detailed_info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
-        #[cfg(debug_assertions)]
         if info_writer.is_some() {
+            #[cfg(debug_assertions)]
             println!(
-                "⚠️ Detailed song info already loaded - enable the check for release builds as well"
+                "⚠️ Detailed song info already loaded (this is to confirm that this check is necessary) ({})",
+                line!()
             );
             drop(info_writer);
             return Ok(self.detailed_info.read().unwrap());

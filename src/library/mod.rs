@@ -621,6 +621,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::LibrarySongs(songs.clone()))
@@ -631,6 +632,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::LibraryAlbums(albums.clone()))
@@ -644,6 +646,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::LibraryArtists(artists.clone()))
@@ -654,6 +657,7 @@ impl Library {
         }
     }
     /// Replaces `self.missing_songs` with `missing_songs`
+    #[inline]
     fn set_missing_songs(&mut self, missing_songs: Songs) {
         self.missing_songs = missing_songs;
     }
