@@ -237,13 +237,28 @@ impl SettingsPage {
         self.disable_background_color();
     }
 
-    pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
-        fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-            const SATURATION: f64 = 2.0;
+    /// Returns a linearized color channel
+    ///
+    /// The input value must be scaled to a 0 to 1 range
+    /// (e.g. color as f64 / 255.0)
+    #[inline]
+    fn srgb_to_linear(c: f64) -> f64 {
+        c.powf(2.2)
+    }
 
-            r = (1.0 - r / 2.0).mul_add(-(1.0 - r / 2.0), 1.0);
-            g = (1.0 - g / 2.0).mul_add(-(1.0 - g / 2.0), 1.0);
-            b = (1.0 - b / 2.0).mul_add(-(1.0 - b / 2.0), 1.0);
+    /// Sets the interface colors based on the input `r` `g` `b`
+    /// values. The colors are processed differently based on the
+    /// selected color scheme.
+    ///
+    /// The input values are expected to be linear rather than sRGB
+    pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
+        #[inline]
+        fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            const SATURATION: f64 = 1.6;
+
+            r = (1.0 - r / 2.0).mul_add(-(1.0 - r / 2.0), 1.0) / 2.0;
+            g = (1.0 - g / 2.0).mul_add(-(1.0 - g / 2.0), 1.0) / 2.0;
+            b = (1.0 - b / 2.0).mul_add(-(1.0 - b / 2.0), 1.0) / 2.0;
 
             let lum = lum(r, g, b);
 
@@ -251,12 +266,9 @@ impl SettingsPage {
             g = lerp(lum, g, SATURATION);
             b = lerp(lum, b, SATURATION);
 
-            (
-                (r * 255.0 / 2.0) as u8,
-                (g * 255.0 / 2.0) as u8,
-                (b * 255.0 / 2.0) as u8,
-            )
+            linear_to_srgb(r, g, b)
         }
+        #[inline]
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 2.5;
 
@@ -270,10 +282,11 @@ impl SettingsPage {
             g = lerp(lum, g, SATURATION);
             b = lerp(lum, b, SATURATION);
 
-            ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+            linear_to_srgb(r, g, b)
         }
+        #[inline]
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
-            const SATURATION: f64 = 1.35;
+            const SATURATION: f64 = 1.2;
 
             r = lerp(r, r * r, 0.4);
             g = lerp(g, g * g, 0.4);
@@ -285,16 +298,22 @@ impl SettingsPage {
             g = lerp(lum, g, SATURATION);
             b = lerp(lum, b, SATURATION);
 
-            (
-                ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8),
-                lum,
-            )
+            (linear_to_srgb(r, g, b), lum.powf(1.0 / 2.2))
         }
         /// Color luminance function:
         /// <https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color/596243#596243>
+        #[inline]
         fn lum(r: f64, g: f64, b: f64) -> f64 {
-            r.mul_add(0.299, g.mul_add(0.587, b * 0.114))
-            // r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
+            r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
+            // r.mul_add(0.299, g.mul_add(0.587, b * 0.114))
+        }
+        #[inline]
+        fn linear_to_srgb(r: f64, g: f64, b: f64) -> (u8, u8, u8) {
+            (
+                (r.powf(1.0 / 2.2) * 255.0) as u8,
+                (g.powf(1.0 / 2.2) * 255.0) as u8,
+                (b.powf(1.0 / 2.2) * 255.0) as u8,
+            )
         }
 
         self.current_color.set(Some((r, g, b)));
@@ -401,9 +420,9 @@ impl SettingsPage {
 
         let num_pixels = image_data.len() / (step_size * 4);
         self.set_background_color(
-            r / num_pixels as f64,
-            g / num_pixels as f64,
-            b / num_pixels as f64,
+            Self::srgb_to_linear(r / num_pixels as f64),
+            Self::srgb_to_linear(g / num_pixels as f64),
+            Self::srgb_to_linear(b / num_pixels as f64),
         );
     }
 
