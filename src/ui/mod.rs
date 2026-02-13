@@ -73,6 +73,8 @@ pub enum UpdateUI {
     FocusPlaying,
     FocusSettings,
     OpenSheet(bool),
+
+    Shutdown,
 }
 
 /// Starts the application and initializes `UI_TX`

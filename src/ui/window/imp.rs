@@ -148,6 +148,12 @@ impl Window {
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),
                 UpdateUI::OpenSheet(open) => self.open_sheet(open),
+
+                UpdateUI::Shutdown => loop {
+                    // Ignore any further requests without closing the channel
+                    let _ = ui_rx.recv().await;
+                    println!("Note: UI requests are ignored during shutdown");
+                },
             }
         }
     }
@@ -429,7 +435,7 @@ impl ObjectImpl for Window {
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
         self.obj()
-            .save_state()
+            .save_and_uninit()
             .expect("Failed to save window state");
 
         glib::Propagation::Proceed

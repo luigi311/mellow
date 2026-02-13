@@ -83,6 +83,7 @@ impl SongsPage {
 
     pub fn load_songs(&self, songs: &Songs) {
         if songs.is_empty() {
+            self.songs_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
             return;
         }

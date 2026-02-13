@@ -82,6 +82,7 @@ impl AlbumsPage {
 
     pub fn load_albums(&self, albums: &Albums) {
         if albums.is_empty() {
+            self.albums_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
             return;
         }

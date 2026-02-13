@@ -13,7 +13,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
-use crate::ui::actions;
+use crate::ui::{UI_TX, UpdateUI, actions};
 
 mod imp;
 
@@ -101,9 +101,9 @@ impl Window {
         self.add_controller(drop_target);
     }
 
-    /// Saves all settings and the player state
-    /// Note that `song_queue` will be uninitialized
-    pub fn save_state(&self) -> Result<(), Box<dyn Error>> {
+    /// Saves all settings and the player state and prepares
+    /// for shutdown, uninitializing various components
+    pub fn save_and_uninit(&self) -> Result<(), Box<dyn Error>> {
         let imp = self.imp();
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
@@ -112,6 +112,9 @@ impl Window {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
+            let ui_tx = UI_TX.get().expect(EXP_INIT);
+            ui_tx.send(UpdateUI::Shutdown).expect(EXP_RX);
+
             let player_tx = PLAYER_TX.get().expect(EXP_INIT);
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             player_tx
@@ -138,6 +141,10 @@ impl Window {
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
+
+        imp.artists_page.load_artists(&vec![]);
+        imp.albums_page.load_albums(&vec![]);
+        imp.songs_page.load_songs(&vec![]);
 
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())

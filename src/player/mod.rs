@@ -281,7 +281,14 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
-                PlayerRequest::Shutdown(save, time, tx) => self.shutdown(save, time, &tx) != (),
+                PlayerRequest::Shutdown(save_queue, save_time, tx) => {
+                    self.shutdown(save_queue, save_time, &tx);
+                    loop {
+                        // Ignore any further requests without closing the channel
+                        let _ = self.rx.recv();
+                        println!("Note: Player requests are ignored during shutdown");
+                    }
+                }
             } {
                 self.update();
                 self.ui_set_state();
@@ -663,12 +670,12 @@ impl Player {
     }
 
     fn shutdown(&mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
         let time = match self.current_time().map(ClockTime::mseconds) {
             Some(time) if time > 0 && save_time => Some(time),
             _ => None,
         };
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         Library::run_task(library_tx, move || {
             SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
         });

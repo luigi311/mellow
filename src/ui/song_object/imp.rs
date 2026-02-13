@@ -1,8 +1,10 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Properties;
 use gtk::{gdk, glib};
+
 use std::cell::{OnceCell, RefCell};
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{library::song::SharedSong, ui::song_object::SongData};
 
@@ -27,3 +29,9 @@ impl ObjectSubclass for SongObject {
 
 #[glib::derived_properties]
 impl ObjectImpl for SongObject {}
+
+impl Drop for SongObject {
+    fn drop(&mut self) {
+        self.is_visible.store(false, Ordering::Relaxed);
+    }
+}
