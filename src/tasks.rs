@@ -46,14 +46,14 @@ impl Runner {
     }
     /// Runs a new task in the thread pool. If all available
     /// threads are busy, the task will wait in a queue.
-    ///
-    /// # Panics
-    /// The function panics if no pool threads are running
     pub fn run<T>(&self, task: T)
     where
         T: FnOnce() + Into<Box<T>> + Send + 'static,
     {
-        self.request.send(task.into()).expect(EXP_INIT);
+        if let Err(e) = self.request.send(task.into()) {
+            #[cfg(debug_assertions)]
+            eprintln!("Could not send task to the thread pool: {e}");
+        }
     }
 
     /// Blocks until all tasks are done then shuts down its worker

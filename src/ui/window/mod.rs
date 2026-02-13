@@ -109,6 +109,13 @@ impl Window {
         let remember_queue = settings_page.remembers_queue();
         let remember_time = settings_page.remembers_time();
 
+        // NOTE: Moving this after starting the background task improves
+        // the shutdown speed, but causes errors because the pages start
+        // tasks in the unbind step (after the thread pool is closed)
+        imp.artists_page.uninit();
+        imp.albums_page.uninit();
+        imp.songs_page.uninit();
+
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
@@ -141,10 +148,6 @@ impl Window {
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
-
-        imp.artists_page.uninit();
-        imp.albums_page.uninit();
-        imp.songs_page.uninit();
 
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())

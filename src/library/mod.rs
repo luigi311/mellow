@@ -607,17 +607,14 @@ impl Library {
     /// Uses `library_tx` to send the `task` to run on the thread pool.
     /// If idle threads are available, the `task` will run when the
     /// library processes the request, otherwise, it will wait in a queue.
-    ///
-    /// # Panics
-    /// The function panics if the library channel receiver is closed
     #[inline]
     pub fn run_task<T>(library_tx: &mpsc::Sender<LibraryRequest>, task: T)
     where
         T: FnOnce() + Into<Box<T>> + Send + 'static,
     {
-        library_tx
-            .send(LibraryRequest::RunTask(task.into()))
-            .expect(EXP_RX);
+        if let Err(e) = library_tx.send(LibraryRequest::RunTask(task.into())) {
+            eprintln!("Could not run task: {e}");
+        };
     }
 
     /// Replaces `self.songs` with `songs`
