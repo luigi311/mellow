@@ -44,15 +44,13 @@ impl ArtistPage {
                 entry.set_prefix_image(Some(&fallback_song_image()));
             }
 
-            entry.connect_activated({
-                let album = Arc::clone(album);
-                move |_| {
-                    UI_TX
-                        .get()
-                        .expect(EXP_INIT)
-                        .send(UpdateUI::AlbumPage(Arc::clone(&album)))
-                        .expect(EXP_RX);
-                }
+            let album = Arc::clone(album);
+            entry.connect_activated(move |_| {
+                UI_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(UpdateUI::AlbumPage(Arc::clone(&album)))
+                    .expect(EXP_RX);
             });
 
             ui.albums_list.append(&entry);

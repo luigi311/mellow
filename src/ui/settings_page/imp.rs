@@ -290,11 +290,11 @@ impl SettingsPage {
                 lum,
             )
         }
+        /// Color luminance function:
+        /// <https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color/596243#596243>
         fn lum(r: f64, g: f64, b: f64) -> f64 {
             r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
         }
-
-        dbg!((r, g, b));
 
         self.current_color.set(Some((r, g, b)));
         let css = self.css.get().expect(EXP_INIT);
@@ -318,8 +318,6 @@ impl SettingsPage {
                 }
             },
         };
-
-        dbg!((r, g, b));
 
         css.load_from_string(&format!(
             ".window {{

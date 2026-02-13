@@ -614,7 +614,7 @@ impl Library {
     {
         if let Err(e) = library_tx.send(LibraryRequest::RunTask(task.into())) {
             eprintln!("Could not run task: {e}");
-        };
+        }
     }
 
     /// Replaces `self.songs` with `songs`

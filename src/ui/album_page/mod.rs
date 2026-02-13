@@ -45,13 +45,11 @@ impl AlbumPage {
             println!("TODO: Decide how to handle album ratings (requested rating: {rating})");
         });
 
-        // IDEA: Divide discs into separate groups
+        // TODO: Divide discs into separate groups
         ui.songs_list.remove_all();
-        for i in 0..album_locked.songs.len() {
-            // for song in &album_locked.songs {
+        for (i, song) in album_locked.songs.iter().enumerate() {
             let entry = SongRow::new();
 
-            let song = &album_locked.songs[i];
             let mut info = song.info();
             let info = info.load_basic();
             // SAFETY: `unload_basic` is always safe to unwrap
@@ -66,20 +64,18 @@ impl AlbumPage {
             );
             entry.set_title(&info.title);
 
-            entry.connect_activated({
-                let song = song.clone();
-                let album = album.clone();
-                move |_| {
-                    UI_TX
-                        .get()
-                        .expect(EXP_INIT)
-                        .send(UpdateUI::SongPage(Box::new((
-                            i,
-                            song.clone(),
-                            Box::new(album.clone() as SharedAlbum),
-                        ))))
-                        .expect(EXP_RX);
-                }
+            let song = Arc::clone(song);
+            let album = Arc::clone(album);
+            entry.connect_activated(move |_| {
+                UI_TX
+                    .get()
+                    .expect(EXP_INIT)
+                    .send(UpdateUI::SongPage(Box::new((
+                        i,
+                        song.clone(),
+                        Box::new(album.clone() as SharedAlbum),
+                    ))))
+                    .expect(EXP_RX);
             });
 
             ui.songs_list.append(&entry);
