@@ -26,7 +26,7 @@
                 <child>
                   <object class="MellowMainPlayer" id="main_player">
                     <property name="margin_top">0</property>
-                    <property name="margin_bottom">40</property>
+                    <property name="margin_bottom">46</property>
                     <property name="margin_start">26</property>
                     <property name="margin_end">26</property>
                   </object>
