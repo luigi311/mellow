@@ -572,11 +572,11 @@ impl SongQueue {
                 library.ui_tx.send(UpdateUI::OpenSheet(true))?;
             }
             StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
-            StartupQueueChoice::QueueFromSongs => library.play_all_songs("", false)?,
+            StartupQueueChoice::QueueFromSongs => library.play_all_songs(false)?,
             StartupQueueChoice::QueueFromAlbums => {
                 let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
                 library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
-                    library.play_all_albums("").unwrap();
+                    library.play_all_albums().unwrap();
                     let _ = library
                         .player_tx
                         .send(PlayerRequest::TogglePlay(Some(false)));
@@ -585,17 +585,17 @@ impl SongQueue {
             StartupQueueChoice::QueueFromArtists => {
                 let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
                 library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
-                    library.play_all_artists("").unwrap();
+                    library.play_all_artists().unwrap();
                     let _ = library
                         .player_tx
                         .send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;
             }
-            StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs("", true)?,
+            StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs(true)?,
             StartupQueueChoice::QueueFromAlbumsShuffled => {
                 let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
                 library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
-                    library.shuffle_all_albums("").unwrap();
+                    library.shuffle_all_albums().unwrap();
                     let _ = library
                         .player_tx
                         .send(PlayerRequest::TogglePlay(Some(false)));
@@ -604,7 +604,7 @@ impl SongQueue {
             StartupQueueChoice::QueueFromArtistsShuffled => {
                 let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
                 library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
-                    library.shuffle_all_artists("").unwrap();
+                    library.shuffle_all_artists().unwrap();
                     let _ = library
                         .player_tx
                         .send(PlayerRequest::TogglePlay(Some(false)));
@@ -615,7 +615,7 @@ impl SongQueue {
                     library.ui_tx.send(UpdateUI::OpenSheet(true))?;
                 } else {
                     // Load all songs into queue on first launch
-                    library.play_all_songs("", false)?;
+                    library.play_all_songs(false)?;
                 }
             }
         }

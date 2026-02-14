@@ -656,34 +656,13 @@ impl Library {
         SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into())
     }
 
-    // TODO: Remove query filtering from the below functions
-
-    /// Returns a queue of all songs in the library matching the given `query`
-    ///
-    /// # Panics
-    /// The function panics if any song's info field is in a poisoned state
-    #[must_use]
-    pub fn all_songs(&self, query: &str) -> Vec<QueueItem> {
-        // TODO: Suppert filters? (e.g. rating > 3, tag: "calm" | "fun", etc)
-        search::query_items(&self.songs, query, |song, query| {
-            let mut info = song.info();
-            let info = info.load_basic();
-            search::query_score(
-                query,
-                // SAFETY: `load_basic` is always safe to unwrap
-                unsafe { &info.as_ref().unwrap_unchecked().title },
-            )
-        })
-        .to_queue()
-    }
-
-    /// Starts a queue of all songs in the library matching the given `query`
+    /// Starts a queue of all songs in the library
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_all_songs(&self, query: &str, shuffle: bool) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_songs(&self, shuffle: bool) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue(
-            self.all_songs(query),
+            self.songs.to_queue(),
             match shuffle {
                 true => Some(vec![]),
                 false => None,
@@ -696,55 +675,26 @@ impl Library {
         Ok(())
     }
 
-    /// Returns a queue of all albums in the library,
-    /// with sequential order of songs
-    ///
-    /// # Panics
-    /// The function panics if any album's `Mutex` is
-    /// in a poisoned state
-    #[must_use]
-    pub fn all_albums(&self, query: &str) -> Vec<QueueItem> {
-        search::query_items(&self.albums, query, |album, query| {
-            search::query_score(query, &album.lock().unwrap().title)
-        })
-        .to_queue()
-    }
-
     /// Starts a queue of all albums in the library
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_albums(query), None, 0))?;
+            .send(PlayerRequest::LoadQueue(self.albums.to_queue(), None, 0))?;
         self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
-    /// Returns a queue of all albums in the library,
-    /// with sequential order of songs, but randomly
-    /// ordered albums
-    ///
-    /// # Panics
-    /// The function panics if any album's `Mutex` is
-    /// in a poisoned state
-    #[must_use]
-    pub fn all_albums_shuffled(&self, query: &str) -> Vec<QueueItem> {
-        search::query_items(&self.albums, query, |album, query| {
-            search::query_score(query, &album.lock().unwrap().title)
-        })
-        .to_shuffled_queue()
-    }
-
     /// Starts a randomly ordered queue of all albums in the library
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn shuffle_all_albums(&self, query: &str) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue(
-            self.all_albums_shuffled(query),
+            self.albums.to_shuffled_queue(),
             None,
             0,
         ))?;
@@ -777,55 +727,26 @@ impl Library {
         Ok(())
     }
 
-    /// Returns a queue of all artists in the library,
-    /// with albums and songs in sequential order
-    ///
-    /// # Panics
-    /// The function panics if any artist's `Mutex` is
-    /// in a poisoned state
-    #[must_use]
-    pub fn all_artists(&self, query: &str) -> Vec<QueueItem> {
-        search::query_items(&self.artists, query, |artist, query| {
-            search::query_score(query, &artist.lock().unwrap().name)
-        })
-        .to_queue()
-    }
-
     /// Starts a queue of all albums in the library
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
+    pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx
-            .send(PlayerRequest::LoadQueue(self.all_artists(query), None, 0))?;
+            .send(PlayerRequest::LoadQueue(self.artists.to_queue(), None, 0))?;
         self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
-    /// Returns a queue of all artists in the library,
-    /// with albums and songs in sequential order, but
-    /// randomly ordered artists
-    ///
-    /// # Panics
-    /// The function panics if any artist's `Mutex` is
-    /// in a poisoned state
-    #[must_use]
-    pub fn all_artists_shuffled(&self, query: &str) -> Vec<QueueItem> {
-        search::query_items(&self.artists, query, |artist, query| {
-            search::query_score(query, &artist.lock().unwrap().name)
-        })
-        .to_shuffled_queue()
-    }
-
     /// Starts a randomly ordered queue of all artists in the library
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn shuffle_all_artists(&self, query: &str) -> Result<(), Box<dyn Error>> {
+    pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue(
-            self.all_artists_shuffled(query),
+            self.artists.to_shuffled_queue(),
             None,
             0,
         ))?;
