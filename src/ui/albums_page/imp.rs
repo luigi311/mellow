@@ -120,6 +120,7 @@ impl AlbumsPage {
                     index as u32,
                     &album.title,
                     &album.artist.lock().unwrap().name,
+                    album.year as u32,
                     Arc::clone(&album.songs[0]),
                 )
             })
@@ -136,8 +137,22 @@ impl AlbumsPage {
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
+        let sorter = gtk::CustomSorter::new(|object_a, object_b| {
+            let album_a = object_a.downcast_ref::<AlbumObject>().unwrap();
+            let album_b = object_b.downcast_ref::<AlbumObject>().unwrap();
+            match album_a.artist().cmp(&album_b.artist()) {
+                std::cmp::Ordering::Equal => match album_a.year().cmp(&album_b.year()) {
+                    std::cmp::Ordering::Equal => album_a.album().cmp(&album_b.album()),
+                    ordering => ordering,
+                },
+                ordering => ordering,
+            }
+            .into()
+        });
+        let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter));
+
         self.albums_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {

@@ -87,10 +87,7 @@ impl SortedAlbums for Albums {
         self.binary_search_by(|album| {
             let album = album.lock().unwrap();
             match album.artist.lock().unwrap().name.cmp(&info.album_artist) {
-                Ordering::Equal => match album.year.cmp(&info.year) {
-                    Ordering::Equal => album.title.cmp(&info.album),
-                    ordering => ordering,
-                },
+                Ordering::Equal => album.title.cmp(&info.album),
                 ordering => ordering,
             }
         })

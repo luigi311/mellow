@@ -19,11 +19,12 @@ glib::wrapper! {
 }
 
 impl AlbumObject {
-    pub fn new(index: u32, album: &str, artist: &str, first_song: SharedSong) -> Self {
+    pub fn new(index: u32, album: &str, artist: &str, year: u32, first_song: SharedSong) -> Self {
         let album_object: AlbumObject = Object::builder()
             .property("index", index)
             .property("album", album)
             .property("artist", artist)
+            .property("year", year)
             .build();
         let _ = album_object.imp().first_song.set(first_song);
         album_object
@@ -80,4 +81,5 @@ pub struct AlbumData {
     album: String,
     artist: String,
     artwork: Option<gdk::Texture>,
+    year: u32,
 }
