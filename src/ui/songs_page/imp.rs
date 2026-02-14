@@ -6,8 +6,8 @@ use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LIBRARY_TX;
-use crate::library::{LibraryRequest, Songs};
+use crate::library::{Songs, ToQueue};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::item_row::ItemRow;
 use crate::ui::song_object::SongObject;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
@@ -78,12 +78,31 @@ impl SongsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx
-            .send(match shuffle {
-                false => LibraryRequest::PlayAllSongs(self.search_query.borrow().to_string()),
-                true => LibraryRequest::ShuffleAllSongs(self.search_query.borrow().to_string()),
-            })
+        let model = self.songs_grid.model().expect(EXP_INIT);
+        let n_items = model.n_items();
+        let mut songs = Vec::with_capacity(n_items as usize);
+
+        for i in 0..n_items {
+            songs.push(
+                model
+                    .item(i)
+                    .unwrap()
+                    .downcast_ref::<SongObject>()
+                    .unwrap()
+                    .shared_song(),
+            );
+        }
+
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::LoadQueue(
+                songs.to_queue(),
+                match shuffle {
+                    true => Some(vec![]),
+                    false => None,
+                },
+                0,
+            ))
             .expect(EXP_RX);
     }
 

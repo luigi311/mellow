@@ -1,9 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Properties;
 use gtk::{gdk, glib};
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 
-use crate::ui::artist_object::ArtistData;
+use crate::{library::artist::SharedArtist, ui::artist_object::ArtistData};
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::ArtistObject)]
@@ -13,6 +13,8 @@ pub struct ArtistObject {
     #[property(name = "albums", get, set, type = u64, member = albums)]
     #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
     pub data: RefCell<ArtistData>,
+
+    pub shared_artist: OnceCell<SharedArtist>,
 }
 
 #[glib::object_subclass]

@@ -6,8 +6,8 @@ use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LIBRARY_TX;
-use crate::library::{Albums, LibraryRequest};
+use crate::library::{Albums, ToQueue, ToShuffledQueue};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::album_object::AlbumObject;
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
@@ -76,13 +76,31 @@ impl AlbumsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let query = self.search_query.borrow().to_string();
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx
-            .send(match shuffle {
-                false => LibraryRequest::PlayAllAlbums(query),
-                true => LibraryRequest::ShuffleAllAlbums(query),
-            })
+        let model = self.albums_grid.model().expect(EXP_INIT);
+        let n_items = model.n_items();
+        let mut albums = Vec::with_capacity(n_items as usize);
+
+        for i in 0..n_items {
+            albums.push(
+                model
+                    .item(i)
+                    .unwrap()
+                    .downcast_ref::<AlbumObject>()
+                    .unwrap()
+                    .shared_album(),
+            );
+        }
+
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::LoadQueue(
+                match shuffle {
+                    true => albums.to_shuffled_queue(),
+                    false => albums.to_queue(),
+                },
+                None,
+                0,
+            ))
             .expect(EXP_RX);
     }
 

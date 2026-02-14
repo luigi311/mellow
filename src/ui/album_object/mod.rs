@@ -7,6 +7,8 @@ use gst::glib::object::ObjectExt;
 use gtk::{gdk, glib};
 
 use crate::excuses::EXP_INIT;
+use crate::library::album::SharedAlbum;
+use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -59,6 +61,16 @@ impl AlbumObject {
             }
             song.info().unload_detailed();
         });
+    }
+
+    pub fn shared_album(&self) -> SharedAlbum {
+        self.imp()
+            .first_song
+            .get()
+            .expect(EXP_INIT)
+            .album()
+            .clone()
+            .expect(EXP_INIT)
     }
 }
 

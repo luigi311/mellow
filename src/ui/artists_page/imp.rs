@@ -3,10 +3,11 @@ use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::LIBRARY_TX;
-use crate::library::{Artists, LibraryRequest};
+use crate::library::{Artists, ToQueue, ToShuffledQueue};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::artist_object::ArtistObject;
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI, fallback_artist_image};
@@ -75,13 +76,31 @@ impl ArtistsPage {
     }
 
     fn play_now(&self, shuffle: bool) {
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let query = self.search_query.borrow().to_string();
-        library_tx
-            .send(match shuffle {
-                false => LibraryRequest::PlayAllArtists(query),
-                true => LibraryRequest::ShuffleAllArtists(query),
-            })
+        let model = self.artists_grid.model().expect(EXP_INIT);
+        let n_items = model.n_items();
+        let mut artists = Vec::with_capacity(n_items as usize);
+
+        for i in 0..n_items {
+            artists.push(
+                model
+                    .item(i)
+                    .unwrap()
+                    .downcast_ref::<ArtistObject>()
+                    .unwrap()
+                    .shared_artist(),
+            );
+        }
+
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::LoadQueue(
+                match shuffle {
+                    true => artists.to_shuffled_queue(),
+                    false => artists.to_queue(),
+                },
+                None,
+                0,
+            ))
             .expect(EXP_RX);
     }
 
@@ -96,8 +115,14 @@ impl ArtistsPage {
         let model = gio::ListStore::new::<ArtistObject>();
         let artists: Vec<ArtistObject> = (0..artsits.len())
             .map(|index| {
-                let artist = artsits[index].lock().unwrap();
-                ArtistObject::new(index as u32, &artist.name, artist.albums.len() as u64)
+                let artist = &artsits[index];
+                let artist_locked = artist.lock().unwrap();
+                ArtistObject::new(
+                    index as u32,
+                    &artist_locked.name,
+                    artist_locked.albums.len() as u64,
+                    Arc::clone(&artist),
+                )
             })
             .collect();
         model.extend_from_slice(&artists);

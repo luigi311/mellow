@@ -1,6 +1,9 @@
-use adw::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{gdk, glib};
+use std::sync::Arc;
+
+use crate::{excuses::EXP_INIT, library::artist::SharedArtist};
 
 mod imp;
 
@@ -9,12 +12,14 @@ glib::wrapper! {
 }
 
 impl ArtistObject {
-    pub fn new(index: u32, artist: &str, albums: u64) -> Self {
-        Object::builder()
+    pub fn new(index: u32, artist: &str, albums: u64, shared_artist: SharedArtist) -> Self {
+        let artist_object: ArtistObject = Object::builder()
             .property("index", index)
             .property("artist", artist)
             .property("albums", albums)
-            .build()
+            .build();
+        let _ = artist_object.imp().shared_artist.set(shared_artist);
+        artist_object
     }
 
     pub fn load_artwork(&self) {
@@ -35,6 +40,10 @@ impl ArtistObject {
 
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
+    }
+
+    pub fn shared_artist(&self) -> SharedArtist {
+        Arc::clone(&self.imp().shared_artist.get().expect(EXP_INIT))
     }
 }
 

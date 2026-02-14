@@ -173,15 +173,6 @@ pub enum LibraryRequest {
 
     QueueFromPaths(Box<[String]>),
 
-    // TODO: Filter and start the queue directly from the UI instead
-    // (using the `ToQueue`/`ToShuffledQueue` traits)
-    PlayAllSongs(String),
-    ShuffleAllSongs(String),
-    PlayAllAlbums(String),
-    ShuffleAllAlbums(String),
-    PlayAllArtists(String),
-    ShuffleAllArtists(String),
-
     PlayAlbum(SharedAlbum),
     ShuffleAlbum(SharedAlbum),
     PlayArtist(SharedArtist),
@@ -259,12 +250,6 @@ impl Library {
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
 
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
-                LibraryRequest::PlayAllSongs(query) => self.play_all_songs(&query, false)?,
-                LibraryRequest::ShuffleAllSongs(query) => self.play_all_songs(&query, true)?,
-                LibraryRequest::PlayAllAlbums(query) => self.play_all_albums(&query)?,
-                LibraryRequest::ShuffleAllAlbums(query) => self.shuffle_all_albums(&query)?,
-                LibraryRequest::PlayAllArtists(query) => self.play_all_artists(&query)?,
-                LibraryRequest::ShuffleAllArtists(query) => self.shuffle_all_artists(&query)?,
 
                 LibraryRequest::PlayAlbum(album) => {
                     self.play_album(&album.lock().unwrap(), false)?;

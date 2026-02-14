@@ -64,6 +64,10 @@ impl SongObject {
             song.info().unload_detailed();
         });
     }
+
+    pub fn shared_song(&self) -> SharedSong {
+        Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
+    }
 }
 
 #[derive(Default)]
