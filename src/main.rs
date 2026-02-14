@@ -22,7 +22,8 @@ pub fn main() -> glib::ExitCode {
         .build();
     app.connect_activate(init);
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
-    app.set_accels_for_action("player.play_pause", &["space"]);
+    // TODO: Ignore shortcut when the overlay is open
+    // app.set_accels_for_action("player.play_pause", &["space"]);
     app.run_with_args(&[] as &[&str])
 }
 

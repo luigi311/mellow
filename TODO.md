@@ -35,7 +35,6 @@ Music library:
 - [-] **Search/filtering for songs/albums/artists pages**
   - TODO: Sort the search results by score
   - FIX: Cannot drag-select text because it drags the header bar
-  - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
@@ -96,9 +95,10 @@ Ideas for improvements:
 > Disabled directories would still retain song data (play counts, etc),
 > but be excluded from the actual `songs`/`albums`/`artists` used by the
 > `Library` (design needed for enabling/disabling libraries)
-- Queue page design improvements
+- Queue page:
   - Each row could also show duration and track number
-- Song page design improvements
+  - Undo (toast) for removed queue items
+- Song page:
   - The library song page and queue subpage could display more information
     about the song, such as track number, disc, year, duration, play count,
     format/sample rate, filename, etc.
