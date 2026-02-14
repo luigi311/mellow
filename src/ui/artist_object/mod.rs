@@ -9,8 +9,9 @@ glib::wrapper! {
 }
 
 impl ArtistObject {
-    pub fn new(artist: &str, albums: u64) -> Self {
+    pub fn new(index: u32, artist: &str, albums: u64) -> Self {
         Object::builder()
+            .property("index", index)
             .property("artist", artist)
             .property("albums", albums)
             .build()
@@ -39,6 +40,7 @@ impl ArtistObject {
 
 #[derive(Default)]
 pub struct ArtistData {
+    index: u32,
     artist: String,
     albums: u64,
     artwork: Option<gdk::Paintable>,

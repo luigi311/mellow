@@ -2,6 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -32,17 +33,22 @@ pub struct SongsPage {
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
-    search_query: RefCell<String>,
+    search_query: Rc<RefCell<String>>,
+
+    songs: RefCell<Vec<SongObject>>,
+    filter: Rc<RefCell<gtk::CustomFilter>>,
 }
 
 #[gtk::template_callbacks]
 impl SongsPage {
     pub fn init_search(&self) {
+        let filter = Rc::clone(&self.filter);
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
             self.search_query,
             move |entry| {
                 search_query.replace(entry.text().to_string());
+                filter.borrow().changed(gtk::FilterChange::Different);
             }
         ));
         self.search_button
@@ -94,30 +100,28 @@ impl SongsPage {
             .map(|index| SongObject::new(index as u32, Arc::clone(&songs[index])))
             .collect();
         model.extend_from_slice(&songs);
+        self.songs.replace(songs);
+
+        let query = Rc::clone(&self.search_query);
+        let filter = gtk::CustomFilter::new(move |object| {
+            let song_object = object.downcast_ref::<SongObject>().unwrap();
+            // TODO: Use the `search::query_score` and sort by scores
+            song_object.song().contains(&*query.borrow())
+        });
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
+        self.filter.replace(filter);
 
         self.songs_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
-        self.songs_grid
-            .model()
-            .unwrap()
-            .item(index)
-            .and_downcast::<SongObject>()
-            .unwrap()
-            .set_property("artwork", artwork);
+        self.songs.borrow()[index as usize].set_property("artwork", artwork);
     }
 
     pub fn uninit(&self) {
-        let mut i = 0;
-        while let Some(item) = self.songs_grid.model().unwrap().item(i) {
-            item.downcast_ref::<SongObject>()
-                .unwrap()
-                .imp()
-                .is_visible
-                .store(false, Ordering::Relaxed);
-            i += 1;
+        for song in self.songs.take() {
+            song.imp().is_visible.store(false, Ordering::Relaxed);
         }
     }
 }
@@ -139,7 +143,15 @@ impl ObjectSubclass for SongsPage {
 }
 impl ObjectImpl for SongsPage {
     fn constructed(&self) {
-        self.songs_grid.connect_activate(|_, index| {
+        self.songs_grid.connect_activate(|grid, index| {
+            let index = grid
+                .model()
+                .unwrap()
+                .item(index)
+                .unwrap()
+                .downcast_ref::<SongObject>()
+                .unwrap()
+                .index();
             UI_TX
                 .get()
                 .expect(EXP_INIT)

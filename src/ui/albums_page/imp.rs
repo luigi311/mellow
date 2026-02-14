@@ -2,6 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -30,17 +31,22 @@ pub struct AlbumsPage {
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
-    search_query: RefCell<String>,
+    search_query: Rc<RefCell<String>>,
+
+    albums: RefCell<Vec<AlbumObject>>,
+    filter: Rc<RefCell<gtk::CustomFilter>>,
 }
 
 #[gtk::template_callbacks]
 impl AlbumsPage {
     pub fn init_search(&self) {
+        let filter = Rc::clone(&self.filter);
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
             self.search_query,
             move |entry| {
                 search_query.replace(entry.text().to_string());
+                filter.borrow().changed(gtk::FilterChange::Different);
             }
         ));
         self.search_button
@@ -101,30 +107,28 @@ impl AlbumsPage {
             })
             .collect();
         model.extend_from_slice(&albums);
+        self.albums.replace(albums);
+
+        let query = Rc::clone(&self.search_query);
+        let filter = gtk::CustomFilter::new(move |object| {
+            let album_object = object.downcast_ref::<AlbumObject>().unwrap();
+            // TODO: Use the `search::query_score` and sort by scores
+            album_object.album().contains(&*query.borrow())
+        });
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
+        self.filter.replace(filter);
 
         self.albums_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
-        self.albums_grid
-            .model()
-            .unwrap()
-            .item(index)
-            .and_downcast::<AlbumObject>()
-            .unwrap()
-            .set_property("artwork", artwork);
+        self.albums.borrow()[index as usize].set_property("artwork", artwork);
     }
 
     pub fn uninit(&self) {
-        let mut i = 0;
-        while let Some(item) = self.albums_grid.model().unwrap().item(i) {
-            item.downcast_ref::<AlbumObject>()
-                .unwrap()
-                .imp()
-                .is_visible
-                .store(false, Ordering::Relaxed);
-            i += 1;
+        for album in self.albums.take() {
+            album.imp().is_visible.store(false, Ordering::Relaxed);
         }
     }
 }
@@ -146,7 +150,15 @@ impl ObjectSubclass for AlbumsPage {
 }
 impl ObjectImpl for AlbumsPage {
     fn constructed(&self) {
-        self.albums_grid.connect_activate(|_, index| {
+        self.albums_grid.connect_activate(|grid, index| {
+            let index = grid
+                .model()
+                .unwrap()
+                .item(index)
+                .unwrap()
+                .downcast_ref::<AlbumObject>()
+                .unwrap()
+                .index();
             UI_TX
                 .get()
                 .expect(EXP_INIT)

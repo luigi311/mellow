@@ -2,6 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::LIBRARY_TX;
@@ -29,17 +30,22 @@ pub struct ArtistsPage {
     search_bar: TemplateChild<gtk::SearchBar>,
     #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
-    search_query: RefCell<String>,
+    search_query: Rc<RefCell<String>>,
+
+    artists: RefCell<Vec<ArtistObject>>,
+    filter: Rc<RefCell<gtk::CustomFilter>>,
 }
 
 #[gtk::template_callbacks]
 impl ArtistsPage {
     pub fn init_search(&self) {
+        let filter = Rc::clone(&self.filter);
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
             self.search_query,
             move |entry| {
                 search_query.replace(entry.text().to_string());
+                filter.borrow().changed(gtk::FilterChange::Different);
             }
         ));
         self.search_button
@@ -88,32 +94,36 @@ impl ArtistsPage {
         self.view_stack.set_visible_child_name("artists");
 
         let model = gio::ListStore::new::<ArtistObject>();
-        let albums: Vec<ArtistObject> = (0..artsits.len())
+        let artists: Vec<ArtistObject> = (0..artsits.len())
             .map(|index| {
                 let artist = artsits[index].lock().unwrap();
-                ArtistObject::new(&artist.name, artist.albums.len() as u64)
+                ArtistObject::new(index as u32, &artist.name, artist.albums.len() as u64)
             })
             .collect();
-        model.extend_from_slice(&albums);
+        model.extend_from_slice(&artists);
+        self.artists.replace(artists);
+
+        let query = Rc::clone(&self.search_query);
+        let filter = gtk::CustomFilter::new(move |object| {
+            let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
+            // TODO: Use the `search::query_score` and sort by scores
+            artist_object.artist().contains(&*query.borrow())
+        });
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
+        self.filter.replace(filter);
 
         self.artists_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
-        self.artists_grid
-            .model()
-            .unwrap()
-            .item(index)
-            .and_downcast::<ArtistObject>()
-            .unwrap()
-            .set_property("artwork", artwork);
+        self.artists.borrow()[index as usize].set_property("artwork", artwork);
     }
 
     pub fn uninit(&self) {
-        self.artists_grid.set_model(None::<&gtk::NoSelection>);
-        self.artists_grid
-            .set_factory(None::<&gtk::SignalListItemFactory>);
+        // for artist in self.artists.take() {
+        //     artist.imp().is_visible.store(false, Ordering::Relaxed);
+        // }
     }
 }
 
@@ -134,7 +144,15 @@ impl ObjectSubclass for ArtistsPage {
 }
 impl ObjectImpl for ArtistsPage {
     fn constructed(&self) {
-        self.artists_grid.connect_activate(|_, index| {
+        self.artists_grid.connect_activate(|grid, index| {
+            let index = grid
+                .model()
+                .unwrap()
+                .item(index)
+                .unwrap()
+                .downcast_ref::<ArtistObject>()
+                .unwrap()
+                .index();
             UI_TX
                 .get()
                 .expect(EXP_INIT)
