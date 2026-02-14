@@ -33,14 +33,13 @@ Music library:
   - TODO: Save/load shuffle preference for individual views
 - [ ] Allow initiating a full library rebuild
 - [-] **Search/filtering for songs/albums/artists pages**
-  - TODO: Show the search results
+  - TODO: Sort the search results by score
   - FIX: Cannot drag-select text because it drags the header bar
   - FIX: Spacebar-to-play shortcut interferes with library search
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
 - [ ] Artists page
-  - [ ] **Search query filtering**
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all artists (shuffled/sequential)
     - TODO: Improve dropdown behavior
@@ -52,7 +51,6 @@ Music library:
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
 - [ ] Albums page
-  - [ ] **Search query filtering**
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all albums (shuffled/sequential)
     - TODO: Improve dropdown behavior
@@ -69,7 +67,6 @@ Music library:
     - [ ] Ability to set tags
     - [ ] **Go to artist button**
 - [ ] Songs page
-  - [ ] **Search query filtering**
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all songs (shuffled/sequential)
     - TODO: Improve dropdown behavior

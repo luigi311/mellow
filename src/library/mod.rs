@@ -656,6 +656,8 @@ impl Library {
         SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into())
     }
 
+    // TODO: Remove query filtering from the below functions
+
     /// Returns a queue of all songs in the library matching the given `query`
     ///
     /// # Panics
