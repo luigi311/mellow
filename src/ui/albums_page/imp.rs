@@ -131,7 +131,7 @@ impl AlbumsPage {
         let filter = gtk::CustomFilter::new(move |object| {
             let album_object = object.downcast_ref::<AlbumObject>().unwrap();
             // TODO: Use the `search::query_score` and sort by scores
-            album_object.album().contains(&*query.borrow())
+            (album_object.album().to_lowercase()).contains(&query.borrow().to_lowercase())
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);

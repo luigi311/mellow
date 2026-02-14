@@ -132,7 +132,7 @@ impl ArtistsPage {
         let filter = gtk::CustomFilter::new(move |object| {
             let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
             // TODO: Use the `search::query_score` and sort by scores
-            artist_object.artist().contains(&*query.borrow())
+            (artist_object.artist().to_lowercase()).contains(&query.borrow().to_lowercase())
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);

@@ -125,7 +125,7 @@ impl SongsPage {
         let filter = gtk::CustomFilter::new(move |object| {
             let song_object = object.downcast_ref::<SongObject>().unwrap();
             // TODO: Use the `search::query_score` and sort by scores
-            song_object.song().contains(&*query.borrow())
+            (song_object.song().to_lowercase()).contains(&query.borrow().to_lowercase())
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
