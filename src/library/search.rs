@@ -124,7 +124,7 @@ where
     let mut matches = Vec::<(T, f64)>::new();
     for item in items {
         let score = score(item, query);
-        if score < SCORE_THRESHOLD || score.is_nan() {
+        if score < SCORE_THRESHOLD {
             continue;
         }
         let index = matches.binary_search_by(|item| score.total_cmp(&item.1));

@@ -32,8 +32,7 @@ Music library:
 - [ ] Save/load user settings and application state
   - TODO: Save/load shuffle preference for individual views
 - [ ] Allow initiating a full library rebuild
-- [-] **Search/filtering for songs/albums/artists pages**
-  - TODO: Sort the search results by score
+- [x] Search/filtering for songs/albums/artists pages
   - FIX: Cannot drag-select text because it drags the header bar
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc

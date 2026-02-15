@@ -66,6 +66,8 @@ impl QueuePage {
                 false => "song_queue",
             });
 
+        // TODO: `ListBox` can use a model; could this help with the scroll position bug?
+
         // TODO: Display the list properly (model/factory/view)
         // TODO: Support reordering queue items (needs UI)
         // TODO: Display the entire queue
