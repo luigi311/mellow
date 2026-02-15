@@ -270,17 +270,21 @@ impl SettingsPage {
         }
         #[inline]
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
-            const SATURATION: f64 = 3.5;
-
-            r = lerp(1.0, 1.0 - (1.0 - r / 2.0).powi(3), 0.55);
-            g = lerp(1.0, 1.0 - (1.0 - g / 2.0).powi(3), 0.55);
-            b = lerp(1.0, 1.0 - (1.0 - b / 2.0).powi(3), 0.55);
-
             let lum = lum(r, g, b);
+            if lum > 0.0 {
+                r /= lum;
+                g /= lum;
+                b /= lum;
+            } else {
+                r = 1.0;
+                g = 1.0;
+                b = 1.0;
+            }
 
-            r = lerp(lum, r, SATURATION);
-            g = lerp(lum, g, SATURATION);
-            b = lerp(lum, b, SATURATION);
+            let target_lum = lerp(1.0, 1.0 - (1.0 - lum / 2.0).powi(3), 0.55);
+            r *= target_lum;
+            g *= target_lum;
+            b *= target_lum;
 
             linear_to_srgb(r, g, b)
         }
