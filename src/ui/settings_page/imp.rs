@@ -272,7 +272,7 @@ impl SettingsPage {
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             let lum = lum(r, g, b);
 
-            let saturation = lerp(1.0 - (1.0 - lum * 1.25).powi(3), 1.0, 0.35);
+            let saturation = lerp(1.0 - (1.0 - (lum * 1.5).min(1.0)).powi(3), 1.0, 0.35);
             r = lerp(lum, r, saturation);
             g = lerp(lum, g, saturation);
             b = lerp(lum, b, saturation);
