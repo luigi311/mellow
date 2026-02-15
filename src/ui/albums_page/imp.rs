@@ -2,11 +2,12 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::cmp;
 use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{Albums, ToQueue, ToShuffledQueue};
+use crate::library::{Albums, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::album_object::AlbumObject;
 use crate::ui::item_tile::ItemTile;
@@ -131,8 +132,10 @@ impl AlbumsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let album_object = object.downcast_ref::<AlbumObject>().unwrap();
-            // TODO: Use the `search::query_score` and sort by scores
+            let score = search::query_score(&*query.borrow(), &album_object.album());
+            album_object.set_rank(score);
             (album_object.album().to_lowercase()).contains(&query.borrow().to_lowercase())
+                || score >= search::SCORE_THRESHOLD
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
@@ -140,9 +143,12 @@ impl AlbumsPage {
         let sorter = gtk::CustomSorter::new(|object_a, object_b| {
             let album_a = object_a.downcast_ref::<AlbumObject>().unwrap();
             let album_b = object_b.downcast_ref::<AlbumObject>().unwrap();
-            match album_a.artist().cmp(&album_b.artist()) {
-                std::cmp::Ordering::Equal => match album_a.year().cmp(&album_b.year()) {
-                    std::cmp::Ordering::Equal => album_a.album().cmp(&album_b.album()),
+            match album_b.rank().total_cmp(&album_a.rank()) {
+                cmp::Ordering::Equal => match album_a.artist().cmp(&album_b.artist()) {
+                    cmp::Ordering::Equal => match album_a.year().cmp(&album_b.year()) {
+                        cmp::Ordering::Equal => album_a.album().cmp(&album_b.album()),
+                        ordering => ordering,
+                    },
                     ordering => ordering,
                 },
                 ordering => ordering,

@@ -2,11 +2,12 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
+use std::cmp;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{Artists, ToQueue, ToShuffledQueue};
+use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::artist_object::ArtistObject;
 use crate::ui::item_tile::ItemTile;
@@ -131,14 +132,27 @@ impl ArtistsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
-            // TODO: Use the `search::query_score` and sort by scores
+            let score = search::query_score(&*query.borrow(), &artist_object.artist());
+            artist_object.set_rank(score);
             (artist_object.artist().to_lowercase()).contains(&query.borrow().to_lowercase())
+                || score >= search::SCORE_THRESHOLD
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
+        let sorter = gtk::CustomSorter::new(|object_a, object_b| {
+            let artist_a = object_a.downcast_ref::<ArtistObject>().unwrap();
+            let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
+            match artist_b.rank().total_cmp(&artist_a.rank()) {
+                cmp::Ordering::Equal => artist_a.artist().cmp(&artist_b.artist()),
+                ordering => ordering,
+            }
+            .into()
+        });
+        let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter));
+
         self.artists_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {

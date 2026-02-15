@@ -12,6 +12,7 @@ pub struct ArtistObject {
     #[property(name = "artist", get, set, type = String, member = artist)]
     #[property(name = "albums", get, set, type = u64, member = albums)]
     #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
+    #[property(name = "rank", get, set, type = f64, member = rank)]
     pub data: RefCell<ArtistData>,
 
     pub shared_artist: OnceCell<SharedArtist>,

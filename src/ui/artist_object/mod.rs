@@ -53,4 +53,5 @@ pub struct ArtistData {
     artist: String,
     albums: u64,
     artwork: Option<gdk::Paintable>,
+    rank: f64,
 }

@@ -82,4 +82,5 @@ pub struct AlbumData {
     artist: String,
     artwork: Option<gdk::Texture>,
     year: u32,
+    rank: f64,
 }

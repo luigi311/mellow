@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{Songs, ToQueue};
+use crate::library::{Songs, ToQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::item_row::ItemRow;
 use crate::ui::song_object::SongObject;
@@ -124,14 +124,24 @@ impl SongsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let song_object = object.downcast_ref::<SongObject>().unwrap();
-            // TODO: Use the `search::query_score` and sort by scores
+            let score = search::query_score(&*query.borrow(), &song_object.song());
+            song_object.set_rank(score);
             (song_object.song().to_lowercase()).contains(&query.borrow().to_lowercase())
+                || score > search::SCORE_THRESHOLD
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
+        let sorter = gtk::CustomSorter::new(|object_a, object_b| {
+            let song_a = object_a.downcast_ref::<SongObject>().unwrap();
+            let song_b = object_b.downcast_ref::<SongObject>().unwrap();
+            // TODO: Should this be sorted beyond just the score?
+            song_b.rank().total_cmp(&song_a.rank()).into()
+        });
+        let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter));
+
         self.songs_grid
-            .set_model(Some(&gtk::NoSelection::new(Some(filter_model))));
+            .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {

@@ -76,4 +76,5 @@ pub struct SongData {
     song: String,
     artist: String,
     artwork: Option<gdk::Texture>,
+    rank: f64,
 }
