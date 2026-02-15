@@ -277,7 +277,7 @@ impl SettingsPage {
 
             if lum < DESATURATION_THRESHOLD {
                 let saturation = lerp(
-                    1.0 - (1.0 - (lum / DESATURATION_THRESHOLD).min(1.0)).powi(3),
+                    1.0 - (1.0 - lum / DESATURATION_THRESHOLD).powi(3),
                     1.0,
                     0.15,
                 );
