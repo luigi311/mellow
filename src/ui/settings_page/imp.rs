@@ -270,13 +270,23 @@ impl SettingsPage {
         }
         #[inline]
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            /// Colors below this luminance value will be desaturated for accuracy
+            const DESATURATION_THRESHOLD: f64 = 0.1;
+
             let lum = lum(r, g, b);
 
-            let saturation = lerp(1.0 - (1.0 - (lum * 1.5).min(1.0)).powi(3), 1.0, 0.35);
-            r = lerp(lum, r, saturation);
-            g = lerp(lum, g, saturation);
-            b = lerp(lum, b, saturation);
+            if lum < DESATURATION_THRESHOLD {
+                let saturation = lerp(
+                    1.0 - (1.0 - (lum / DESATURATION_THRESHOLD).min(1.0)).powi(3),
+                    1.0,
+                    0.15,
+                );
+                r = lerp(lum, r, saturation);
+                g = lerp(lum, g, saturation);
+                b = lerp(lum, b, saturation);
+            }
 
+            // Normalize the color to brighten it without losing saturation
             if lum > 0.0 {
                 r /= lum;
                 g /= lum;
@@ -287,6 +297,7 @@ impl SettingsPage {
                 b = 1.0;
             }
 
+            // Scale the normalized color to the target luminance
             let target_lum = lum * lum / 2.0 + 0.5;
             r *= target_lum;
             g *= target_lum;
