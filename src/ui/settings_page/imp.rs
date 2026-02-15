@@ -281,7 +281,7 @@ impl SettingsPage {
                 b = 1.0;
             }
 
-            let target_lum = lerp(1.0, 1.0 - (1.0 - lum / 2.0).powi(3), 0.55);
+            let target_lum = lum * lum / 2.5 + 0.6;
             r *= target_lum;
             g *= target_lum;
             b *= target_lum;
