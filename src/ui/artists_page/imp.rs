@@ -11,7 +11,7 @@ use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::artist_object::ArtistObject;
 use crate::ui::item_tile::ItemTile;
-use crate::ui::{UI_TX, UpdateUI, fallback_artist_image};
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]
@@ -208,12 +208,15 @@ impl ObjectImpl for ArtistsPage {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
+            let artist_tile = ItemTile::default();
+            artist_tile.set_width_request(180);
+            artist_tile.set_margin_top(8);
+            artist_tile.set_margin_bottom(8);
+            artist_tile.imp().image.set_visible(false);
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
-                .set_child(Some(
-                    &ItemTile::builder().image_css_classes(&["circular"]).build(),
-                ));
+                .set_child(Some(&artist_tile));
         });
         factory.connect_bind(move |_, list_item| {
             let list_item = list_item
@@ -234,15 +237,15 @@ impl ObjectImpl for ArtistsPage {
                 &artist_object.artist(),
                 &format!("Albums: {}", artist_object.albums()),
             );
-            artist_tile.set_artwork(&artist_object.artwork().unwrap_or_else(|| {
-                artist_object.load_artwork();
-                fallback_artist_image()
-            }));
+            // artist_tile.set_artwork(&artist_object.artwork().unwrap_or_else(|| {
+            //     artist_object.load_artwork();
+            //     fallback_artist_image()
+            // }));
 
-            artist_tile.add_bindings(&[artist_object
-                .bind_property("artwork", &artist_tile.imp().image.get(), "paintable")
-                .sync_create()
-                .build()]);
+            // artist_tile.add_bindings(&[artist_object
+            //     .bind_property("artwork", &artist_tile.imp().image.get(), "paintable")
+            //     .sync_create()
+            //     .build()]);
         });
         factory.connect_unbind(|_, list_item| {
             let list_item = list_item
