@@ -122,7 +122,7 @@ impl ArtistsPage {
                     index as u32,
                     &artist_locked.name,
                     artist_locked.albums.len() as u64,
-                    Arc::clone(&artist),
+                    Arc::clone(artist),
                 )
             })
             .collect();
@@ -132,7 +132,7 @@ impl ArtistsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
-            let score = search::query_score(&*query.borrow(), &artist_object.artist());
+            let score = search::query_score(&query.borrow(), &artist_object.artist());
             artist_object.set_rank(score);
             (artist_object.artist().to_lowercase()).contains(&query.borrow().to_lowercase())
                 || score >= search::SCORE_THRESHOLD

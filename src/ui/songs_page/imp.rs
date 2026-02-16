@@ -124,7 +124,7 @@ impl SongsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let song_object = object.downcast_ref::<SongObject>().unwrap();
-            let score = search::query_score(&*query.borrow(), &song_object.song());
+            let score = search::query_score(&query.borrow(), &song_object.song());
             song_object.set_rank(score);
             (song_object.song().to_lowercase()).contains(&query.borrow().to_lowercase())
                 || score > search::SCORE_THRESHOLD

@@ -43,7 +43,7 @@ impl ArtistObject {
     }
 
     pub fn shared_artist(&self) -> SharedArtist {
-        Arc::clone(&self.imp().shared_artist.get().expect(EXP_INIT))
+        Arc::clone(self.imp().shared_artist.get().expect(EXP_INIT))
     }
 }
 
