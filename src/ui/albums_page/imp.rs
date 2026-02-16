@@ -36,18 +36,21 @@ pub struct AlbumsPage {
 
     albums: RefCell<Vec<AlbumObject>>,
     filter: Rc<RefCell<gtk::CustomFilter>>,
+    sorter: Rc<RefCell<gtk::CustomSorter>>,
 }
 
 #[gtk::template_callbacks]
 impl AlbumsPage {
     pub fn init_search(&self) {
         let filter = Rc::clone(&self.filter);
+        let sorter = Rc::clone(&self.sorter);
         self.search_entry.connect_search_changed(glib::clone!(
             #[strong(rename_to=search_query)]
             self.search_query,
             move |entry| {
                 search_query.replace(entry.text().to_string());
                 filter.borrow().changed(gtk::FilterChange::Different);
+                sorter.borrow().changed(gtk::SorterChange::Different);
             }
         ));
         self.search_button
@@ -155,7 +158,8 @@ impl AlbumsPage {
             }
             .into()
         });
-        let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter));
+        let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
+        self.sorter.replace(sorter);
 
         self.albums_grid
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
