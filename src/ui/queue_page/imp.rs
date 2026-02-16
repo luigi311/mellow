@@ -1,13 +1,15 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::glib;
+use gtk::{gio, glib};
 use std::cell::OnceCell;
+use std::sync::Arc;
 use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::ui::queue_item_object::QueueItemObject;
 use crate::ui::queue_subpage::QueueSubpage;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
@@ -30,6 +32,7 @@ pub struct QueuePage {
     view_stack: TemplateChild<adw::ViewStack>,
 
     pub song_page: OnceCell<QueueSubpage>,
+    list_model: OnceCell<gio::ListStore>,
 }
 
 #[gtk::template_callbacks]
@@ -66,72 +69,65 @@ impl QueuePage {
                 false => "song_queue",
             });
 
-        // TODO: `ListBox` can use a model; could this help with the scroll position bug?
+        // TODO: Reorder queue items using drag & drop
+        // FIX: The scroll position resets when the queue is updated
 
-        // TODO: Display the list properly (model/factory/view)
-        // TODO: Support reordering queue items (needs UI)
-        // TODO: Display the entire queue
-        self.list_box.remove_all();
+        let mut needs_loading = false;
+        let Some(list_model) = self.list_model.get() else {
+            return;
+        };
+
         let start = index.saturating_sub(45);
         let end = (index + 45).min(queue.len());
-        let mut needs_loading = false;
-        for (i, item) in queue.iter().enumerate().take(end).skip(start) {
-            match item {
-                QueueItem::Song(song) => {
-                    let mut info = song.info();
+        let items: Vec<QueueItemObject> = queue
+            .iter()
+            .enumerate()
+            .take(end)
+            .skip(start)
+            .map(|index_item| {
+                let object_index = index_item.0 as u32;
+                match index_item.1 {
+                    QueueItem::Song(song) => {
+                        let mut info = song.info();
 
-                    let song_info_temp = info.load_basic();
-                    // SAFETY: `load_basic` is always safe to unwrap
-                    let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
-                    let is_playing = i == index;
+                        let queue_item_object = {
+                            let song_info_temp = info.load_basic();
+                            // SAFETY: `load_basic` is always safe to unwrap
+                            let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
 
-                    let entry = SongRow::default();
-                    entry.set_title(&song_info.title.clone());
-                    entry.set_subtitle(&song_info.artist.clone());
-                    drop(song_info_temp);
-                    if is_playing {
-                        entry.add_css_class("heading");
-                        entry.add_css_class("card");
+                            QueueItemObject::new(
+                                object_index,
+                                object_index == index as u32,
+                                song_info.title.clone(),
+                                song_info.artist.clone(),
+                                Some(Arc::clone(song)),
+                            )
+                        };
+
+                        // TODO: Cached low-res album covers
+                        if let Some(artwork) = info.inspect_detailed().as_ref().map_or_else(
+                            || {
+                                needs_loading = true;
+                                None
+                            },
+                            |info| info.artwork.as_ref(),
+                        ) {
+                            queue_item_object.set_artwork(artwork);
+                        }
+
+                        queue_item_object
                     }
-
-                    // TODO: Cached low-res album covers
-                    let detailed_info = info.inspect_detailed();
-                    let artwork = detailed_info.as_ref().map_or_else(
-                        || {
-                            needs_loading = true;
-                            None
-                        },
-                        |info| info.artwork.as_ref(),
-                    );
-                    if artwork.is_some() {
-                        entry.set_prefix_image(artwork);
-                    } else {
-                        entry.set_prefix_image(Some(&fallback_song_image()));
-                    }
-
-                    entry.connect_activated(move |_| {
-                        UI_TX
-                            .get()
-                            .expect(EXP_INIT)
-                            .send(UpdateUI::QueueSupbage(i))
-                            .expect(EXP_RX);
-                    });
-
-                    self.list_box.append(&entry);
+                    QueueItem::Stopper => QueueItemObject::new(
+                        object_index,
+                        false,
+                        String::from("Pause"),
+                        String::new(),
+                        None,
+                    ),
                 }
-                QueueItem::Stopper => {
-                    let entry = SongRow::default();
-                    entry.set_title("Pause");
-                    entry.add_css_class("heading");
-                    entry.add_css_class("dimmed");
-
-                    // IDEA: Draw a pause icon in place of the album cover
-                    // queue_entry.set_prefix_image();
-
-                    self.list_box.append(&entry);
-                }
-            }
-        }
+            })
+            .collect();
+        list_model.splice(0, list_model.n_items(), &items);
 
         let scroll_target = (index - start) * 54;
         self.scrolled_window
@@ -198,6 +194,53 @@ impl ObjectImpl for QueuePage {
     fn constructed(&self) {
         self.obj().update_shuffle(false);
         self.obj().update_repeat(false);
+
+        let model = gio::ListStore::new::<QueueItemObject>();
+        self.list_box.bind_model(Some(&model), move |object| {
+            let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
+
+            let item_row = SongRow::default();
+            item_row.set_title(&queue_item_object.title());
+            item_row.set_subtitle(&queue_item_object.subtitle());
+
+            // TODO: Bind the properties so they update when the object changes
+            // (for example when loading artworks)
+
+            match queue_item_object.shared_song() {
+                // Song
+                Some(_) => {
+                    if queue_item_object.playing() {
+                        item_row.add_css_class("heading");
+                        item_row.add_css_class("card");
+                    }
+
+                    let artwork = queue_item_object.artwork();
+                    if artwork.is_some() {
+                        item_row.set_prefix_image(artwork.as_ref());
+                    } else {
+                        item_row.set_prefix_image(Some(&fallback_song_image()));
+                    }
+
+                    let object_index = queue_item_object.index() as usize;
+                    item_row.connect_activated(move |_| {
+                        UI_TX
+                            .get()
+                            .expect(EXP_INIT)
+                            .send(UpdateUI::QueueSupbage(object_index))
+                            .expect(EXP_RX);
+                    });
+                }
+                // Stopper
+                None => {
+                    item_row.add_css_class("heading");
+                    item_row.add_css_class("dimmed");
+                    // IDEA: Draw a pause icon in place of the album cover
+                }
+            }
+
+            item_row.upcast::<gtk::Widget>()
+        });
+        let _ = self.list_model.set(model);
     }
 }
 

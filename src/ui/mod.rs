@@ -17,6 +17,7 @@ mod item_tile;
 mod library_page;
 mod lyrics_page;
 mod main_player;
+mod queue_item_object;
 mod queue_page;
 mod queue_subpage;
 mod rating;
