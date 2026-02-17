@@ -62,13 +62,17 @@ pub fn init_globals() {
 #[inline]
 #[must_use]
 pub fn format_duration(duration: &Duration) -> String {
+    format_duration_seconds(duration.as_secs())
+}
+#[inline]
+#[must_use]
+pub fn format_duration_seconds(seconds_total: u64) -> String {
+    let seconds = seconds_total % 60;
     // TODO: Support hours
     // IDEA: Support days (for playlists, maybe `format_duration_long()`)
-    let duration = duration.as_secs();
-    let seconds = duration % 60;
     format!(
         "{}:{}{seconds}",
-        (duration - seconds) / 60,
+        (seconds_total - seconds) / 60,
         if seconds < 10 { "0" } else { "" }
     )
 }
