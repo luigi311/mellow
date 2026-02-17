@@ -22,7 +22,7 @@ impl AlbumsPage {
         self.imp().load_albums(albums);
     }
 
-    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
         self.imp().assign_artwork(index, artwork);
     }
 

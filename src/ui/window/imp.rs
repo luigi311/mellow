@@ -305,7 +305,7 @@ impl Window {
             return;
         };
         self.songs_page
-            .assign_artwork(index as u32, info.artwork.clone());
+            .assign_artwork(index as u32, info.artwork.as_ref());
     }
     fn album_loaded(&self, index: usize) {
         let album = &self.albums.borrow()[index];
@@ -315,7 +315,7 @@ impl Window {
             return;
         };
         self.albums_page
-            .assign_artwork(index as u32, info.artwork.clone());
+            .assign_artwork(index as u32, info.artwork.as_ref());
     }
     fn artist_loaded(&self, index: usize) {
         self.artists_page.assign_artwork(
@@ -330,6 +330,9 @@ impl Window {
         let Some(ref info) = *info.inspect_detailed() else {
             return;
         };
+        if info.artwork.is_none() {
+            return;
+        }
         self.queue_page
             .assign_artwork(index as u32, info.artwork.as_ref());
     }

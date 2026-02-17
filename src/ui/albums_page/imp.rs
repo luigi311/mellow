@@ -168,7 +168,7 @@ impl AlbumsPage {
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
-    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
+    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
         self.albums.borrow()[index as usize].set_property("artwork", artwork);
     }
 
