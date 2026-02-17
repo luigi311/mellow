@@ -76,6 +76,7 @@ impl QueuePage {
 
         // TODO: Reorder queue items using drag & drop
         // FIX: The scroll position resets when the queue is updated
+        // FIX: Artworks don't update when inserting an item
 
         self.playing_index.set(index);
         let Some(list_model) = self.list_model.get() else {
@@ -118,8 +119,6 @@ impl QueuePage {
                             .map_or_else(|| None, |info| info.artwork.as_ref())
                         {
                             queue_item_object.set_artwork(artwork);
-                        } else {
-                            queue_item_object.load_artwork();
                         }
 
                         queue_item_object
@@ -168,7 +167,7 @@ impl QueuePage {
         }
         let index = index as usize + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
         if index >= queue_items_len {
-            dbg!(index);
+            eprintln!("Skipping queue item artwork: {index} is out of bounds of {queue_items_len}");
             return;
         }
         self.queue_items.borrow()[index].set_property("artwork", artwork);
@@ -227,6 +226,7 @@ impl ObjectImpl for QueuePage {
                     if artwork.is_some() {
                         queue_row.set_prefix_image(artwork.as_ref());
                     } else {
+                        queue_item_object.load_artwork();
                         queue_row.set_prefix_image(Some(&fallback_song_image()));
                     }
 
