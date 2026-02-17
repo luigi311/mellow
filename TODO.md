@@ -95,7 +95,7 @@ Ideas for improvements:
 > but be excluded from the actual `songs`/`albums`/`artists` used by the
 > `Library` (design needed for enabling/disabling libraries)
 - Queue page:
-  - Each row could also show duration and track number
+  - Show a track number as well?
   - Undo (toast) for removed queue items
 - Song page:
   - The library song page and queue subpage could display more information

@@ -24,6 +24,17 @@
     </child>
 
     <child type="suffix">
+      <object class="GtkLabel" id="suffix_label">
+        <property name="margin_end">7</property>
+        <property name="margin_end">7</property>
+        <style>
+          <class name="dimmed"/>
+          <class name="numeric"/>
+        </style>
+      </object>
+    </child>
+
+    <child type="suffix">
       <object class="GtkImage">
         <property name="icon_name">go-next-symbolic</property>
       </object>

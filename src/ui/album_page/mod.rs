@@ -3,6 +3,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::format_duration_seconds;
 use crate::library::album::SharedAlbum;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
@@ -48,13 +49,13 @@ impl AlbumPage {
         // TODO: Divide discs into separate groups
         ui.songs_list.remove_all();
         for (i, song) in album_locked.songs.iter().enumerate() {
-            let entry = SongRow::new();
+            let song_row = SongRow::new();
 
             let mut info = song.info();
             let info = info.load_basic();
             // SAFETY: `unload_basic` is always safe to unwrap
             let info = unsafe { info.as_ref().unwrap_unchecked() };
-            entry.add_prefix(
+            song_row.add_prefix(
                 &gtk::Label::builder()
                     .width_chars(2)
                     .label(info.track.to_string())
@@ -62,11 +63,13 @@ impl AlbumPage {
                     .css_classes(["dimmed", "numeric"])
                     .build(),
             );
-            entry.set_title(&info.title);
+            song_row.set_title(&info.title);
+            let duration = song.info().load_basic().as_ref().unwrap().duration;
+            song_row.set_suffix_label(&format_duration_seconds(duration.seconds()));
 
             let song = Arc::clone(song);
             let album = Arc::clone(album);
-            entry.connect_activated(move |_| {
+            song_row.connect_activated(move |_| {
                 UI_TX
                     .get()
                     .expect(EXP_INIT)
@@ -78,7 +81,7 @@ impl AlbumPage {
                     .expect(EXP_RX);
             });
 
-            ui.songs_list.append(&entry);
+            ui.songs_list.append(&song_row);
         }
     }
 }

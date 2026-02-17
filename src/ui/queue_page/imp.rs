@@ -5,6 +5,7 @@ use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::format_duration_seconds;
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -200,33 +201,36 @@ impl ObjectImpl for QueuePage {
         self.list_box.bind_model(Some(&model), move |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
-            let item_row = SongRow::default();
-            item_row.set_title(&queue_item_object.title());
-            item_row.set_subtitle(&queue_item_object.subtitle());
+            let queue_row = SongRow::default();
+            queue_row.set_title(&queue_item_object.title());
+            queue_row.set_subtitle(&queue_item_object.subtitle());
 
             match queue_item_object.shared_song() {
                 // Song
-                Some(_) => {
+                Some(song) => {
                     if queue_item_object.playing() {
-                        item_row.add_css_class("heading");
-                        item_row.add_css_class("card");
+                        queue_row.add_css_class("heading");
+                        queue_row.add_css_class("card");
                     }
 
-                    item_row.add_bindings(&[queue_item_object
-                        .bind_property("artwork", &item_row.imp().prefix_image.get(), "paintable")
+                    queue_row.add_bindings(&[queue_item_object
+                        .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
                         .sync_create()
                         .build()]);
 
+                    let duration = song.info().load_basic().as_ref().unwrap().duration;
+                    queue_row.set_suffix_label(&format_duration_seconds(duration.seconds()));
+
                     let artwork = queue_item_object.artwork();
                     if artwork.is_some() {
-                        item_row.set_prefix_image(artwork.as_ref());
+                        queue_row.set_prefix_image(artwork.as_ref());
                     } else {
                         queue_item_object.load_artwork();
-                        item_row.set_prefix_image(Some(&fallback_song_image()));
+                        queue_row.set_prefix_image(Some(&fallback_song_image()));
                     }
 
                     let object_index = queue_item_object.index() as usize;
-                    item_row.connect_activated(move |_| {
+                    queue_row.connect_activated(move |_| {
                         UI_TX
                             .get()
                             .expect(EXP_INIT)
@@ -236,13 +240,13 @@ impl ObjectImpl for QueuePage {
                 }
                 // Stopper
                 None => {
-                    item_row.add_css_class("heading");
-                    item_row.add_css_class("dimmed");
+                    queue_row.add_css_class("heading");
+                    queue_row.add_css_class("dimmed");
                     // IDEA: Draw a pause icon in place of the album cover
                 }
             }
 
-            item_row.upcast::<gtk::Widget>()
+            queue_row.upcast::<gtk::Widget>()
         });
         let _ = self.list_model.set(model);
     }

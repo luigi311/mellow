@@ -27,6 +27,10 @@ impl SongRow {
         self.imp().prefix_image.set_paintable(image);
     }
 
+    pub fn set_suffix_label(&self, content: &str) {
+        self.imp().suffix_label.set_label(content);
+    }
+
     pub fn add_bindings(&self, bindings: &[glib::Binding]) {
         self.imp().bindings.borrow_mut().extend_from_slice(bindings);
     }
