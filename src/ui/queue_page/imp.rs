@@ -118,6 +118,8 @@ impl QueuePage {
                             .map_or_else(|| None, |info| info.artwork.as_ref())
                         {
                             queue_item_object.set_artwork(artwork);
+                        } else {
+                            queue_item_object.load_artwork();
                         }
 
                         queue_item_object
@@ -225,7 +227,6 @@ impl ObjectImpl for QueuePage {
                     if artwork.is_some() {
                         queue_row.set_prefix_image(artwork.as_ref());
                     } else {
-                        queue_item_object.load_artwork();
                         queue_row.set_prefix_image(Some(&fallback_song_image()));
                     }
 
