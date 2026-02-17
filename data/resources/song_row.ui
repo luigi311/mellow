@@ -25,8 +25,7 @@
 
     <child type="suffix">
       <object class="GtkLabel" id="suffix_label">
-        <property name="margin_end">7</property>
-        <property name="margin_end">7</property>
+        <property name="margin_end">8</property>
         <style>
           <class name="dimmed"/>
           <class name="numeric"/>
