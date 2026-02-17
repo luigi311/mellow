@@ -2,11 +2,15 @@ use adw::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use gtk::glib;
 
+use std::cell::RefCell;
+
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_row.ui")]
 pub struct SongRow {
     #[template_child]
     pub prefix_image: TemplateChild<gtk::Picture>,
+
+    pub bindings: RefCell<Vec<glib::Binding>>,
 }
 
 #[glib::object_subclass]

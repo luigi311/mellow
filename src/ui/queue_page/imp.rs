@@ -1,9 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
-use gtk::{gio, glib};
-use std::cell::OnceCell;
+use gtk::{gdk, gio, glib};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
-use std::thread;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library};
@@ -13,6 +12,9 @@ use crate::ui::queue_item_object::QueueItemObject;
 use crate::ui::queue_subpage::QueueSubpage;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+
+const NUM_ITEMS_AHEAD: usize = 45;
+const NUM_ITEMS_BEHIND: usize = 45;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
@@ -31,6 +33,8 @@ pub struct QueuePage {
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
 
+    playing_index: Cell<usize>,
+    queue_items: RefCell<Vec<QueueItemObject>>,
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
 }
@@ -72,13 +76,15 @@ impl QueuePage {
         // TODO: Reorder queue items using drag & drop
         // FIX: The scroll position resets when the queue is updated
 
-        let mut needs_loading = false;
+        self.playing_index.set(index);
         let Some(list_model) = self.list_model.get() else {
             return;
         };
 
-        let start = index.saturating_sub(45);
-        let end = (index + 45).min(queue.len());
+        let (start, end) = (
+            index.saturating_sub(NUM_ITEMS_BEHIND),
+            (index + NUM_ITEMS_AHEAD).min(queue.len()),
+        );
         let items: Vec<QueueItemObject> = queue
             .iter()
             .enumerate()
@@ -105,13 +111,11 @@ impl QueuePage {
                         };
 
                         // TODO: Cached low-res album covers
-                        if let Some(artwork) = info.inspect_detailed().as_ref().map_or_else(
-                            || {
-                                needs_loading = true;
-                                None
-                            },
-                            |info| info.artwork.as_ref(),
-                        ) {
+                        if let Some(artwork) = info
+                            .inspect_detailed()
+                            .as_ref()
+                            .map_or_else(|| None, |info| info.artwork.as_ref())
+                        {
                             queue_item_object.set_artwork(artwork);
                         }
 
@@ -128,50 +132,47 @@ impl QueuePage {
             })
             .collect();
         list_model.splice(0, list_model.n_items(), &items);
+        self.queue_items.replace(items);
 
         let scroll_target = (index - start) * 54;
         self.scrolled_window
             .vadjustment()
             .set_value(scroll_target as f64);
 
-        if !needs_loading {
-            let songs = queue.to_vec();
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-                // Garbage collection
-                for (index, song) in songs.iter().enumerate() {
-                    if !(start..end).contains(&index)
-                        && let QueueItem::Song(song) = song
-                        && song.info().inspect_detailed().as_ref().is_some_and(|info| {
-                            info.artwork
-                                .as_ref()
-                                .is_some_and(|artwork| artwork.ref_count() == 1)
-                        })
-                    {
-                        song.info().unload_detailed();
-                    }
-                }
-            });
-
-            return; // Skip loading artworks
-        }
-
-        let songs = queue[start..end].to_vec();
-        let load_artworks_handle = thread::spawn(move || {
-            println!("Loading artworks for queued songs");
-            for song in songs.iter().rev() {
-                if let QueueItem::Song(song) = song {
-                    drop(song.info().load_detailed());
+        let songs = queue.to_vec();
+        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            // Garbage collection
+            for (index, song) in songs.iter().enumerate() {
+                if !(start..end).contains(&index)
+                    && let QueueItem::Song(song) = song
+                    && song.info().inspect_detailed().as_ref().is_some_and(|info| {
+                        info.artwork
+                            .as_ref()
+                            .is_some_and(|artwork| artwork.ref_count() == 1)
+                    })
+                {
+                    song.info().unload_detailed();
                 }
             }
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
-                .send(UpdateUI::RedrawQueue)
-                .expect(EXP_RX);
         });
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            let _ = load_artworks_handle.join();
-        });
+    }
+
+    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
+        let queue_items_len = self.queue_items.borrow().len();
+        let playing_index = self.playing_index.get();
+        if index < self.playing_index.get().saturating_sub(NUM_ITEMS_BEHIND) as u32 {
+            return;
+        }
+        let index = index as usize + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
+        if index >= queue_items_len {
+            dbg!(index);
+            return;
+        }
+        self.queue_items.borrow()[index].set_property("artwork", artwork);
+    }
+
+    pub fn uninit(&self) {
+        self.list_model.get().expect(EXP_INIT).remove_all();
     }
 }
 
@@ -203,9 +204,6 @@ impl ObjectImpl for QueuePage {
             item_row.set_title(&queue_item_object.title());
             item_row.set_subtitle(&queue_item_object.subtitle());
 
-            // TODO: Bind the properties so they update when the object changes
-            // (for example when loading artworks)
-
             match queue_item_object.shared_song() {
                 // Song
                 Some(_) => {
@@ -214,10 +212,16 @@ impl ObjectImpl for QueuePage {
                         item_row.add_css_class("card");
                     }
 
+                    item_row.add_bindings(&[queue_item_object
+                        .bind_property("artwork", &item_row.imp().prefix_image.get(), "paintable")
+                        .sync_create()
+                        .build()]);
+
                     let artwork = queue_item_object.artwork();
                     if artwork.is_some() {
                         item_row.set_prefix_image(artwork.as_ref());
                     } else {
+                        queue_item_object.load_artwork();
                         item_row.set_prefix_image(Some(&fallback_song_image()));
                     }
 

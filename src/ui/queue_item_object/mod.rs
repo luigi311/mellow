@@ -49,9 +49,8 @@ impl QueueItemObject {
                 return;
             };
             drop(song.info().load_detailed());
-            // TODO: Update the queue_object artwork, same as song_/album_object
-            // let ui_tx = UI_TX.get().expect(EXP_INIT);
-            // let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index));
+            let ui_tx = UI_TX.get().expect(EXP_INIT);
+            let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index));
         });
     }
 

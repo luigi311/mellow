@@ -1,7 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
-use gtk::glib;
+use gtk::{gdk, glib};
 
-use crate::excuses::INIT_ERR;
 use crate::player::queue_item::QueueItem;
 use crate::ui::queue_subpage::QueueSubpage;
 
@@ -17,7 +16,7 @@ glib::wrapper! {
 impl QueuePage {
     pub fn init(&self, song_page: QueueSubpage) {
         let queue_page = self.imp();
-        queue_page.song_page.set(song_page).expect(INIT_ERR);
+        let _ = queue_page.song_page.set(song_page);
     }
 
     pub fn get_shuffle(&self) -> bool {
@@ -41,5 +40,12 @@ impl QueuePage {
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         self.imp().update_song_queue(queue, index);
+    }
+    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
+        self.imp().assign_artwork(index, artwork);
+    }
+
+    pub fn uninit(&self) {
+        self.imp().uninit();
     }
 }

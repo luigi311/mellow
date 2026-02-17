@@ -145,6 +145,7 @@ impl Window {
         imp.artists_page.uninit();
         imp.albums_page.uninit();
         imp.songs_page.uninit();
+        imp.queue_page.uninit();
 
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())

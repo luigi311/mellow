@@ -26,4 +26,13 @@ impl SongRow {
     pub fn set_prefix_image(&self, image: Option<&impl IsA<gdk::Paintable>>) {
         self.imp().prefix_image.set_paintable(image);
     }
+
+    pub fn add_bindings(&self, bindings: &[glib::Binding]) {
+        self.imp().bindings.borrow_mut().extend_from_slice(bindings);
+    }
+    pub fn reset_bindings(&self) {
+        for binding in self.imp().bindings.borrow_mut().drain(..) {
+            binding.unbind();
+        }
+    }
 }

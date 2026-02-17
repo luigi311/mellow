@@ -59,6 +59,7 @@ pub enum UpdateUI {
     LibrarySongLoaded(usize),
     LibraryAlbumLoaded(usize),
     LibraryArtistLoaded(usize),
+    QueueSongLoaded(usize),
 
     ArtistPageByIndex(usize),
     ArtistPage(SharedArtist),

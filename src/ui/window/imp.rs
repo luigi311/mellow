@@ -69,7 +69,7 @@ pub struct Window {
     #[template_child]
     pub playing: TemplateChild<adw::NavigationView>,
     #[template_child]
-    queue_page: TemplateChild<QueuePage>,
+    pub queue_page: TemplateChild<QueuePage>,
     #[template_child]
     queue_song_page: TemplateChild<QueueSubpage>,
     #[template_child]
@@ -134,6 +134,7 @@ impl Window {
                 UpdateUI::LibrarySongLoaded(index) => self.song_loaded(index),
                 UpdateUI::LibraryAlbumLoaded(index) => self.album_loaded(index),
                 UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
+                UpdateUI::QueueSongLoaded(index) => self.queue_song_loaded(index),
 
                 UpdateUI::ArtistPageByIndex(index) => self.open_artist_page_by_index(index),
                 UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
@@ -322,6 +323,15 @@ impl Window {
             // TODO: Decide what to show
             None,
         );
+    }
+    fn queue_song_loaded(&self, index: usize) {
+        let song = &self.song_queue.borrow()[index];
+        let info = song.as_song().info();
+        let Some(ref info) = *info.inspect_detailed() else {
+            return;
+        };
+        self.queue_page
+            .assign_artwork(index as u32, info.artwork.as_ref());
     }
 
     // TODO: Reset the scroll position when opening song/album/artist page
