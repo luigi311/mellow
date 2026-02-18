@@ -97,17 +97,13 @@ impl QueuePage {
                 for (index, song) in queue.iter().enumerate() {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
-                        && song
-                            .info()
-                            .try_inspect_detailed()
-                            .as_ref()
-                            .is_ok_and(|info| {
-                                info.as_ref().is_some_and(|info| {
-                                    info.artwork
-                                        .as_ref()
-                                        .is_some_and(|artwork| artwork.ref_count() == 1)
-                                })
+                        && (song.info().try_inspect_detailed().as_ref()).is_ok_and(|info| {
+                            info.as_ref().is_some_and(|info| {
+                                info.artwork
+                                    .as_ref()
+                                    .is_some_and(|artwork| artwork.ref_count() == 1)
                             })
+                        })
                     {
                         song.info().unload_detailed();
                     }
@@ -115,11 +111,7 @@ impl QueuePage {
             }
         });
 
-        let items: Vec<QueueItemObject> = queue
-            .iter()
-            .enumerate()
-            .take(end)
-            .skip(start)
+        let items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
             .map(|index_item| {
                 let object_index = index_item.0 as u32;
                 match index_item.1 {
@@ -141,14 +133,13 @@ impl QueuePage {
                             .set_suffix(format_duration_seconds(song_info.duration.seconds()));
                         drop(song_info_temp);
 
-                        if let Ok(info) = info.try_inspect_detailed() {
-                            // TODO: Cached low-res album covers
-                            if let Some(artwork) = info
+                        // TODO: Cached low-res album covers
+                        if let Ok(info) = info.try_inspect_detailed()
+                            && let Some(artwork) = info
                                 .as_ref()
                                 .map_or_else(|| None, |info| info.artwork.as_ref())
-                            {
-                                queue_item_object.set_artwork(artwork);
-                            }
+                        {
+                            queue_item_object.set_artwork(artwork);
                         }
 
                         queue_item_object
@@ -217,44 +208,41 @@ impl ObjectImpl for QueuePage {
             queue_row.set_title(&queue_item_object.title());
             queue_row.set_subtitle(&queue_item_object.subtitle());
 
-            match queue_item_object.shared_song() {
-                // Song
-                Some(_) => {
-                    if queue_item_object.playing() {
-                        queue_row.add_css_class("heading");
-                        queue_row.add_css_class("card");
-                    }
+            if queue_item_object.shared_song().is_some() {
+                // The queue item is a `Song`
 
-                    queue_row.add_bindings(&[queue_item_object
-                        .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
-                        .sync_create()
-                        .build()]);
-
-                    queue_row.set_suffix_label(&queue_item_object.suffix());
-
-                    let artwork = queue_item_object.artwork();
-                    if artwork.is_some() {
-                        queue_row.set_prefix_image(artwork.as_ref());
-                    } else {
-                        queue_item_object.load_artwork();
-                        queue_row.set_prefix_image(Some(&fallback_song_image()));
-                    }
-
-                    let object_index = queue_item_object.index() as usize;
-                    queue_row.connect_activated(move |_| {
-                        UI_TX
-                            .get()
-                            .expect(EXP_INIT)
-                            .send(UpdateUI::QueueSupbage(object_index))
-                            .expect(EXP_RX);
-                    });
-                }
-                // Stopper
-                None => {
+                if queue_item_object.playing() {
                     queue_row.add_css_class("heading");
-                    queue_row.add_css_class("dimmed");
-                    // IDEA: Draw a pause icon in place of the album cover
+                    queue_row.add_css_class("card");
                 }
+
+                queue_row.add_bindings(&[queue_item_object
+                    .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
+                    .sync_create()
+                    .build()]);
+
+                queue_row.set_suffix_label(&queue_item_object.suffix());
+
+                let artwork = queue_item_object.artwork();
+                if artwork.is_some() {
+                    queue_row.set_prefix_image(artwork.as_ref());
+                } else {
+                    queue_item_object.load_artwork();
+                    queue_row.set_prefix_image(Some(&fallback_song_image()));
+                }
+
+                let object_index = queue_item_object.index() as usize;
+                queue_row.connect_activated(move |_| {
+                    (UI_TX.get().expect(EXP_INIT))
+                        .send(UpdateUI::QueueSupbage(object_index))
+                        .expect(EXP_RX);
+                });
+            } else {
+                // The queue item is a `Stopper`
+
+                queue_row.add_css_class("heading");
+                queue_row.add_css_class("dimmed");
+                // IDEA: Draw a pause icon in place of the album cover
             }
 
             queue_row.upcast::<gtk::Widget>()
