@@ -110,6 +110,7 @@ impl SongsPage {
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
+        ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
 
     pub fn load_songs(&self, songs: &Songs) {
