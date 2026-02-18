@@ -349,9 +349,10 @@ impl Library {
         let progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
         let progress_step = progress_interval as f64 / songs.len() as f64;
         let mut progress = 0.0;
+        let mut iter = 0;
 
         // TODO: Allow cancellation
-        for (i, song) in songs.iter().enumerate() {
+        for song in &songs {
             let mut info = song.info();
             let song_info = info.load_basic();
             // SAFETY: `load_basic` is always safe to uwnrap
@@ -430,10 +431,11 @@ impl Library {
                 }
             }
 
-            if i % progress_interval == 0 {
+            if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
             }
+            iter += 1;
         }
 
         library_tx.send(LibraryRequest::SetArtists(artists))?;
@@ -560,8 +562,9 @@ impl Library {
         let progress_interval = possibly_moved.len() / PROGRESS_BAR_STEPS + 1;
         let progress_step = progress_interval as f64 / possibly_moved.len() as f64;
         let mut progress = 0.0;
+        let mut iter = 0;
 
-        for (i, missing) in possibly_moved.into_iter().enumerate() {
+        for missing in possibly_moved {
             let old_info = missing.info();
 
             // Optimization: start with an initial guess and expand outwards
@@ -579,10 +582,11 @@ impl Library {
                 }
             }
 
-            if i % progress_interval == 0 {
+            if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
             }
+            iter += 1;
         }
     }
 
