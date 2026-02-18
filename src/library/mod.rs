@@ -434,6 +434,7 @@ impl Library {
             if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+                iter = 0;
             }
             iter += 1;
         }
@@ -585,6 +586,7 @@ impl Library {
             if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
+                iter = 0;
             }
             iter += 1;
         }
