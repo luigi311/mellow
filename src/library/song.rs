@@ -286,11 +286,24 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the basic song info if loaded, but does not load it
     ///
+    /// Note: This function may block the current thread if the song
+    /// info is already being loaded elsewhere; if this is not desired,
+    /// use `try_inspect_basic` instead
+    ///
     /// # Panics
     /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn inspect_basic(&self) -> RwLockReadGuard<'_, Option<SongInfo>> {
         self.info.read().unwrap()
+    }
+    /// Returns the basic song info if accessible without blocking
+    /// the current thread, but does not load it
+    ///
+    /// # Errors
+    /// The function errors if the `RwLock` is currently busy
+    #[inline]
+    pub fn try_inspect_basic(&self) -> Result<RwLockReadGuard<'_, Option<SongInfo>>, TryLockError> {
+        self.info.try_read().map_err(|_| TryLockError)
     }
     /// Loads basic song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.
@@ -431,11 +444,26 @@ impl SongInfoLoader<'_> {
     }
     /// Returns the detailed song info if loaded, but does not load it
     ///
+    /// Note: This function may block the current thread if the song
+    /// info is already being loaded elsewhere; if this is not desired,
+    /// use `try_inspect_detailed` instead
+    ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn inspect_detailed(&self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
         self.detailed_info.read().unwrap()
+    }
+    /// Returns the basic song info if accessible without blocking
+    /// the current thread, but does not load it
+    ///
+    /// # Errors
+    /// The function errors if the `RwLock` is currently busy
+    #[inline]
+    pub fn try_inspect_detailed(
+        &self,
+    ) -> Result<RwLockReadGuard<'_, Option<DetailedSongInfo>>, TryLockError> {
+        self.detailed_info.try_read().map_err(|_| TryLockError)
     }
     /// Loads detailed song info and returns its `MutexGuard`.
     /// The returned inner `Option` is always safe to unwrap.

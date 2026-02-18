@@ -353,9 +353,9 @@ impl Player {
         }
 
         self.queue.load_new(queue, shuffled);
+        // Ensure all info is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
             let song = Arc::clone(song);
-            // Ensure all info is available to display as soon as possible
             let load_artwork = thread::spawn(move || {
                 let mut info = song.info();
                 drop(info.load_detailed());

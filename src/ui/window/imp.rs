@@ -192,8 +192,11 @@ impl Window {
         *song_duration = Duration::from_millis(song_info.duration.mseconds());
         drop(song_info_temp);
 
-        let detailed_info = info.inspect_detailed();
-        let artwork = match detailed_info.as_ref() {
+        let detailed_info = info.try_inspect_detailed();
+        let artwork = match detailed_info
+            .as_ref()
+            .map_or_else(|_| None, |info| info.as_ref())
+        {
             Some(detailed) => {
                 self.lyrics_page.set_content(&title, &detailed.lyrics);
                 detailed.artwork.as_ref()

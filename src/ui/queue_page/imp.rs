@@ -97,11 +97,17 @@ impl QueuePage {
                 for (index, song) in queue.iter().enumerate() {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
-                        && song.info().inspect_detailed().as_ref().is_some_and(|info| {
-                            info.artwork
-                                .as_ref()
-                                .is_some_and(|artwork| artwork.ref_count() == 1)
-                        })
+                        && song
+                            .info()
+                            .try_inspect_detailed()
+                            .as_ref()
+                            .is_ok_and(|info| {
+                                info.as_ref().is_some_and(|info| {
+                                    info.artwork
+                                        .as_ref()
+                                        .is_some_and(|artwork| artwork.ref_count() == 1)
+                                })
+                            })
                     {
                         song.info().unload_detailed();
                     }
@@ -135,13 +141,14 @@ impl QueuePage {
                             .set_suffix(format_duration_seconds(song_info.duration.seconds()));
                         drop(song_info_temp);
 
-                        // TODO: Cached low-res album covers
-                        if let Some(artwork) = info
-                            .inspect_detailed()
-                            .as_ref()
-                            .map_or_else(|| None, |info| info.artwork.as_ref())
-                        {
-                            queue_item_object.set_artwork(artwork);
+                        if let Ok(info) = info.try_inspect_detailed() {
+                            // TODO: Cached low-res album covers
+                            if let Some(artwork) = info
+                                .as_ref()
+                                .map_or_else(|| None, |info| info.artwork.as_ref())
+                            {
+                                queue_item_object.set_artwork(artwork);
+                            }
                         }
 
                         queue_item_object
