@@ -76,17 +76,39 @@ impl QueuePage {
 
         // TODO: Reorder queue items using drag & drop
         // FIX: The scroll position resets when the queue is updated
-        // FIX: Artworks don't update when inserting an item
 
         self.playing_index.set(index);
         let Some(list_model) = self.list_model.get() else {
             return;
         };
 
-        let (start, end) = (
-            index.saturating_sub(NUM_ITEMS_BEHIND),
-            (index + NUM_ITEMS_AHEAD).min(queue.len()),
-        );
+        let start = index.saturating_sub(NUM_ITEMS_BEHIND);
+        let end = (index + NUM_ITEMS_AHEAD).min(queue.len());
+
+        // Garbage collection
+        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
+            let queue = queue.to_vec();
+            move || {
+                // NOTE: Garbage collection moved to before assigning the items,
+                // because it would othewise sometimes unload background-loaded
+                // artworks before they would be assigned. If there are issues
+                // with queue artworks not loading in the future, try disabling
+                // garbage collection to verify that it is working properly.
+                for (index, song) in queue.iter().enumerate() {
+                    if !(start..end).contains(&index)
+                        && let QueueItem::Song(song) = song
+                        && song.info().inspect_detailed().as_ref().is_some_and(|info| {
+                            info.artwork
+                                .as_ref()
+                                .is_some_and(|artwork| artwork.ref_count() == 1)
+                        })
+                    {
+                        song.info().unload_detailed();
+                    }
+                }
+            }
+        });
+
         let items: Vec<QueueItemObject> = queue
             .iter()
             .enumerate()
@@ -140,23 +162,6 @@ impl QueuePage {
         self.scrolled_window
             .vadjustment()
             .set_value(scroll_target as f64);
-
-        let songs = queue.to_vec();
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            // Garbage collection
-            for (index, song) in songs.iter().enumerate() {
-                if !(start..end).contains(&index)
-                    && let QueueItem::Song(song) = song
-                    && song.info().inspect_detailed().as_ref().is_some_and(|info| {
-                        info.artwork
-                            .as_ref()
-                            .is_some_and(|artwork| artwork.ref_count() == 1)
-                    })
-                {
-                    song.info().unload_detailed();
-                }
-            }
-        });
     }
 
     pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {

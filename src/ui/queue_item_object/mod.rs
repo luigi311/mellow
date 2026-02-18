@@ -3,7 +3,7 @@ use glib::Object;
 use gtk::{gdk, glib};
 
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
@@ -56,6 +56,10 @@ impl QueueItemObject {
 
     pub fn shared_song(&self) -> Option<&SharedSong> {
         self.imp().shared_song.get().expect(EXP_INIT).as_ref()
+    }
+
+    pub fn is_visible(&self) -> &Arc<AtomicBool> {
+        &self.imp().is_visible
     }
 }
 
