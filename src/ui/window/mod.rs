@@ -104,6 +104,8 @@ impl Window {
     /// Saves all settings and the player state and prepares
     /// for shutdown, uninitializing various components
     pub fn save_and_uninit(&self) -> Result<(), Box<dyn Error>> {
+        let _ = UI_TX.get().expect(EXP_INIT).send(UpdateUI::Shutdown);
+
         let imp = self.imp();
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
@@ -112,24 +114,23 @@ impl Window {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
-            let player_tx = PLAYER_TX.get().expect(EXP_INIT);
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
-            player_tx
+            (PLAYER_TX.get().expect(EXP_INIT))
                 .send(PlayerRequest::Shutdown(
                     remember_queue,
                     remember_time,
                     player_shutdown_tx,
                 ))
                 .expect(EXP_RX);
-            let _ = player_shutdown_rx.recv();
 
+            // Wait for the player shutdown request to be processed
+            // before shutting down the library (and thread pool)
+            let _ = player_shutdown_rx.recv();
             library_tx
                 .send(LibraryRequest::Shutdown(library_shutdown_tx))
                 .expect(EXP_RX);
         });
 
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
-        ui_tx.send(UpdateUI::Shutdown).expect(EXP_RX);
         imp.artists_page.uninit();
         imp.albums_page.uninit();
         imp.songs_page.uninit();
@@ -146,6 +147,7 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
+        // Wait for all background tasks to complete before closing
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
