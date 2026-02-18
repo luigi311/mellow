@@ -112,9 +112,6 @@ impl Window {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
-            let ui_tx = UI_TX.get().expect(EXP_INIT);
-            ui_tx.send(UpdateUI::Shutdown).expect(EXP_RX);
-
             let player_tx = PLAYER_TX.get().expect(EXP_INIT);
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             player_tx
@@ -131,6 +128,13 @@ impl Window {
                 .expect(EXP_RX);
         });
 
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        ui_tx.send(UpdateUI::Shutdown).expect(EXP_RX);
+        imp.artists_page.uninit();
+        imp.albums_page.uninit();
+        imp.songs_page.uninit();
+        imp.queue_page.uninit();
+
         let settings = self.settings();
         settings.set_int("window-width", self.size(Orientation::Horizontal))?;
         settings.set_int("window-height", self.size(Orientation::Vertical))?;
@@ -141,11 +145,6 @@ impl Window {
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
-
-        imp.artists_page.uninit();
-        imp.albums_page.uninit();
-        imp.songs_page.uninit();
-        imp.queue_page.uninit();
 
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
