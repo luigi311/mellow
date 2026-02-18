@@ -1,7 +1,8 @@
 use core::error::Error;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
-use std::sync::{OnceLock, mpsc};
+use std::sync::{Arc, OnceLock, mpsc};
+use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -352,6 +353,18 @@ impl Player {
         }
 
         self.queue.load_new(queue, shuffled);
+        if let QueueItem::Song(song) = self.queue.nth(index) {
+            let song = Arc::clone(song);
+            // Ensure all info is available to display as soon as possible
+            let load_artwork = thread::spawn(move || {
+                let mut info = song.info();
+                drop(info.load_detailed());
+                drop(info.load_basic());
+            });
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                load_artwork.join().unwrap();
+            });
+        }
         self.skip_to(index);
     }
 
