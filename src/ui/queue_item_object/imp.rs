@@ -15,6 +15,7 @@ pub struct QueueItemObject {
     #[property(name = "playing", get, set, type = bool, member = playing)]
     #[property(name = "title", get, set, type = String, member = title)]
     #[property(name = "subtitle", get, set, type = String, member = subtitle)]
+    #[property(name = "suffix", get, set, type = String, member = suffix)]
     #[property(name = "artwork", get, set, type = Option<gdk::Texture>, member = artwork)]
     pub data: RefCell<QueueItemData>,
 

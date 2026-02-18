@@ -118,21 +118,22 @@ impl QueuePage {
                 let object_index = index_item.0 as u32;
                 match index_item.1 {
                     QueueItem::Song(song) => {
+                        let queue_item_object = QueueItemObject::new(
+                            object_index,
+                            object_index == index as u32,
+                            Some(Arc::clone(song)),
+                        );
+
                         let mut info = song.info();
 
-                        let queue_item_object = {
-                            let song_info_temp = info.load_basic();
-                            // SAFETY: `load_basic` is always safe to unwrap
-                            let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
-
-                            QueueItemObject::new(
-                                object_index,
-                                object_index == index as u32,
-                                song_info.title.clone(),
-                                song_info.artist.clone(),
-                                Some(Arc::clone(song)),
-                            )
-                        };
+                        let song_info_temp = info.load_basic();
+                        // SAFETY: `load_basic` is always safe to unwrap
+                        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+                        queue_item_object.set_title(song_info.title.clone());
+                        queue_item_object.set_subtitle(song_info.artist.clone());
+                        queue_item_object
+                            .set_suffix(format_duration_seconds(song_info.duration.seconds()));
+                        drop(song_info_temp);
 
                         // TODO: Cached low-res album covers
                         if let Some(artwork) = info
@@ -145,13 +146,11 @@ impl QueuePage {
 
                         queue_item_object
                     }
-                    QueueItem::Stopper => QueueItemObject::new(
-                        object_index,
-                        false,
-                        String::from("Pause"),
-                        String::new(),
-                        None,
-                    ),
+                    QueueItem::Stopper => {
+                        let queue_item_object = QueueItemObject::new(object_index, false, None);
+                        queue_item_object.set_title("Pause");
+                        queue_item_object
+                    }
                 }
             })
             .collect();
@@ -213,7 +212,7 @@ impl ObjectImpl for QueuePage {
 
             match queue_item_object.shared_song() {
                 // Song
-                Some(song) => {
+                Some(_) => {
                     if queue_item_object.playing() {
                         queue_row.add_css_class("heading");
                         queue_row.add_css_class("card");
@@ -224,8 +223,7 @@ impl ObjectImpl for QueuePage {
                         .sync_create()
                         .build()]);
 
-                    let duration = song.info().load_basic().as_ref().unwrap().duration;
-                    queue_row.set_suffix_label(&format_duration_seconds(duration.seconds()));
+                    queue_row.set_suffix_label(&queue_item_object.suffix());
 
                     let artwork = queue_item_object.artwork();
                     if artwork.is_some() {

@@ -16,18 +16,10 @@ glib::wrapper! {
 }
 
 impl QueueItemObject {
-    pub fn new(
-        index: u32,
-        playing: bool,
-        title: String,
-        subtitle: String,
-        song: Option<SharedSong>,
-    ) -> Self {
+    pub fn new(index: u32, playing: bool, song: Option<SharedSong>) -> Self {
         let song_object: QueueItemObject = Object::builder()
             .property("index", index)
             .property("playing", playing)
-            .property("title", title)
-            .property("subtitle", subtitle)
             .build();
         let _ = song_object.imp().shared_song.set(song);
         song_object
@@ -69,5 +61,6 @@ pub struct QueueItemData {
     playing: bool,
     title: String,
     subtitle: String,
+    suffix: String,
     artwork: Option<gdk::Texture>,
 }
