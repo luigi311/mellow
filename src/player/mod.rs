@@ -261,7 +261,7 @@ impl Player {
                 PlayerRequest::RemoveAt(index) => {
                     if index == self.queue.index() {
                         if self.next_song_loaded {
-                            println!("Removing song which is already loaded");
+                            println!("Removing song which was already loaded");
                             self.unload_gapless();
                             self.queue.remove(index);
                             self.ui_set_state();
@@ -287,6 +287,7 @@ impl Player {
                     loop {
                         // Ignore any further requests without closing the channel
                         self.rx.recv()?;
+                        #[cfg(debug_assertions)]
                         println!("Note: Player requests are ignored during shutdown");
                     }
                 }

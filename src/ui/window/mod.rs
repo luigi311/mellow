@@ -3,7 +3,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use core::error::Error;
 use gdk::{DragAction, FileList};
 use gio::Settings;
-use glib::{Object, clone};
+use glib::Object;
 use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
 use std::time::Duration;
@@ -73,9 +73,7 @@ impl Window {
         self.insert_action_group("ui", Some(&ui_actions));
 
         self.add_action_entries([gio::ActionEntry::builder("show_about_dialog")
-            .activate(clone!(move |window: &Window, _, _| {
-                about::show_about_dialog(window);
-            }))
+            .activate(move |window: &Window, _, _| about::show_about_dialog(window))
             .build()]);
     }
 

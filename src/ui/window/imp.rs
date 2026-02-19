@@ -141,9 +141,7 @@ impl Window {
                 UpdateUI::AlbumPageByIndex(index) => self.open_album_page_by_index(index),
                 UpdateUI::AlbumPage(album) => self.open_album_page(&album),
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
-                UpdateUI::SongPage(context) => {
-                    self.open_song_page(context.0, context.1, context.2);
-                }
+                UpdateUI::SongPage(ctx) => self.open_song_page(ctx.0, ctx.1, ctx.2),
 
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
@@ -153,6 +151,7 @@ impl Window {
                 UpdateUI::Shutdown => loop {
                     // Ignore any further requests without closing the channel
                     ui_rx.recv().await.unwrap();
+                    #[cfg(debug_assertions)]
                     println!("Note: UI requests are ignored during shutdown");
                 },
             }
@@ -453,8 +452,7 @@ impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
         self.obj()
             .save_and_uninit()
-            .expect("Failed to save window state");
-
+            .expect("Errors were encountered during shutdown");
         glib::Propagation::Proceed
     }
 }

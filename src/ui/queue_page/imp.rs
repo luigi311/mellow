@@ -183,7 +183,7 @@ impl QueuePage {
         if index < playing_index.saturating_sub(NUM_ITEMS_BEHIND) {
             return Err(IndexNotFoundError);
         }
-        let model_index = index as usize + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
+        let model_index = index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
         if model_index >= queue_items_len {
             return Err(IndexNotFoundError);
         }
