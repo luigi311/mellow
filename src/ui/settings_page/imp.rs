@@ -180,7 +180,7 @@ impl SettingsPage {
                 .window_content
                 .get()
                 .expect(EXP_INIT)
-                .has_css_class("window")
+                .has_css_class("color-main")
         {
             return;
         }
@@ -188,26 +188,26 @@ impl SettingsPage {
         self.sheet_content
             .get()
             .expect(EXP_INIT)
-            .add_css_class("overlay");
+            .add_css_class("color-menu");
         self.player_controls
             .get()
             .expect(EXP_INIT)
-            .add_css_class("overlay");
+            .add_css_class("color-menu");
         self.window_content
             .get()
             .expect(EXP_INIT)
-            .add_css_class("window");
+            .add_css_class("color-main");
         self.bottom_bar
             .get()
             .expect(EXP_INIT)
-            .add_css_class("window");
+            .add_css_class("color-main");
     }
     pub fn disable_background_color(&self) {
         if !self
             .window_content
             .get()
             .expect(EXP_INIT)
-            .has_css_class("window")
+            .has_css_class("color-main")
         {
             return;
         }
@@ -215,19 +215,19 @@ impl SettingsPage {
         self.sheet_content
             .get()
             .expect(EXP_INIT)
-            .remove_css_class("overlay");
+            .remove_css_class("color-menu");
         self.player_controls
             .get()
             .expect(EXP_INIT)
-            .remove_css_class("overlay");
+            .remove_css_class("color-menu");
         self.window_content
             .get()
             .expect(EXP_INIT)
-            .remove_css_class("window");
+            .remove_css_class("color-main");
         self.bottom_bar
             .get()
             .expect(EXP_INIT)
-            .remove_css_class("window");
+            .remove_css_class("color-main");
     }
     pub fn reset_background_color(&self) {
         if self.css.get().unwrap().prefers_color_scheme() == InterfaceColorScheme::Default {
@@ -361,14 +361,14 @@ impl SettingsPage {
         };
 
         css.load_from_string(&format!(
-            ".window {{
+            ".color-main {{
                  background-color: rgba({r}, {g}, {b}, 1);
                  border-bottom: 0px none;
                  border-right: 0px none;
                  border-left: 0px none;
                  border-top: 0px none;
              }}
-             .overlay {{
+             .color-menu {{
                  background-color: rgba({}, {}, {}, 1);
              }}
             ",
