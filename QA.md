@@ -20,7 +20,7 @@ Song Queue:
   - FIX: Starting an empty queue does not unload the currently playing song
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [x] Reordering the queue works as expected
+- [-] Reordering the queue works as expected
   - TODO: Reorder using drag & drop
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
@@ -39,7 +39,9 @@ Music Library:
   - FIX: Rebuilding sometimes blocks library requests(?)
 - [x] Album grouping works as expected
 - [x] Searching is quick and works as expected
-  - TODO: Filters for songs/albums/artists
+- [ ] Filters and sort modes work as expected
+  - TODO: Implement filters
+  - TODO: Implement sort modes
 
 User Experience:
 

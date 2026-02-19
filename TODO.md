@@ -1,5 +1,6 @@
 Song queue:
 
+- FIX: **Scroll position resets whenever the queue is updated**
 - FIX: Queue subpage should close (or update) when the queue changes
 (for example, starting a new queue still shows old info, which leads
 to misleading behavior - pressing play would jump to a different song
@@ -7,8 +8,8 @@ than shown on the page, or even try to index out of bounds)
 - [-] Display the song queue
   - TODO: Draw the entire queue (using a more performant approach)
   - FIX: Memory leak when toggling shuffle
-- [-] **Allow reordering the queue**
-  - TODO: Reorder using drag & drop
+- [-] Allow reordering the queue
+  - TODO: **Reorder using drag & drop**
 - [ ] **Multi-selection mode**
   - [ ] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once
@@ -29,20 +30,26 @@ than shown on the page, or even try to index out of bounds)
 
 Music library:
 
-- [ ] Save/load user settings and application state
+- [-] Save/load user settings and application state
   - TODO: Save/load shuffle preference for individual views
 - [ ] Allow initiating a full library rebuild
-- [x] Search/filtering for songs/albums/artists pages
+- [-] Search/filtering for songs/albums/artists pages
   - FIX: Cannot drag-select text because it drags the header bar
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
+- [ ] Songs/albums/artists sort modes
+  - [ ] Date added (either newest or oldest)
+  - [ ] Release date (either newest or oldest)
+  - [ ] Best/worst rating
+  - [ ] Most/least played
+  - [x] Default
 - [ ] Artists page
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all artists (shuffled/sequential)
-    - TODO: Improve dropdown behavior
-  - [-] Show all artists
-    - TODO: **Show images (and/or other visual improvements)**
+    > Dropdown behavior could be improved by only selecting the shuffle mode
+    > for the button, rather than starting the playback when clicked
+  - [x] Show all artists
   - [-] Artist subpage, accessed from each item
     - [-] Display artist info (name/number of albums/average rating)
     - [x] Display all albums by the artist, each opening an Album subpage
@@ -56,14 +63,14 @@ Music library:
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
-    - [ ] **Interactive rating widget**
+    - [ ] Interactive rating widget
       - TODO: Decide how ratings should be handled and how to store them
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags
-    - [ ] **Go to artist button**
+    - [ ] Go to artist button
 - [ ] Songs page
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all songs (shuffled/sequential)
@@ -72,13 +79,14 @@ Music library:
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Song subpage, accessed from each item
     - [-] Display song info (title/album/artist, maybe album cover)
+      - TODO: Needs design improvements
     - [x] Interactive rating widget
     - [x] Play Now: Start a new queue and skip to the selected track
     - [x] Play Next: Insert the song to the next position in the queue
     - [ ] Add to Queue button
     - [ ] Ability to set tags
-    - [ ] **Go to album button**
-    - [ ] **Go to artist button**
+    - [ ] Go to album button
+    - [ ] Go to artist button
 - [x] Play counting
 > Works, but the counting logic could be improved
 
