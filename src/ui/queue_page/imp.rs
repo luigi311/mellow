@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_seconds;
+use crate::library::song::SharedSong;
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -35,10 +36,13 @@ pub struct QueuePage {
     view_stack: TemplateChild<adw::ViewStack>,
 
     playing_index: Cell<usize>,
-    queue_items: RefCell<Vec<QueueItemObject>>,
+    queue_item_objects: RefCell<Vec<QueueItemObject>>,
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
 }
+
+#[derive(Debug)]
+struct IndexNotFoundError;
 
 #[gtk::template_callbacks]
 impl QueuePage {
@@ -116,33 +120,7 @@ impl QueuePage {
                 let object_index = index_item.0 as u32;
                 match index_item.1 {
                     QueueItem::Song(song) => {
-                        let queue_item_object = QueueItemObject::new(
-                            object_index,
-                            object_index == index as u32,
-                            Some(Arc::clone(song)),
-                        );
-
-                        let mut info = song.info();
-
-                        let song_info_temp = info.load_basic();
-                        // SAFETY: `load_basic` is always safe to unwrap
-                        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
-                        queue_item_object.set_title(song_info.title.clone());
-                        queue_item_object.set_subtitle(song_info.artist.clone());
-                        queue_item_object
-                            .set_suffix(format_duration_seconds(song_info.duration.seconds()));
-                        drop(song_info_temp);
-
-                        // TODO: Cached low-res album covers
-                        if let Ok(info) = info.try_inspect_detailed()
-                            && let Some(artwork) = info
-                                .as_ref()
-                                .map_or_else(|| None, |info| info.artwork.as_ref())
-                        {
-                            queue_item_object.set_artwork(artwork);
-                        }
-
-                        queue_item_object
+                        self.new_queue_item_object(object_index, object_index == index as u32, song)
                     }
                     QueueItem::Stopper => {
                         let queue_item_object = QueueItemObject::new(object_index, false, None);
@@ -153,7 +131,7 @@ impl QueuePage {
             })
             .collect();
         list_model.splice(0, list_model.n_items(), &items);
-        self.queue_items.replace(items);
+        self.queue_item_objects.replace(items);
 
         let scroll_target = (index - start) * 54;
         self.scrolled_window
@@ -161,18 +139,60 @@ impl QueuePage {
             .set_value(scroll_target as f64);
     }
 
-    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
-        let queue_items_len = self.queue_items.borrow().len();
+    #[inline]
+    fn new_queue_item_object(
+        &self,
+        queue_index: u32,
+        is_playing: bool,
+        song: &SharedSong,
+    ) -> QueueItemObject {
+        let object = QueueItemObject::new(queue_index, is_playing, Some(Arc::clone(song)));
+
+        let mut info = song.info();
+
+        let song_info_temp = info.load_basic();
+        // SAFETY: `load_basic` is always safe to unwrap
+        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+        object.set_title(song_info.title.clone());
+        object.set_subtitle(song_info.artist.clone());
+        object.set_suffix(format_duration_seconds(song_info.duration.seconds()));
+        drop(song_info_temp);
+
+        // TODO: Cached low-res album covers
+        if let Ok(info) = info.try_inspect_detailed()
+            && let Some(artwork) = info
+                .as_ref()
+                .map_or_else(|| None, |info| info.artwork.as_ref())
+        {
+            object.set_artwork(artwork);
+        }
+
+        object
+    }
+
+    pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
+        if let Ok(index) = self.queue_index_to_model(index) {
+            self.queue_item_objects.borrow()[index].set_property("artwork", artwork);
+        }
+    }
+
+    #[inline]
+    fn queue_index_to_model(&self, index: usize) -> Result<usize, IndexNotFoundError> {
+        let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
-        if index < self.playing_index.get().saturating_sub(NUM_ITEMS_BEHIND) as u32 {
-            return;
+        if index < playing_index.saturating_sub(NUM_ITEMS_BEHIND) {
+            return Err(IndexNotFoundError);
         }
-        let index = index as usize + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
-        if index >= queue_items_len {
-            eprintln!("Skipping queue item artwork: {index} is out of bounds of {queue_items_len}");
-            return;
+        let model_index = index as usize + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
+        if model_index >= queue_items_len {
+            return Err(IndexNotFoundError);
         }
-        self.queue_items.borrow()[index].set_property("artwork", artwork);
+        Ok(model_index)
+    }
+    #[inline]
+    fn model_index_to_queue(&self, index: usize) -> usize {
+        let playing_index = self.playing_index.get();
+        index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
     }
 
     pub fn uninit(&self) {
