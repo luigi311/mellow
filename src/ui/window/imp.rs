@@ -338,8 +338,7 @@ impl Window {
         if info.artwork.is_none() {
             return;
         }
-        self.queue_page
-            .assign_artwork(index as u32, info.artwork.as_ref());
+        self.queue_page.assign_artwork(index, info.artwork.as_ref());
     }
 
     // TODO: Reset the scroll position when opening song/album/artist page
