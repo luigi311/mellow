@@ -22,8 +22,10 @@ pub struct LibraryConfig {
 }
 
 impl LibraryConfig {
-    /// Creates a new instance of `LibraryConfig`
-    /// and assigns the provided `directories`
+    /// Creates a new instance of `LibraryConfig` and assigns the provided `directories`
+    ///
+    /// # Panics
+    /// The function panics if the `CONFIG_DIR` global variable is uninitialized
     pub fn new(directories: Vec<String>) -> Self {
         let mut config = LibraryConfig {
             directories,

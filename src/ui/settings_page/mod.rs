@@ -48,6 +48,10 @@ impl From<i32> for StartupQueueChoice {
 }
 
 impl SettingsPage {
+    /// Initializes various components, such as for theming support
+    ///
+    /// # Panics
+    /// The function panics if called when already initialized
     pub fn init(
         &self,
         style_manager: adw::StyleManager,
@@ -58,40 +62,47 @@ impl SettingsPage {
     ) {
         let imp = self.imp();
         imp.player_controls.set(player_controls).expect(INIT_ERR);
-        imp.bottom_bar.set(bottom_bar).expect(INIT_ERR);
-        imp.window_content.set(window_content).expect(INIT_ERR);
-        imp.sheet_content.set(sheet_content).expect(INIT_ERR);
+        let _ = imp.bottom_bar.set(bottom_bar);
+        let _ = imp.window_content.set(window_content);
+        let _ = imp.sheet_content.set(sheet_content);
         // TODO: Detect color cheme
         // let style_preference = style_manager.color_scheme();
         let _ = imp.css.set(gtk::CssProvider::new());
         let css = imp.css.get().expect(INIT_ERR);
-        imp.style_manager.set(style_manager).expect(INIT_ERR);
+        let _ = imp.style_manager.set(style_manager);
         imp.set_theme(adw::ColorScheme::ForceDark);
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(&display, css, 210);
         }
     }
 
+    /// Returns the current value of the volume slider
     #[must_use]
     pub fn volume(&self) -> f64 {
         self.imp().volume.value()
     }
+    /// Sets the volume slider to the provided value;
+    /// note that this does not update the player volume
     pub fn set_volume(&self, volume: f64) {
         self.imp().volume.set_value(volume);
     }
 
+    /// Returns the current gapless mode setting
     #[must_use]
     pub fn gapless(&self) -> bool {
         self.imp().gapless.is_active()
     }
+    /// Enables or disables the gapless mode
     pub fn set_gapless(&self, gapless: bool) {
         self.imp().gapless.set_active(gapless);
     }
 
+    /// Returns the currently selected choice of startup queue
     #[must_use]
     pub fn startup_queue(&self) -> Ref<'_, StartupQueueChoice> {
         self.imp().startup_choice.borrow()
     }
+    /// Sets the type of queue the player should start with when opened
     pub fn set_startup_queue(&self, choice: StartupQueueChoice) {
         let settings = self.imp();
         settings.startup_choice.replace(choice);
@@ -109,6 +120,8 @@ impl SettingsPage {
         }
     }
 
+    /// Returns `true` if the startup choice is `RestoreQueue`,
+    /// otherwise returns `false`
     #[must_use]
     pub fn remembers_queue(&self) -> bool {
         matches!(
@@ -116,51 +129,71 @@ impl SettingsPage {
             StartupQueueChoice::RestoreQueue
         )
     }
+    /// Returns `true` if the startup choice is `RestoreQueue`
+    /// _and_ is set to also remember time, otherwise returns
+    /// `false`
     #[must_use]
     pub fn remembers_time(&self) -> bool {
         self.imp().remember_time.is_active()
     }
+    /// Sets whether time should be restored along with the
+    /// queue when `RestoreQueue` is selected
     pub fn set_remember_time(&self, remember_time: bool) {
         self.imp().remember_time.set_active(remember_time);
     }
 
+    /// Returns `true` if adaptive colors are enabled,
+    /// otherwise returns `false`
     #[must_use]
     pub fn adaptive_colors(&self) -> bool {
         self.imp().adaptive_colors.is_active()
     }
+    /// Enables or disables adaptive colors
     pub fn set_adaptive_colors(&self, adaptive_colors: bool) {
         self.imp().adaptive_colors.set_active(adaptive_colors);
     }
 
+    /// Returns the currently selected color scheme as `u32`
+    ///
+    /// The values are currently hardcoded as such:
+    /// - 0: Dark
+    /// - 1: Light
+    /// - 2: Auto
     #[must_use]
     pub fn color_scheme(&self) -> u32 {
         self.imp().color_scheme.selected()
     }
+    /// Sets the application color scheme
+    ///
+    /// Valid values are as follows:
+    /// - 0: Dark
+    /// - 1: Light
+    /// - 2: Auto
     pub fn set_color_scheme(&self, id: u32) {
         self.imp().color_scheme.set_selected(id);
     }
 
+    /// Returns the list of directories shown in the UI
     #[must_use]
     pub fn directories(&self) -> Vec<String> {
         self.imp().directories.borrow().clone()
     }
+    /// Sets the directories displayed by the UI;
+    /// note that this does not affect the library
+    /// configuration
     pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
     }
 
-    pub fn enable_background_color(&self) {
-        self.imp().enable_background_color();
-    }
-    pub fn disable_background_color(&self) {
-        self.imp().disable_background_color();
-    }
+    /// Resets the adaptive background color and show the default
+    /// background instead; useful when an album cover is missing
     pub fn reset_background_color(&self) {
         self.imp().reset_background_color();
     }
-
-    pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
-        self.imp().set_background_color(r, g, b);
-    }
+    /// Sets the adaptive background color and tries to match the
+    /// colors in the artwork. If adaptive colors are disabled, the
+    /// color will still be stored in memory, so it is ready to use
+    /// in case the user chooses to enable adaptive colors.
     pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
         self.imp().set_background_from_artwork(artwork);
     }
