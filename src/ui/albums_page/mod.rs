@@ -18,10 +18,10 @@ impl AlbumsPage {
     }
 
     pub fn load_albums(&self, albums: &Albums) {
-        println!("load_albums()");
         self.imp().load_albums(albums);
     }
 
+    #[inline]
     pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
         self.imp().assign_artwork(index, artwork);
     }

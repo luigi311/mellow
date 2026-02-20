@@ -18,10 +18,10 @@ impl SongsPage {
     }
 
     pub fn load_songs(&self, songs: &Songs) {
-        println!("load_songs()");
         self.imp().load_songs(songs);
     }
 
+    #[inline]
     pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
         self.imp().assign_artwork(index, artwork);
     }

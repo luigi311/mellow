@@ -152,6 +152,7 @@ impl SongsPage {
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
+    #[inline]
     pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
         self.songs.borrow()[index as usize].set_property("artwork", artwork);
     }

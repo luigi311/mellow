@@ -41,6 +41,7 @@ impl QueuePage {
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         self.imp().update_song_queue(queue, index);
     }
+    #[inline]
     pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
         self.imp().assign_artwork(index, artwork);
     }
