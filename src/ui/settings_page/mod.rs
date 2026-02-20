@@ -55,6 +55,7 @@ impl SettingsPage {
     ///
     /// # Panics
     /// The function panics if called when already initialized
+    #[inline]
     pub fn init(
         &self,
         style_manager: adw::StyleManager,
@@ -76,32 +77,38 @@ impl SettingsPage {
     }
 
     /// Returns the current value of the volume slider
+    #[inline]
     #[must_use]
     pub fn volume(&self) -> f64 {
         self.imp().volume.value()
     }
     /// Sets the volume slider to the provided value;
     /// note that this does not update the player volume
+    #[inline]
     pub fn set_volume(&self, volume: f64) {
         self.imp().volume.set_value(volume);
     }
 
     /// Returns the current gapless mode setting
+    #[inline]
     #[must_use]
     pub fn gapless(&self) -> bool {
         self.imp().gapless.is_active()
     }
     /// Enables or disables the gapless mode
+    #[inline]
     pub fn set_gapless(&self, gapless: bool) {
         self.imp().gapless.set_active(gapless);
     }
 
     /// Returns the currently selected choice of startup queue
+    #[inline]
     #[must_use]
     pub fn startup_queue(&self) -> Ref<'_, StartupQueueChoice> {
         self.imp().startup_choice.borrow()
     }
     /// Sets the type of queue the player should start with when opened
+    #[inline]
     pub fn set_startup_queue(&self, choice: StartupQueueChoice) {
         let settings = self.imp();
         settings.startup_choice.replace(choice);
@@ -121,6 +128,7 @@ impl SettingsPage {
 
     /// Returns `true` if the startup choice is `RestoreQueue`,
     /// otherwise returns `false`
+    #[inline]
     #[must_use]
     pub fn remembers_queue(&self) -> bool {
         matches!(
@@ -131,23 +139,27 @@ impl SettingsPage {
     /// Whether the player remembers the playback time
     /// Note that this setting only applies when the startup
     /// queue is set to `RestoreQueue`
+    #[inline]
     #[must_use]
     pub fn remembers_time(&self) -> bool {
         self.imp().remember_time.is_active()
     }
     /// Sets whether time should be restored along with the
     /// queue when `RestoreQueue` is selected
+    #[inline]
     pub fn set_remember_time(&self, remember_time: bool) {
         self.imp().remember_time.set_active(remember_time);
     }
 
     /// Returns `true` if adaptive colors are enabled,
     /// otherwise returns `false`
+    #[inline]
     #[must_use]
     pub fn adaptive_colors(&self) -> bool {
         self.imp().adaptive_colors.is_active()
     }
     /// Enables or disables adaptive colors
+    #[inline]
     pub fn set_adaptive_colors(&self, adaptive_colors: bool) {
         self.imp().adaptive_colors.set_active(adaptive_colors);
     }
@@ -158,6 +170,7 @@ impl SettingsPage {
     /// - 0: Dark
     /// - 1: Light
     /// - 2: Auto
+    #[inline]
     #[must_use]
     pub fn color_scheme(&self) -> u32 {
         self.imp().color_scheme.selected()
@@ -168,11 +181,13 @@ impl SettingsPage {
     /// - 0: Dark
     /// - 1: Light
     /// - 2: Auto
+    #[inline]
     pub fn set_color_scheme(&self, id: u32) {
         self.imp().color_scheme.set_selected(id);
     }
 
     /// Returns the list of directories shown in the UI
+    #[inline]
     #[must_use]
     pub fn directories(&self) -> Vec<String> {
         self.imp().directories.borrow().clone()
@@ -180,12 +195,14 @@ impl SettingsPage {
     /// Sets the directories displayed by the UI;
     /// note that this does not affect the library
     /// configuration
+    #[inline]
     pub fn set_directories(&self, directories: &[String]) {
         self.imp().set_directories(directories);
     }
 
     /// Resets the adaptive background color and show the default
     /// background instead; useful when an album cover is missing
+    #[inline]
     pub fn reset_background_color(&self) {
         self.imp().reset_background_color();
     }
@@ -193,6 +210,7 @@ impl SettingsPage {
     /// colors in the artwork. If adaptive colors are disabled, the
     /// color will still be stored in memory, so it is ready to use
     /// in case the user chooses to enable adaptive colors.
+    #[inline]
     pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
         self.imp().set_background_from_artwork(artwork);
     }

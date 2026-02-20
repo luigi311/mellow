@@ -14,11 +14,13 @@ glib::wrapper! {
 }
 
 impl QueuePage {
+    #[inline]
     pub fn init(&self, song_page: QueueSubpage) {
         let queue_page = self.imp();
         let _ = queue_page.song_page.set(song_page);
     }
 
+    #[inline]
     pub fn get_shuffle(&self) -> bool {
         self.imp().shuffle_toggle.is_active()
     }
@@ -31,13 +33,16 @@ impl QueuePage {
         ui.shuffle_toggle.set_active(shuffle);
     }
 
+    #[inline]
     pub fn get_repeat(&self) -> bool {
         self.imp().repeat_toggle.is_active()
     }
+    #[inline]
     pub fn update_repeat(&self, repeat: bool) {
         self.imp().repeat_toggle.set_active(repeat);
     }
 
+    #[inline]
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         self.imp().update_song_queue(queue, index);
     }
@@ -47,6 +52,7 @@ impl QueuePage {
     }
 
     /// Empties the list model, cancelling any pending background tasks during drop
+    #[inline]
     pub fn uninit(&self) {
         self.imp().uninit();
     }

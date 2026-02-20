@@ -37,6 +37,7 @@ impl Window {
         window
     }
 
+    #[inline]
     fn settings(&self) -> &Settings {
         self.imp().settings.get().expect(EXP_INIT)
     }

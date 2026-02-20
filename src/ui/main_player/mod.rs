@@ -20,6 +20,7 @@ glib::wrapper! {
 }
 
 impl MainPlayer {
+    #[inline]
     pub fn init(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
         // As a workaround for `release` not being signaled by `GtkScale`,
@@ -39,6 +40,7 @@ impl MainPlayer {
             .add_controller(release_seek_bar);
     }
 
+    #[inline]
     pub fn set_state(&self, playing: bool, interactive: bool) {
         let ui = self.imp();
         ui.pause_button.set_icon_name(match playing {
@@ -97,6 +99,7 @@ impl MainPlayer {
     }
 
     /// Sets main player spacing based on available space
+    #[inline]
     pub fn update_spacing(&self, height: i32) {
         const SPACERS: i32 = 2;
         const WITH_OUTER: i32 = SPACERS + 3;

@@ -41,6 +41,7 @@ pub struct ArtistsPage {
 
 #[gtk::template_callbacks]
 impl ArtistsPage {
+    #[inline]
     pub fn init_search(&self) {
         let filter = Rc::clone(&self.filter);
         let sorter = Rc::clone(&self.sorter);
@@ -168,6 +169,7 @@ impl ArtistsPage {
         self.artists.borrow()[index as usize].set_property("artwork", artwork);
     }
 
+    #[inline]
     pub fn uninit(&self) {
         // for artist in self.artists.take() {
         //     artist.imp().is_visible.store(false, Ordering::Relaxed);

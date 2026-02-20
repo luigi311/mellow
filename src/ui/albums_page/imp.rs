@@ -41,6 +41,7 @@ pub struct AlbumsPage {
 
 #[gtk::template_callbacks]
 impl AlbumsPage {
+    #[inline]
     pub fn init_search(&self) {
         let filter = Rc::clone(&self.filter);
         let sorter = Rc::clone(&self.sorter);

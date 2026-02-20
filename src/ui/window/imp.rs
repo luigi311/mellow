@@ -90,6 +90,7 @@ pub struct Window {
 }
 
 impl Window {
+    #[inline]
     pub fn init_ui_elements(&self, style_manager: adw::StyleManager) {
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());

@@ -12,36 +12,43 @@ glib::wrapper! {
 }
 
 impl Default for ItemRow {
+    #[inline]
     fn default() -> Self {
         Object::builder().build()
     }
 }
 
 impl ItemRow {
+    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[inline]
     pub fn builder() -> ItemRowBuilder {
         ItemRowBuilder {
             item_row: Self::default(),
         }
     }
 
+    #[inline]
     pub fn set_artwork(&self, image: &impl IsA<gdk::Paintable>) {
         self.imp().image.set_paintable(Some(image));
     }
 
+    #[inline]
     pub fn set_info(&self, title: &str, subtitle: &str) {
         let ui = self.imp();
         ui.title.set_label(title);
         ui.subtitle.set_label(subtitle);
     }
 
+    #[inline]
     pub fn add_bindings(&self, bindings: &[glib::Binding]) {
         self.imp().bindings.borrow_mut().extend_from_slice(bindings);
     }
+    #[inline]
     pub fn reset_bindings(&self) {
         for binding in self.imp().bindings.borrow_mut().drain(..) {
             binding.unbind();
@@ -54,31 +61,37 @@ pub struct ItemRowBuilder {
 }
 
 impl ItemRowBuilder {
+    #[inline]
     pub fn artwork(self, artwork: &impl IsA<gdk::Paintable>) -> Self {
         self.item_row.set_artwork(artwork);
         self
     }
 
+    #[inline]
     pub fn titles(self, album: &str, artist: &str) -> Self {
         self.item_row.set_info(album, artist);
         self
     }
 
+    #[inline]
     pub fn image_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
+    #[inline]
     pub fn title_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
+    #[inline]
     pub fn subtitle_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
+    #[inline]
     pub fn build(self) -> ItemRow {
         self.item_row
     }
