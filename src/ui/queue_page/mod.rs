@@ -45,6 +45,7 @@ impl QueuePage {
         self.imp().assign_artwork(index, artwork);
     }
 
+    /// Empties the list model, cancelling any pending background tasks during drop
     pub fn uninit(&self) {
         self.imp().uninit();
     }

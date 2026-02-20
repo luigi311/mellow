@@ -53,7 +53,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
-|  4  | Song queue interface & management         | ⚠️ WIP: Displays a limited number of items, does not yet support reordering or multi-selection |
+|  4  | Song queue interface & management         | ⚠️ WIP: Does not yet support multi-selection or drag-&-drop reordering |
 |  5  | Music library                             | ⚠️ WIP: Basics are done, but see below |
 | 5.1 | Artists page                              | ⚠️ WIP: Missing artworks and some functionality |
 | 5.2 | Albums page                               | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |

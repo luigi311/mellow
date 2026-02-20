@@ -71,6 +71,23 @@ impl QueuePage {
             .expect(EXP_RX);
     }
 
+    #[inline]
+    pub fn scroll_to(&self, scroll_target: f64) {
+        let scrolled_window = self.scrolled_window.get();
+        scrolled_window.vadjustment().set_value(scroll_target);
+        // WORKAROUND: Setting the scroll position in an idle task because it
+        // doesn't update otherwise
+        glib::idle_add_local(move || {
+            scrolled_window.vadjustment().set_value(scroll_target);
+            glib::ControlFlow::Break
+        });
+    }
+
+    pub fn scroll_to_playing(&self) {
+        let index = self.playing_index.get();
+        self.scroll_to(((index - index.saturating_sub(NUM_ITEMS_BEHIND)) * 54) as f64);
+    }
+
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         self.view_stack
             .set_visible_child_name(match queue.is_empty() {
@@ -78,10 +95,7 @@ impl QueuePage {
                 false => "song_queue",
             });
 
-        let scroll_target = self.scrolled_window.vadjustment().value();
-
         // TODO: Reorder queue items using drag & drop
-        // FIX: The scroll position resets when the queue is updated
 
         self.playing_index.set(index);
         let Some(list_model) = self.list_model.get() else {
@@ -117,6 +131,7 @@ impl QueuePage {
             }
         });
 
+        let previous_scroll_position = self.scrolled_window.vadjustment().value();
         let items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
             .map(|index_item| {
                 let object_index = index_item.0 as u32;
@@ -135,18 +150,11 @@ impl QueuePage {
         list_model.splice(0, list_model.n_items(), &items);
         self.queue_item_objects.replace(items);
 
-        // let scroll_target = ((index - start) * 54) as f64;
-        self.scrolled_window.vadjustment().set_value(scroll_target);
-        // WORKAROUND: Setting the scroll position in an idle task because it
-        // doesn't work otherwise. The scroll position has to be re-applied,
-        // because it resets when the `list_box` rows change.
-        glib::idle_add_local({
-            let scrolled_window = self.scrolled_window.get();
-            move || {
-                scrolled_window.vadjustment().set_value(scroll_target);
-                glib::ControlFlow::Break
-            }
-        });
+        // Re-applying the scroll position, because it resets when the `list_box` rows change
+        self.scroll_to(previous_scroll_position);
+
+        // IDEA: Maybe scroll to the current song when the queue starts,
+        // or the shuffle mode is updated?
     }
 
     #[inline]
@@ -186,6 +194,10 @@ impl QueuePage {
         }
     }
 
+    /// Takes a queue item index and returns the index to access its object
+    ///
+    /// # Panics
+    /// Panics if `self.queue_item_objects` `RefCell` is mutably borrowed
     #[inline]
     fn queue_index_to_model(&self, index: usize) -> Result<usize, IndexNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
@@ -199,12 +211,14 @@ impl QueuePage {
         }
         Ok(model_index)
     }
+    /// Takes a model index and returns the index to access its queue item
     #[inline]
     fn model_index_to_queue(&self, index: usize) -> usize {
         let playing_index = self.playing_index.get();
         index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
     }
 
+    /// Empties the list model, cancelling any pending background tasks during drop
     pub fn uninit(&self) {
         self.list_model.get().expect(EXP_INIT).remove_all();
     }
