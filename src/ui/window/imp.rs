@@ -98,10 +98,14 @@ impl Window {
         self.artists_page.init_search();
         self.settings_page.init(
             style_manager,
-            self.sheet_content.get(),
-            self.main_player.imp().media_controls.get(),
-            self.sheet.get(),
-            self.bottom_bar.get(),
+            vec![
+                self.sheet.get().upcast::<gtk::Widget>(),
+                self.bottom_bar.get().upcast::<gtk::Widget>(),
+            ],
+            vec![
+                self.sheet_content.get().upcast::<gtk::Widget>(),
+                (self.main_player.imp().media_controls.get()).upcast::<gtk::Widget>(),
+            ],
         );
     }
 

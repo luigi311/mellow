@@ -57,10 +57,9 @@ pub struct SettingsPage {
     pub style_manager: OnceCell<adw::StyleManager>,
     current_color: Cell<Option<(f64, f64, f64)>>,
 
-    pub sheet_content: OnceCell<adw::ToolbarView>,
-    pub player_controls: OnceCell<gtk::Box>,
-    pub window_content: OnceCell<adw::BottomSheet>,
-    pub bottom_bar: OnceCell<gtk::Box>,
+    pub style_main: RefCell<Vec<gtk::Widget>>,
+    pub style_menu: RefCell<Vec<gtk::Widget>>,
+    pub has_style: Cell<bool>,
 }
 
 #[gtk::template_callbacks]
@@ -70,18 +69,14 @@ impl SettingsPage {
         if approx_eq(value, self.volume.value()) {
             return glib::Propagation::Stop;
         }
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SetVolume(value * value))
             .expect(EXP_RX);
         glib::Propagation::Proceed
     }
     #[template_callback]
     pub fn handle_gapless_switch(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SetGapless(self.gapless.is_active()))
             .expect(EXP_RX);
     }
@@ -151,18 +146,15 @@ impl SettingsPage {
     }
 
     pub fn set_theme(&self, preference: adw::ColorScheme) {
-        self.css
-            .get()
-            .unwrap()
-            .set_prefers_color_scheme(match preference {
-                adw::ColorScheme::ForceDark | adw::ColorScheme::PreferDark => {
-                    InterfaceColorScheme::Dark
-                }
-                adw::ColorScheme::ForceLight | adw::ColorScheme::PreferLight => {
-                    InterfaceColorScheme::Light
-                }
-                _ => InterfaceColorScheme::Default,
-            });
+        (self.css.get().expect(EXP_INIT)).set_prefers_color_scheme(match preference {
+            adw::ColorScheme::ForceDark | adw::ColorScheme::PreferDark => {
+                InterfaceColorScheme::Dark
+            }
+            adw::ColorScheme::ForceLight | adw::ColorScheme::PreferLight => {
+                InterfaceColorScheme::Light
+            }
+            _ => InterfaceColorScheme::Default,
+        });
         self.style_manager
             .get()
             .unwrap()
@@ -175,59 +167,32 @@ impl SettingsPage {
     }
 
     pub fn enable_background_color(&self) {
-        if self.current_color.get().is_none()
-            || self
-                .window_content
-                .get()
-                .expect(EXP_INIT)
-                .has_css_class("color-main")
-        {
+        if self.current_color.get().is_none() || self.has_style.get() {
             return;
         }
 
-        self.sheet_content
-            .get()
-            .expect(EXP_INIT)
-            .add_css_class("color-menu");
-        self.player_controls
-            .get()
-            .expect(EXP_INIT)
-            .add_css_class("color-menu");
-        self.window_content
-            .get()
-            .expect(EXP_INIT)
-            .add_css_class("color-main");
-        self.bottom_bar
-            .get()
-            .expect(EXP_INIT)
-            .add_css_class("color-main");
+        for widget in self.style_main.borrow().iter() {
+            widget.add_css_class("color-main");
+        }
+        for widget in self.style_menu.borrow().iter() {
+            widget.add_css_class("color-menu");
+        }
+
+        self.has_style.set(true);
     }
     pub fn disable_background_color(&self) {
-        if !self
-            .window_content
-            .get()
-            .expect(EXP_INIT)
-            .has_css_class("color-main")
-        {
+        if !self.has_style.get() {
             return;
         }
 
-        self.sheet_content
-            .get()
-            .expect(EXP_INIT)
-            .remove_css_class("color-menu");
-        self.player_controls
-            .get()
-            .expect(EXP_INIT)
-            .remove_css_class("color-menu");
-        self.window_content
-            .get()
-            .expect(EXP_INIT)
-            .remove_css_class("color-main");
-        self.bottom_bar
-            .get()
-            .expect(EXP_INIT)
-            .remove_css_class("color-main");
+        for widget in self.style_main.borrow().iter() {
+            widget.remove_css_class("color-main");
+        }
+        for widget in self.style_menu.borrow().iter() {
+            widget.remove_css_class("color-menu");
+        }
+
+        self.has_style.set(false);
     }
     pub fn reset_background_color(&self) {
         if self.css.get().unwrap().prefers_color_scheme() == InterfaceColorScheme::Default {
@@ -314,7 +279,6 @@ impl SettingsPage {
             b = lerp(b, b * b, 0.4);
 
             let lum = lum(r, g, b);
-
             r = lerp(lum, r, SATURATION);
             g = lerp(lum, g, SATURATION);
             b = lerp(lum, b, SATURATION);

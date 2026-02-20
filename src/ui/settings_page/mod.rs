@@ -50,22 +50,19 @@ impl From<i32> for StartupQueueChoice {
 impl SettingsPage {
     /// Initializes various components, such as for theming support
     ///
+    /// The `style_main` and `style_menu` widgets will be styled
+    /// accordingly when adaptive colors are enabled
+    ///
     /// # Panics
     /// The function panics if called when already initialized
     pub fn init(
         &self,
         style_manager: adw::StyleManager,
-        sheet_content: adw::ToolbarView,
-        player_controls: gtk::Box,
-        window_content: adw::BottomSheet,
-        bottom_bar: gtk::Box,
+        style_main: Vec<gtk::Widget>,
+        style_menu: Vec<gtk::Widget>,
     ) {
         let imp = self.imp();
-        imp.player_controls.set(player_controls).expect(INIT_ERR);
-        let _ = imp.bottom_bar.set(bottom_bar);
-        let _ = imp.window_content.set(window_content);
-        let _ = imp.sheet_content.set(sheet_content);
-        // TODO: Detect color cheme
+        // TODO: Detect system color cheme
         // let style_preference = style_manager.color_scheme();
         let _ = imp.css.set(gtk::CssProvider::new());
         let css = imp.css.get().expect(INIT_ERR);
@@ -74,6 +71,8 @@ impl SettingsPage {
         if let Some(display) = gdk::Display::default() {
             gtk::style_context_add_provider_for_display(&display, css, 210);
         }
+        imp.style_main.replace(style_main);
+        imp.style_menu.replace(style_menu);
     }
 
     /// Returns the current value of the volume slider
@@ -129,9 +128,9 @@ impl SettingsPage {
             StartupQueueChoice::RestoreQueue
         )
     }
-    /// Returns `true` if the startup choice is `RestoreQueue`
-    /// _and_ is set to also remember time, otherwise returns
-    /// `false`
+    /// Whether the player remembers the playback time
+    /// Note that this setting only applies when the startup
+    /// queue is set to `RestoreQueue`
     #[must_use]
     pub fn remembers_time(&self) -> bool {
         self.imp().remember_time.is_active()
