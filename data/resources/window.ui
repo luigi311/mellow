@@ -17,6 +17,9 @@
             <child type="top">
               <object class="AdwHeaderBar">
                 <property name="show-title">False</property>
+                <!-- TODO: Add a menu button to the opposite side of the close button -->
+                <!-- The menu should contain: volume slider, song rating widget -->
+                <!-- NOTE: Could also include 'About' and 'Preferences' -->
               </object>
             </child>
 

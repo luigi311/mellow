@@ -101,6 +101,13 @@ Ideas for improvements:
 > Disabled directories would still retain song data (play counts, etc),
 > but be excluded from the actual `songs`/`albums`/`artists` used by the
 > `Library` (design needed for enabling/disabling libraries)
+- Main player:
+  - Display a hamburger menu on the opposite side of the close button:
+    - Move the volume widget into the menu
+    - Add a rating widget
+    - Move the 'About' button into the menu
+    - Could also move the settings, and make it a popup window, then something
+    else can be moved into that overlay tab (maybe current file details/lyrics?)
 - Queue page:
   - Show a track number as well?
   - Undo (toast) for removed queue items
