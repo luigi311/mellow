@@ -184,6 +184,7 @@ impl QueuePage {
         queue_item_object
     }
 
+    #[inline]
     pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
         if let Ok(index) = self.queue_index_to_model(index) {
             self.queue_item_objects.borrow()[index].set_property("artwork", artwork);
