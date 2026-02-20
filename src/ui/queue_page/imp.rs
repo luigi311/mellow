@@ -134,16 +134,10 @@ impl QueuePage {
         let previous_scroll_position = self.scrolled_window.vadjustment().value();
         let items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
             .map(|index_item| {
-                let object_index = index_item.0 as u32;
+                let q_index = index_item.0;
                 match index_item.1 {
-                    QueueItem::Song(song) => {
-                        self.new_queue_item_object(object_index, object_index == index as u32, song)
-                    }
-                    QueueItem::Stopper => {
-                        let queue_item_object = QueueItemObject::new(object_index, false, None);
-                        queue_item_object.set_title("Pause");
-                        queue_item_object
-                    }
+                    QueueItem::Song(song) => self.new_song(q_index as u32, q_index == index, song),
+                    QueueItem::Stopper => self.new_stopper(q_index as u32),
                 }
             })
             .collect();
@@ -158,12 +152,7 @@ impl QueuePage {
     }
 
     #[inline]
-    fn new_queue_item_object(
-        &self,
-        queue_index: u32,
-        is_playing: bool,
-        song: &SharedSong,
-    ) -> QueueItemObject {
+    fn new_song(&self, queue_index: u32, is_playing: bool, song: &SharedSong) -> QueueItemObject {
         let object = QueueItemObject::new(queue_index, is_playing, Some(Arc::clone(song)));
 
         let mut info = song.info();
@@ -186,6 +175,13 @@ impl QueuePage {
         }
 
         object
+    }
+
+    #[inline]
+    fn new_stopper(&self, queue_index: u32) -> QueueItemObject {
+        let queue_item_object = QueueItemObject::new(queue_index, false, None);
+        queue_item_object.set_title("Pause");
+        queue_item_object
     }
 
     pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
@@ -213,6 +209,7 @@ impl QueuePage {
     }
     /// Takes a model index and returns the index to access its queue item
     #[inline]
+    #[must_use]
     fn model_index_to_queue(&self, index: usize) -> usize {
         let playing_index = self.playing_index.get();
         index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
