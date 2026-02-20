@@ -2,8 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
 use adw::subclass::prelude::*;
-use glib::Object;
-use gst::glib::object::ObjectExt;
+use glib::{Object, object::ObjectExt};
 use gtk::{gdk, glib};
 
 use crate::excuses::EXP_INIT;
