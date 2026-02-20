@@ -62,7 +62,7 @@ impl SettingsPage {
         style_menu: Vec<gtk::Widget>,
     ) {
         let imp = self.imp();
-        // TODO: Detect system color cheme
+        // TODO: Detect system color scheme
         // let style_preference = style_manager.color_scheme();
         let _ = imp.css.set(gtk::CssProvider::new());
         let css = imp.css.get().expect(INIT_ERR);
