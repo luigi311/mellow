@@ -55,7 +55,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  3  | Open files/folders to create a queue      | ✅ Done |
 |  4  | Song queue interface & management         | ⚠️ WIP: Does not yet support multi-selection or drag-&-drop reordering |
 |  5  | Music library                             | ⚠️ WIP: Mostly done, but see below |
-| 5.1 | Artists page                              | ⚠️ WIP: Missing artworks and some functionality |
+| 5.1 | Artists page                              | ⚠️ WIP: Some functionality may be missing |
 | 5.2 | Albums page                               | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
 | 5.3 | Songs page                                | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
 | 5.4 | Search/filter/sort                        | ⚠️ WIP: No filters or sort modes yet |
