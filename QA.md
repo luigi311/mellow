@@ -24,8 +24,7 @@ Song Queue:
   - TODO: Reorder using drag & drop
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
-- [ ] Scrolling works without issues
-  - FIX: Scroll position resets whenever the queue changes
+- [x] Scrolling works without issues
 
 Music Library:
 

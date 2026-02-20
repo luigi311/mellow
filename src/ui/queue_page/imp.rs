@@ -78,6 +78,8 @@ impl QueuePage {
                 false => "song_queue",
             });
 
+        let scroll_target = self.scrolled_window.vadjustment().value();
+
         // TODO: Reorder queue items using drag & drop
         // FIX: The scroll position resets when the queue is updated
 
@@ -133,10 +135,18 @@ impl QueuePage {
         list_model.splice(0, list_model.n_items(), &items);
         self.queue_item_objects.replace(items);
 
-        let scroll_target = (index - start) * 54;
-        self.scrolled_window
-            .vadjustment()
-            .set_value(scroll_target as f64);
+        // let scroll_target = ((index - start) * 54) as f64;
+        self.scrolled_window.vadjustment().set_value(scroll_target);
+        // WORKAROUND: Setting the scroll position in an idle task because it
+        // doesn't work otherwise. The scroll position has to be re-applied,
+        // because it resets when the `list_box` rows change.
+        glib::idle_add_local({
+            let scrolled_window = self.scrolled_window.get();
+            move || {
+                scrolled_window.vadjustment().set_value(scroll_target);
+                glib::ControlFlow::Break
+            }
+        });
     }
 
     #[inline]

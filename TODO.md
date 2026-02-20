@@ -1,6 +1,5 @@
 Song queue:
 
-- FIX: **Scroll position resets whenever the queue is updated**
 - FIX: Queue subpage should close (or update) when the queue changes
 (for example, starting a new queue still shows old info, which leads
 to misleading behavior - pressing play would jump to a different song
