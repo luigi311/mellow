@@ -20,7 +20,7 @@ impl SongPage {
         let mut info = song.info();
 
         let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` is always safe to unwrap
+        // SAFETY: `load_basic` ensures the value is `Some`
         let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         song_page.song_title.set_label(&song_info.title);
         song_page.album_title.set_label(&song_info.album);

@@ -355,7 +355,7 @@ impl Library {
         for song in &songs {
             let mut info = song.info();
             let song_info = info.load_basic();
-            // SAFETY: `load_basic` is always safe to uwnrap
+            // SAFETY: `load_basic` ensures the value is `Some`
             let song_info = unsafe { song_info.as_ref().unwrap_unchecked() };
 
             let album_index = albums.find_album(song_info);

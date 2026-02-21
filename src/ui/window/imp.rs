@@ -186,7 +186,7 @@ impl Window {
         let mut info = song.info();
 
         let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` is always safe to unwrap
+        // SAFETY: `load_basic` ensures the value is `Some`
         let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         let (title, album, artist) = (
             song_info.title.clone(),

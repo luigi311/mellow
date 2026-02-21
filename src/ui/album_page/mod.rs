@@ -25,7 +25,7 @@ impl AlbumPage {
 
         let mut info = songs[0].info(); // IDEA: Load artwork in the background?
         let detailed_info = info.load_detailed();
-        // SAFETY: `load_detailed` is always safe to unwrap
+        // SAFETY: `load_detailed` ensures the value is `Some`
         let artwork = unsafe { detailed_info.as_ref().unwrap_unchecked().artwork.as_ref() };
         if artwork.is_some() {
             ui.album_cover.set_paintable(artwork);
@@ -53,7 +53,7 @@ impl AlbumPage {
 
             let mut info = song.info();
             let info = info.load_basic();
-            // SAFETY: `unload_basic` is always safe to unwrap
+            // SAFETY: `load_basic` ensures the value is `Some`
             let info = unsafe { info.as_ref().unwrap_unchecked() };
             song_row.add_prefix(
                 &gtk::Label::builder()

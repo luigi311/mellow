@@ -36,7 +36,7 @@ impl ArtistPage {
 
             let mut info = album_locked.songs[0].info();
             let info = info.load_detailed();
-            // SAFETY: `load_detailed` is always safe to unwrap
+            // SAFETY: `load_detailed` ensures the value is `Some`
             let artwork = unsafe { info.as_ref().unwrap_unchecked().artwork.as_ref() };
             if artwork.is_some() {
                 entry.set_prefix_image(artwork);

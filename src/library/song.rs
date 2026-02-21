@@ -91,7 +91,7 @@ impl<'s> Song {
         let uri = info.file_uri();
         let user_info = info.user().clone();
         let info = info.load_basic();
-        // SAFETY: `info.load_basic` is always safe to unwrap
+        // SAFETY: `load_basic` ensures the value is `Some`
         let info = unsafe { info.as_ref().unwrap_unchecked() };
 
         serialize! {

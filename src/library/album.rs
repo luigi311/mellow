@@ -38,7 +38,7 @@ impl SortedAlbumSongs for AlbumSongs {
         self.binary_search_by(|song| {
             let mut new_info = song.info();
             let new_info = new_info.load_basic();
-            // SAFETY: `load_basic` is always safe to unwrap
+            // SAFETY: `load_basic` ensures the value is `Some`
             let new_info = unsafe { new_info.as_ref().unwrap_unchecked() };
 
             match new_info.disc.cmp(&info.disc) {
