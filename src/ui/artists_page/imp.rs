@@ -140,10 +140,12 @@ impl ArtistsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
-            let score = search::query_score(&query.borrow(), &artist_object.artist());
+            let score = search::query_score_simple(
+                &query.borrow().to_lowercase(),
+                &artist_object.artist().to_lowercase(),
+            );
             artist_object.set_rank(score);
-            (artist_object.artist().to_lowercase()).contains(&query.borrow().to_lowercase())
-                || score >= search::SCORE_THRESHOLD
+            score >= search::SCORE_THRESHOLD
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);

@@ -4,6 +4,8 @@ pub const SCORE_THRESHOLD: f64 = 0.75;
 /// score number between 0 and 1, depending on how well
 /// the `query` matches the `item`
 ///
+/// Note: the comparison is case-sensitive
+///
 /// # Example:
 /// ```rust
 /// use mellow::library::search::query_score;
@@ -34,8 +36,8 @@ pub fn query_score(query: &str, item: &str) -> f64 {
     }
     // dbg!(&query);
     // dbg!(&item);
-    let query_bytes: Vec<u8> = query.to_lowercase().bytes().collect();
-    let item_bytes: Vec<u8> = item.to_lowercase().bytes().collect();
+    let query_bytes: Vec<u8> = query.bytes().collect();
+    let item_bytes: Vec<u8> = item.bytes().collect();
     let (mut start, mut end) = (0, 0);
     let mut offset = 0;
     let mut match_len = 0.0;
@@ -83,6 +85,19 @@ pub fn query_score(query: &str, item: &str) -> f64 {
     }
 
     result
+}
+
+#[inline]
+#[must_use]
+pub fn query_score_simple(query: &str, item: &str) -> f64 {
+    let words = query.split(' ').collect::<Vec<&str>>();
+    let mut missed_words = 0.0;
+    for word in &words {
+        if !item.contains(word) {
+            missed_words += 1.0;
+        }
+    }
+    1.0 - missed_words * (1.0 / words.len() as f64)
 }
 
 /// Returns a filtered `Vec<T>`, ordered by the scoring
