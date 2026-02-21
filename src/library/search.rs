@@ -149,7 +149,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
             }
         }
         last_word_index = max_match_index;
-        if max_match_score < 0.01 && !word.trim().is_empty() {
+        if max_match_score < 0.01 && !word.is_empty() {
             return 0.0;
         }
 
