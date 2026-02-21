@@ -124,18 +124,18 @@ impl<'s> Song {
 
         deserialize! {
             data => {
-                "uri"<"&str"> => uri,
-                "title"<"String"> => info.title,
-                "album"<"String"> => info.album,
-                "artist"<"String"> => info.artist,
-                "album_artist"<"String"> => info.album_artist,
-                "track"<"parse"> => info.track,
-                "disc"<"parse"> => info.disc,
-                "year"<"parse"> => info.year,
-                "duration"<"ClockTime"> => info.duration,
-                "modified"<"parse"> => user_info.modified,
-                "play_count"<"parse"> => user_info.play_count,
-                "rating"<"parse"> => user_info.rating,
+                "uri"<str> => uri,
+                "title"<String> => info.title,
+                "album"<String> => info.album,
+                "artist"<String> => info.artist,
+                "album_artist"<String> => info.album_artist,
+                "track"<parse> => info.track,
+                "disc"<parse> => info.disc,
+                "year"<parse> => info.year,
+                "duration"<ClockTime> => info.duration,
+                "modified"<parse> => user_info.modified,
+                "play_count"<parse> => user_info.play_count,
+                "rating"<parse> => user_info.rating,
             }
         }
 

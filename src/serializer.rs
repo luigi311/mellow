@@ -106,11 +106,11 @@ pub fn serialize_list(list: &[String]) -> String {
 ///
 /// deserialize! {
 ///     data => {
-///         "number"<"parse"> => number,
-///         "text"<"String"> => text,
-///         "time"<"ClockTime"> => time,
-///         "list"<"[String]"> => list,
-///         "numbers"<"[parse]"> => numbers,
+///         "number"<parse> => number,
+///         "text"<String> => text,
+///         "time"<ClockTime> => time,
+///         "list"<[String]> => list,
+///         "numbers"<[parse]> => numbers,
 ///     }
 /// }
 ///
@@ -151,22 +151,22 @@ macro_rules! deserialize {
         }
     };
 
-    (@to_value "parse", $value:expr, $field:expr) => {
+    (@to_value parse, $value:expr, $field:expr) => {
         $value.parse().map_err(|e| format!("{} {e}", $field))?
     };
-    (@to_value "&str", $value:expr, $field:expr) => {
+    (@to_value str, $value:expr, $field:expr) => {
         $value
     };
-    (@to_value "String", $value:expr, $field:expr) => {
+    (@to_value String, $value:expr, $field:expr) => {
         $value.to_owned()
     };
-    (@to_value "[parse]", $value:expr, $field:expr) => {
+    (@to_value [parse], $value:expr, $field:expr) => {
         $value.split(',').into_iter().map(|value| value.trim().parse().unwrap()).collect()
     };
-    (@to_value "[String]", $value:expr, $field:expr) => {
+    (@to_value [String], $value:expr, $field:expr) => {
         unescaped_split($value, ',')
     };
-    (@to_value "ClockTime", $value:expr, $field:expr) => {
+    (@to_value ClockTime, $value:expr, $field:expr) => {
         ClockTime::from_nseconds(
             $value.parse().map_err(|e| format!("{} {e}", $field))?
         )
