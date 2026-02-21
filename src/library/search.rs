@@ -133,16 +133,20 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 
     let query_words = query.split(' ').collect::<Vec<&str>>();
     let item_words = item.split(' ').collect::<Vec<&str>>();
+    let mut first_word = true;
     let mut last_word_index = 0;
     let mut score = 0.0;
     for word in &query_words {
         let mut max_match_score = 0.0;
         let mut max_match_index = 0;
         for (i, item_word) in item_words.iter().enumerate() {
-            if item_word.contains(word) && (i > last_word_index || last_word_index == 0) {
+            if item_word.contains(word) && (i > last_word_index || first_word) {
                 let word_score = word.len() as f64 / item_word.len() as f64;
                 if word_score > max_match_score {
-                    max_match_score = word_score / (i.max(1) - last_word_index) as f64;
+                    max_match_score = match first_word {
+                        false => word_score / (i - last_word_index) as f64,
+                        true => word_score,
+                    };
                     max_match_index = i;
                 }
             }
@@ -153,6 +157,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
         }
 
         score += max_match_score;
+        first_word = false;
     }
     score / query_words.len() as f64
 }
