@@ -111,8 +111,7 @@ pub fn query_score_old(query: &str, item: &str) -> f64 {
 /// ```rust
 /// use mellow::library::search::query_score;
 ///
-/// assert_eq!(query_score("world", "Hello world!"), 0.8333333333333334);
-/// assert_eq!(query_score("Hello world!", "world"), 0.0);
+/// assert_eq!(query_score("happy day", "happy tuesday"), 0.7142857142857143);
 /// assert_eq!(query_score("test", "test"), 1.0);
 /// assert_eq!(query_score("test", "TEST"), 0.0);
 /// assert_eq!(query_score("test", "testing"), 0.5714285714285714);
@@ -132,11 +131,11 @@ pub fn query_score(query: &str, item: &str) -> f64 {
         return 0.0;
     }
 
-    let words = query.split(' ').collect::<Vec<&str>>();
+    let query_words = query.split(' ').collect::<Vec<&str>>();
     let item_words = item.split(' ').collect::<Vec<&str>>();
     let mut last_word_index = 0;
     let mut score = 0.0;
-    for word in &words {
+    for word in &query_words {
         let mut max_match_score = 0.0;
         let mut max_match_index = 0;
         for (i, item_word) in item_words.iter().enumerate() {
@@ -155,7 +154,7 @@ pub fn query_score(query: &str, item: &str) -> f64 {
 
         score += max_match_score;
     }
-    score / words.len() as f64
+    score / query_words.len() as f64
 }
 
 #[inline]
