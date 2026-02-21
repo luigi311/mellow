@@ -103,7 +103,7 @@ pub fn query_score_old(query: &str, item: &str) -> f64 {
 /// scored based on factors such as ordering and spacing
 /// between the matched words. If small discrepancies
 /// between `query` and `input` should be allowed, use
-/// `query_score_adv` instead.
+/// `query_score_old` instead.
 ///
 /// Note: the comparison is case-sensitive
 ///
