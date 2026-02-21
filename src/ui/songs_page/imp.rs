@@ -132,12 +132,12 @@ impl SongsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let song_object = object.downcast_ref::<SongObject>().unwrap();
-            let score = search::query_score_simple(
+            let score = search::query_score(
                 &query.borrow().to_lowercase(),
                 &song_object.song().to_lowercase(),
             );
             song_object.set_rank(score);
-            score > search::SCORE_THRESHOLD
+            score > 0.01
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);

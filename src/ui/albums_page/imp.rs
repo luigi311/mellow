@@ -140,12 +140,12 @@ impl AlbumsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let album_object = object.downcast_ref::<AlbumObject>().unwrap();
-            let score = search::query_score_simple(
+            let score = search::query_score(
                 &query.borrow().to_lowercase(),
                 &album_object.album().to_lowercase(),
             );
             album_object.set_rank(score);
-            score >= search::SCORE_THRESHOLD
+            score > 0.01
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
