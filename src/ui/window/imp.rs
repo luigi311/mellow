@@ -332,7 +332,11 @@ impl Window {
         );
     }
     fn queue_song_loaded(&self, index: usize) {
-        let QueueItem::Song(song) = &self.song_queue.borrow()[index] else {
+        let song_queue = self.song_queue.borrow();
+        if index >= song_queue.len() {
+            return;
+        }
+        let QueueItem::Song(song) = &song_queue[index] else {
             return;
         };
         let info = song.info();
