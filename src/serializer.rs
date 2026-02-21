@@ -76,8 +76,8 @@ pub fn serialize_list(list: &[String]) -> String {
 /// if they are not present within the provided `data`
 ///
 /// # Panics
-/// This macro panics if a value cannot be parsed when used
-/// with types `parse`, `[parse]`, or `ClockTime`
+/// This macro panics if a value of type `parse`, `[parse]`,
+/// or `ClockTime` fails to parse
 ///
 /// # Example
 /// ```rust
