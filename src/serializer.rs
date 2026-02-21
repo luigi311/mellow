@@ -76,18 +76,12 @@ pub fn serialize_list(list: &[String]) -> String {
 /// if they are not present within the provided `data`
 ///
 /// # Panics
-/// This macro may panic when the `"[parse]"` type is used
-/// if the data cannot be parsed into the target type
-///
-/// # Errors
-/// This macro causes the caller to propagate an `Err`
-/// value of type `String` if a value cannot be parsed
-/// (with the exception of `"[parse]"`; see above)
+/// This macro panics if a value cannot be parsed when used
+/// with types `parse`, `[parse]`, or `ClockTime`
 ///
 /// # Example
 /// ```rust
-/// use mellow::deserialize;
-/// use mellow::unescaped_split;
+/// use mellow::{deserialize, unescaped_split};
 /// use gst::ClockTime;
 ///
 /// let mut number = 0;
@@ -126,15 +120,13 @@ pub fn serialize_list(list: &[String]) -> String {
 ///     ],
 /// );
 /// assert_eq!(numbers, [1, 2, 3, 4]);
-///
-/// Ok::<(), String>(())
 /// ```
 #[macro_export]
 macro_rules! deserialize {
     {$data:tt => {$($field:tt<$type:tt> => $target:expr,)+}} => {
         #[cfg(debug_assertions)]
         if $data.is_empty() {
-            Err("No data provided".to_string())?
+            panic!("No data provided");
         }
 
         for line in $data.lines() {
@@ -152,7 +144,7 @@ macro_rules! deserialize {
     };
 
     (@to_value parse, $value:expr, $field:expr) => {
-        $value.parse().map_err(|e| format!("{} {e}", $field))?
+        $value.parse().map_err(|e| format!("{} {e}", $field)).unwrap()
     };
     (@to_value str, $value:expr, $field:expr) => {
         $value
@@ -168,7 +160,7 @@ macro_rules! deserialize {
     };
     (@to_value ClockTime, $value:expr, $field:expr) => {
         ClockTime::from_nseconds(
-            $value.parse().map_err(|e| format!("{} {e}", $field))?
+            $value.parse().map_err(|e| format!("{} {e}", $field)).unwrap()
         )
     };
 }
