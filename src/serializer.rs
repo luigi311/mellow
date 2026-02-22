@@ -126,6 +126,7 @@ pub fn serialize_list(list: &[String]) -> String {
 /// assert_eq!(text, "hello".to_string());
 /// assert_eq!(text_str, "hi");
 /// assert_eq!(time, ClockTime::from_nseconds(50000));
+/// assert_eq!(numbers, [1, 2, 3, 4]);
 /// assert_eq!(
 ///     list,
 ///     ["one".to_owned(), "two".to_owned(), "three, four".to_owned()],
@@ -134,7 +135,6 @@ pub fn serialize_list(list: &[String]) -> String {
 ///     times,
 ///     [ClockTime::from_nseconds(12), ClockTime::from_nseconds(34)],
 /// );
-/// assert_eq!(numbers, [1, 2, 3, 4]);
 /// ```
 #[macro_export]
 macro_rules! deserialize {
