@@ -2,8 +2,8 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{gdk, glib};
 
-use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::cmp;
+use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
@@ -68,6 +68,62 @@ impl SongObject {
     pub fn shared_song(&self) -> SharedSong {
         Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
     }
+
+    #[inline]
+    pub fn order_cmp(&self, other: &Self, order_by: SongOrdering) -> gtk::Ordering {
+        match other.rank().total_cmp(&self.rank()) {
+            cmp::Ordering::Equal => match order_by {
+                SongOrdering::Default => self.cmp_default(other),
+                SongOrdering::BestRating => self.cmp_best_rating(other),
+                SongOrdering::MostPlayed => self.cmp_most_played(other),
+                SongOrdering::AddedNewer => self.cmp_added_newer(other),
+                SongOrdering::ModifiedNewer => self.cmp_modified_newer(other),
+            },
+            ordering => ordering,
+        }
+        .into()
+    }
+    #[inline]
+    fn cmp_default(&self, _other: &Self) -> cmp::Ordering {
+        // TODO: Should songs be ordered manually?
+        cmp::Ordering::Equal
+    }
+    #[inline]
+    fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
+        let rating_a = self.shared_song().info().user().rating;
+        let rating_b = other.shared_song().info().user().rating;
+        match rating_b.cmp(&rating_a) {
+            cmp::Ordering::Equal => self.cmp_default(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
+        let play_count_a = self.shared_song().info().user().play_count;
+        let play_count_b = other.shared_song().info().user().play_count;
+        match play_count_b.cmp(&play_count_a) {
+            cmp::Ordering::Equal => self.cmp_default(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
+        let added_a = self.shared_song().info().user().added;
+        let added_b = other.shared_song().info().user().added;
+        match added_b.cmp(&added_a) {
+            cmp::Ordering::Equal => self.cmp_default(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
+        let modified_a = self.shared_song().info().user().modified;
+        let modified_b = other.shared_song().info().user().modified;
+        match modified_b.cmp(&modified_a) {
+            cmp::Ordering::Equal => self.cmp_default(other),
+            ordering => ordering,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -77,4 +133,12 @@ pub struct SongData {
     artist: String,
     artwork: Option<gdk::Texture>,
     rank: f64,
+}
+
+pub enum SongOrdering {
+    Default,
+    BestRating,
+    MostPlayed,
+    AddedNewer,
+    ModifiedNewer,
 }

@@ -9,7 +9,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Songs, ToQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::item_row::ItemRow;
-use crate::ui::song_object::SongObject;
+use crate::ui::song_object::{SongObject, SongOrdering};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 #[derive(Default, CompositeTemplate)]
@@ -147,8 +147,8 @@ impl SongsPage {
         let sorter = gtk::CustomSorter::new(|object_a, object_b| {
             let song_a = object_a.downcast_ref::<SongObject>().unwrap();
             let song_b = object_b.downcast_ref::<SongObject>().unwrap();
-            // TODO: Should this be sorted beyond just the score?
-            song_b.rank().total_cmp(&song_a.rank()).into()
+            // TODO: Order mode selection in the UI
+            song_a.order_cmp(&song_b, SongOrdering::Default)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);

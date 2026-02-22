@@ -2,14 +2,13 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
-use std::cmp;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::artist_object::ArtistObject;
+use crate::ui::artist_object::{ArtistObject, ArtistOrdering};
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -155,11 +154,8 @@ impl ArtistsPage {
         let sorter = gtk::CustomSorter::new(|object_a, object_b| {
             let artist_a = object_a.downcast_ref::<ArtistObject>().unwrap();
             let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
-            match artist_b.rank().total_cmp(&artist_a.rank()) {
-                cmp::Ordering::Equal => artist_a.artist().cmp(&artist_b.artist()),
-                ordering => ordering,
-            }
-            .into()
+            // TODO: Order mode selection in the UI
+            artist_a.order_cmp(&artist_b, ArtistOrdering::Artist)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);

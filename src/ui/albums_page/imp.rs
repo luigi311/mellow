@@ -2,14 +2,13 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
-use std::cmp;
 use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Albums, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::album_object::AlbumObject;
+use crate::ui::album_object::{AlbumObject, AlbumOrdering};
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
@@ -155,17 +154,8 @@ impl AlbumsPage {
         let sorter = gtk::CustomSorter::new(|object_a, object_b| {
             let album_a = object_a.downcast_ref::<AlbumObject>().unwrap();
             let album_b = object_b.downcast_ref::<AlbumObject>().unwrap();
-            match album_b.rank().total_cmp(&album_a.rank()) {
-                cmp::Ordering::Equal => match album_a.artist().cmp(&album_b.artist()) {
-                    cmp::Ordering::Equal => match album_a.year().cmp(&album_b.year()) {
-                        cmp::Ordering::Equal => album_a.album().cmp(&album_b.album()),
-                        ordering => ordering,
-                    },
-                    ordering => ordering,
-                },
-                ordering => ordering,
-            }
-            .into()
+            // TODO: Order mode selection in the UI
+            album_a.order_cmp(&album_b, AlbumOrdering::ArtistYearAlbum)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);

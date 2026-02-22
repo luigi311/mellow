@@ -1,5 +1,5 @@
-use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::cmp;
+use std::sync::{Arc, atomic::Ordering};
 
 use adw::subclass::prelude::*;
 use glib::{Object, object::ObjectExt};
@@ -72,6 +72,73 @@ impl AlbumObject {
             .clone()
             .expect(EXP_INIT)
     }
+
+    #[inline]
+    pub fn order_cmp(&self, other: &Self, order_by: AlbumOrdering) -> gtk::Ordering {
+        match other.rank().total_cmp(&self.rank()) {
+            cmp::Ordering::Equal => match order_by {
+                AlbumOrdering::ArtistYearAlbum => self.cmp_artist_year_album(other),
+                AlbumOrdering::ModifiedNewer => self.cmp_modified_newer(other),
+                AlbumOrdering::AddedNewer => self.cmp_added_newer(other),
+                AlbumOrdering::MostPlayed => self.cmp_most_played(other),
+                AlbumOrdering::BestRating => self.cmp_best_rating(other),
+            },
+            ordering => ordering,
+        }
+        .into()
+    }
+    #[inline]
+    pub fn cmp_artist_year_album(&self, other: &Self) -> cmp::Ordering {
+        match self.artist().cmp(&other.artist()) {
+            cmp::Ordering::Equal => match self.year().cmp(&other.year()) {
+                cmp::Ordering::Equal => self.album().cmp(&other.album()),
+                ordering => ordering,
+            },
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
+        println!("TODO: Sorting by average play count is not yet implemented");
+        cmp::Ordering::Equal
+    }
+    #[inline]
+    fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
+        println!("TODO: Sorting by best rating is not yet implemented");
+        cmp::Ordering::Equal
+    }
+    #[inline]
+    fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
+        // NOTE: Comparing modification time using the first song is not necessarily correct
+        let modified_a = self.shared_album().lock().unwrap().songs[0]
+            .info()
+            .user()
+            .modified;
+        let modified_b = other.shared_album().lock().unwrap().songs[0]
+            .info()
+            .user()
+            .modified;
+        match modified_b.cmp(&modified_a) {
+            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
+        // NOTE: Comparing added time using the first song is not necessarily correct
+        let added_a = self.shared_album().lock().unwrap().songs[0]
+            .info()
+            .user()
+            .added;
+        let added_b = other.shared_album().lock().unwrap().songs[0]
+            .info()
+            .user()
+            .added;
+        match added_b.cmp(&added_a) {
+            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            ordering => ordering,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -82,4 +149,12 @@ pub struct AlbumData {
     artwork: Option<gdk::Texture>,
     year: u32,
     rank: f64,
+}
+
+pub enum AlbumOrdering {
+    ArtistYearAlbum,
+    ModifiedNewer,
+    AddedNewer,
+    BestRating,
+    MostPlayed,
 }
