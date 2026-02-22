@@ -20,6 +20,13 @@ letting music be the central point of focus.
 > forward. See the [Roadmap](#roadmap), [QA.md](QA.md), and [TODO.md](TODO.md)
 > for more information.
 
+> [!WARNING]
+> In its current (unfinished) state, Mellow may consume a lot of system resources due
+> to lack of artwork/thumbnail caching. There may also be memory leaks. For a decent
+> experience, ensure that you have enough free and available memory before trying it
+> on your system. With my configuration, Mellow takes up about 3 GB of RAM, and can
+> increase to over 6 GB in certain cases.
+
 # Philosophy
 
 Mellow's primary design goal is to minimize distraction and maximize immersion,
@@ -41,10 +48,11 @@ When the overlay is closed, it is time to enjoy the music.
 
 - ✨ Sleek and minimal interface - less for the eyes, more for the ears
 - 🌈 Adaptive colors - interface colors adapt to match the album cover
+- 🌊 Gapless playback - enjoy stutter-free transitions between songs
 - 📋 Song queue - view or edit the list of playing songs
 - 📀 Music library - browse and play your local music collection
 - 📂 File discovery - detects changed, moved, removed, or added song files
-- 🌊 Gapless playback - enjoy stutter-free transitions between songs
+- 🔗 Removable devices - unavailable libraries still keep all their data
 
 # Roadmap
 
@@ -60,7 +68,7 @@ When the overlay is closed, it is time to enjoy the music.
 | 5.3 | Songs page                                | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
 | 5.4 | Search/filter/sort                        | ⚠️ WIP: No filters or sort modes yet |
 |  6  | Play counts and ratings                   | ⚠️ WIP: No album ratings, play counts are not shown anywhere yet |
-|  7  | Tag-like playlists                        | ❌ TODO |
+|  7  | User-assigned tags                        | ❌ TODO |
 |  8  | D-Bus media integration (MPRIS)           | ❌ TODO |
 |  9  | Adaptive background/colors                | ✅ Done |
 

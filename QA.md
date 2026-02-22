@@ -28,9 +28,11 @@ Song Queue:
 
 Music Library:
 
-- [x] The 'Songs' page and its subpages do not have performance issues
+- [ ] The 'Songs' page and its subpages do not have performance issues
+  - FIX: Performance issues while scrolling at large window sizes
 - [ ] The 'Albums' page and its subpages do not have performance issues
   - FIX: Artwork loading on the album subpage blocks the main thread
+  - FIX: Performance issues while scrolling at large window sizes
 - [ ] The 'Artists' page and its subpages do not have performance issues
   - FIX: Artwork loading on the artist subpage blocks the main thread
 - [ ] Library building works in the background and doesn't affect functionality
@@ -52,3 +54,4 @@ User Experience:
 - [x] All settings load properly (test with non-default values)
 - [ ] Does not leak memory
   - FIX: Song queue memory leak (see TODO.md)
+  - FIX: Memory leak related to artwork loading in songs/albums pages
