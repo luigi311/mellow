@@ -208,7 +208,7 @@ impl QueuePage {
         }
         Ok(model_index)
     }
-    /// Takes a model index and returns the index to access its queue item
+    // /// Takes a model index and returns the index to access its queue item
     // #[inline]
     // #[must_use]
     // fn model_index_to_queue(&self, index: usize) -> usize {
