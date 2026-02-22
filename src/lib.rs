@@ -46,7 +46,7 @@ pub fn init_globals() {
 }
 
 /// Takes a duration in seconds and returns a nicely formatted
-/// `String` for display
+/// `String` for display (`(h:)(m)m:ss`)
 ///
 /// # Example:
 /// ```rust
@@ -72,7 +72,7 @@ pub fn format_duration(seconds_total: u64) -> String {
     }
 }
 /// Takes a duration in milliseconds and returns a nicely
-/// formatted `String` for display
+/// formatted `String` for display (`(h:)(m)m:ss`)
 ///
 /// # Example:
 /// ```rust
@@ -80,6 +80,7 @@ pub fn format_duration(seconds_total: u64) -> String {
 /// use mellow::format_duration_ms;
 ///
 /// assert_eq!(format_duration_ms(83000), "1:23");
+/// assert_eq!(format_duration_ms((60 * 60 + 83) * 1000), "1:01:23");
 /// ```
 #[inline]
 #[must_use]
