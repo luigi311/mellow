@@ -3,6 +3,7 @@ use gio::prelude::*;
 use gst::ClockTime;
 use gtk::{gdk, gio, glib};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use lofty::file::TaggedFile;
 use lofty::prelude::*;
@@ -60,7 +61,7 @@ impl<'s> Song {
     /// Constructs a new `Song` from a `gio::File`
     #[inline]
     #[must_use]
-    const fn from_file(file: gio::File) -> Song {
+    fn from_file(file: gio::File) -> Song {
         Song {
             album: Mutex::new(None),
             file,
@@ -104,6 +105,7 @@ impl<'s> Song {
             info.disc => "disc",
             info.year => "year",
             info.duration.nseconds() => "duration",
+            user_info.added => "added",
             user_info.modified => "modified",
             user_info.play_count => "play_count",
             user_info.rating => "rating",
@@ -133,6 +135,7 @@ impl<'s> Song {
                 "disc"<?> => info.disc,
                 "year"<?> => info.year,
                 "duration"<ClockTime> => info.duration,
+                "added"<?> => user_info.added,
                 "modified"<?> => user_info.modified,
                 "play_count"<?> => user_info.play_count,
                 "rating"<?> => user_info.rating,
@@ -605,6 +608,7 @@ pub struct SongInfo {
 }
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
+    pub added: u64,
     pub modified: i64,
     pub play_count: usize,
     pub rating: u8,
@@ -639,16 +643,19 @@ impl Default for SongInfo {
     }
 }
 
-impl UserSongInfo {
-    #[must_use]
-    pub const fn default() -> Self {
+impl Default for UserSongInfo {
+    fn default() -> Self {
         Self {
+            added: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or_else(|_| 0, |time| time.as_secs()),
             modified: 0,
             play_count: 0,
             rating: 0,
         }
     }
-
+}
+impl UserSongInfo {
     /// Copies info from `other` and merges into `self`:
     /// - Play counts are summed up
     /// - Ratings are averaged, or whichever one is non-zero is used
