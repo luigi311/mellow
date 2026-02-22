@@ -209,12 +209,12 @@ impl QueuePage {
         Ok(model_index)
     }
     /// Takes a model index and returns the index to access its queue item
-    #[inline]
-    #[must_use]
-    fn model_index_to_queue(&self, index: usize) -> usize {
-        let playing_index = self.playing_index.get();
-        index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
-    }
+    // #[inline]
+    // #[must_use]
+    // fn model_index_to_queue(&self, index: usize) -> usize {
+    //     let playing_index = self.playing_index.get();
+    //     index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
+    // }
 
     /// Empties the list model, cancelling any pending background tasks during drop
     pub fn uninit(&self) {
