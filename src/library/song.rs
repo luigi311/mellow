@@ -10,6 +10,8 @@ use lofty::prelude::*;
 use lofty::probe::Probe;
 
 use crate::library::album::SharedAlbum;
+use crate::serializer::serialize_list;
+use crate::unescaped_split;
 use crate::{deserialize, serialize};
 
 pub struct Song {
@@ -97,6 +99,8 @@ impl<'s> Song {
 
         serialize! {
             uri => "uri",
+            user_info.added => "added",
+            user_info.modified => "modified",
             info.title => "title",
             info.album => "album",
             info.artist => "artist",
@@ -105,10 +109,9 @@ impl<'s> Song {
             info.disc => "disc",
             info.year => "year",
             info.duration.nseconds() => "duration",
-            user_info.added => "added",
-            user_info.modified => "modified",
             user_info.play_count => "play_count",
             user_info.rating => "rating",
+            serialize_list(&user_info.tags) => "tags",
         }
     }
 
@@ -127,6 +130,8 @@ impl<'s> Song {
         deserialize! {
             data => {
                 "uri"<str> => uri,
+                "added"<?> => user_info.added,
+                "modified"<?> => user_info.modified,
                 "title"<String> => info.title,
                 "album"<String> => info.album,
                 "artist"<String> => info.artist,
@@ -135,10 +140,9 @@ impl<'s> Song {
                 "disc"<?> => info.disc,
                 "year"<?> => info.year,
                 "duration"<ClockTime> => info.duration,
-                "added"<?> => user_info.added,
-                "modified"<?> => user_info.modified,
                 "play_count"<?> => user_info.play_count,
                 "rating"<?> => user_info.rating,
+                "tags"<[String]> => user_info.tags,
             }
         }
 
@@ -612,6 +616,7 @@ pub struct UserSongInfo {
     pub modified: i64,
     pub play_count: usize,
     pub rating: u8,
+    pub tags: Vec<String>,
 }
 /// Fields which do not need to be held in memory at all times
 pub struct DetailedSongInfo {
@@ -652,6 +657,7 @@ impl Default for UserSongInfo {
             modified: 0,
             play_count: 0,
             rating: 0,
+            tags: Vec::new(),
         }
     }
 }
