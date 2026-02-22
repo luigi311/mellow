@@ -25,9 +25,9 @@ pub struct MainPlayer {
     #[template_child]
     pub seek_bar: TemplateChild<gtk::Scale>,
     #[template_child]
-    pub time_cur_label: TemplateChild<gtk::Label>,
+    pub current_time: TemplateChild<gtk::Label>,
     #[template_child]
-    pub time_end_label: TemplateChild<gtk::Label>,
+    pub duration: TemplateChild<gtk::Label>,
 }
 
 #[gtk::template_callbacks]

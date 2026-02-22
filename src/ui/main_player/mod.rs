@@ -1,12 +1,10 @@
 use adw::{prelude::*, subclass::prelude::*};
+use gst::ClockTime;
 use gtk::Orientation;
 use gtk::{gdk, glib};
 
-use gst::ClockTime;
-use std::time::Duration;
-
 use crate::excuses::{EXP_RX, EXP_SAFE};
-use crate::format_duration;
+use crate::format_duration_ms;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::fallback_song_image;
 
@@ -56,7 +54,7 @@ impl MainPlayer {
         album: &str,
         artist: &str,
         artwork: Option<&gdk::Texture>,
-        song_duration: &Duration,
+        song_duration_ms: u64,
     ) {
         let ui = self.imp();
 
@@ -70,9 +68,9 @@ impl MainPlayer {
         ui.album_title.set_label(album);
         ui.artist_name.set_label(artist);
 
-        match song_duration.is_zero() {
-            true => ui.time_end_label.set_label("-:--"),
-            false => ui.time_end_label.set_label(&format_duration(song_duration)),
+        match song_duration_ms {
+            0 => ui.duration.set_label("-:--"),
+            _ => ui.duration.set_label(&format_duration_ms(song_duration_ms)),
         }
     }
 
@@ -80,8 +78,7 @@ impl MainPlayer {
     pub fn set_time(&self, time: Option<ClockTime>, duration_ms: f64) {
         let ui = self.imp();
         if let Some(time_ms) = time.map(gst::ClockTime::mseconds) {
-            ui.time_cur_label
-                .set_label(&format_duration(&Duration::from_millis(time_ms)));
+            ui.current_time.set_label(&format_duration_ms(time_ms));
             ui.seek_bar.set_child_visible(true);
             if duration_ms > 0.0 {
                 ui.seek_bar.set_sensitive(true);
@@ -92,7 +89,7 @@ impl MainPlayer {
                 ui.seek_bar.set_value(0.0);
             }
         } else {
-            ui.time_cur_label.set_label("-:--");
+            ui.current_time.set_label("-:--");
             ui.seek_bar.set_child_visible(false);
             ui.seek_bar.set_sensitive(false);
             ui.seek_bar.set_value(0.0);

@@ -3,7 +3,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::format_duration_seconds;
+use crate::format_duration;
 use crate::library::album::SharedAlbum;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
@@ -66,7 +66,7 @@ impl AlbumPage {
             );
             song_row.set_title(&info.title);
             let duration = song.info().load_basic().as_ref().unwrap().duration;
-            song_row.set_suffix_label(&format_duration_seconds(duration.seconds()));
+            song_row.set_suffix_label(&format_duration(duration.seconds()));
 
             let song = Arc::clone(song);
             let album = Arc::clone(album);

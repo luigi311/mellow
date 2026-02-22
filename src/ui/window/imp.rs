@@ -5,7 +5,6 @@ use gtk::{CompositeTemplate, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
@@ -112,17 +111,17 @@ impl Window {
 
     #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) -> ! {
-        let mut song_duration = Duration::default();
+        let mut song_duration_ms = 0;
         loop {
             match ui_rx.recv().await.unwrap() {
+                UpdateUI::SongInfo => self.update_song_info(&mut song_duration_ms),
+                UpdateUI::PlayerTime(time) => {
+                    self.main_player.set_time(time, song_duration_ms as f64);
+                }
                 UpdateUI::PlayerState(playing, interactive) => {
                     self.main_player.set_state(playing, interactive);
                 }
-                UpdateUI::PlayerTime(time) => {
-                    self.main_player
-                        .set_time(time, song_duration.as_millis() as f64);
-                }
-                UpdateUI::SongInfo => self.update_song_info(&mut song_duration),
+
                 UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::RedrawQueue => self.update_song_index(self.song_queue_index.get()),
@@ -163,7 +162,7 @@ impl Window {
         }
     }
 
-    fn update_song_info(&self, song_duration: &mut Duration) {
+    fn update_song_info(&self, song_duration_ms: &mut u64) {
         println!("update_song_info()");
         let queue = self.song_queue.borrow();
         if queue.is_empty() {
@@ -193,7 +192,7 @@ impl Window {
             song_info.album.clone(),
             song_info.artist.clone(),
         );
-        *song_duration = Duration::from_millis(song_info.duration.mseconds());
+        *song_duration_ms = song_info.duration.mseconds();
         drop(song_info_temp);
 
         let detailed_info = info.try_inspect_detailed();
@@ -221,7 +220,7 @@ impl Window {
         };
 
         self.main_player
-            .set_info(&title, &album, &artist, artwork, song_duration);
+            .set_info(&title, &album, &artist, artwork, *song_duration_ms);
 
         match artwork {
             Some(artwork) => self.settings_page.set_background_from_artwork(artwork),

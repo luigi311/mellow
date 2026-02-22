@@ -5,7 +5,7 @@ use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::format_duration_seconds;
+use crate::format_duration;
 use crate::library::song::SharedSong;
 use crate::library::{LIBRARY_TX, Library};
 use crate::player::queue_item::QueueItem;
@@ -162,7 +162,7 @@ impl QueuePage {
         let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         object.set_title(song_info.title.clone());
         object.set_subtitle(song_info.artist.clone());
-        object.set_suffix(format_duration_seconds(song_info.duration.seconds()));
+        object.set_suffix(format_duration(song_info.duration.seconds()));
         drop(song_info_temp);
 
         // TODO: Cached low-res album covers

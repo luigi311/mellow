@@ -107,7 +107,7 @@
           <object class="GtkBox">
             <property name="hexpand">True</property>
             <child>
-              <object class="GtkLabel" id="time_cur_label">
+              <object class="GtkLabel" id="current_time">
                 <property name="label">-:--</property>
                 <property name="halign">start</property>
                 <style>
@@ -131,7 +131,7 @@
               </object>
             </child>
             <child>
-              <object class="GtkLabel" id="time_end_label">
+              <object class="GtkLabel" id="duration">
                 <property name="label">-:--</property>
                 <property name="halign">end</property>
                 <style>

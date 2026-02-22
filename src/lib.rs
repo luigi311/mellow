@@ -19,7 +19,6 @@ use gtk::glib;
 use std::fs::{self, DirEntry};
 use std::path::Path;
 use std::sync::OnceLock;
-use std::time::Duration;
 use std::{io, mem, ptr};
 
 pub mod about;
@@ -46,27 +45,19 @@ pub fn init_globals() {
     ));
 }
 
-/// Takes a `&Duration` and returns a nicely formatted `String`
-/// for display
+/// Takes a duration in seconds and returns a nicely formatted
+/// `String` for display
 ///
 /// # Example:
 /// ```rust
 /// use std::time::Duration;
 /// use mellow::format_duration;
 ///
-/// let duration = Duration::from_secs(83);
-/// let formatted = format_duration(&duration);
-///
-/// assert_eq!(formatted, "1:23");
+/// assert_eq!(format_duration(83), "1:23");
 /// ```
 #[inline]
 #[must_use]
-pub fn format_duration(duration: &Duration) -> String {
-    format_duration_seconds(duration.as_secs())
-}
-#[inline]
-#[must_use]
-pub fn format_duration_seconds(seconds_total: u64) -> String {
+pub fn format_duration(seconds_total: u64) -> String {
     let seconds = seconds_total % 60;
     // TODO: Support hours
     // IDEA: Support days (for playlists, maybe `format_duration_long()`)
@@ -75,6 +66,21 @@ pub fn format_duration_seconds(seconds_total: u64) -> String {
         (seconds_total - seconds) / 60,
         if seconds < 10 { "0" } else { "" }
     )
+}
+/// Takes a duration in milliseconds and returns a nicely
+/// formatted `String` for display
+///
+/// # Example:
+/// ```rust
+/// use std::time::Duration;
+/// use mellow::format_duration_ms;
+///
+/// assert_eq!(format_duration_ms(83000), "1:23");
+/// ```
+#[inline]
+#[must_use]
+pub fn format_duration_ms(milliseconds_total: u64) -> String {
+    format_duration(milliseconds_total / 1000)
 }
 
 /// Returns a value between `left` and `right` at point `mid`
