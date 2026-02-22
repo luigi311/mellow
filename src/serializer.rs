@@ -127,10 +127,7 @@ pub fn serialize_list(list: &[String]) -> String {
 /// assert_eq!(text_str, "hi");
 /// assert_eq!(time, ClockTime::from_nseconds(50000));
 /// assert_eq!(numbers, [1, 2, 3, 4]);
-/// assert_eq!(
-///     list,
-///     ["one".to_owned(), "two".to_owned(), "three, four".to_owned()],
-/// );
+/// assert_eq!(list, ["one", "two", "three, four"]);
 /// assert_eq!(
 ///     times,
 ///     [ClockTime::from_nseconds(12), ClockTime::from_nseconds(34)],

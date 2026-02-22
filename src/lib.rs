@@ -57,7 +57,7 @@ pub fn init_globals() {
 /// let duration = Duration::from_secs(83);
 /// let formatted = format_duration(&duration);
 ///
-/// assert_eq!(formatted, "1:23".to_owned());
+/// assert_eq!(formatted, "1:23");
 /// ```
 #[inline]
 #[must_use]
@@ -217,10 +217,10 @@ impl<T> ReorderVecExt for Vec<T> {
     /// assert_eq!(
     ///     strings,
     ///     [
-    ///         "a".to_owned(),
-    ///         "much longer string to test if everything still works regardless".to_owned(),
-    ///         "b".to_owned(),
-    ///         "c".to_owned(),
+    ///         "a",
+    ///         "much longer string to test if everything still works regardless",
+    ///         "b",
+    ///         "c",
     ///     ]
     /// );
     /// ```
