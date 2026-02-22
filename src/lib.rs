@@ -54,18 +54,22 @@ pub fn init_globals() {
 /// use mellow::format_duration;
 ///
 /// assert_eq!(format_duration(83), "1:23");
+/// assert_eq!(format_duration(60 * 60 + 83), "1:01:23");
 /// ```
 #[inline]
 #[must_use]
 pub fn format_duration(seconds_total: u64) -> String {
     let seconds = seconds_total % 60;
-    // TODO: Support hours
-    // IDEA: Support days (for playlists, maybe `format_duration_long()`)
-    format!(
-        "{}:{}{seconds}",
-        (seconds_total - seconds) / 60,
-        if seconds < 10 { "0" } else { "" }
-    )
+    if seconds_total < 60 * 60 {
+        format!("{}:{seconds:02}", (seconds_total - seconds) / 60)
+    } else {
+        let minutes_total = (seconds_total - seconds) / 60;
+        let minutes = minutes_total % 60;
+        format!(
+            "{}:{minutes:02}:{seconds:02}",
+            (minutes_total - minutes) / 60,
+        )
+    }
 }
 /// Takes a duration in milliseconds and returns a nicely
 /// formatted `String` for display
@@ -81,6 +85,11 @@ pub fn format_duration(seconds_total: u64) -> String {
 #[must_use]
 pub fn format_duration_ms(milliseconds_total: u64) -> String {
     format_duration(milliseconds_total / 1000)
+}
+#[inline]
+#[must_use]
+pub fn format_duration_minutes(minutes_total: u64) -> String {
+    todo!("TODO: Format long times (minutes, hours, days)")
 }
 
 /// Returns a value between `left` and `right` at point `mid`
