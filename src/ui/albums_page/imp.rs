@@ -80,6 +80,7 @@ impl AlbumsPage {
         self.play_now(true);
     }
 
+    #[inline]
     fn play_now(&self, shuffle: bool) {
         let model = self.albums_grid.model().expect(EXP_INIT);
         let n_items = model.n_items();
@@ -113,6 +114,7 @@ impl AlbumsPage {
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
 
+    #[inline]
     pub fn load_albums(&self, albums: &Albums) {
         if albums.is_empty() {
             self.albums_grid.set_model(None::<&gtk::NoSelection>);

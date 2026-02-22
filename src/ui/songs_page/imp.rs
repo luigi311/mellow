@@ -81,6 +81,7 @@ impl SongsPage {
         self.play_now(true);
     }
 
+    #[inline]
     fn play_now(&self, shuffle: bool) {
         let model = self.songs_grid.model().expect(EXP_INIT);
         let n_items = model.n_items();
@@ -114,6 +115,7 @@ impl SongsPage {
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
 
+    #[inline]
     pub fn load_songs(&self, songs: &Songs) {
         if songs.is_empty() {
             self.songs_grid.set_model(None::<&gtk::NoSelection>);

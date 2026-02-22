@@ -18,6 +18,7 @@ glib::wrapper! {
 }
 
 impl AlbumPage {
+    #[inline]
     pub fn update(&self, album: &SharedAlbum) {
         let ui = self.imp();
         let album_locked = album.lock().unwrap();

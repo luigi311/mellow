@@ -192,6 +192,9 @@ impl SongInfoLoader<'_> {
         self.file.uri().to_string()
     }
     /// Returns the full song file path
+    ///
+    /// # Panics
+    /// The function panics if the path is not valid UTF-8
     #[inline]
     #[must_use]
     pub fn file_path(&self) -> String {

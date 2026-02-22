@@ -13,6 +13,7 @@ glib::wrapper! {
 }
 
 impl SongPage {
+    #[inline]
     pub fn update(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
         let song_page = self.imp();
 

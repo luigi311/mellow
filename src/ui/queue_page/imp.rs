@@ -121,7 +121,7 @@ impl QueuePage {
                             info.as_ref().is_some_and(|info| {
                                 info.artwork
                                     .as_ref()
-                                    .is_some_and(|artwork| artwork.ref_count() == 1)
+                                    .is_some_and(|artwork| artwork.ref_count() < 2)
                             })
                         })
                     {

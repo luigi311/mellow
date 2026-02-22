@@ -80,6 +80,7 @@ impl ArtistsPage {
         self.play_now(true);
     }
 
+    #[inline]
     fn play_now(&self, shuffle: bool) {
         let model = self.artists_grid.model().expect(EXP_INIT);
         let n_items = model.n_items();
@@ -113,6 +114,7 @@ impl ArtistsPage {
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
 
+    #[inline]
     pub fn load_artists(&self, artsits: &Artists) {
         if artsits.is_empty() {
             self.artists_grid.set_model(None::<&gtk::NoSelection>);

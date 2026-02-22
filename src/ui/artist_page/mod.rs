@@ -17,6 +17,7 @@ glib::wrapper! {
 }
 
 impl ArtistPage {
+    #[inline]
     pub fn update(&self, artist: &SharedArtist) {
         let ui = self.imp();
         ui.artist.replace(Some(Arc::clone(artist)));

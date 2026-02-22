@@ -76,6 +76,7 @@ impl MainPlayer {
         }
     }
 
+    #[inline]
     pub fn set_time(&self, time: Option<ClockTime>, duration_ms: f64) {
         let ui = self.imp();
         if let Some(time_ms) = time.map(gst::ClockTime::mseconds) {
