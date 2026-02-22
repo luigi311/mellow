@@ -192,7 +192,7 @@ impl Window {
             song_info.album.clone(),
             song_info.artist.clone(),
         );
-        *song_duration_ms = song_info.duration.mseconds();
+        *song_duration_ms = song_info.duration_ms;
         drop(song_info_temp);
 
         let detailed_info = info.try_inspect_detailed();

@@ -1,6 +1,5 @@
 use core::error::Error;
 use gio::prelude::*;
-use gst::ClockTime;
 use gtk::{gdk, gio, glib};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -108,7 +107,7 @@ impl<'s> Song {
             info.track => "track",
             info.disc => "disc",
             info.year => "year",
-            info.duration.nseconds() => "duration",
+            info.duration_ms => "duration",
             user_info.play_count => "play_count",
             user_info.rating => "rating",
             serialize_list(&user_info.tags) => "tags",
@@ -139,7 +138,7 @@ impl<'s> Song {
                 "track"<?> => info.track,
                 "disc"<?> => info.disc,
                 "year"<?> => info.year,
-                "duration"<ClockTime> => info.duration,
+                "duration"<?> => info.duration_ms,
                 "play_count"<?> => user_info.play_count,
                 "rating"<?> => user_info.rating,
                 "tags"<[String]> => user_info.tags,
@@ -431,7 +430,7 @@ impl SongInfoLoader<'_> {
             disc: tag.disk().unwrap_or(1),
             year: tag.date().unwrap_or_default().year,
             #[allow(clippy::cast_possible_truncation)]
-            duration: ClockTime::from_mseconds(properties.duration().as_millis() as u64),
+            duration_ms: properties.duration().as_millis() as u64,
         })
     }
 
@@ -608,7 +607,7 @@ pub struct SongInfo {
     pub track: u32,
     pub disc: u32,
     pub year: u16,
-    pub duration: ClockTime,
+    pub duration_ms: u64,
 }
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
@@ -643,7 +642,7 @@ impl Default for SongInfo {
             track: 0,
             disc: 1,
             year: 0,
-            duration: ClockTime::ZERO,
+            duration_ms: 0,
         }
     }
 }
