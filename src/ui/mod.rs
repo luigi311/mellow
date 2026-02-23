@@ -1,6 +1,7 @@
 use adw::{self, Application, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
 use gtk::{self, gdk, gio, glib};
+use std::cell::Cell;
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -116,4 +117,18 @@ pub fn fallback_album_image() -> gdk::Paintable {
 pub fn fallback_song_image() -> gdk::Paintable {
     // TODO: Fallback image for songs (maybe a symbolic note icon?)
     gdk::Paintable::new_empty(1, 1)
+}
+
+#[derive(Clone, Copy)]
+pub struct SortConfig<O: 'static> {
+    pub ordering: &'static Cell<O>,
+    pub reversed: &'static Cell<bool>,
+}
+impl<O> SortConfig<O> {
+    pub fn new(ordering: O, reversed: bool) -> SortConfig<O> {
+        SortConfig {
+            ordering: Box::leak(Box::new(Cell::new(ordering))),
+            reversed: Box::leak(Box::new(Cell::new(reversed))),
+        }
+    }
 }

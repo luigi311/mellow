@@ -8,9 +8,9 @@ use std::sync::{Arc, atomic::Ordering};
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Albums, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::album_object::{AlbumObject, AlbumOrdering, AlbumsSortConfig};
+use crate::ui::album_object::{AlbumObject, AlbumOrdering};
 use crate::ui::item_tile::ItemTile;
-use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::ui::{SortConfig, UI_TX, UpdateUI, fallback_album_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/albums_page.ui")]
@@ -39,7 +39,7 @@ pub struct AlbumsPage {
     filter: Rc<RefCell<gtk::CustomFilter>>,
     sorter: Rc<RefCell<gtk::CustomSorter>>,
 
-    sort_mode: OnceCell<AlbumsSortConfig>,
+    sort_mode: OnceCell<SortConfig<AlbumOrdering>>,
 }
 
 #[gtk::template_callbacks]
@@ -217,7 +217,7 @@ impl ObjectImpl for AlbumsPage {
     fn constructed(&self) {
         let _ = self
             .sort_mode
-            .set(AlbumsSortConfig::new(AlbumOrdering::ArtistYearAlbum, false));
+            .set(SortConfig::new(AlbumOrdering::ArtistYearAlbum, false));
 
         self.albums_grid.connect_activate(|grid, index| {
             let index = grid

@@ -1,7 +1,6 @@
 use adw::subclass::prelude::*;
 use glib::{Object, object::ObjectExt};
 use gtk::{gdk, glib};
-use std::cell::{Cell, RefCell};
 use std::cmp;
 use std::sync::{Arc, atomic};
 
@@ -9,7 +8,7 @@ use crate::excuses::EXP_INIT;
 use crate::library::album::SharedAlbum;
 use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{SortConfig, UI_TX, UpdateUI};
 
 mod imp;
 
@@ -74,9 +73,9 @@ impl AlbumObject {
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self, sort_by: AlbumsSortConfig) -> gtk::Ordering {
+    pub fn order_cmp(&self, other: &Self, sort_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match *sort_by.ordering.borrow() {
+            cmp::Ordering::Equal => match sort_by.ordering.get() {
                 AlbumOrdering::ArtistYearAlbum => self.cmp_artist_year_album(other),
                 AlbumOrdering::ModifiedNewer => self.cmp_modified_newer(other),
                 AlbumOrdering::AddedNewer => self.cmp_added_newer(other),
@@ -155,24 +154,11 @@ pub struct AlbumData {
     rank: f64,
 }
 
+#[derive(Clone, Copy)]
 pub enum AlbumOrdering {
     ArtistYearAlbum,
     ModifiedNewer,
     AddedNewer,
     BestRating,
     MostPlayed,
-}
-
-#[derive(Clone, Copy)]
-pub struct AlbumsSortConfig {
-    pub ordering: &'static RefCell<AlbumOrdering>,
-    pub reversed: &'static Cell<bool>,
-}
-impl AlbumsSortConfig {
-    pub fn new(ordering: AlbumOrdering, reversed: bool) -> AlbumsSortConfig {
-        AlbumsSortConfig {
-            ordering: Box::leak(Box::new(RefCell::new(ordering))),
-            reversed: Box::leak(Box::new(Cell::new(reversed))),
-        }
-    }
 }

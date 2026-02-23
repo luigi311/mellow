@@ -9,8 +9,8 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Songs, ToQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::item_row::ItemRow;
-use crate::ui::song_object::{SongObject, SongOrdering, SongsSortConfig};
-use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+use crate::ui::song_object::{SongObject, SongOrdering};
+use crate::ui::{SortConfig, UI_TX, UpdateUI, fallback_song_image};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
@@ -41,7 +41,7 @@ pub struct SongsPage {
     filter: Rc<RefCell<gtk::CustomFilter>>,
     sorter: Rc<RefCell<gtk::CustomSorter>>,
 
-    sort_mode: OnceCell<SongsSortConfig>,
+    sort_mode: OnceCell<SortConfig<SongOrdering>>,
 }
 
 #[gtk::template_callbacks]
@@ -210,7 +210,7 @@ impl ObjectImpl for SongsPage {
     fn constructed(&self) {
         let _ = self
             .sort_mode
-            .set(SongsSortConfig::new(SongOrdering::Default, false));
+            .set(SortConfig::new(SongOrdering::Default, false));
 
         self.songs_grid.connect_activate(|grid, index| {
             let index = grid

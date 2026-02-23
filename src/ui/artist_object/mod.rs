@@ -1,12 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{gdk, glib};
-use std::cell::{Cell, RefCell};
 use std::cmp;
 use std::sync::Arc;
 
 use crate::excuses::EXP_INIT;
 use crate::library::artist::SharedArtist;
+use crate::ui::SortConfig;
 
 mod imp;
 
@@ -50,9 +50,9 @@ impl ArtistObject {
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self, order_by: ArtistsSortConfig) -> gtk::Ordering {
+    pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match *order_by.ordering.borrow() {
+            cmp::Ordering::Equal => match order_by.ordering.get() {
                 ArtistOrdering::Artist => self.cmp_artist(other),
                 ArtistOrdering::AddedNewer => self.cmp_added_newer(other),
                 ArtistOrdering::ModifiedNewer => self.cmp_modified_newer(other),
@@ -138,24 +138,11 @@ pub struct ArtistData {
     rank: f64,
 }
 
+#[derive(Clone, Copy)]
 pub enum ArtistOrdering {
     // IDEA: Sort by average play count
     // IDEA: Sort by best average rating
     Artist,
     AddedNewer,
     ModifiedNewer,
-}
-
-#[derive(Clone, Copy)]
-pub struct ArtistsSortConfig {
-    pub ordering: &'static RefCell<ArtistOrdering>,
-    pub reversed: &'static Cell<bool>,
-}
-impl ArtistsSortConfig {
-    pub fn new(ordering: ArtistOrdering, reversed: bool) -> ArtistsSortConfig {
-        ArtistsSortConfig {
-            ordering: Box::leak(Box::new(RefCell::new(ordering))),
-            reversed: Box::leak(Box::new(Cell::new(reversed))),
-        }
-    }
 }

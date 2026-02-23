@@ -8,9 +8,9 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::artist_object::{ArtistObject, ArtistOrdering, ArtistsSortConfig};
+use crate::ui::artist_object::{ArtistObject, ArtistOrdering};
 use crate::ui::item_tile::ItemTile;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{SortConfig, UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]
@@ -39,7 +39,7 @@ pub struct ArtistsPage {
     filter: Rc<RefCell<gtk::CustomFilter>>,
     sorter: Rc<RefCell<gtk::CustomSorter>>,
 
-    sort_mode: OnceCell<ArtistsSortConfig>,
+    sort_mode: OnceCell<SortConfig<ArtistOrdering>>,
 }
 
 #[gtk::template_callbacks]
@@ -218,7 +218,7 @@ impl ObjectImpl for ArtistsPage {
     fn constructed(&self) {
         let _ = self
             .sort_mode
-            .set(ArtistsSortConfig::new(ArtistOrdering::Artist, false));
+            .set(SortConfig::new(ArtistOrdering::Artist, false));
 
         self.artists_grid.connect_activate(|grid, index| {
             let index = grid
