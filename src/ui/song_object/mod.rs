@@ -112,7 +112,7 @@ impl SongObject {
         let rating_a = self.shared_song().info().user().rating;
         let rating_b = other.shared_song().info().user().rating;
         match rating_b.cmp(&rating_a) {
-            cmp::Ordering::Equal => self.cmp_default(other),
+            cmp::Ordering::Equal => self.cmp_most_played(other),
             ordering => ordering,
         }
     }
