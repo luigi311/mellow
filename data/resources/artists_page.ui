@@ -16,17 +16,17 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">Default</attribute>
-        <attribute name='action'>menu.songs_sort_mode</attribute>
+        <attribute name='action'>menu.artists_sort_mode</attribute>
         <attribute name='target' type='s'>"Default"</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">Added</attribute>
-        <attribute name='action'>menu.songs_sort_mode</attribute>
+        <attribute name='action'>menu.artists_sort_mode</attribute>
         <attribute name='target' type='s'>"Added"</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">Modified</attribute>
-        <attribute name='action'>menu.songs_sort_mode</attribute>
+        <attribute name='action'>menu.artists_sort_mode</attribute>
         <attribute name='target' type='s'>"Modified"</attribute>
       </item>
     </section>
