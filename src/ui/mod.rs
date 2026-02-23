@@ -125,6 +125,10 @@ pub struct SortConfig<O: 'static> {
     pub reversed: &'static Cell<bool>,
 }
 impl<O> SortConfig<O> {
+    /// Constructs a new instance of `SortConfig`
+    ///
+    /// Note: Once constructed, the data will remain
+    /// in memory for the duration of the program
     pub fn new(ordering: O, reversed: bool) -> SortConfig<O> {
         SortConfig {
             ordering: Box::leak(Box::new(Cell::new(ordering))),
