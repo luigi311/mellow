@@ -3,12 +3,13 @@ use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::artist_object::{ArtistObject, ArtistOrdering};
+use crate::ui::artists_page::{ARTIST_ORDERING, ARTISTS_REVERSE_ORDER};
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -19,6 +20,8 @@ pub struct ArtistsPage {
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
     shuffle_button: TemplateChild<adw::SplitButton>,
+    #[template_child]
+    sort_button: TemplateChild<adw::SplitButton>,
 
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
@@ -154,8 +157,7 @@ impl ArtistsPage {
         let sorter = gtk::CustomSorter::new(|object_a, object_b| {
             let artist_a = object_a.downcast_ref::<ArtistObject>().unwrap();
             let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
-            // TODO: Order mode selection in the UI
-            artist_a.order_cmp(&artist_b, ArtistOrdering::Artist)
+            artist_a.order_cmp(&artist_b)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
@@ -167,6 +169,22 @@ impl ArtistsPage {
     #[inline]
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
         self.artists.borrow()[index as usize].set_property("artwork", artwork);
+    }
+
+    #[inline]
+    pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
+        *ARTIST_ORDERING.write().unwrap() = sort_mode;
+        self.sorter.borrow().changed(gtk::SorterChange::Different);
+    }
+    #[template_callback]
+    pub fn handle_reverse_sort(&self) {
+        let old_order = ARTISTS_REVERSE_ORDER.load(Ordering::Relaxed);
+        ARTISTS_REVERSE_ORDER.store(!old_order, Ordering::Relaxed);
+        self.sorter.borrow().changed(gtk::SorterChange::Inverted);
+        self.sort_button.set_icon_name(match !old_order {
+            true => "view-sort-ascending-symbolic",
+            false => "view-sort-descending-symbolic",
+        });
     }
 
     #[inline]

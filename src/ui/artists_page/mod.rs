@@ -1,9 +1,13 @@
 use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
+use std::sync::{RwLock, atomic::AtomicBool};
 
-use crate::library::Artists;
+use crate::{library::Artists, ui::artist_object::ArtistOrdering};
 
 mod imp;
+
+pub static ARTIST_ORDERING: RwLock<ArtistOrdering> = RwLock::new(ArtistOrdering::Artist);
+pub static ARTISTS_REVERSE_ORDER: AtomicBool = AtomicBool::new(false);
 
 glib::wrapper! {
     pub struct ArtistsPage(ObjectSubclass<imp::ArtistsPage>)
@@ -26,6 +30,11 @@ impl ArtistsPage {
     #[inline]
     pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
         self.imp().assign_artwork(index, artwork);
+    }
+
+    #[inline]
+    pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
+        self.imp().set_sort_mode(sort_mode);
     }
 
     #[inline]

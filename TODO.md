@@ -37,11 +37,11 @@ Music library:
 - [ ] More complex filtering
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
-- [ ] Songs/albums/artists sort modes
-  - [ ] Date added (either newest or oldest)
+- [x] Songs/albums/artists sort modes
+  - [-] Date added (either newest or oldest)
   - [ ] Release date (either newest or oldest)
-  - [ ] Best/worst rating
-  - [ ] Most/least played
+  - [-] Best/worst rating
+  - [-] Most/least played
   - [x] Default
 - [ ] Artists page
   - [ ] Sort modes & custom filters

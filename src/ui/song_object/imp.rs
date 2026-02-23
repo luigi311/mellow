@@ -13,8 +13,10 @@ use crate::{library::song::SharedSong, ui::song_object::SongData};
 pub struct SongObject {
     #[property(name = "index", get, set, type = u32, member = index)]
     #[property(name = "song", get, set, type = String, member = song)]
+    #[property(name = "album", get, set, type = String, member = album)]
     #[property(name = "artist", get, set, type = String, member = artist)]
     #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
+    #[property(name = "year", get, set, type = u32, member = year)]
     #[property(name = "rank", get, set, type = f64, member = rank)]
     pub data: RefCell<SongData>,
 

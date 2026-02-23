@@ -1,5 +1,5 @@
 use std::cmp;
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::{Arc, atomic};
 
 use adw::subclass::prelude::*;
 use glib::{Object, object::ObjectExt};
@@ -9,6 +9,7 @@ use crate::excuses::EXP_INIT;
 use crate::library::album::SharedAlbum;
 use crate::library::song::SharedSongExt;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
+use crate::ui::albums_page::{ALBUM_ORDERING, ALBUMS_REVERSE_ORDER};
 use crate::ui::{UI_TX, UpdateUI};
 
 mod imp;
@@ -37,9 +38,9 @@ impl AlbumObject {
         let imp = self.imp();
         let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
         let is_visible = Arc::clone(&imp.is_visible);
-        is_visible.store(true, Ordering::Relaxed);
+        is_visible.store(true, atomic::Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            if !is_visible.load(Ordering::Relaxed) {
+            if !is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
             drop(song.info().load_detailed());
@@ -53,10 +54,10 @@ impl AlbumObject {
         let imp = self.imp();
         let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
         let is_visible = Arc::clone(&imp.is_visible);
-        is_visible.store(false, Ordering::Relaxed);
+        is_visible.store(false, atomic::Ordering::Relaxed);
         // NOTE: Unloading in the background in case the `RwLock` is busy
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            if is_visible.load(Ordering::Relaxed) {
+            if is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
             song.info().unload_detailed();
@@ -74,9 +75,9 @@ impl AlbumObject {
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self, order_by: AlbumOrdering) -> gtk::Ordering {
-        match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match order_by {
+    pub fn order_cmp(&self, other: &Self) -> gtk::Ordering {
+        let ord = match other.rank().total_cmp(&self.rank()) {
+            cmp::Ordering::Equal => match *ALBUM_ORDERING.read().unwrap() {
                 AlbumOrdering::ArtistYearAlbum => self.cmp_artist_year_album(other),
                 AlbumOrdering::ModifiedNewer => self.cmp_modified_newer(other),
                 AlbumOrdering::AddedNewer => self.cmp_added_newer(other),
@@ -84,6 +85,10 @@ impl AlbumObject {
                 AlbumOrdering::BestRating => self.cmp_best_rating(other),
             },
             ordering => ordering,
+        };
+        match ALBUMS_REVERSE_ORDER.load(atomic::Ordering::Relaxed) {
+            false => ord,
+            true => ord.reverse(),
         }
         .into()
     }

@@ -66,7 +66,7 @@ When the overlay is closed, it is time to enjoy the music.
 | 5.1 | Artists page                              | ⚠️ WIP: Some functionality may be missing |
 | 5.2 | Albums page                               | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
 | 5.3 | Songs page                                | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
-| 5.4 | Search/filter/sort                        | ⚠️ WIP: No filters or sort modes yet |
+| 5.4 | Search/filter/sort                        | ⚠️ WIP: No filtering yet (except by query) |
 |  6  | Play counts and ratings                   | ⚠️ WIP: No album ratings, play counts are not shown anywhere yet |
 |  7  | User-assigned tags                        | ❌ TODO |
 |  8  | D-Bus media integration (MPRIS)           | ❌ TODO |

@@ -73,6 +73,15 @@ impl Window {
         ]);
         self.insert_action_group("ui", Some(&ui_actions));
 
+        let window = self.imp();
+        let menu_actions = gio::SimpleActionGroup::new();
+        menu_actions.add_action_entries([
+            actions::menu::songs_sort_mode(window.songs_page.get()),
+            actions::menu::albums_sort_mode(window.albums_page.get()),
+            actions::menu::artists_sort_mode(window.artists_page.get()),
+        ]);
+        self.insert_action_group("menu", Some(&menu_actions));
+
         self.add_action_entries([gio::ActionEntry::builder("show_about_dialog")
             .activate(move |window: &Window, _, _| about::show_about_dialog(window))
             .build()]);
