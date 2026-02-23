@@ -55,6 +55,39 @@ impl Runner {
         }
     }
 
+    /// Causes the thread pool to wait until all current
+    /// tasks have finished before running any new ones
+    ///
+    /// The caller may use the returned channel to be
+    /// notified when there are no more running tasks
+    ///
+    /// Note: The caller must not handle the receiver
+    /// message more than once, otherwise workers could
+    /// become permanently stuck
+    pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
+        let (unblock_tx, unblock_rx) = mpsc::channel();
+        let unblock_rx = Arc::new(Mutex::new(unblock_rx));
+        let num_tasks = self.threads.len();
+
+        // Occupy all but one of the workers with a blocking operation
+        for _ in 1..num_tasks {
+            let unblock_rx = Arc::clone(&unblock_rx);
+            self.run(move || unblock_rx.lock().unwrap().recv().unwrap())
+        }
+
+        // When this task gets its turn in the queue, all tasks
+        // started prior to this function have finished processing
+        self.run(move || {
+            // Notify the other workers to stop waiting
+            // (and one extra for the function caller)
+            for _ in 0..num_tasks {
+                let _ = unblock_tx.send(());
+            }
+        });
+
+        unblock_rx
+    }
+
     /// Blocks until all tasks are done then shuts down its worker
     /// threads, leaving the `Runner` in an unusable state
     pub fn shutdown(&mut self) {

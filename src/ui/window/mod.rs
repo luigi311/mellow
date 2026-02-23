@@ -6,11 +6,13 @@ use gio::Settings;
 use glib::Object;
 use gtk::{Orientation, gdk, gio, glib};
 use std::sync::mpsc;
+use std::thread;
 use std::time::Duration;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, LibraryRequest};
+use crate::library::config::LibraryConfig;
+use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
 use crate::ui::{UI_TX, UpdateUI, actions};
@@ -121,7 +123,9 @@ impl Window {
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
-        Library::run_task(library_tx, move || {
+        thread::spawn(move || {
+            LibraryConfig::config_dir_create_if_missing();
+
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             (PLAYER_TX.get().expect(EXP_INIT))
                 .send(PlayerRequest::Shutdown(

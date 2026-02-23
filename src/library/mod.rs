@@ -4,6 +4,7 @@ use gtk::gio;
 use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
+use std::sync::atomic::{self, AtomicBool};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
@@ -40,6 +41,8 @@ pub struct Library {
     pub albums: Albums,
     pub artists: Artists,
     pub missing_songs: Songs,
+
+    cancel_pending: Arc<AtomicBool>,
 
     on_albums_set: Vec<LibraryTask>,
     on_artists_set: Vec<LibraryTask>,
@@ -167,6 +170,7 @@ impl ToShuffledQueue for Artists {
 pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
 pub enum LibraryRequest {
     Rebuild,
+    CancelRebuild,
 
     QueueFromPaths(Box<[String]>),
 
@@ -213,6 +217,8 @@ impl Library {
             artists: Vec::new(),
             missing_songs: Vec::new(),
 
+            cancel_pending: Arc::new(AtomicBool::new(false)),
+
             on_albums_set: Vec::new(),
             on_artists_set: Vec::new(),
 
@@ -240,6 +246,7 @@ impl Library {
         loop {
             match self.rx.recv()? {
                 LibraryRequest::Rebuild => self.discover_files(),
+                LibraryRequest::CancelRebuild => self.cancel_library_build(),
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
@@ -304,8 +311,11 @@ impl Library {
 
         self.tasks.run({
             let config = self.config.clone();
+            let cancel = Arc::clone(&self.cancel_pending);
             let missing_songs = self.missing_songs.clone();
-            move || Library::create_connections(songs, missing_songs, &config).expect(EXP_RX)
+            move || {
+                Library::create_connections(songs, missing_songs, &config, &cancel).expect(EXP_RX);
+            }
         });
     }
 
@@ -321,6 +331,7 @@ impl Library {
         mut songs: Songs,
         mut missing: Songs,
         config: &LibraryConfig,
+        cancel: &Arc<AtomicBool>,
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
@@ -331,8 +342,12 @@ impl Library {
         // in case some finish sooner than others
         let chunk_size = songs.len() / 64;
         for i in 0..64 {
+            let cancel = Arc::clone(cancel);
             let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
             Library::run_task(library_tx, move || {
+                if cancel.load(atomic::Ordering::Relaxed) {
+                    return;
+                }
                 for song in songs {
                     drop(song.info().try_load_basic());
                 }
@@ -340,7 +355,7 @@ impl Library {
         }
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-        Library::merge_moved_entries(&songs, possibly_moved, config);
+        Library::merge_moved_entries(&songs, possibly_moved, config, cancel);
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
@@ -434,7 +449,11 @@ impl Library {
             if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 0;
+                if cancel.load(atomic::Ordering::Relaxed) {
+                    break;
+                }
+                iter = 1;
+                continue;
             }
             iter += 1;
         }
@@ -542,7 +561,12 @@ impl Library {
     ///
     /// # Panics
     /// The function may panic if the UI channel receiver is unititialized or closed
-    pub fn merge_moved_entries(songs: &Songs, possibly_moved: Songs, config: &LibraryConfig) {
+    pub fn merge_moved_entries(
+        songs: &Songs,
+        possibly_moved: Songs,
+        config: &LibraryConfig,
+        cancel: &Arc<AtomicBool>,
+    ) {
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
             if cmp_info.inspect_basic().eq(&info.load_basic()) {
                 // Copy the user-assigned song info to the new entry
@@ -586,10 +610,24 @@ impl Library {
             if iter == progress_interval {
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 0;
+                if cancel.load(atomic::Ordering::Relaxed) {
+                    break;
+                }
+                iter = 1;
+                continue;
             }
             iter += 1;
         }
+    }
+
+    /// Cancels any currently running library build operation
+    pub fn cancel_library_build(&self) {
+        self.cancel_pending.store(true, atomic::Ordering::Relaxed);
+        self.tasks.await_all_tasks();
+        let cancel_pending = Arc::clone(&self.cancel_pending);
+        self.tasks.run(move || {
+            cancel_pending.store(false, atomic::Ordering::Relaxed);
+        });
     }
 
     /// Uses `library_tx` to send the `task` to run on the thread pool.
@@ -875,14 +913,12 @@ impl Library {
             .iter()
             .map(|song| song.serlialize() + "\n")
             .collect::<String>();
-        match fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT)).map(|()| {
-            fs::write(
-                [CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
-                serialized.trim(),
-            )
-        }) {
-            Ok(Ok(())) => println!("Library song info has been successfully written to disk"),
-            Ok(Err(e)) | Err(e) => eprintln!("Problems writing the library state to disk: \n{e}"),
+        match fs::write(
+            [CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
+            serialized.trim(),
+        ) {
+            Ok(()) => println!("Library song info has been successfully written to disk"),
+            Err(e) => eprintln!("Problems writing the library state to disk: \n{e}"),
         }
     }
 
@@ -916,6 +952,8 @@ impl Library {
             };
             songs.insert(index, missing_song);
         }
+        self.cancel_pending.store(true, atomic::Ordering::Relaxed);
+        self.tasks.await_all_tasks();
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
         notify_done.send(()).expect(EXP_RX);

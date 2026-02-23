@@ -1,5 +1,6 @@
 use gio::prelude::FileExt;
 use gtk::gio;
+use std::fs;
 use std::str::Chars;
 
 use crate::CONFIG_DIR;
@@ -85,16 +86,15 @@ impl LibraryConfig {
     /// # Panics
     /// The function panics if either the library or UI channel receiver is closed
     fn update_library(&self) {
-        UI_TX
-            .get()
-            .expect(EXP_INIT)
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        ui_tx
             .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
             .expect(EXP_RX);
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(LibraryRequest::Rebuild)
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        library_tx
+            .send(LibraryRequest::CancelRebuild)
             .expect(EXP_RX);
+        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups
@@ -166,8 +166,15 @@ impl LibraryConfig {
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
     /// the common part is `"file:///home/"`, and the returned value is 13
+    #[inline]
     #[must_use]
     pub const fn uri_opt(&self) -> usize {
         self.uri_opt
+    }
+
+    #[inline]
+    pub fn config_dir_create_if_missing() {
+        fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT))
+            .expect("Could not create the config directory");
     }
 }
