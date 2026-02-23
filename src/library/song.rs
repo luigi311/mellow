@@ -566,6 +566,14 @@ impl SongInfoLoader<'_> {
     pub fn unload_detailed(&self) {
         *self.detailed_info.write().unwrap() = None;
     }
+    /// Unloads detailed song info if the write lock can be
+    /// obtained without blocking, or does nothing otherwise
+    #[inline]
+    pub fn try_unload_detailed(&self) {
+        if let Ok(mut detailed_info) = self.detailed_info.try_write() {
+            *detailed_info = None;
+        }
+    }
 
     /// Returns a new `TaggedFile` for reading song tags
     #[inline]

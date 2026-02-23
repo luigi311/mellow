@@ -67,7 +67,7 @@ impl SongObject {
             if is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
-            song.info().try_unload_detailed();
+            song.info().unload_detailed();
         });
     }
 
