@@ -30,6 +30,11 @@
         <attribute name='target' type='s'>"Play Count"</attribute>
       </item>
       <item>
+        <attribute name="label" translatable="yes">Release Date</attribute>
+        <attribute name='action'>menu.songs_sort_mode</attribute>
+        <attribute name='target' type='s'>"Release Date"</attribute>
+      </item>
+      <item>
         <attribute name="label" translatable="yes">Added</attribute>
         <attribute name='action'>menu.songs_sort_mode</attribute>
         <attribute name='target' type='s'>"Added"</attribute>

@@ -54,8 +54,8 @@ impl ArtistObject {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
                 ArtistOrdering::Artist => self.cmp_artist(other),
-                ArtistOrdering::AddedNewer => self.cmp_added_newer(other),
-                ArtistOrdering::ModifiedNewer => self.cmp_modified_newer(other),
+                ArtistOrdering::Added => self.cmp_added_newer(other),
+                ArtistOrdering::Modified => self.cmp_modified_newer(other),
             },
             ordering => ordering,
         };
@@ -143,6 +143,6 @@ pub enum ArtistOrdering {
     // IDEA: Sort by average play count
     // IDEA: Sort by best average rating
     Artist,
-    AddedNewer,
-    ModifiedNewer,
+    Added,
+    Modified,
 }

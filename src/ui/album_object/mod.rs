@@ -77,10 +77,11 @@ impl AlbumObject {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match sort_by.ordering.get() {
                 AlbumOrdering::ArtistYearAlbum => self.cmp_artist_year_album(other),
-                AlbumOrdering::ModifiedNewer => self.cmp_modified_newer(other),
-                AlbumOrdering::AddedNewer => self.cmp_added_newer(other),
-                AlbumOrdering::MostPlayed => self.cmp_most_played(other),
-                AlbumOrdering::BestRating => self.cmp_best_rating(other),
+                AlbumOrdering::ReleaseDate => self.cmp_release_date(other),
+                AlbumOrdering::Modified => self.cmp_modified_newer(other),
+                AlbumOrdering::Added => self.cmp_added_newer(other),
+                AlbumOrdering::PlayCount => self.cmp_most_played(other),
+                AlbumOrdering::Rating => self.cmp_best_rating(other),
             },
             ordering => ordering,
         };
@@ -111,6 +112,13 @@ impl AlbumObject {
         cmp::Ordering::Equal
     }
     #[inline]
+    fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
+        match other.year().cmp(&self.year()) {
+            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing modification time using the first song is not necessarily correct
         let modified_a = self.shared_album().lock().unwrap().songs[0]
@@ -128,7 +136,6 @@ impl AlbumObject {
     }
     #[inline]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
-        // NOTE: Comparing added time using the first song is not necessarily correct
         let added_a = self.shared_album().lock().unwrap().songs[0]
             .info()
             .user()
@@ -157,8 +164,9 @@ pub struct AlbumData {
 #[derive(Clone, Copy)]
 pub enum AlbumOrdering {
     ArtistYearAlbum,
-    ModifiedNewer,
-    AddedNewer,
-    BestRating,
-    MostPlayed,
+    ReleaseDate,
+    Modified,
+    Added,
+    Rating,
+    PlayCount,
 }

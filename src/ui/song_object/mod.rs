@@ -80,10 +80,11 @@ impl SongObject {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match sort_by.ordering.get() {
                 SongOrdering::Default => self.cmp_default(other),
-                SongOrdering::BestRating => self.cmp_best_rating(other),
-                SongOrdering::MostPlayed => self.cmp_most_played(other),
-                SongOrdering::AddedNewer => self.cmp_added_newer(other),
-                SongOrdering::ModifiedNewer => self.cmp_modified_newer(other),
+                SongOrdering::Rating => self.cmp_best_rating(other),
+                SongOrdering::PlayCount => self.cmp_most_played(other),
+                SongOrdering::ReleaseDate => self.cmp_release_date(other),
+                SongOrdering::Added => self.cmp_added_newer(other),
+                SongOrdering::Modified => self.cmp_modified_newer(other),
             },
             ordering => ordering,
         };
@@ -96,13 +97,7 @@ impl SongObject {
     #[inline]
     fn cmp_default(&self, other: &Self) -> cmp::Ordering {
         match self.artist().cmp(&other.artist()) {
-            cmp::Ordering::Equal => match self.year().cmp(&other.year()) {
-                cmp::Ordering::Equal => match self.album().cmp(&other.album()) {
-                    cmp::Ordering::Equal => self.song().cmp(&other.song()),
-                    ordering => ordering,
-                },
-                ordering => ordering,
-            },
+            cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
     }
@@ -122,6 +117,13 @@ impl SongObject {
         let play_count_a = self.shared_song().info().user().play_count;
         let play_count_b = other.shared_song().info().user().play_count;
         match play_count_b.cmp(&play_count_a) {
+            cmp::Ordering::Equal => self.cmp_default(other),
+            ordering => ordering,
+        }
+    }
+    #[inline]
+    fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
+        match other.year().cmp(&self.year()) {
             cmp::Ordering::Equal => self.cmp_default(other),
             ordering => ordering,
         }
@@ -162,8 +164,9 @@ pub struct SongData {
 #[derive(Clone, Copy)]
 pub enum SongOrdering {
     Default,
-    BestRating,
-    MostPlayed,
-    AddedNewer,
-    ModifiedNewer,
+    Rating,
+    PlayCount,
+    ReleaseDate,
+    Added,
+    Modified,
 }

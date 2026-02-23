@@ -19,10 +19,11 @@ pub fn songs_sort_mode(songs_page: SongsPage) -> gio::ActionEntry<gio::SimpleAct
             action.set_state(variant);
             songs_page.set_sort_mode(match &*variant.get::<String>().unwrap() {
                 "Default" => SongOrdering::Default,
-                "Rating" => SongOrdering::BestRating,
-                "Play Count" => SongOrdering::MostPlayed,
-                "Added" => SongOrdering::AddedNewer,
-                "Modified" => SongOrdering::ModifiedNewer,
+                "Rating" => SongOrdering::Rating,
+                "Play Count" => SongOrdering::PlayCount,
+                "Release Date" => SongOrdering::ReleaseDate,
+                "Added" => SongOrdering::Added,
+                "Modified" => SongOrdering::Modified,
                 _ => unimplemented!(),
             });
         })
@@ -38,10 +39,11 @@ pub fn albums_sort_mode(albums_page: AlbumsPage) -> gio::ActionEntry<gio::Simple
             action.set_state(variant);
             albums_page.set_sort_mode(match &*variant.get::<String>().unwrap() {
                 "Default" => AlbumOrdering::ArtistYearAlbum,
-                "Rating" => AlbumOrdering::BestRating,
-                "Play Count" => AlbumOrdering::MostPlayed,
-                "Added" => AlbumOrdering::AddedNewer,
-                "Modified" => AlbumOrdering::ModifiedNewer,
+                "Rating" => AlbumOrdering::Rating,
+                "Play Count" => AlbumOrdering::PlayCount,
+                "Release Date" => AlbumOrdering::ReleaseDate,
+                "Added" => AlbumOrdering::Added,
+                "Modified" => AlbumOrdering::Modified,
                 _ => unimplemented!(),
             });
         })
@@ -57,8 +59,8 @@ pub fn artists_sort_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::Sim
             action.set_state(variant);
             artists_page.set_sort_mode(match &*variant.get::<String>().unwrap() {
                 "Default" => ArtistOrdering::Artist,
-                "Added" => ArtistOrdering::AddedNewer,
-                "Modified" => ArtistOrdering::ModifiedNewer,
+                "Added" => ArtistOrdering::Added,
+                "Modified" => ArtistOrdering::Modified,
                 _ => unimplemented!(),
             });
         })
