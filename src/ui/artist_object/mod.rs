@@ -1,12 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{gdk, glib};
+use std::cell::{Cell, RefCell};
 use std::cmp;
-use std::sync::{Arc, atomic};
+use std::sync::Arc;
 
 use crate::excuses::EXP_INIT;
 use crate::library::artist::SharedArtist;
-use crate::ui::artists_page::{ARTIST_ORDERING, ARTISTS_REVERSE_ORDER};
 
 mod imp;
 
@@ -50,16 +50,16 @@ impl ArtistObject {
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self) -> gtk::Ordering {
+    pub fn order_cmp(&self, other: &Self, order_by: ArtistsSortConfig) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match *ARTIST_ORDERING.read().unwrap() {
+            cmp::Ordering::Equal => match *order_by.ordering.borrow() {
                 ArtistOrdering::Artist => self.cmp_artist(other),
                 ArtistOrdering::AddedNewer => self.cmp_added_newer(other),
                 ArtistOrdering::ModifiedNewer => self.cmp_modified_newer(other),
             },
             ordering => ordering,
         };
-        match ARTISTS_REVERSE_ORDER.load(atomic::Ordering::Relaxed) {
+        match order_by.reversed.get() {
             false => ord,
             true => ord.reverse(),
         }
@@ -144,4 +144,18 @@ pub enum ArtistOrdering {
     Artist,
     AddedNewer,
     ModifiedNewer,
+}
+
+#[derive(Clone, Copy)]
+pub struct ArtistsSortConfig {
+    pub ordering: &'static RefCell<ArtistOrdering>,
+    pub reversed: &'static Cell<bool>,
+}
+impl ArtistsSortConfig {
+    pub fn new(ordering: ArtistOrdering, reversed: bool) -> ArtistsSortConfig {
+        ArtistsSortConfig {
+            ordering: Box::leak(Box::new(RefCell::new(ordering))),
+            reversed: Box::leak(Box::new(Cell::new(reversed))),
+        }
+    }
 }

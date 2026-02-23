@@ -1,13 +1,9 @@
 use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
-use std::sync::{RwLock, atomic::AtomicBool};
 
 use crate::{library::Songs, ui::song_object::SongOrdering};
 
 mod imp;
-
-pub static SONG_ORDERING: RwLock<SongOrdering> = RwLock::new(SongOrdering::Default);
-pub static SONGS_REVERSE_ORDER: AtomicBool = AtomicBool::new(false);
 
 glib::wrapper! {
     pub struct SongsPage(ObjectSubclass<imp::SongsPage>)

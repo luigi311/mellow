@@ -1,13 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::{gdk, glib};
-
+use std::cell::{Cell, RefCell};
 use std::cmp;
 use std::sync::{Arc, atomic};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, song::SharedSong};
-use crate::ui::songs_page::{SONG_ORDERING, SONGS_REVERSE_ORDER};
 use crate::ui::{UI_TX, UpdateUI};
 
 mod imp;
@@ -78,9 +77,9 @@ impl SongObject {
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self) -> gtk::Ordering {
+    pub fn order_cmp(&self, other: &Self, sort_by: SongsSortConfig) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match *SONG_ORDERING.read().unwrap() {
+            cmp::Ordering::Equal => match *sort_by.ordering.borrow() {
                 SongOrdering::Default => self.cmp_default(other),
                 SongOrdering::BestRating => self.cmp_best_rating(other),
                 SongOrdering::MostPlayed => self.cmp_most_played(other),
@@ -89,7 +88,7 @@ impl SongObject {
             },
             ordering => ordering,
         };
-        match SONGS_REVERSE_ORDER.load(atomic::Ordering::Relaxed) {
+        match sort_by.reversed.get() {
             false => ord,
             true => ord.reverse(),
         }
@@ -167,4 +166,18 @@ pub enum SongOrdering {
     MostPlayed,
     AddedNewer,
     ModifiedNewer,
+}
+
+#[derive(Clone, Copy)]
+pub struct SongsSortConfig {
+    pub ordering: &'static RefCell<SongOrdering>,
+    pub reversed: &'static Cell<bool>,
+}
+impl SongsSortConfig {
+    pub fn new(ordering: SongOrdering, reversed: bool) -> SongsSortConfig {
+        SongsSortConfig {
+            ordering: Box::leak(Box::new(RefCell::new(ordering))),
+            reversed: Box::leak(Box::new(Cell::new(reversed))),
+        }
+    }
 }

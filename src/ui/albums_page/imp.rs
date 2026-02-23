@@ -1,15 +1,14 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Albums, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::album_object::{AlbumObject, AlbumOrdering};
-use crate::ui::albums_page::{ALBUM_ORDERING, ALBUMS_REVERSE_ORDER};
+use crate::ui::album_object::{AlbumObject, AlbumOrdering, AlbumsSortConfig};
 use crate::ui::item_tile::ItemTile;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
@@ -39,6 +38,8 @@ pub struct AlbumsPage {
     albums: RefCell<Vec<AlbumObject>>,
     filter: Rc<RefCell<gtk::CustomFilter>>,
     sorter: Rc<RefCell<gtk::CustomSorter>>,
+
+    sort_mode: OnceCell<AlbumsSortConfig>,
 }
 
 #[gtk::template_callbacks]
@@ -154,10 +155,11 @@ impl AlbumsPage {
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
-        let sorter = gtk::CustomSorter::new(|object_a, object_b| {
+        let sort_mode = self.sort_mode.get().unwrap().clone();
+        let sorter = gtk::CustomSorter::new(move |object_a, object_b| {
             let album_a = object_a.downcast_ref::<AlbumObject>().unwrap();
             let album_b = object_b.downcast_ref::<AlbumObject>().unwrap();
-            album_a.order_cmp(&album_b)
+            album_a.order_cmp(&album_b, sort_mode)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
@@ -173,15 +175,17 @@ impl AlbumsPage {
 
     #[inline]
     pub fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
-        *ALBUM_ORDERING.write().unwrap() = sort_mode;
+        let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
+        ordering.replace(sort_mode);
         self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[template_callback]
     pub fn handle_reverse_sort(&self) {
-        let old_order = ALBUMS_REVERSE_ORDER.load(Ordering::Relaxed);
-        ALBUMS_REVERSE_ORDER.store(!old_order, Ordering::Relaxed);
+        let reversed = self.sort_mode.get().expect(EXP_INIT).reversed;
+        let old_rev = reversed.get();
+        reversed.set(!old_rev);
         self.sorter.borrow().changed(gtk::SorterChange::Inverted);
-        self.sort_button.set_icon_name(match !old_order {
+        self.sort_button.set_icon_name(match !old_rev {
             true => "view-sort-ascending-symbolic",
             false => "view-sort-descending-symbolic",
         });
@@ -211,6 +215,10 @@ impl ObjectSubclass for AlbumsPage {
 }
 impl ObjectImpl for AlbumsPage {
     fn constructed(&self) {
+        let _ = self
+            .sort_mode
+            .set(AlbumsSortConfig::new(AlbumOrdering::ArtistYearAlbum, false));
+
         self.albums_grid.connect_activate(|grid, index| {
             let index = grid
                 .model()
