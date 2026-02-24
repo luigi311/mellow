@@ -54,3 +54,8 @@ User Experience:
   - FIX: Song queue memory leak (see TODO.md)
   - FIX: Memory leak related to artwork loading in songs/albums pages
 - [ ] No other issues found while testing
+
+Design Consistency:
+
+- [ ] Similar looking elements work the same an all places
+  - FIX: Songs/albums/artists shuffle mode selection differs from subpages
