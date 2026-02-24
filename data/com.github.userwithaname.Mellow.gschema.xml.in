@@ -45,7 +45,7 @@
       <summary>When enabled, the window colors adapt to the song artwork</summary>
     </key>
     <key name="color-scheme" enum="com.github.userwithaname.Mellow.color-scheme">
-      <default>'Dark'</default>
+      <default>'Auto'</default>
     </key>
     <key name="directories" type="s">
       <default>":"</default>
