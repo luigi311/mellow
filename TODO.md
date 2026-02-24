@@ -26,8 +26,8 @@ than shown on the page, or even try to index out of bounds)
   > The bottom sheet could open automatically and focus the song
   queue, then show a "Drop here to start playing" message, or the
   window could show an overlay (like Amberol does)
-- [ ] Go to album button on the queue subpage
-- [ ] Go to artist button on the queue subpage
+- [x] Go to album button on the queue subpage
+- [x] Go to artist button on the queue subpage
 
 Music library:
 
@@ -40,13 +40,14 @@ Music library:
   - [ ] Filter by tags, ratings, year, etc
   - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
 - [x] Songs/albums/artists sort modes
-  - [-] Date added (either newest or oldest)
-  - [ ] Release date (either newest or oldest)
+  - [x] Date added (either newest or oldest)
+  - [x] Release date (either newest or oldest)
   - [-] Best/worst rating
+    - TODO: Artists page
   - [-] Most/least played
+    - TODO: Artists page
   - [x] Default
 - [ ] Artists page
-  - [ ] Sort modes & custom filters
   - [x] Buttons to play all artists (shuffled/sequential)
     > Dropdown behavior could be improved by only selecting the shuffle mode
     > for the button, rather than starting the playback when clicked
@@ -57,7 +58,6 @@ Music library:
     - [x] Play/Shuffle buttons
     - [ ] Add to Queue button
 - [ ] Albums page
-  - [ ] Sort modes & custom filters
   - [x] Buttons to play all albums (shuffled/sequential)
     - TODO: Improve dropdown behavior
   - [x] Show all albums
@@ -74,7 +74,6 @@ Music library:
     - [x] Go to artist button
       > May need design improvements
 - [ ] Songs page
-  - [ ] Sort modes & custom filters
   - [x] Buttons to play all songs (shuffled/sequential)
     - TODO: Improve dropdown behavior
   - [x] Show all songs
@@ -85,17 +84,12 @@ Music library:
     - [x] Interactive rating widget
     - [x] Play Now: Start a new queue and skip to the selected track
     - [x] Play Next: Insert the song to the next position in the queue
-    - [ ] Add to Queue button
+    - [x] Add to Queue button
     - [ ] Ability to set tags
     - [x] Go to album button
     - [x] Go to artist button
 - [x] Play counting
 > Works, but the counting logic could be improved
-
-Misc:
-
-- [-] Load song info without blocking the UI
-  - TODO: Library songs/albums/artists
 
 Ideas for improvements:
 

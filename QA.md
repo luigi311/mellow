@@ -36,10 +36,10 @@ Music Library:
 - [ ] The 'Artists' page and its subpages do not have performance issues
   - FIX: Artwork loading on the artist subpage blocks the main thread
 - [ ] Library building works in the background and doesn't affect functionality
-  - FIX: Rebuilding sometimes blocks library requests(?)
+  - FIX: Rebuilding sometimes blocks library requests (is this still an issue?)
 - [x] Album grouping works as expected
 - [x] Searching is quick and works as expected
-- [ ] Filters and sort modes work as expected
+- [-] Filters and sort modes work as expected
   - TODO: Implement filters
 
 User Experience:
