@@ -91,6 +91,24 @@ pub struct Window {
 impl Window {
     #[inline]
     pub fn init_ui_elements(&self, style_manager: adw::StyleManager) {
+        self.library.connect_popped(glib::clone!(
+            #[weak(rename_to=window)]
+            self,
+            move |_, _| {
+                match window.library_subpages.borrow_mut().pop() {
+                    Some(SubpageType::Song) => {
+                        window.song_pages.borrow_mut().pop();
+                    }
+                    Some(SubpageType::Album) => {
+                        window.album_pages.borrow_mut().pop();
+                    }
+                    Some(SubpageType::Artist) => {
+                        window.artist_pages.borrow_mut().pop();
+                    }
+                    None => return,
+                };
+            }
+        ));
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
         self.songs_page.init_search();
