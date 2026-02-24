@@ -1,6 +1,7 @@
 use adw::subclass::prelude::*;
 use glib::clone;
 use gtk::{gio, glib};
+use std::rc::Rc;
 
 use crate::ui::Window;
 
@@ -54,44 +55,49 @@ pub fn shuffle_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionG
         ))
         .build()
 }
+// TODO: Remove `play/shuffle_visible_…`, and make the dropdown select the button mode instead
 #[inline]
 pub fn play_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    let album_pages = Rc::clone(&window.imp().album_pages);
     gio::ActionEntry::builder("play_visible_album")
-        .activate(clone!(
-            #[weak(rename_to=album_page)]
-            window.imp().album_page.imp(),
-            move |_, _, _| album_page.handle_play_sequential()
-        ))
+        .activate(move |_, _, _| {
+            if let Some(page) = album_pages.borrow().last() {
+                page.imp().handle_play_sequential();
+            }
+        })
         .build()
 }
 #[inline]
 pub fn shuffle_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    let album_pages = Rc::clone(&window.imp().album_pages);
     gio::ActionEntry::builder("shuffle_visible_album")
-        .activate(clone!(
-            #[weak(rename_to=album_page)]
-            window.imp().album_page.imp(),
-            move |_, _, _| album_page.handle_play_shuffled()
-        ))
+        .activate(move |_, _, _| {
+            if let Some(page) = album_pages.borrow().last() {
+                page.imp().handle_play_shuffled();
+            }
+        })
         .build()
 }
 #[inline]
 pub fn play_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    let artist_pages = Rc::clone(&window.imp().artist_pages);
     gio::ActionEntry::builder("play_visible_artist")
-        .activate(clone!(
-            #[weak(rename_to=artist_page)]
-            window.imp().artist_page.imp(),
-            move |_, _, _| artist_page.handle_play_sequential()
-        ))
+        .activate(move |_, _, _| {
+            if let Some(page) = artist_pages.borrow().last() {
+                page.imp().handle_play_sequential();
+            }
+        })
         .build()
 }
 #[inline]
 pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    let artist_pages = Rc::clone(&window.imp().artist_pages);
     gio::ActionEntry::builder("shuffle_visible_artist")
-        .activate(clone!(
-            #[weak(rename_to=artist_page)]
-            window.imp().artist_page.imp(),
-            move |_, _, _| artist_page.handle_play_shuffled()
-        ))
+        .activate(move |_, _, _| {
+            if let Some(page) = artist_pages.borrow().last() {
+                page.imp().handle_play_shuffled();
+            }
+        })
         .build()
 }
 #[inline]

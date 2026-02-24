@@ -26,6 +26,8 @@ than shown on the page, or even try to index out of bounds)
   > The bottom sheet could open automatically and focus the song
   queue, then show a "Drop here to start playing" message, or the
   window could show an overlay (like Amberol does)
+- [ ] Go to album button on the queue subpage
+- [ ] Go to artist button on the queue subpage
 
 Music library:
 
@@ -69,7 +71,8 @@ Music library:
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags
-    - [ ] Go to artist button
+    - [x] Go to artist button
+      > May need design improvements
 - [ ] Songs page
   - [ ] Sort modes & custom filters
   - [x] Buttons to play all songs (shuffled/sequential)
@@ -84,8 +87,8 @@ Music library:
     - [x] Play Next: Insert the song to the next position in the queue
     - [ ] Add to Queue button
     - [ ] Ability to set tags
-    - [ ] Go to album button
-    - [ ] Go to artist button
+    - [x] Go to album button
+    - [x] Go to artist button
 - [x] Play counting
 > Works, but the counting logic could be improved
 

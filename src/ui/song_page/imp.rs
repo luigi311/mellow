@@ -2,13 +2,17 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
 use std::cell::{Cell, RefCell};
+use std::sync::Arc;
 
 use crate::excuses::ACTION_ERR;
 use crate::excuses::EXP_INIT;
 use crate::excuses::EXP_RX;
 use crate::library::ToQueue;
+use crate::library::song::SharedSong;
+use crate::library::song::SharedSongExt;
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
+use crate::player::queue_item::QueueItem;
 use crate::ui::UI_TX;
 use crate::ui::UpdateUI;
 use crate::ui::rating::Rating;
@@ -27,6 +31,7 @@ pub struct SongPage {
     pub rating: TemplateChild<Rating>,
 
     pub index: Cell<usize>,
+    pub shared_song: RefCell<Option<SharedSong>>,
     pub context: RefCell<Option<Box<dyn ToQueue + Send>>>,
 }
 
@@ -61,9 +66,40 @@ impl SongPage {
         player_tx
             .send(PlayerRequest::InsertRelative(Box::new((
                 1,
-                self.context.borrow().as_ref().expect(EXP_INIT).to_queue()[self.index.get()]
-                    .clone(),
+                QueueItem::Song(Arc::clone(self.shared_song.borrow().as_ref().unwrap())),
             ))))
+            .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_go_to_album(&self) {
+        (UI_TX.get().expect(EXP_INIT))
+            .send(UpdateUI::AlbumPage(Arc::clone(
+                self.shared_song
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .album()
+                    .as_ref()
+                    .unwrap(),
+            )))
+            .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_go_to_artist(&self) {
+        (UI_TX.get().expect(EXP_INIT))
+            .send(UpdateUI::ArtistPage(Arc::clone(
+                &self
+                    .shared_song
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .album()
+                    .as_ref()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .artist,
+            )))
             .expect(EXP_RX);
     }
 }

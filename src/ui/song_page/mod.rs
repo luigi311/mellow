@@ -1,6 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::Object;
 use gtk::glib;
+use std::sync::Arc;
 
 use crate::library::{ToQueue, song::SharedSong};
 
@@ -49,6 +50,7 @@ impl SongPage {
         drop(user_info);
         drop(info);
 
+        song_page.shared_song.replace(Some(Arc::clone(&song)));
         song_page.rating.connect_rating_set(move |rating| {
             song.info().set_rating(rating);
         });

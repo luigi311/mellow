@@ -2,7 +2,7 @@ use adw::subclass::prelude::*;
 use glib::{clone, variant::StaticVariantType};
 use gtk::{gio, glib};
 
-use crate::ui::Window;
+use crate::ui::{Window, library_page::SubpageType};
 
 #[inline]
 pub fn open_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
@@ -51,26 +51,24 @@ pub fn playing_nav_pop(window: &Window) -> gio::ActionEntry<gio::SimpleActionGro
         .build()
 }
 #[inline]
-pub fn library_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("library_nav_push")
-        .parameter_type(Some(&String::static_variant_type()))
-        .activate(clone!(
-            #[weak(rename_to=ui)]
-            window.imp(),
-            move |_, _, tag| {
-                let tag = tag.unwrap().get::<String>().unwrap();
-                ui.library.push_by_tag(&tag);
-            }
-        ))
-        .build()
-}
-#[inline]
 pub fn library_nav_pop(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("library_nav_pop")
         .activate(clone!(
             #[weak(rename_to=ui)]
             window.imp(),
             move |_, _, _| {
+                match ui.library_subpages.borrow_mut().pop() {
+                    Some(SubpageType::Song) => {
+                        ui.song_pages.borrow_mut().pop();
+                    }
+                    Some(SubpageType::Album) => {
+                        ui.album_pages.borrow_mut().pop();
+                    }
+                    Some(SubpageType::Artist) => {
+                        ui.artist_pages.borrow_mut().pop();
+                    }
+                    None => return,
+                };
                 ui.library.pop();
             }
         ))

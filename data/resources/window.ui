@@ -105,20 +105,11 @@
                           </object>
                         </child>
 
-                        <!-- TODO: Remove Song/Album/Artist pages once push/popping by widget works -->
-
                         Songs
                         <child>
                           <object class="MellowSongsPage" id="songs_page">
                             <property name="title" translatable="yes">Songs</property>
                             <property name="tag">library_songs</property>
-                          </object>
-                        </child>
-                        Song Page
-                        <child>
-                          <object class="MellowSongPage" id="song_page">
-                            <property name="title" translatable="yes">Song</property>
-                            <property name="tag">song</property>
                           </object>
                         </child>
 
@@ -129,26 +120,12 @@
                             <property name="tag">library_albums</property>
                           </object>
                         </child>
-                        Album Page
-                        <child>
-                          <object class="MellowAlbumPage" id="album_page">
-                            <property name="title" translatable="yes">Album</property>
-                            <property name="tag">album</property>
-                          </object>
-                        </child>
 
                         Artists
                         <child>
                           <object class="MellowArtistsPage" id="artists_page">
                             <property name="title" translatable="yes">Artists</property>
                             <property name="tag">library_artists</property>
-                          </object>
-                        </child>
-                        Artist Page
-                        <child>
-                          <object class="MellowArtistPage" id="artist_page">
-                            <property name="title" translatable="yes">Artist</property>
-                            <property name="tag">artist</property>
                           </object>
                         </child>
 

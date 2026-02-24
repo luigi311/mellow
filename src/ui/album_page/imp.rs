@@ -9,6 +9,7 @@ use crate::library::album::SharedAlbum;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::ui::rating::Rating;
 use crate::ui::song_row::SongRow;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/album_page.ui")]
@@ -50,6 +51,14 @@ impl AlbumPage {
             .expect(EXP_INIT)
             .send(LibraryRequest::ShuffleAlbum(Arc::clone(
                 self.album.borrow().as_ref().expect(EXP_INIT),
+            )))
+            .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_go_to_artist(&self) {
+        (UI_TX.get().expect(EXP_INIT))
+            .send(UpdateUI::ArtistPage(Arc::clone(
+                &self.album.borrow().as_ref().unwrap().lock().unwrap().artist,
             )))
             .expect(EXP_RX);
     }

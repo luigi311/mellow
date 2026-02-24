@@ -19,7 +19,7 @@ use crate::ui::album_page::AlbumPage;
 use crate::ui::albums_page::AlbumsPage;
 use crate::ui::artist_page::ArtistPage;
 use crate::ui::artists_page::ArtistsPage;
-use crate::ui::library_page::LibraryPage;
+use crate::ui::library_page::{LibraryPage, SubpageType};
 use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
@@ -59,21 +59,10 @@ pub struct Window {
     #[template_child]
     pub artists_page: TemplateChild<ArtistsPage>,
 
-    // TODO: When popping, how will I know which vec to pop from?
-    // Could use an array of enums, or maybe a custom type which
-    // would just store `gtk::Widget`s and an enum for their type
-    // so they can be downcast (e.g. to `AlbumPage`) when needed
+    pub library_subpages: Rc<RefCell<Vec<SubpageType>>>,
     pub song_pages: Rc<RefCell<Vec<SongPage>>>,
     pub album_pages: Rc<RefCell<Vec<AlbumPage>>>,
     pub artist_pages: Rc<RefCell<Vec<ArtistPage>>>,
-
-    // TODO: Remove those when not needed anymore
-    #[template_child]
-    pub song_page: TemplateChild<SongPage>,
-    #[template_child]
-    pub album_page: TemplateChild<AlbumPage>,
-    #[template_child]
-    pub artist_page: TemplateChild<ArtistPage>,
 
     // View stack "Playing" tab
     #[template_child]
@@ -357,35 +346,27 @@ impl Window {
         self.queue_page.assign_artwork(index, info.artwork.as_ref());
     }
 
-    // TODO: Reset the scroll position when opening song/album/artist page
-
     fn open_song_page_by_index(&self, index: usize) {
         let songs: Songs = self.songs.borrow().clone();
         self.open_song_page(index, Arc::clone(&songs[index]), Box::new(songs));
     }
     fn open_song_page(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
-        // let song_page = SongPage::new(index, song, to_queue);
-        // self.library.push(&song_page);
-        // self.song_pages.borrow_mut().push(song_page);
-
-        self.song_page.update(index, song, to_queue);
-        self.library.push_by_tag("song");
-    }
-    fn open_artist_page(&self, artist: &SharedArtist) {
-        // let artist_page = ArtistPage::new(artist);
-        // self.library.push(&artist_page);
-        // self.artist_pages.borrow_mut().push(artist_page);
-
-        self.artist_page.update(artist);
-        self.library.push_by_tag("artist");
+        let song_page = SongPage::new(index, song, to_queue);
+        self.library.push(&song_page);
+        self.song_pages.borrow_mut().push(song_page);
+        self.library_subpages.borrow_mut().push(SubpageType::Song);
     }
     fn open_album_page(&self, album: &SharedAlbum) {
-        // let album_page = AlbumPage::new(album);
-        // self.library.push(&album_page);
-        // self.album_pages.borrow_mut().push(album_page);
-
-        self.album_page.update(album);
-        self.library.push_by_tag("album");
+        let album_page = AlbumPage::new(album);
+        self.library.push(&album_page);
+        self.album_pages.borrow_mut().push(album_page);
+        self.library_subpages.borrow_mut().push(SubpageType::Album);
+    }
+    fn open_artist_page(&self, artist: &SharedArtist) {
+        let artist_page = ArtistPage::new(artist);
+        self.library.push(&artist_page);
+        self.artist_pages.borrow_mut().push(artist_page);
+        self.library_subpages.borrow_mut().push(SubpageType::Artist);
     }
 }
 

@@ -64,13 +64,13 @@ When the overlay is closed, it is time to enjoy the music.
 |  4  | Song queue interface & management         | ⚠️ WIP: Does not yet support multi-selection or drag-&-drop reordering |
 |  5  | Music library                             | ⚠️ WIP: Mostly done, but see below |
 | 5.1 | Artists page                              | ⚠️ WIP: Some functionality may be missing |
-| 5.2 | Albums page                               | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
-| 5.3 | Songs page                                | ⚠️ WIP: Subpage is missing go-to functionality, high CPU usage while loading artworks |
+| 5.2 | Albums page                               | ⚠️ WIP: High CPU usage while loading artworks |
+| 5.3 | Songs page                                | ⚠️ WIP: High CPU usage while loading artworks |
 | 5.4 | Search/filter/sort                        | ⚠️ WIP: No filtering yet (except by query) |
-|  6  | Play counts and ratings                   | ⚠️ WIP: No album ratings, play counts are not shown anywhere yet |
-|  7  | User-assigned tags                        | ❌ TODO |
-|  8  | D-Bus media integration (MPRIS)           | ❌ TODO |
-|  9  | Adaptive background/colors                | ✅ Done |
+| 5.5 | Play counts and ratings                   | ⚠️ WIP: No album ratings, play counts are not shown anywhere yet |
+| 5.6 | User-assigned tags                        | ❌ TODO |
+|  6  | D-Bus media integration (MPRIS)           | ❌ TODO |
+|  7  | Adaptive background/colors                | ✅ Done |
 
 # Building from source
 

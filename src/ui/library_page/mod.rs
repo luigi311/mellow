@@ -31,3 +31,9 @@ impl LibraryPage {
         }
     }
 }
+
+pub enum SubpageType {
+    Song,
+    Album,
+    Artist,
+}
