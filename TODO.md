@@ -72,7 +72,6 @@ Music library:
     - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags
     - [x] Go to artist button
-      > May need design improvements
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
     - TODO: Improve dropdown behavior

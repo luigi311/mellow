@@ -50,10 +50,7 @@
               <object class="AdwPreferencesGroup">
 
                 <child>
-                  <object class="AdwButtonRow">
-                    <!-- FIX: It is unintuitive to make this a 'Go To Artist' button -->
-                    <!-- FIX: Making this a button interferes with the rating widget -->
-                    <signal name="activated" handler="handle_go_to_artist" swapped="true"/>
+                  <object class="AdwPreferencesRow">
                     <child>
                       <object class="GtkBox">
                         <property name="orientation">vertical</property>
@@ -111,9 +108,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="MellowRating" id="rating">
-                                <property name="sensitive">False</property>
-                              </object>
+                              <object class="MellowRating" id="rating"/>
                             </child>
                           </object>
                         </child>
@@ -134,6 +129,30 @@
                     </style>
                   </object>
                 </child>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwPreferencesGroup">
+
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_go_to_artist" swapped="true"/>
+                    <property name="title" translatable="yes">Go To Artist</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">avatar-default-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
               </object>
             </child>
 
