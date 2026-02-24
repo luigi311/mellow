@@ -148,11 +148,11 @@ impl SongsPage {
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
-        let sort_mode = self.sort_mode.get().unwrap().clone();
+        let sort_mode = *self.sort_mode.get().unwrap();
         let sorter = gtk::CustomSorter::new(move |object_a, object_b| {
             let song_a = object_a.downcast_ref::<SongObject>().unwrap();
             let song_b = object_b.downcast_ref::<SongObject>().unwrap();
-            song_a.order_cmp(&song_b, sort_mode)
+            song_a.order_cmp(song_b, sort_mode)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);

@@ -624,7 +624,7 @@ impl Library {
     /// Cancels any currently running library build operation
     pub fn cancel_library_build(&self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
-        self.tasks.await_all_tasks();
+        let _ = self.tasks.await_all_tasks();
         let cancel_pending = Arc::clone(&self.cancel_pending);
         self.tasks.run(move || {
             cancel_pending.store(false, atomic::Ordering::Relaxed);
@@ -954,7 +954,6 @@ impl Library {
             songs.insert(index, missing_song);
         }
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
-        self.tasks.await_all_tasks();
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
         notify_done.send(()).expect(EXP_RX);

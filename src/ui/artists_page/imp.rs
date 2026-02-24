@@ -155,11 +155,11 @@ impl ArtistsPage {
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
-        let sort_mode = self.sort_mode.get().unwrap().clone();
+        let sort_mode = *self.sort_mode.get().unwrap();
         let sorter = gtk::CustomSorter::new(move |object_a, object_b| {
             let artist_a = object_a.downcast_ref::<ArtistObject>().unwrap();
             let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
-            artist_a.order_cmp(&artist_b, sort_mode)
+            artist_a.order_cmp(artist_b, sort_mode)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);

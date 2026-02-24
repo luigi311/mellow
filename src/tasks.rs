@@ -63,6 +63,7 @@ impl Runner {
     ///
     /// Note: The caller must not use the receiver to handle more than
     /// one message, otherwise workers could become permanently stuck
+    #[must_use]
     pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
         let (unblock_tx, unblock_rx) = mpsc::channel();
         let unblock_rx = Arc::new(Mutex::new(unblock_rx));
