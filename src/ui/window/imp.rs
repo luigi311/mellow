@@ -3,6 +3,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gio, glib};
 use std::cell::{Cell, OnceCell, RefCell};
+use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
@@ -54,13 +55,23 @@ pub struct Window {
     #[template_child]
     pub songs_page: TemplateChild<SongsPage>,
     #[template_child]
-    pub song_page: TemplateChild<SongPage>,
-    #[template_child]
     pub albums_page: TemplateChild<AlbumsPage>,
     #[template_child]
-    pub album_page: TemplateChild<AlbumPage>,
-    #[template_child]
     pub artists_page: TemplateChild<ArtistsPage>,
+
+    // TODO: When popping, how will I know which vec to pop from?
+    // Could use an array of enums, or maybe a custom type which
+    // would just store `gtk::Widget`s and an enum for their type
+    // so they can be downcast (e.g. to `AlbumPage`) when needed
+    pub song_pages: Rc<RefCell<Vec<SongPage>>>,
+    pub album_pages: Rc<RefCell<Vec<AlbumPage>>>,
+    pub artist_pages: Rc<RefCell<Vec<ArtistPage>>>,
+
+    // TODO: Remove those when not needed anymore
+    #[template_child]
+    pub song_page: TemplateChild<SongPage>,
+    #[template_child]
+    pub album_page: TemplateChild<AlbumPage>,
     #[template_child]
     pub artist_page: TemplateChild<ArtistPage>,
 
@@ -140,12 +151,10 @@ impl Window {
                 UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
                 UpdateUI::QueueSongLoaded(index) => self.queue_song_loaded(index),
 
-                UpdateUI::ArtistPageByIndex(index) => self.open_artist_page_by_index(index),
-                UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
-                UpdateUI::AlbumPageByIndex(index) => self.open_album_page_by_index(index),
-                UpdateUI::AlbumPage(album) => self.open_album_page(&album),
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
                 UpdateUI::SongPage(ctx) => self.open_song_page(ctx.0, ctx.1, ctx.2),
+                UpdateUI::AlbumPage(album) => self.open_album_page(&album),
+                UpdateUI::ArtistPage(artist) => self.open_artist_page(&artist),
 
                 UpdateUI::FocusLibrary => self.focus_library(),
                 UpdateUI::FocusPlaying => self.focus_playing(),
@@ -355,20 +364,26 @@ impl Window {
         self.open_song_page(index, Arc::clone(&songs[index]), Box::new(songs));
     }
     fn open_song_page(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
+        // let song_page = SongPage::new(index, song, to_queue);
+        // self.library.push(&song_page);
+        // self.song_pages.borrow_mut().push(song_page);
+
         self.song_page.update(index, song, to_queue);
         self.library.push_by_tag("song");
     }
-    fn open_artist_page_by_index(&self, index: usize) {
-        self.open_artist_page(&self.artists.borrow()[index]);
-    }
     fn open_artist_page(&self, artist: &SharedArtist) {
+        // let artist_page = ArtistPage::new(artist);
+        // self.library.push(&artist_page);
+        // self.artist_pages.borrow_mut().push(artist_page);
+
         self.artist_page.update(artist);
         self.library.push_by_tag("artist");
     }
-    fn open_album_page_by_index(&self, index: usize) {
-        self.open_album_page(&self.albums.borrow()[index]);
-    }
     fn open_album_page(&self, album: &SharedAlbum) {
+        // let album_page = AlbumPage::new(album);
+        // self.library.push(&album_page);
+        // self.album_pages.borrow_mut().push(album_page);
+
         self.album_page.update(album);
         self.library.push_by_tag("album");
     }

@@ -1,4 +1,5 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
+use glib::Object;
 use gtk::glib;
 
 use crate::library::{ToQueue, song::SharedSong};
@@ -12,7 +13,20 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
+impl Default for SongPage {
+    #[inline]
+    fn default() -> Self {
+        Object::builder().build()
+    }
+}
+
 impl SongPage {
+    #[inline]
+    pub fn new(index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) -> SongPage {
+        let song_page = Self::default();
+        song_page.update(index, song, to_queue);
+        song_page
+    }
     #[inline]
     pub fn update(&self, index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) {
         let song_page = self.imp();
@@ -23,6 +37,7 @@ impl SongPage {
         let song_info_temp = info.load_basic();
         // SAFETY: `load_basic` ensures the value is `Some`
         let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+        self.set_title(&["Song: ", &song_info.title].concat());
         song_page.song_title.set_label(&song_info.title);
         song_page.album_title.set_label(&song_info.album);
         song_page.artist_name.set_label(&song_info.artist);

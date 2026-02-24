@@ -222,18 +222,18 @@ impl ObjectImpl for AlbumsPage {
             .set(SortConfig::new(AlbumOrdering::ArtistYearAlbum, false));
 
         self.albums_grid.connect_activate(|grid, index| {
-            let index = grid
+            let album = grid
                 .model()
                 .unwrap()
                 .item(index)
                 .unwrap()
                 .downcast_ref::<AlbumObject>()
                 .unwrap()
-                .index();
+                .shared_album();
             UI_TX
                 .get()
                 .expect(EXP_INIT)
-                .send(UpdateUI::AlbumPageByIndex(index as usize))
+                .send(UpdateUI::AlbumPage(album))
                 .expect(EXP_RX);
         });
 

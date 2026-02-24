@@ -105,6 +105,8 @@
                           </object>
                         </child>
 
+                        <!-- TODO: Remove Song/Album/Artist pages once push/popping by widget works -->
+
                         Songs
                         <child>
                           <object class="MellowSongsPage" id="songs_page">

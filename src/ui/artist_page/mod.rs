@@ -1,4 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
+use glib::Object;
 use gtk::glib;
 use std::sync::Arc;
 
@@ -16,12 +17,26 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
+impl Default for ArtistPage {
+    #[inline]
+    fn default() -> Self {
+        Object::builder().build()
+    }
+}
+
 impl ArtistPage {
+    #[inline]
+    pub fn new(artist: &SharedArtist) -> ArtistPage {
+        let artist_page = Self::default();
+        artist_page.update(artist);
+        artist_page
+    }
     #[inline]
     pub fn update(&self, artist: &SharedArtist) {
         let ui = self.imp();
         ui.artist.replace(Some(Arc::clone(artist)));
         let artist = artist.lock().unwrap();
+        self.set_title(&["Artist: ", &artist.name].concat());
         ui.artist_name.set_label(&artist.name);
 
         ui.albums_list.remove_all();

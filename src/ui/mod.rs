@@ -62,15 +62,13 @@ pub enum UpdateUI {
     LibraryArtistLoaded(usize),
     QueueSongLoaded(usize),
 
-    ArtistPageByIndex(usize),
-    ArtistPage(SharedArtist),
-    AlbumPageByIndex(usize),
-    AlbumPage(SharedAlbum),
     SongPageByIndex(usize),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field
     SongPage(Box<(usize, SharedSong, Box<dyn ToQueue + Send>)>),
+    AlbumPage(SharedAlbum),
+    ArtistPage(SharedArtist),
 
     FocusLibrary,
     FocusPlaying,

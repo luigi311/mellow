@@ -221,18 +221,18 @@ impl ObjectImpl for ArtistsPage {
             .set(SortConfig::new(ArtistOrdering::Artist, false));
 
         self.artists_grid.connect_activate(|grid, index| {
-            let index = grid
+            let artist = grid
                 .model()
                 .unwrap()
                 .item(index)
                 .unwrap()
                 .downcast_ref::<ArtistObject>()
                 .unwrap()
-                .index();
+                .shared_artist();
             UI_TX
                 .get()
                 .expect(EXP_INIT)
-                .send(UpdateUI::ArtistPageByIndex(index as usize))
+                .send(UpdateUI::ArtistPage(artist))
                 .expect(EXP_RX);
         });
 

@@ -1,4 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
+use glib::Object;
 use gtk::glib;
 use std::sync::Arc;
 
@@ -17,7 +18,20 @@ glib::wrapper! {
             gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::Orientable, gtk::ConstraintTarget;
 }
 
+impl Default for AlbumPage {
+    #[inline]
+    fn default() -> Self {
+        Object::builder().build()
+    }
+}
+
 impl AlbumPage {
+    #[inline]
+    pub fn new(album: &SharedAlbum) -> AlbumPage {
+        let album_page = Self::default();
+        album_page.update(album);
+        album_page
+    }
     #[inline]
     pub fn update(&self, album: &SharedAlbum) {
         let ui = self.imp();
@@ -34,6 +48,7 @@ impl AlbumPage {
             ui.album_cover.set_paintable(Some(&fallback_album_image()));
         }
 
+        self.set_title(&["Album: ", &album_locked.title].concat());
         ui.album.replace(Some(Arc::clone(album)));
         ui.album_title.set_label(&album_locked.title);
         ui.artist_name
