@@ -1,12 +1,16 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::library::song::{SharedSong, SharedSongExt};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
+use crate::ui::UI_TX;
+use crate::ui::UpdateUI;
 use crate::ui::rating::Rating;
 
 #[derive(Default, CompositeTemplate)]
@@ -14,6 +18,7 @@ use crate::ui::rating::Rating;
 pub struct QueueSubpage {
     pub index: Cell<usize>,
     pub stop_after: Cell<bool>,
+    pub shared_song: RefCell<Option<SharedSong>>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -102,6 +107,38 @@ impl QueueSubpage {
                 self.index.get() + 1,
             ))
             .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_go_to_album(&self) {
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
+        let _ = ui_tx.send(UpdateUI::AlbumPage(Arc::clone(
+            self.shared_song
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .album()
+                .as_ref()
+                .unwrap(),
+        )));
+    }
+    #[template_callback]
+    pub fn handle_go_to_artist(&self) {
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
+        let _ = ui_tx.send(UpdateUI::ArtistPage(Arc::clone(
+            &self
+                .shared_song
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .album()
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .artist,
+        )));
     }
 }
 

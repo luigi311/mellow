@@ -141,6 +141,47 @@
               </object>
             </child>
 
+            <child>
+              <object class="AdwPreferencesGroup">
+
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_go_to_album" swapped="true"/>
+                    <property name="title" translatable="yes">Go To Album</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">media-optical-cd-audio-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_go_to_artist" swapped="true"/>
+                    <property name="title" translatable="yes">Go To Artist</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">avatar-default-symbolic</property>
+                      </object>
+                    </child>
+                    <child type="suffix">
+                      <object class="GtkImage">
+                        <property name="icon_name">go-next-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+
           </object>
         </property>
       </object>

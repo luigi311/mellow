@@ -1,5 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
+use std::sync::Arc;
 
 use crate::library::song::SharedSong;
 
@@ -27,6 +28,7 @@ impl QueueSubpage {
         song_page.rating.set_rating_silent(user_info.rating);
         drop(user_info);
         drop(info);
+        song_page.shared_song.replace(Some(Arc::clone(&song)));
         song_page.rating.connect_rating_set(move |rating| {
             song.info().set_rating(rating);
         });
