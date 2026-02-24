@@ -53,6 +53,4 @@ User Experience:
 - [ ] Does not leak memory
   - FIX: Song queue memory leak (see TODO.md)
   - FIX: Memory leak related to artwork loading in songs/albums pages
-- [ ] No issues which could worsen the user experience
-  - FIX: Closing the player while building the library freezes the app
-    (most likely due to `serialize_songs` blocking to load the info)
+- [ ] No other issues found while testing
