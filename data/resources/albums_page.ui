@@ -89,12 +89,20 @@
           </object>
         </child>
         <child type="top">
-          <object class="GtkSearchBar" id="search_bar">
+          <object class="AdwClamp">
             <child>
-              <object class="GtkSearchEntry" id="search_entry"/>
+              <object class="GtkSearchBar" id="search_bar">
+                <property name="hexpand">true</property>
+                <child>
+                  <object class="GtkSearchEntry" id="search_entry">
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+              </object>
             </child>
           </object>
         </child>
+
         <property name="content">
 
           <object class="AdwViewStack" id="view_stack">
