@@ -46,6 +46,8 @@ pub enum PlayerRequest {
     LoadQueue(Vec<QueueItem>, Option<Vec<usize>>, usize),
     /// Appends multiple items to the current queue
     AppendQueue(Vec<QueueItem>),
+    /// Appends an item to the current queue
+    Append(QueueItem),
     /// Move a queue item from the first argument index to the second
     Reorder(usize, usize),
     /// Inserts an item into the queue
@@ -95,6 +97,7 @@ impl std::fmt::Debug for PlayerRequest {
                 Self::LoadQueue(queue, None, index) =>
                     format!("InitQueue((…, None, {index})): {} items", queue.len()),
                 Self::AppendQueue(queue) => format!("AppendQueue(…): {} items", queue.len()),
+                Self::Append(_) => "Append(…)".to_owned(),
                 Self::Reorder(from, to) => format!("Reorder({from}, {to})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
@@ -247,6 +250,7 @@ impl Player {
                     self.load_queue(queue, shuffled, index) == ()
                 }
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
+                PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {

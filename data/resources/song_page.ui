@@ -95,6 +95,19 @@
                   </object>
                 </child>
 
+                <child>
+                  <object class="AdwActionRow">
+                    <signal name="activated" handler="handle_add_to_queue" swapped="true"/>
+                    <property name="title" translatable="yes">Add To Queue</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">list-add-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
               </object>
             </child>
 

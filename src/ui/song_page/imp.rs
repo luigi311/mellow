@@ -71,6 +71,18 @@ impl SongPage {
             .expect(EXP_RX);
     }
     #[template_callback]
+    pub fn handle_add_to_queue(&self) {
+        self.obj()
+            .activate_action("ui.library_nav_pop", None)
+            .expect(ACTION_ERR);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        player_tx
+            .send(PlayerRequest::Append(QueueItem::Song(Arc::clone(
+                self.shared_song.borrow().as_ref().unwrap(),
+            ))))
+            .expect(EXP_RX);
+    }
+    #[template_callback]
     pub fn handle_go_to_album(&self) {
         (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::AlbumPage(Arc::clone(
