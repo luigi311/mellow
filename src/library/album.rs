@@ -15,6 +15,9 @@ pub struct Album {
 }
 
 impl Album {
+    /// Loops through all album songs and returns the average rating,
+    /// or returns `default_to` if no songs have a rating assigned
+    #[must_use]
     pub fn compute_average_rating(&self, default_to: f64) -> f64 {
         let mut rating_total = 0.0;
         let mut num_songs = 0;
@@ -30,6 +33,8 @@ impl Album {
             n => rating_total / n as f64,
         }
     }
+    /// Loops through all album songs and returns the average play count
+    #[must_use]
     pub fn compute_average_play_count(&self) -> f64 {
         let mut play_count_total = 0;
         for song in &self.songs {
