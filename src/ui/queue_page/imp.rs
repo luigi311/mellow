@@ -28,7 +28,6 @@ pub struct QueuePage {
 
     #[template_child]
     list_box: TemplateChild<gtk::ListBox>,
-    // list_view: TemplateChild<gtk::ListView>,
     #[template_child]
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
@@ -48,25 +47,19 @@ struct IndexNotFoundError;
 impl QueuePage {
     #[template_callback]
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_open_library(&self) {
-        UI_TX
-            .get()
-            .expect(EXP_INIT)
+        (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::FocusLibrary)
             .expect(EXP_RX);
     }

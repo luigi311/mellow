@@ -74,9 +74,7 @@ impl QueueSubpage {
         self.obj()
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::RemoveAt(self.index.get()))
             .expect(EXP_RX);
     }
@@ -85,9 +83,7 @@ impl QueueSubpage {
         self.obj()
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::Reorder(
                 self.index.get(),
                 self.index.get() - 1,
@@ -99,9 +95,7 @@ impl QueueSubpage {
         self.obj()
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::Reorder(
                 self.index.get(),
                 self.index.get() + 1,
@@ -113,10 +107,7 @@ impl QueueSubpage {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
         let _ = ui_tx.send(UpdateUI::AlbumPage(Arc::clone(
-            self.shared_song
-                .borrow()
-                .as_ref()
-                .unwrap()
+            (self.shared_song.borrow().as_ref().unwrap())
                 .album()
                 .as_ref()
                 .unwrap(),
@@ -130,11 +121,7 @@ impl QueueSubpage {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
         let _ = ui_tx.send(UpdateUI::ArtistPage(Arc::clone(
-            &self
-                .shared_song
-                .borrow()
-                .as_ref()
-                .unwrap()
+            &(self.shared_song.borrow().as_ref().unwrap())
                 .album()
                 .as_ref()
                 .unwrap()

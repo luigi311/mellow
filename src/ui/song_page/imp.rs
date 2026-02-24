@@ -8,8 +8,7 @@ use crate::excuses::ACTION_ERR;
 use crate::excuses::EXP_INIT;
 use crate::excuses::EXP_RX;
 use crate::library::ToQueue;
-use crate::library::song::SharedSong;
-use crate::library::song::SharedSongExt;
+use crate::library::song::{SharedSong, SharedSongExt};
 use crate::player::PLAYER_TX;
 use crate::player::PlayerRequest;
 use crate::player::queue_item::QueueItem;
@@ -86,10 +85,7 @@ impl SongPage {
     pub fn handle_go_to_album(&self) {
         (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::AlbumPage(Arc::clone(
-                self.shared_song
-                    .borrow()
-                    .as_ref()
-                    .unwrap()
+                (self.shared_song.borrow().as_ref().unwrap())
                     .album()
                     .as_ref()
                     .unwrap(),
@@ -100,11 +96,7 @@ impl SongPage {
     pub fn handle_go_to_artist(&self) {
         (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::ArtistPage(Arc::clone(
-                &self
-                    .shared_song
-                    .borrow()
-                    .as_ref()
-                    .unwrap()
+                &(self.shared_song.borrow().as_ref().unwrap())
                     .album()
                     .as_ref()
                     .unwrap()

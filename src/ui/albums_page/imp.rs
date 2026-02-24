@@ -54,6 +54,7 @@ impl AlbumsPage {
             }
         ));
         // TODO: Empty the query when pressing escape
+        // TODO: Focus the search bar with CTRL+F
     }
 
     #[template_callback]

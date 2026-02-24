@@ -43,9 +43,11 @@ Music library:
   - [x] Date added (either newest or oldest)
   - [x] Release date (either newest or oldest)
   - [-] Best/worst rating
-    - TODO: Artists page
+    - TODO: Albums page
+    - IDEA: Artists page
   - [-] Most/least played
-    - TODO: Artists page
+    - TODO: Albums page
+    - IDEA: Artists page
   - [x] Default
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
@@ -56,7 +58,7 @@ Music library:
     - [-] Display artist info (name/number of albums/average rating)
     - [x] Display all albums by the artist, each opening an Album subpage
     - [x] Play/Shuffle buttons
-    - [ ] Add to Queue button
+    - [ ] **Add to Queue button**
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
     - TODO: Improve dropdown behavior
@@ -64,10 +66,10 @@ Music library:
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year)
-    - [ ] Interactive rating widget
+    - [ ] **Interactive(?) rating widget**
       - TODO: Decide how ratings should be handled and how to store them
     - [x] Play/Shuffle buttons
-    - [ ] Add to Queue button
+    - [ ] **Add to Queue button**
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags
