@@ -28,10 +28,6 @@ pub struct AlbumsPage {
     albums_grid: TemplateChild<gtk::GridView>,
 
     #[template_child]
-    search_button: TemplateChild<gtk::ToggleButton>,
-    #[template_child]
-    search_bar: TemplateChild<gtk::SearchBar>,
-    #[template_child]
     search_entry: TemplateChild<gtk::SearchEntry>,
     search_query: Rc<RefCell<String>>,
 
@@ -57,16 +53,7 @@ impl AlbumsPage {
                 sorter.borrow().changed(gtk::SorterChange::Different);
             }
         ));
-        self.search_button
-            .bind_property("active", &self.search_bar.get(), "search-mode-enabled")
-            .sync_create()
-            .bidirectional()
-            .build();
-    }
-
-    #[template_callback]
-    pub fn handle_toggle_search(&self, toggle: &gtk::ToggleButton) {
-        self.search_bar.set_search_mode(toggle.is_active());
+        // TODO: Empty the query when pressing escape
     }
 
     #[template_callback]
