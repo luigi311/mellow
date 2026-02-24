@@ -151,12 +151,12 @@ pub fn query_score(query: &str, item: &str) -> f64 {
                 }
             }
         }
-        last_word_index = max_match_index;
         if max_match_score < 0.01 && !word.is_empty() {
             return 0.0;
         }
-
         score += max_match_score;
+
+        last_word_index = max_match_index;
         first_word = false;
     }
     score / query_words.len() as f64

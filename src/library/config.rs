@@ -4,7 +4,7 @@ use std::fs;
 use std::str::Chars;
 
 use crate::CONFIG_DIR;
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -27,6 +27,7 @@ impl LibraryConfig {
     ///
     /// # Panics
     /// The function panics if the `CONFIG_DIR` global variable is uninitialized
+    #[inline]
     pub fn new(directories: Vec<String>) -> Self {
         let mut config = LibraryConfig {
             directories,
@@ -82,19 +83,13 @@ impl LibraryConfig {
     }
 
     /// Requests a library rebuild and updates the directory list in the UI
-    ///
-    /// # Panics
-    /// The function panics if either the library or UI channel receiver is closed
     fn update_library(&self) {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
-        ui_tx
-            .send(UpdateUI::LibraryDirs(self.directories.clone().into()))
-            .expect(EXP_RX);
+        let _ = ui_tx.send(UpdateUI::LibraryDirs(self.directories.clone().into()));
+
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        library_tx
-            .send(LibraryRequest::CancelRebuild)
-            .expect(EXP_RX);
-        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+        let _ = library_tx.send(LibraryRequest::CancelRebuild);
+        let _ = library_tx.send(LibraryRequest::Rebuild);
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups

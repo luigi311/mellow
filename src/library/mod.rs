@@ -366,7 +366,6 @@ impl Library {
         let mut progress = 0.0;
         let mut iter = 0;
 
-        // TODO: Allow cancellation
         for song in &songs {
             let mut info = song.info();
             let song_info = info.load_basic();
@@ -447,11 +446,12 @@ impl Library {
             }
 
             if iter == progress_interval {
-                progress += progress_step;
-                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
                 if cancel.load(atomic::Ordering::Relaxed) {
+                    let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
+                progress += progress_step;
+                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
                 iter = 1;
                 continue;
             }
@@ -608,11 +608,12 @@ impl Library {
             }
 
             if iter == progress_interval {
-                progress += progress_step;
-                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
                 if cancel.load(atomic::Ordering::Relaxed) {
+                    let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
+                progress += progress_step;
+                let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
                 iter = 1;
                 continue;
             }
