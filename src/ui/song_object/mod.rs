@@ -104,8 +104,14 @@ impl SongObject {
     #[inline]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
         // TODO: Add `rating` to `SongObject` (and update so it stays in sync)
-        let rating_a = self.shared_song().info().user().rating;
-        let rating_b = other.shared_song().info().user().rating;
+        let rating_a = match self.shared_song().info().user().rating {
+            0 => 3,
+            n => n,
+        };
+        let rating_b = match other.shared_song().info().user().rating {
+            0 => 3,
+            n => n,
+        };
         match rating_b.cmp(&rating_a) {
             cmp::Ordering::Equal => self.cmp_most_played(other),
             ordering => ordering,
