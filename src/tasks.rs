@@ -61,7 +61,7 @@ impl Runner {
     /// The caller may use the returned channel to be
     /// notified when there are no more running tasks
     ///
-    /// Note: The caller must use the receiver to handle more than
+    /// Note: The caller must not use the receiver to handle more than
     /// one message, otherwise workers could become permanently stuck
     pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
         let (unblock_tx, unblock_rx) = mpsc::channel();
