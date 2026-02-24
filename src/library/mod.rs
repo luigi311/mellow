@@ -5,7 +5,7 @@ use rand::random_range;
 use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::atomic::{self, AtomicBool};
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -20,8 +20,8 @@ pub use artist::Artist;
 pub use song::{Song, SongInfo};
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::album::{SharedAlbum, SortedAlbumSongs};
-use crate::library::artist::{SharedArtist, SortedArtistAlbums};
+use crate::library::album::SortedAlbumSongs;
+use crate::library::artist::SortedArtistAlbums;
 use crate::library::config::{FILE_SUPPORT, LibraryConfig};
 use crate::library::song::{SharedSong, SharedSongExt, SongInfoLoader};
 use crate::player::PlayerRequest;
@@ -174,11 +174,6 @@ pub enum LibraryRequest {
 
     QueueFromPaths(Box<[String]>),
 
-    PlayAlbum(SharedAlbum),
-    ShuffleAlbum(SharedAlbum),
-    PlayArtist(SharedArtist),
-    ShuffleArtist(SharedArtist),
-
     AddLibrary(Box<str>),
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
@@ -254,17 +249,6 @@ impl Library {
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
 
                 LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
-
-                LibraryRequest::PlayAlbum(album) => {
-                    self.play_album(&album.lock().unwrap(), false)?;
-                }
-                LibraryRequest::ShuffleAlbum(album) => {
-                    self.play_album(&album.lock().unwrap(), true)?;
-                }
-                LibraryRequest::PlayArtist(artist) => self.play_artist(&artist.lock().unwrap())?,
-                LibraryRequest::ShuffleArtist(artist) => {
-                    self.shuffle_artist_albums(&artist.lock().unwrap())?;
-                }
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
@@ -746,29 +730,6 @@ impl Library {
         Ok(())
     }
 
-    /// Starts a queue using songs from the given album
-    ///
-    /// # Errors
-    /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_album(
-        &self,
-        album: &MutexGuard<Album>,
-        shuffle: bool,
-    ) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
-            album.songs.to_queue(),
-            match shuffle {
-                true => Some(vec![]),
-                false => None,
-            },
-            0,
-        ))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
     /// Starts a queue of all albums in the library
     ///
     /// # Errors
@@ -789,35 +750,6 @@ impl Library {
     pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
         self.player_tx.send(PlayerRequest::LoadQueue(
             self.artists.to_shuffled_queue(),
-            None,
-            0,
-        ))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    /// Starts a queue using songs by the given artist
-    ///
-    /// # Errors
-    /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_artist(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(artist.to_queue(), None, 0))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
-        Ok(())
-    }
-
-    /// Starts a queue of randomly ordered albums by the given artist
-    ///
-    /// # Errors
-    /// The function errors if either the player or UI channel receiver is closed
-    pub fn shuffle_artist_albums(&self, artist: &MutexGuard<Artist>) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
-            artist.to_shuffled_queue(),
             None,
             0,
         ))?;

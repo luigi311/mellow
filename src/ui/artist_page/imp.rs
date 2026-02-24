@@ -2,13 +2,13 @@ use adw::subclass::prelude::*;
 use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
 use std::cell::{Cell, RefCell};
-use std::sync::Arc;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::EXP_INIT;
 use crate::library::artist::SharedArtist;
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::song_row::SongRow;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artist_page.ui")]
@@ -44,29 +44,29 @@ impl ArtistPage {
     }
     #[template_callback]
     pub fn play_sequential(&self) {
-        (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::PlayArtist(Arc::clone(
-                self.artist.borrow().as_ref().unwrap(),
-            )))
-            .expect(EXP_RX);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let _ = player_tx.send(PlayerRequest::LoadQueue(
+            self.artist.borrow().as_ref().unwrap().to_queue(),
+            None,
+            0,
+        ));
+        let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let _ = ui_tx.send(UpdateUI::OpenSheet(false));
+        let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[template_callback]
     pub fn play_shuffled(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(PlayerRequest::SetShuffle(false))
-            .expect(EXP_RX);
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
-            .send(LibraryRequest::ShuffleArtist(Arc::clone(
-                self.artist.borrow().as_ref().unwrap(),
-            )))
-            .expect(EXP_RX);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let _ = player_tx.send(PlayerRequest::LoadQueue(
+            self.artist.borrow().as_ref().unwrap().to_shuffled_queue(),
+            None,
+            0,
+        ));
+        let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let _ = ui_tx.send(UpdateUI::OpenSheet(false));
+        let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
 }
 

@@ -5,8 +5,8 @@ use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::album::SharedAlbum;
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{ToQueue, album::SharedAlbum};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::rating::Rating;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI};
@@ -55,19 +55,29 @@ impl AlbumPage {
     }
     #[inline]
     pub fn play_sequential(&self) {
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::PlayAlbum(Arc::clone(
-                self.album.borrow().as_ref().expect(EXP_INIT),
-            )))
-            .expect(EXP_RX);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let _ = player_tx.send(PlayerRequest::LoadQueue(
+            self.album.borrow().as_ref().unwrap().to_queue(),
+            None,
+            0,
+        ));
+        let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let _ = ui_tx.send(UpdateUI::OpenSheet(false));
+        let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[inline]
     pub fn play_shuffled(&self) {
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::ShuffleAlbum(Arc::clone(
-                self.album.borrow().as_ref().expect(EXP_INIT),
-            )))
-            .expect(EXP_RX);
+        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let _ = player_tx.send(PlayerRequest::LoadQueue(
+            self.album.borrow().as_ref().unwrap().to_queue(),
+            Some(vec![]),
+            0,
+        ));
+        let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let _ = ui_tx.send(UpdateUI::OpenSheet(false));
+        let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
