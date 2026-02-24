@@ -150,6 +150,11 @@ impl Window {
                 UpdateUI::FocusSettings => self.focus_settings(),
                 UpdateUI::OpenSheet(open) => self.open_sheet(open),
 
+                UpdateUI::RunAction(action) => {
+                    WidgetExt::activate_action(&self.main_player.get(), action, None)
+                        .expect(ACTION_ERR)
+                }
+
                 UpdateUI::Shutdown => loop {
                     // Ignore any further requests without closing the channel
                     ui_rx.recv().await.unwrap();

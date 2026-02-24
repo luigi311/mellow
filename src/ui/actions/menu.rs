@@ -13,6 +13,8 @@ use crate::ui::artists_page::ArtistsPage;
 use crate::ui::song_object::SongOrdering;
 use crate::ui::songs_page::SongsPage;
 
+// FIX: Menus should use the correct initial state
+
 #[inline]
 pub fn songs_sort_mode(songs_page: SongsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("songs_sort_mode")

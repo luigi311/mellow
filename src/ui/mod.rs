@@ -75,6 +75,8 @@ pub enum UpdateUI {
     FocusSettings,
     OpenSheet(bool),
 
+    RunAction(&'static str),
+
     Shutdown,
 }
 

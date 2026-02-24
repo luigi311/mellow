@@ -1,10 +1,10 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::subclass::prelude::*;
 use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
-use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{ToQueue, album::SharedAlbum};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::rating::Rating;
@@ -81,9 +81,7 @@ impl AlbumPage {
     }
     #[inline]
     pub fn add_to_queue(&self) {
-        self.obj()
-            .activate_action("ui.library_nav_pop", None)
-            .expect(ACTION_ERR);
+        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
         let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(
             self.album.borrow().as_ref().unwrap().to_queue(),
         ));
