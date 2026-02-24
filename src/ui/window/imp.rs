@@ -94,26 +94,15 @@ impl Window {
         self.library.connect_popped(glib::clone!(
             #[weak(rename_to=window)]
             self,
-            move |_, _| {
-                match window.library_subpages.borrow_mut().pop() {
-                    Some(SubpageType::Song) => {
-                        window.song_pages.borrow_mut().pop();
-                    }
-                    Some(SubpageType::Album) => {
-                        window.album_pages.borrow_mut().pop();
-                    }
-                    Some(SubpageType::Artist) => {
-                        window.artist_pages.borrow_mut().pop();
-                    }
-                    None => return,
-                };
+            move |_, _| match window.library_subpages.borrow_mut().pop() {
+                Some(SubpageType::Artist) => drop(window.artist_pages.borrow_mut().pop()),
+                Some(SubpageType::Album) => drop(window.album_pages.borrow_mut().pop()),
+                Some(SubpageType::Song) => drop(window.song_pages.borrow_mut().pop()),
+                None => (),
             }
         ));
         self.main_player.init();
         self.queue_page.init(self.queue_song_page.get());
-        self.songs_page.init_search();
-        self.albums_page.init_search();
-        self.artists_page.init_search();
         self.settings_page.init(
             style_manager,
             vec![

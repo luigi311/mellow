@@ -100,7 +100,7 @@ impl AlbumsPage {
         });
     }
     #[inline]
-    pub fn get_shuffle(&self) -> bool {
+    pub const fn get_shuffle(&self) -> bool {
         self.shuffle.get()
     }
 
@@ -207,19 +207,14 @@ impl ObjectImpl for AlbumsPage {
         let _ = self
             .sort_mode
             .set(SortConfig::new(AlbumOrdering::ArtistYearAlbum, false));
+        self.init_search();
 
         self.albums_grid.connect_activate(|grid, index| {
-            let album = grid
-                .model()
-                .unwrap()
-                .item(index)
-                .unwrap()
+            let album = (grid.model().unwrap().item(index).unwrap())
                 .downcast_ref::<AlbumObject>()
                 .unwrap()
                 .shared_album();
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
+            (UI_TX.get().expect(EXP_INIT))
                 .send(UpdateUI::AlbumPage(album))
                 .expect(EXP_RX);
         });

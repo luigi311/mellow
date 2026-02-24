@@ -3,7 +3,7 @@ use gst::ClockTime;
 use gtk::Orientation;
 use gtk::{gdk, glib};
 
-use crate::excuses::{EXP_RX, EXP_SAFE};
+use crate::excuses::EXP_RX;
 use crate::format_duration_ms;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::fallback_song_image;
@@ -31,11 +31,7 @@ impl MainPlayer {
             let player_tx = PLAYER_TX.get().unwrap().clone();
             move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).expect(EXP_RX)
         });
-        self.imp()
-            .seek_bar
-            .parent()
-            .expect(EXP_SAFE)
-            .add_controller(release_seek_bar);
+        (self.imp().seek_bar.parent().unwrap()).add_controller(release_seek_bar);
     }
 
     #[inline]

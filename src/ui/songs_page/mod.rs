@@ -14,11 +14,6 @@ glib::wrapper! {
 
 impl SongsPage {
     #[inline]
-    pub fn init_search(&self) {
-        self.imp().init_search();
-    }
-
-    #[inline]
     pub fn load_songs(&self, songs: &Songs) {
         self.imp().load_songs(songs);
     }

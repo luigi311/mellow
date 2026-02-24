@@ -100,7 +100,7 @@ impl ArtistsPage {
         });
     }
     #[inline]
-    pub fn get_shuffle(&self) -> bool {
+    pub const fn get_shuffle(&self) -> bool {
         self.shuffle.get()
     }
 
@@ -206,19 +206,14 @@ impl ObjectImpl for ArtistsPage {
         let _ = self
             .sort_mode
             .set(SortConfig::new(ArtistOrdering::Artist, false));
+        self.init_search();
 
         self.artists_grid.connect_activate(|grid, index| {
-            let artist = grid
-                .model()
-                .unwrap()
-                .item(index)
-                .unwrap()
+            let artist = (grid.model().unwrap().item(index).unwrap())
                 .downcast_ref::<ArtistObject>()
                 .unwrap()
                 .shared_artist();
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
+            (UI_TX.get().expect(EXP_INIT))
                 .send(UpdateUI::ArtistPage(artist))
                 .expect(EXP_RX);
         });

@@ -100,7 +100,7 @@ impl SongsPage {
         });
     }
     #[inline]
-    pub fn get_shuffle(&self) -> bool {
+    pub const fn get_shuffle(&self) -> bool {
         self.shuffle.get()
     }
 
@@ -198,19 +198,14 @@ impl ObjectImpl for SongsPage {
         let _ = self
             .sort_mode
             .set(SortConfig::new(SongOrdering::Default, false));
+        self.init_search();
 
         self.songs_grid.connect_activate(|grid, index| {
-            let index = grid
-                .model()
-                .unwrap()
-                .item(index)
-                .unwrap()
+            let index = (grid.model().unwrap().item(index).unwrap())
                 .downcast_ref::<SongObject>()
                 .unwrap()
                 .index();
-            UI_TX
-                .get()
-                .expect(EXP_INIT)
+            (UI_TX.get().expect(EXP_INIT))
                 .send(UpdateUI::SongPageByIndex(index as usize))
                 .expect(EXP_RX);
         });

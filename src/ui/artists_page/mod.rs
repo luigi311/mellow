@@ -14,11 +14,6 @@ glib::wrapper! {
 
 impl ArtistsPage {
     #[inline]
-    pub fn init_search(&self) {
-        self.imp().init_search();
-    }
-
-    #[inline]
     pub fn load_artists(&self, artists: &Artists) {
         self.imp().load_artists(artists);
     }
