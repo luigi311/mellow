@@ -121,6 +121,9 @@ impl QueueSubpage {
                 .as_ref()
                 .unwrap(),
         )));
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
@@ -139,6 +142,9 @@ impl QueueSubpage {
                 .unwrap()
                 .artist,
         )));
+        self.obj()
+            .activate_action("ui.playing_nav_pop", None)
+            .expect(ACTION_ERR);
     }
 }
 
