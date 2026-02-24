@@ -62,9 +62,7 @@ impl ArtistPage {
 
             let album = Arc::clone(album);
             entry.connect_activated(move |_| {
-                UI_TX
-                    .get()
-                    .expect(EXP_INIT)
+                (UI_TX.get().expect(EXP_INIT))
                     .send(UpdateUI::AlbumPage(Arc::clone(&album)))
                     .expect(EXP_RX);
             });

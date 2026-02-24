@@ -105,3 +105,5 @@ Ideas for improvements:
     about the song, such as track number, disc, year, duration, play count,
     format/sample rate, filename, etc.
   - An 'Open With' or 'Show on Disk' button
+- The 'Go To Album/Artist' buttons could pop instead of pushing when the previous
+  page is the same as the one that is about to open

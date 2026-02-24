@@ -89,9 +89,7 @@ impl AlbumPage {
             let song = Arc::clone(song);
             let album = Arc::clone(album);
             song_row.connect_activated(move |_| {
-                UI_TX
-                    .get()
-                    .expect(EXP_INIT)
+                (UI_TX.get().expect(EXP_INIT))
                     .send(UpdateUI::SongPage(Box::new((
                         i,
                         song.clone(),

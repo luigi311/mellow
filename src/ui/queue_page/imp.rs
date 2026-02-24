@@ -102,11 +102,10 @@ impl QueuePage {
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
             let queue = queue.to_vec();
             move || {
-                // NOTE: Garbage collection moved to before assigning the items,
-                // because it would othewise sometimes unload background-loaded
-                // artworks before they would be assigned. If there are issues
-                // with queue artworks not loading in the future, try disabling
-                // garbage collection to verify that it is working properly.
+                // NOTE: Garbage collection happens before assigning the items, due to
+                // background-loaded artworks otherwise sometimes not getting assigned.
+                // If there are issues with queue artworks in the future, try disabling
+                // garbage collection first, to verify that it is working properly.
                 for (index, song) in queue.iter().enumerate() {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
