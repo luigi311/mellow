@@ -65,9 +65,7 @@ Music library:
   - [x] Show all albums
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
-    - [x] Display album info (album cover/title/artist/year)
-    - [ ] **Interactive(?) rating widget**
-      - TODO: Decide how ratings should be handled and how to store them
+    - [x] Display album info (album cover/title/artist/year/average rating)
     - [x] Play/Shuffle buttons
     - [ ] **Add to Queue button**
     - [x] Display a track list, each opening a Song subpage

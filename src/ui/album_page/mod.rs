@@ -58,6 +58,8 @@ impl AlbumPage {
             _ => String::new(),
         });
 
+        ui.rating
+            .set_rating_silent(album_locked.compute_average_rating(0.0).round() as u8);
         ui.rating.connect_rating_set(|rating| {
             println!("TODO: Decide how to handle album ratings (requested rating: {rating})");
         });

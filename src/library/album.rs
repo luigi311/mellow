@@ -14,6 +14,34 @@ pub struct Album {
     pub artist: SharedArtist,
 }
 
+impl Album {
+    pub fn compute_average_rating(&self, default_to: f64) -> f64 {
+        let mut rating_total = 0.0;
+        let mut num_songs = 0;
+        for song in &self.songs {
+            match song.info().user().rating {
+                0 => continue,
+                n => rating_total += n as f64,
+            }
+            num_songs += 1;
+        }
+        match num_songs {
+            0 => default_to,
+            n => rating_total / n as f64,
+        }
+    }
+    pub fn compute_average_play_count(&self) -> f64 {
+        let mut play_count_total = 0;
+        for song in &self.songs {
+            play_count_total += song.info().user().play_count;
+        }
+        match self.songs.len() {
+            0 => 0.0,
+            n => play_count_total as f64 / n as f64,
+        }
+    }
+}
+
 impl ToQueue for Album {
     fn to_queue(&self) -> Vec<QueueItem> {
         self.songs.to_queue()

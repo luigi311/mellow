@@ -103,13 +103,37 @@ impl AlbumObject {
     }
     #[inline]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
-        println!("TODO: Sorting by average play count is not yet implemented");
-        cmp::Ordering::Equal
+        let play_count_a = self
+            .shared_album()
+            .lock()
+            .unwrap()
+            .compute_average_play_count();
+        let play_count_b = other
+            .shared_album()
+            .lock()
+            .unwrap()
+            .compute_average_play_count();
+        match play_count_b.total_cmp(&play_count_a) {
+            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            ordering => ordering,
+        }
     }
     #[inline]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
-        println!("TODO: Sorting by best rating is not yet implemented");
-        cmp::Ordering::Equal
+        let rating_a = self
+            .shared_album()
+            .lock()
+            .unwrap()
+            .compute_average_rating(3.0);
+        let rating_b = other
+            .shared_album()
+            .lock()
+            .unwrap()
+            .compute_average_rating(3.0);
+        match rating_b.total_cmp(&rating_a) {
+            cmp::Ordering::Equal => self.cmp_most_played(other),
+            ordering => ordering,
+        }
     }
     #[inline]
     fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
