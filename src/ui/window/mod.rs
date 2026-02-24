@@ -75,6 +75,12 @@ impl Window {
         ]);
         self.insert_action_group("ui", Some(&ui_actions));
 
+        // IDEA: Song/album/artist pages could be constructed anew every time they are
+        // pushed onto the view stack, and an `Rc<RefCell<Vec>>` variable would keep
+        // track of their order. For example, to change the button shuffle behavior on
+        // a subpage, simply grab the top-most one in the `Vec`, and call the function.
+        // This might work for implementing the go-to-album/artist functionality
+
         let window = self.imp();
         let menu_actions = gio::SimpleActionGroup::new();
         menu_actions.add_action_entries([
@@ -120,9 +126,8 @@ impl Window {
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
         let remember_time = settings_page.remembers_time();
-
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
+
         thread::spawn(move || {
             LibraryConfig::config_dir_create_if_missing();
 
@@ -138,7 +143,7 @@ impl Window {
             // Wait for the player shutdown request to be processed
             // before shutting down the library (and thread pool)
             let _ = player_shutdown_rx.recv();
-            library_tx
+            (LIBRARY_TX.get().expect(EXP_INIT))
                 .send(LibraryRequest::Shutdown(library_shutdown_tx))
                 .expect(EXP_RX);
         });
