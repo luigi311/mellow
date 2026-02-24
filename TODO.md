@@ -31,7 +31,9 @@ than shown on the page, or even try to index out of bounds)
 
 Music library:
 
-- [x] Save/load user settings and application state
+- [ ] Save/load user settings and application state
+  - TODO: Remember sort mode preference
+  - IDEA: Remember filters?
 - [ ] Allow initiating a full library rebuild
 - [-] Search/filtering for songs/albums/artists pages
   - FIX: Cannot drag-select text because it drags the header bar
