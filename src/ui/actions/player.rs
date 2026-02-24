@@ -41,17 +41,27 @@ pub fn play_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionGrou
         .activate(clone!(
             #[weak(rename_to=songs_page)]
             window.imp().songs_page.imp(),
-            move |_, _, _| songs_page.handle_play_sequential()
+            move |_, _, _| songs_page.handle_play_now()
         ))
         .build()
 }
 #[inline]
-pub fn shuffle_all_songs(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("shuffle_all_songs")
+pub fn play_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("play_all_albums")
         .activate(clone!(
-            #[weak(rename_to=songs_page)]
-            window.imp().songs_page.imp(),
-            move |_, _, _| songs_page.handle_play_shuffled()
+            #[weak(rename_to=albums_page)]
+            window.imp().albums_page.imp(),
+            move |_, _, _| albums_page.handle_play_now()
+        ))
+        .build()
+}
+#[inline]
+pub fn play_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("play_all_artists")
+        .activate(clone!(
+            #[weak(rename_to=artists_page)]
+            window.imp().artists_page.imp(),
+            move |_, _, _| artists_page.handle_play_now()
         ))
         .build()
 }
@@ -98,45 +108,5 @@ pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleAc
                 page.imp().handle_play_shuffled();
             }
         })
-        .build()
-}
-#[inline]
-pub fn play_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("play_all_albums")
-        .activate(clone!(
-            #[weak(rename_to=albums_page)]
-            window.imp().albums_page.imp(),
-            move |_, _, _| albums_page.handle_play_sequential()
-        ))
-        .build()
-}
-#[inline]
-pub fn shuffle_all_albums(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("shuffle_all_albums")
-        .activate(clone!(
-            #[weak(rename_to=albums_page)]
-            window.imp().albums_page.imp(),
-            move |_, _, _| albums_page.handle_play_shuffled()
-        ))
-        .build()
-}
-#[inline]
-pub fn play_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("play_all_artists")
-        .activate(clone!(
-            #[weak(rename_to=artists_page)]
-            window.imp().artists_page.imp(),
-            move |_, _, _| artists_page.handle_play_sequential()
-        ))
-        .build()
-}
-#[inline]
-pub fn shuffle_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    gio::ActionEntry::builder("shuffle_all_artists")
-        .activate(clone!(
-            #[weak(rename_to=artists_page)]
-            window.imp().artists_page.imp(),
-            move |_, _, _| artists_page.handle_play_shuffled()
-        ))
         .build()
 }

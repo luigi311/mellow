@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 use std::sync::{Arc, atomic::Ordering};
 
@@ -17,8 +17,6 @@ use crate::ui::{SortConfig, UI_TX, UpdateUI, fallback_album_image};
 pub struct AlbumsPage {
     #[template_child]
     play_button: TemplateChild<adw::SplitButton>,
-    #[template_child]
-    shuffle_button: TemplateChild<adw::SplitButton>,
     #[template_child]
     sort_button: TemplateChild<adw::SplitButton>,
 
@@ -36,6 +34,8 @@ pub struct AlbumsPage {
     sorter: Rc<RefCell<gtk::CustomSorter>>,
 
     sort_mode: OnceCell<SortConfig<AlbumOrdering>>,
+
+    shuffle: Cell<bool>,
 }
 
 #[gtk::template_callbacks]
@@ -58,21 +58,7 @@ impl AlbumsPage {
     }
 
     #[template_callback]
-    pub fn handle_play_sequential(&self) {
-        self.play_button.set_visible(true);
-        self.shuffle_button.set_visible(false);
-        self.play_now(false);
-    }
-
-    #[template_callback]
-    pub fn handle_play_shuffled(&self) {
-        self.play_button.set_visible(false);
-        self.shuffle_button.set_visible(true);
-        self.play_now(true);
-    }
-
-    #[inline]
-    fn play_now(&self, shuffle: bool) {
+    pub fn handle_play_now(&self) {
         let model = self.albums_grid.model().expect(EXP_INIT);
         let n_items = model.n_items();
         let mut albums = Vec::with_capacity(n_items as usize);
@@ -91,7 +77,7 @@ impl AlbumsPage {
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         player_tx
             .send(PlayerRequest::LoadQueue(
-                match shuffle {
+                match self.shuffle.get() {
                     true => albums.to_shuffled_queue(),
                     false => albums.to_queue(),
                 },
@@ -103,6 +89,15 @@ impl AlbumsPage {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+    }
+
+    #[inline]
+    pub fn set_shuffle(&self, shuffle: bool) {
+        self.shuffle.set(shuffle);
+        self.play_button.set_icon_name(match shuffle {
+            false => "media-playback-start-symbolic",
+            true => "media-playlist-shuffle-symbolic",
+        });
     }
 
     #[inline]

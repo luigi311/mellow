@@ -47,9 +47,6 @@ Music library:
   - [x] Default
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
-    - TODO: **Improve dropdown behavior**
-    > Dropdown behavior could be improved by only selecting the shuffle mode
-    > for the button, rather than starting the playback when clicked
   - [x] Show all artists
   - [-] Artist subpage, accessed from each item
     - [-] Display artist info (name/number of albums/average rating)
@@ -58,7 +55,6 @@ Music library:
     - [ ] **Add to Queue button**
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
-    - TODO: **Improve dropdown behavior**
   - [x] Show all albums
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
@@ -71,7 +67,6 @@ Music library:
     - [x] Go to artist button
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
-    - TODO: **Improve dropdown behavior**
   - [x] Show all songs
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Song subpage, accessed from each item

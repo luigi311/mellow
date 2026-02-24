@@ -34,6 +34,11 @@ impl AlbumsPage {
     }
 
     #[inline]
+    pub fn set_shuffle(&self, shuffle: bool) {
+        self.imp().set_shuffle(shuffle);
+    }
+
+    #[inline]
     pub fn uninit(&self) {
         self.imp().uninit();
     }

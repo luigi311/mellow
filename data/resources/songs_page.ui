@@ -3,12 +3,14 @@
   <menu id="play_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">Play</attribute>
-        <attribute name='action'>player.play_all_songs</attribute>
+        <attribute name="label" translatable="yes">Sequential</attribute>
+        <attribute name='action'>menu.songs_play_mode</attribute>
+        <attribute name='target' type='s'>"Sequential"</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">Shuffle</attribute>
-        <attribute name='action'>player.shuffle_all_songs</attribute>
+        <attribute name="label" translatable="yes">Shuffled</attribute>
+        <attribute name='action'>menu.songs_play_mode</attribute>
+        <attribute name='target' type='s'>"Shuffled"</attribute>
       </item>
     </section>
   </menu>
@@ -79,19 +81,10 @@
 
             <child type="end">
               <object class="AdwSplitButton" id="play_button">
-                <signal name="clicked" handler="handle_play_sequential" swapped="true"/>
+                <signal name="clicked" handler="handle_play_now" swapped="true"/>
                 <property name="menu-model">play_menu</property>
                 <property name="icon-name">media-playback-start-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Play All</property>
-              </object>
-            </child>
-            <child type="end">
-              <object class="AdwSplitButton" id="shuffle_button">
-                <property name="visible">false</property>
-                <signal name="clicked" handler="handle_play_shuffled" swapped="true"/>
-                <property name="menu-model">play_menu</property>
-                <property name="icon-name">media-playlist-shuffle-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Play Shuffled</property>
               </object>
             </child>
 

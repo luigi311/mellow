@@ -51,15 +51,12 @@ impl Window {
             actions::player::play_pause(self),
             actions::player::skip_next(self),
             actions::player::play_all_songs(self),
-            actions::player::shuffle_all_songs(self),
+            actions::player::play_all_albums(self),
+            actions::player::play_all_artists(self),
             actions::player::play_visible_album(self),
             actions::player::shuffle_visible_album(self),
             actions::player::play_visible_artist(self),
             actions::player::shuffle_visible_artist(self),
-            actions::player::play_all_albums(self),
-            actions::player::shuffle_all_albums(self),
-            actions::player::play_all_artists(self),
-            actions::player::shuffle_all_artists(self),
         ]);
         self.insert_action_group("player", Some(&player_actions));
 
@@ -85,6 +82,9 @@ impl Window {
             actions::menu::songs_sort_mode(window.songs_page.get()),
             actions::menu::albums_sort_mode(window.albums_page.get()),
             actions::menu::artists_sort_mode(window.artists_page.get()),
+            actions::menu::songs_play_mode(window.songs_page.get()),
+            actions::menu::albums_play_mode(window.albums_page.get()),
+            actions::menu::artists_play_mode(window.artists_page.get()),
         ]);
         self.insert_action_group("menu", Some(&menu_actions));
 

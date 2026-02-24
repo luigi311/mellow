@@ -66,3 +66,52 @@ pub fn artists_sort_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::Sim
         })
         .build()
 }
+
+#[inline]
+pub fn artists_play_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("artists_play_mode")
+        .parameter_type(Some(VariantTy::STRING))
+        .state("Sequential".to_variant())
+        .activate(move |_, action, variant| {
+            let variant = variant.unwrap();
+            action.set_state(variant);
+            artists_page.set_shuffle(match &*variant.get::<String>().unwrap() {
+                "Sequential" => false,
+                "Shuffled" => true,
+                _ => unimplemented!(),
+            });
+        })
+        .build()
+}
+#[inline]
+pub fn albums_play_mode(albums_page: AlbumsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("albums_play_mode")
+        .parameter_type(Some(VariantTy::STRING))
+        .state("Sequential".to_variant())
+        .activate(move |_, action, variant| {
+            let variant = variant.unwrap();
+            action.set_state(variant);
+            albums_page.set_shuffle(match &*variant.get::<String>().unwrap() {
+                "Sequential" => false,
+                "Shuffled" => true,
+                _ => unimplemented!(),
+            });
+        })
+        .build()
+}
+#[inline]
+pub fn songs_play_mode(songs_page: SongsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("songs_play_mode")
+        .parameter_type(Some(VariantTy::STRING))
+        .state("Sequential".to_variant())
+        .activate(move |_, action, variant| {
+            let variant = variant.unwrap();
+            action.set_state(variant);
+            songs_page.set_shuffle(match &*variant.get::<String>().unwrap() {
+                "Sequential" => false,
+                "Shuffled" => true,
+                _ => unimplemented!(),
+            });
+        })
+        .build()
+}
