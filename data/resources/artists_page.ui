@@ -36,8 +36,7 @@
       <object class="AdwToolbarView">
         <child type="top">
           <object class="AdwHeaderBar">
-            <property name="show_title">False</property>
-            <child>
+            <child type="title">
               <object class="AdwClamp">
                 <child>
                   <object class="GtkSearchEntry" id="search_entry">
