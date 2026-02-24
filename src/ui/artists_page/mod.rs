@@ -37,6 +37,10 @@ impl ArtistsPage {
     pub fn set_shuffle(&self, shuffle: bool) {
         self.imp().set_shuffle(shuffle);
     }
+    #[inline]
+    pub fn get_shuffle(&self) -> bool {
+        self.imp().get_shuffle()
+    }
 
     #[inline]
     pub fn uninit(&self) {

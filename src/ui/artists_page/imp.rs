@@ -99,6 +99,10 @@ impl ArtistsPage {
             true => "media-playlist-shuffle-symbolic",
         });
     }
+    #[inline]
+    pub fn get_shuffle(&self) -> bool {
+        self.shuffle.get()
+    }
 
     #[inline]
     pub fn load_artists(&self, artsits: &Artists) {

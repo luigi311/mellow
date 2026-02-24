@@ -162,14 +162,19 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
+        settings.set_boolean("songs-shuffle", imp.songs_page.get_shuffle())?;
+        settings.set_boolean("albums-shuffle", imp.albums_page.get_shuffle())?;
+        settings.set_boolean("artists-shuffle", imp.artists_page.get_shuffle())?;
+
         // Wait for all background tasks to complete before closing
         library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
 
     pub fn load_state(&self) {
+        let imp = self.imp();
+        let settings_page = &imp.settings_page;
         let settings = self.settings();
-        let settings_page = &self.imp().settings_page;
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be set manually before setting the slider
@@ -183,6 +188,13 @@ impl Window {
         settings_page.set_remember_time(settings.boolean("remember-time"));
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));
         settings_page.set_color_scheme(settings.enum_("color-scheme").cast_unsigned());
+
+        imp.songs_page
+            .set_shuffle(settings.boolean("songs-shuffle"));
+        imp.albums_page
+            .set_shuffle(settings.boolean("albums-shuffle"));
+        imp.artists_page
+            .set_shuffle(settings.boolean("artists-shuffle"));
 
         self.set_default_size(settings.int("window-width"), settings.int("window-height"));
     }

@@ -51,5 +51,17 @@
       <default>":"</default>
       <summary>Directories within which the player will look for music files</summary>
     </key>
+    <key name="songs-shuffle" type="b">
+      <default>false</default>
+      <summary>Whether the play button on the songs page should start a shuffled queue</summary>
+    </key>
+    <key name="albums-shuffle" type="b">
+      <default>false</default>
+      <summary>Whether the play button on the albums page should start a shuffled queue</summary>
+    </key>
+    <key name="artists-shuffle" type="b">
+      <default>false</default>
+      <summary>Whether the play button on the artists page should start a shuffled queue</summary>
+    </key>
   </schema>
 </schemalist>

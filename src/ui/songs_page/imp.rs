@@ -15,7 +15,6 @@ use crate::ui::{SortConfig, UI_TX, UpdateUI, fallback_song_image};
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
 pub struct SongsPage {
-    // TODO: Remember last play mode between sessions
     #[template_child]
     play_button: TemplateChild<adw::SplitButton>,
     #[template_child]
@@ -99,6 +98,10 @@ impl SongsPage {
             false => "media-playback-start-symbolic",
             true => "media-playlist-shuffle-symbolic",
         });
+    }
+    #[inline]
+    pub fn get_shuffle(&self) -> bool {
+        self.shuffle.get()
     }
 
     #[inline]
