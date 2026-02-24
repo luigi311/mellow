@@ -51,8 +51,8 @@
 
                 <child>
                   <object class="AdwButtonRow">
-                    <!-- TODO: Not the best design choice to make this a 'Go To Artist' button -->
-                    <!-- Among being unintuitive, it may also conflict with the rating widget -->
+                    <!-- FIX: It is unintuitive to make this a 'Go To Artist' button -->
+                    <!-- FIX: Making this a button interferes with the rating widget -->
                     <signal name="activated" handler="handle_go_to_artist" swapped="true"/>
                     <child>
                       <object class="GtkBox">

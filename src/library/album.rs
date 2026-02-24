@@ -45,6 +45,13 @@ impl Album {
             n => play_count_total as f64 / n as f64,
         }
     }
+
+    /// Sets the rating of all songs on the album to `rating`
+    pub fn rate_all_songs(&self, rating: u8) {
+        for song in &self.songs {
+            song.info().set_rating(rating);
+        }
+    }
 }
 
 impl ToQueue for Album {

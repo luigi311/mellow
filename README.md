@@ -61,13 +61,13 @@ When the overlay is closed, it is time to enjoy the music.
 |  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
-|  4  | Song queue interface & management         | ⚠️ WIP: Does not yet support multi-selection or drag-&-drop reordering |
+|  4  | Song queue interface & management         | ⚠️ WIP: No multi-selection or drag-&-drop reordering yet |
 |  5  | Music library                             | ⚠️ WIP: Mostly done, but see below |
 | 5.1 | Artists page                              | ⚠️ WIP: Some functionality may be missing |
 | 5.2 | Albums page                               | ⚠️ WIP: High CPU usage while loading artworks |
 | 5.3 | Songs page                                | ⚠️ WIP: High CPU usage while loading artworks |
 | 5.4 | Search/filter/sort                        | ⚠️ WIP: No filtering yet (except by query) |
-| 5.5 | Play counts and ratings                   | ⚠️ WIP: No album ratings, play counts are not shown anywhere yet |
+| 5.5 | Play counts and ratings                   | ⚠️ WIP: Play counts are not shown anywhere yet |
 | 5.6 | User-assigned tags                        | ❌ TODO |
 |  6  | D-Bus media integration (MPRIS)           | ❌ TODO |
 |  7  | Adaptive background/colors                | ✅ Done |
