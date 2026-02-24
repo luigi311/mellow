@@ -54,10 +54,8 @@ impl Window {
             actions::player::play_all_songs(self),
             actions::player::play_all_albums(self),
             actions::player::play_all_artists(self),
-            actions::player::play_visible_album(self),
-            actions::player::shuffle_visible_album(self),
-            actions::player::play_visible_artist(self),
-            actions::player::shuffle_visible_artist(self),
+            actions::player::queue_visible_album(self),
+            actions::player::queue_visible_artist(self),
         ]);
         self.insert_action_group("player", Some(&player_actions));
 

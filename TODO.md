@@ -53,7 +53,7 @@ Music library:
     - [-] Display artist info (name/number of albums/average rating)
     - [x] Display all albums by the artist, each opening an Album subpage
     - [x] Play/Shuffle buttons
-    - [ ] **Add to Queue button**
+    - [x] Add to Queue button
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
   - [x] Show all albums
@@ -61,7 +61,7 @@ Music library:
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year/average rating)
     - [x] Play/Shuffle buttons
-    - [ ] **Add to Queue button**
+    - [x] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
     - [ ] Ability to set tags

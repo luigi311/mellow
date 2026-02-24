@@ -65,47 +65,24 @@ pub fn play_all_artists(window: &Window) -> gio::ActionEntry<gio::SimpleActionGr
         ))
         .build()
 }
-// TODO: Remove `play/shuffle_visible_…`, and make the dropdown select the button mode instead
 #[inline]
-pub fn play_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+pub fn queue_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     let album_pages = Rc::clone(&window.imp().album_pages);
-    gio::ActionEntry::builder("play_visible_album")
+    gio::ActionEntry::builder("queue_visible_album")
         .activate(move |_, _, _| {
             if let Some(page) = album_pages.borrow().last() {
-                page.imp().play_sequential();
+                page.imp().add_to_queue();
             }
         })
         .build()
 }
 #[inline]
-pub fn shuffle_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    let album_pages = Rc::clone(&window.imp().album_pages);
-    gio::ActionEntry::builder("shuffle_visible_album")
-        .activate(move |_, _, _| {
-            if let Some(page) = album_pages.borrow().last() {
-                page.imp().play_shuffled();
-            }
-        })
-        .build()
-}
-#[inline]
-pub fn play_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+pub fn queue_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     let artist_pages = Rc::clone(&window.imp().artist_pages);
-    gio::ActionEntry::builder("play_visible_artist")
+    gio::ActionEntry::builder("queue_visible_artist")
         .activate(move |_, _, _| {
             if let Some(page) = artist_pages.borrow().last() {
-                page.imp().play_sequential();
-            }
-        })
-        .build()
-}
-#[inline]
-pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
-    let artist_pages = Rc::clone(&window.imp().artist_pages);
-    gio::ActionEntry::builder("shuffle_visible_artist")
-        .activate(move |_, _, _| {
-            if let Some(page) = artist_pages.borrow().last() {
-                page.imp().play_shuffled();
+                page.imp().add_to_queue();
             }
         })
         .build()

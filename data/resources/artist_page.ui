@@ -12,6 +12,10 @@
         <attribute name='action'>menu.artist_page_play_mode</attribute>
         <attribute name='target' type='s'>"Shuffled"</attribute>
       </item>
+      <item>
+        <attribute name="label" translatable="yes">Add To Queue</attribute>
+        <attribute name='action'>player.queue_visible_artist</attribute>
+      </item>
     </section>
   </menu>
   <template class="MellowArtistPage" parent="AdwNavigationPage">
