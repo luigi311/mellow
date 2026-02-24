@@ -42,15 +42,12 @@ Music library:
 - [x] Songs/albums/artists sort modes
   - [x] Date added (either newest or oldest)
   - [x] Release date (either newest or oldest)
-  - [-] Best/worst rating
-    - TODO: Albums page
-    - IDEA: Artists page
-  - [-] Most/least played
-    - TODO: Albums page
-    - IDEA: Artists page
+  - [x] Best/worst rating
+  - [x] Most/least played
   - [x] Default
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
+    - TODO: **Improve dropdown behavior**
     > Dropdown behavior could be improved by only selecting the shuffle mode
     > for the button, rather than starting the playback when clicked
   - [x] Show all artists
@@ -61,7 +58,7 @@ Music library:
     - [ ] **Add to Queue button**
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
-    - TODO: Improve dropdown behavior
+    - TODO: **Improve dropdown behavior**
   - [x] Show all albums
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
@@ -74,7 +71,7 @@ Music library:
     - [x] Go to artist button
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
-    - TODO: Improve dropdown behavior
+    - TODO: **Improve dropdown behavior**
   - [x] Show all songs
     > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Song subpage, accessed from each item
