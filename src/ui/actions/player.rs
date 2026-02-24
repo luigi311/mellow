@@ -72,7 +72,7 @@ pub fn play_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleAction
     gio::ActionEntry::builder("play_visible_album")
         .activate(move |_, _, _| {
             if let Some(page) = album_pages.borrow().last() {
-                page.imp().handle_play_sequential();
+                page.imp().play_sequential();
             }
         })
         .build()
@@ -83,7 +83,7 @@ pub fn shuffle_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleAct
     gio::ActionEntry::builder("shuffle_visible_album")
         .activate(move |_, _, _| {
             if let Some(page) = album_pages.borrow().last() {
-                page.imp().handle_play_shuffled();
+                page.imp().play_shuffled();
             }
         })
         .build()
@@ -94,7 +94,7 @@ pub fn play_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActio
     gio::ActionEntry::builder("play_visible_artist")
         .activate(move |_, _, _| {
             if let Some(page) = artist_pages.borrow().last() {
-                page.imp().handle_play_sequential();
+                page.imp().play_sequential();
             }
         })
         .build()
@@ -105,7 +105,7 @@ pub fn shuffle_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleAc
     gio::ActionEntry::builder("shuffle_visible_artist")
         .activate(move |_, _, _| {
             if let Some(page) = artist_pages.borrow().last() {
-                page.imp().handle_play_shuffled();
+                page.imp().play_shuffled();
             }
         })
         .build()

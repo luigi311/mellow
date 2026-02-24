@@ -5,6 +5,7 @@ use gdk::{DragAction, FileList};
 use gio::Settings;
 use glib::Object;
 use gtk::{Orientation, gdk, gio, glib};
+use std::rc::Rc;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -85,6 +86,8 @@ impl Window {
             actions::menu::songs_play_mode(window.songs_page.get()),
             actions::menu::albums_play_mode(window.albums_page.get()),
             actions::menu::artists_play_mode(window.artists_page.get()),
+            actions::menu::album_page_play_mode(Rc::clone(&window.album_pages)),
+            actions::menu::artist_page_play_mode(Rc::clone(&window.artist_pages)),
         ]);
         self.insert_action_group("menu", Some(&menu_actions));
 

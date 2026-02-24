@@ -57,5 +57,4 @@ User Experience:
 
 Design Consistency:
 
-- [ ] Similar looking elements work the same an all places
-  - FIX: Songs/albums/artists shuffle mode selection differs from subpages
+- [x] Similar looking elements work the same an all places

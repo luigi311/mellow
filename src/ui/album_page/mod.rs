@@ -103,4 +103,8 @@ impl AlbumPage {
             ui.songs_list.append(&song_row);
         }
     }
+    #[inline]
+    pub fn set_shuffle(&self, shuffle: bool) {
+        self.imp().set_shuffle(shuffle);
+    }
 }

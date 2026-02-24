@@ -1,7 +1,7 @@
 use adw::subclass::prelude::*;
 use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -17,6 +17,8 @@ pub struct AlbumPage {
     pub album: RefCell<Option<SharedAlbum>>,
 
     #[template_child]
+    play_button: TemplateChild<adw::SplitButton>,
+    #[template_child]
     pub album_cover: TemplateChild<gtk::Picture>,
     #[template_child]
     pub album_title: TemplateChild<gtk::Label>,
@@ -30,25 +32,38 @@ pub struct AlbumPage {
 
     #[template_child]
     pub songs_list: TemplateChild<gtk::ListBox>,
+
+    shuffle: Cell<bool>,
 }
 
 #[gtk::template_callbacks]
 impl AlbumPage {
+    #[inline]
+    pub fn set_shuffle(&self, shuffle: bool) {
+        self.shuffle.set(shuffle);
+        self.play_button.set_icon_name(match shuffle {
+            false => "media-playback-start-symbolic",
+            true => "media-playlist-shuffle-symbolic",
+        });
+    }
     #[template_callback]
-    pub fn handle_play_sequential(&self) {
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
+    pub fn handle_play_now(&self) {
+        match self.shuffle.get() {
+            true => self.play_shuffled(),
+            false => self.play_sequential(),
+        }
+    }
+    #[inline]
+    pub fn play_sequential(&self) {
+        (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::PlayAlbum(Arc::clone(
                 self.album.borrow().as_ref().expect(EXP_INIT),
             )))
             .expect(EXP_RX);
     }
-    #[template_callback]
-    pub fn handle_play_shuffled(&self) {
-        LIBRARY_TX
-            .get()
-            .expect(EXP_INIT)
+    #[inline]
+    pub fn play_shuffled(&self) {
+        (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::ShuffleAlbum(Arc::clone(
                 self.album.borrow().as_ref().expect(EXP_INIT),
             )))

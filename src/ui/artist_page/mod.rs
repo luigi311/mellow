@@ -72,4 +72,8 @@ impl ArtistPage {
             ui.albums_list.append(&entry);
         }
     }
+    #[inline]
+    pub fn set_shuffle(&self, shuffle: bool) {
+        self.imp().set_shuffle(shuffle);
+    }
 }
