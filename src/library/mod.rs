@@ -334,10 +334,10 @@ impl Library {
                     let cancel = Arc::clone(&cancel);
                     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
                     Library::run_task(library_tx, move || {
-                        if cancel.load(atomic::Ordering::Relaxed) {
-                            return;
-                        }
                         for song in songs {
+                            if cancel.load(atomic::Ordering::Relaxed) {
+                                return;
+                            }
                             drop(song.info().try_load_basic());
                         }
                     });
@@ -357,10 +357,10 @@ impl Library {
         //     let cancel = Arc::clone(cancel);
         //     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
         //     Library::run_task(library_tx, move || {
-        //         if cancel.load(atomic::Ordering::Relaxed) {
-        //             return;
-        //         }
         //         for song in songs {
+        //             if cancel.load(atomic::Ordering::Relaxed) {
+        //                 return;
+        //             }
         //             drop(song.info().try_load_basic());
         //         }
         //     });
