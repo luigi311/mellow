@@ -465,7 +465,12 @@ impl Library {
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
+        // Cancel background tasks if the main function finished first
+        if !cancel.load(atomic::Ordering::Relaxed) {
+            let _ = library_tx.send(LibraryRequest::CancelRebuild);
+        }
         let _ = background_task_spawner.join();
+
         Ok(())
     }
 
