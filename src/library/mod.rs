@@ -829,9 +829,8 @@ impl Library {
                         // SAFETY: `index` is `Ok`, therefore within bounds
                         unsafe { self.songs.get_unchecked(index) },
                     ));
-                } else {
-                    break;
                 }
+                break;
             }
         }
         QueueItem::Song(SharedSong::from_path(file))
@@ -865,9 +864,7 @@ impl Library {
         let Ok(data) = fs::read_to_string([&self.config.dir, "songs"].concat()) else {
             return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
-        data.split("\n\n")
-            .filter_map(SharedSong::deserialize)
-            .collect()
+        (data.split("\n\n").filter_map(SharedSong::deserialize)).collect()
     }
 
     /// Writes the configuration to disk and shuts down gracefully.
@@ -877,14 +874,13 @@ impl Library {
     /// The function panics if the `notify_done`'s receiver is closed
     pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) {
         let mut songs = mem::take(&mut self.songs);
-        for missing_song in mem::take(&mut self.missing_songs) {
+        for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
-            let Err(index) =
-                songs.find_song(&missing_song.info().file_uri(), self.config.uri_opt())
+            let Err(index) = songs.find_song(&missing.info().file_uri(), self.config.uri_opt())
             else {
                 continue;
             };
-            songs.insert(index, missing_song);
+            songs.insert(index, missing);
         }
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         self.tasks.run(move || Library::serialize_songs(&songs));
