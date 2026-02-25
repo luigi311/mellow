@@ -246,6 +246,7 @@ impl SettingsPage {
                     return linear_to_srgb(target_lum, target_lum, target_lum);
                 }
 
+                // Desaturate dark colors for more accurate results once normalized
                 let saturation = 1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(4);
                 r = lerp(luminance, r, saturation);
                 g = lerp(luminance, g, saturation);
@@ -281,6 +282,7 @@ impl SettingsPage {
             r.mul_add(0.2126, g.mul_add(0.7152, b * 0.0722))
             // r.mul_add(0.299, g.mul_add(0.587, b * 0.114))
         }
+        /// Converts a linear color to sRGB (for use with the CSS)
         #[inline]
         fn linear_to_srgb(r: f64, g: f64, b: f64) -> (u8, u8, u8) {
             (
