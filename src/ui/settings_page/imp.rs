@@ -236,21 +236,17 @@ impl SettingsPage {
         #[inline]
         fn process_color_light(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             /// Colors below this luminance value will be desaturated for accuracy
-            const DESATURATION_THRESHOLD: f64 = 0.2;
+            const DESATURATION_THRESHOLD: f64 = 0.3;
 
             let luminance = lum(r, g, b);
-            let target_lum = luminance * luminance / 2.0 + 0.5;
+            let target_lum = (luminance * luminance * luminance).mul_add(0.5, 0.5);
 
             if luminance < DESATURATION_THRESHOLD {
                 if luminance == 0.0 {
                     return linear_to_srgb(target_lum, target_lum, target_lum);
                 }
 
-                let saturation = lerp(
-                    1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(3),
-                    1.0,
-                    0.3,
-                );
+                let saturation = 1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(5);
                 r = lerp(luminance, r, saturation);
                 g = lerp(luminance, g, saturation);
                 b = lerp(luminance, b, saturation);
