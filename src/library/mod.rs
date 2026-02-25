@@ -362,7 +362,8 @@ impl Library {
         let mut artists = Vec::with_capacity(songs.len() / 64);
 
         const PROGRESS_BAR_STEPS: usize = 320;
-        let progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
+        let mut progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
+        progress_interval -= songs.len() % progress_interval;
         let progress_step = progress_interval as f64 / songs.len() as f64;
         let mut progress = 0.0;
         let mut iter = 0;
@@ -446,6 +447,7 @@ impl Library {
                 }
             }
 
+            iter += 1;
             if iter == progress_interval {
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
@@ -453,10 +455,8 @@ impl Library {
                 }
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 1;
-                continue;
+                iter = 0;
             }
-            iter += 1;
         }
 
         library_tx.send(LibraryRequest::SetArtists(artists))?;
@@ -591,7 +591,8 @@ impl Library {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
         const PROGRESS_BAR_STEPS: usize = 320;
-        let progress_interval = possibly_moved.len() / PROGRESS_BAR_STEPS + 1;
+        let mut progress_interval = possibly_moved.len() / PROGRESS_BAR_STEPS + 1;
+        progress_interval -= possibly_moved.len() % progress_interval;
         let progress_step = progress_interval as f64 / possibly_moved.len() as f64;
         let mut progress = 0.0;
         let mut iter = 0;
@@ -614,6 +615,7 @@ impl Library {
                 }
             }
 
+            iter += 1;
             if iter == progress_interval {
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
@@ -621,10 +623,8 @@ impl Library {
                 }
                 progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 1;
-                continue;
+                iter = 0;
             }
-            iter += 1;
         }
     }
 
