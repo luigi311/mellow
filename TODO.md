@@ -37,15 +37,17 @@ Music library:
 - [ ] Allow initiating a full library rebuild
 - [-] Search/filtering for songs/albums/artists pages
   - FIX: Cannot drag-select text because it drags the header bar
-- [ ] More complex filtering
-  - [ ] Filter by tags, ratings, year, etc
-  - [ ] Conditional: year < 2000, rating > 3, play-count = 0, etc
 - [x] Songs/albums/artists sort modes
   - [x] Date added (either newest or oldest)
   - [x] Release date (either newest or oldest)
   - [x] Best/worst rating
   - [x] Most/least played
   - [x] Default
+- [ ] Songs/albums/artists filtering
+  - TODO: Create a submenu in the sort dropdown for selecting filters
+  - [ ] Filter by tags, ratings, year, etc
+  - IDEA: Conditional filters: year < 2000, rating > 3, play-count = 0, etc
+  > Note: may not work with the dropdown-submenu design
 - [ ] Artists page
   - [x] Buttons to play all artists (shuffled/sequential)
   - [x] Show all artists
