@@ -225,11 +225,11 @@ impl SettingsPage {
             g = (1.0 - (1.0 - g).powi(3)) / 5.5;
             b = (1.0 - (1.0 - b).powi(3)) / 5.5;
 
-            let lum = lum(r, g, b);
+            let luminance = lum(r, g, b);
 
-            r = lerp(lum, r, SATURATION);
-            g = lerp(lum, g, SATURATION);
-            b = lerp(lum, b, SATURATION);
+            r = lerp(luminance, r, SATURATION);
+            g = lerp(luminance, g, SATURATION);
+            b = lerp(luminance, b, SATURATION);
 
             linear_to_srgb(r, g, b)
         }
@@ -267,12 +267,12 @@ impl SettingsPage {
             g = lerp(g, g * g, 0.4);
             b = lerp(b, b * b, 0.4);
 
-            let lum = lum(r, g, b);
-            r = lerp(lum, r, SATURATION);
-            g = lerp(lum, g, SATURATION);
-            b = lerp(lum, b, SATURATION);
+            let luminance = lum(r, g, b);
+            r = lerp(luminance, r, SATURATION);
+            g = lerp(luminance, g, SATURATION);
+            b = lerp(luminance, b, SATURATION);
 
-            (linear_to_srgb(r, g, b), lum.powf(1.0 / 2.2))
+            (linear_to_srgb(r, g, b), luminance.powf(1.0 / 2.2))
         }
         /// Color luminance function:
         /// <https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color/596243#596243>
@@ -296,7 +296,7 @@ impl SettingsPage {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),
             InterfaceColorScheme::Light => process_color_light(r, g, b),
             _ => match process_color_auto(r, g, b) {
-                (color, lum) if lum < 0.5 => {
+                (color, luminance) if luminance < 0.5 => {
                     self.style_manager
                         .get()
                         .unwrap()
