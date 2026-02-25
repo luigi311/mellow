@@ -824,14 +824,13 @@ impl Library {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
                 let file = gio::File::for_path(file);
-                match self.songs.find_song(&file.uri(), self.config.uri_opt()) {
-                    Ok(index) => {
+                if let Ok(index) = self.songs.find_song(&file.uri(), self.config.uri_opt()) {
+                    return QueueItem::Song(Arc::clone(
                         // SAFETY: `index` is `Ok`, therefore within bounds
-                        return QueueItem::Song(Arc::clone(unsafe {
-                            self.songs.get_unchecked(index)
-                        }));
-                    }
-                    Err(_) => break,
+                        unsafe { self.songs.get_unchecked(index) },
+                    ));
+                } else {
+                    break;
                 }
             }
         }
