@@ -221,9 +221,9 @@ impl SettingsPage {
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 1.6;
 
-            r = (1.0 - r / 2.0).mul_add(-(1.0 - r / 2.0), 1.0) / 2.0;
-            g = (1.0 - g / 2.0).mul_add(-(1.0 - g / 2.0), 1.0) / 2.0;
-            b = (1.0 - b / 2.0).mul_add(-(1.0 - b / 2.0), 1.0) / 2.0;
+            r = (1.0 - (1.0 - r).powi(3)) / 5.5;
+            g = (1.0 - (1.0 - g).powi(3)) / 5.5;
+            b = (1.0 - (1.0 - b).powi(3)) / 5.5;
 
             let lum = lum(r, g, b);
 
