@@ -238,33 +238,30 @@ impl SettingsPage {
             /// Colors below this luminance value will be desaturated for accuracy
             const DESATURATION_THRESHOLD: f64 = 0.2;
 
-            let lum = lum(r, g, b);
+            let luminance = lum(r, g, b);
+            let target_lum = luminance * luminance / 2.0 + 0.5;
 
-            if lum < DESATURATION_THRESHOLD {
-                let saturation = lerp(1.0 - (1.0 - lum / DESATURATION_THRESHOLD).powi(3), 1.0, 0.3);
-                r = lerp(lum, r, saturation);
-                g = lerp(lum, g, saturation);
-                b = lerp(lum, b, saturation);
+            if luminance < DESATURATION_THRESHOLD {
+                if luminance == 0.0 {
+                    return linear_to_srgb(target_lum, target_lum, target_lum);
+                }
+
+                let saturation = lerp(
+                    1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(3),
+                    1.0,
+                    0.3,
+                );
+                r = lerp(luminance, r, saturation);
+                g = lerp(luminance, g, saturation);
+                b = lerp(luminance, b, saturation);
             }
 
-            // Normalize the color to brighten it without losing saturation
-            if lum > 0.0 {
-                r /= lum;
-                g /= lum;
-                b /= lum;
-            } else {
-                r = 1.0;
-                g = 1.0;
-                b = 1.0;
-            }
-
-            // Scale the normalized color to the target luminance
-            let target_lum = lum * lum / 2.0 + 0.5;
-            r *= target_lum;
-            g *= target_lum;
-            b *= target_lum;
-
-            linear_to_srgb(r, g, b)
+            // Normalize the color and scale it to the target luminance
+            linear_to_srgb(
+                r / luminance * target_lum,
+                g / luminance * target_lum,
+                b / luminance * target_lum,
+            )
         }
         #[inline]
         fn process_color_auto(mut r: f64, mut g: f64, mut b: f64) -> ((u8, u8, u8), f64) {
