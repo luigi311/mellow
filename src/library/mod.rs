@@ -322,7 +322,7 @@ impl Library {
 
         let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
 
-        thread::spawn({
+        let background_task_spawner = thread::spawn({
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
@@ -331,6 +331,9 @@ impl Library {
                 let chunk_size = songs.len() / 64;
                 let mut iter = 0;
                 for i in 0..64 {
+                    if cancel.load(atomic::Ordering::Relaxed) {
+                        return;
+                    }
                     let cancel = Arc::clone(&cancel);
                     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
                     Library::run_task(library_tx, move || {
@@ -341,30 +344,16 @@ impl Library {
                             drop(song.info().try_load_basic());
                         }
                     });
-                    if iter == 8 {
-                        // Avoid sending too many library requests at once
-                        // TODO: Test if this is worth it or not
-                        thread::yield_now();
+                    if iter == 7 {
                         iter = 0;
+                        // Avoid sending too many `run_task` requests at once
+                        thread::yield_now();
                         continue;
                     }
                     iter += 1;
                 }
             }
         });
-        // let chunk_size = songs.len() / 64;
-        // for i in 0..64 {
-        //     let cancel = Arc::clone(cancel);
-        //     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
-        //     Library::run_task(library_tx, move || {
-        //         for song in songs {
-        //             if cancel.load(atomic::Ordering::Relaxed) {
-        //                 return;
-        //             }
-        //             drop(song.info().try_load_basic());
-        //         }
-        //     });
-        // }
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
         Library::merge_moved_entries(&songs, possibly_moved, config, cancel);
@@ -476,6 +465,7 @@ impl Library {
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
+        let _ = background_task_spawner.join();
         Ok(())
     }
 
