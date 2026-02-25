@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::path::Path;
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
-use std::{fs, mem};
+use std::{fs, mem, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
@@ -322,21 +322,49 @@ impl Library {
 
         let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
 
-        // Spawning more tasks than there are workers,
-        // in case some finish sooner than others
-        let chunk_size = songs.len() / 64;
-        for i in 0..64 {
+        thread::spawn({
             let cancel = Arc::clone(cancel);
-            let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
-            Library::run_task(library_tx, move || {
-                if cancel.load(atomic::Ordering::Relaxed) {
-                    return;
+            let songs = songs.clone();
+            move || {
+                // Spawning more tasks than there are workers,
+                // in case some finish sooner than expected
+                let chunk_size = songs.len() / 64;
+                let mut iter = 0;
+                for i in 0..64 {
+                    let cancel = Arc::clone(&cancel);
+                    let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
+                    Library::run_task(library_tx, move || {
+                        if cancel.load(atomic::Ordering::Relaxed) {
+                            return;
+                        }
+                        for song in songs {
+                            drop(song.info().try_load_basic());
+                        }
+                    });
+                    if iter == 8 {
+                        // Avoid sending too many library requests at once
+                        // TODO: Test if this is worth it or not
+                        thread::yield_now();
+                        iter = 0;
+                        continue;
+                    }
+                    iter += 1;
                 }
-                for song in songs {
-                    drop(song.info().try_load_basic());
-                }
-            });
-        }
+            }
+        });
+        // let chunk_size = songs.len() / 64;
+        // for i in 0..64 {
+        //     let cancel = Arc::clone(cancel);
+        //     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
+        //     Library::run_task(library_tx, move || {
+        //         if cancel.load(atomic::Ordering::Relaxed) {
+        //             return;
+        //         }
+        //         for song in songs {
+        //             drop(song.info().try_load_basic());
+        //         }
+        //     });
+        // }
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
         Library::merge_moved_entries(&songs, possibly_moved, config, cancel);
