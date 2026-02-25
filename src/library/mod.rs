@@ -818,6 +818,8 @@ impl Library {
 
     /// Attempts to locate the given `file` within the library and
     /// returns it, otherwise a new instance of `Song` is returned
+    #[inline]
+    #[must_use]
     fn queue_from_library_or_new(&self, file: &str) -> QueueItem {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
