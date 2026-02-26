@@ -72,7 +72,7 @@ impl Runner {
         // Occupy all but one of the workers with a blocking operation
         for _ in 1..num_tasks {
             let unblock_rx = Arc::clone(&unblock_rx);
-            self.run(move || unblock_rx.lock().unwrap().recv().unwrap())
+            self.run(move || unblock_rx.lock().unwrap().recv().unwrap());
         }
 
         // When this task gets its turn in the queue, all tasks

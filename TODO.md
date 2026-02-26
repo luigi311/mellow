@@ -1,7 +1,6 @@
 Song queue:
 
 - [-] Display the song queue
-  - TODO: Draw the entire queue (using a more performant approach)
   - FIX: Memory leak when toggling shuffle
 - [-] Allow reordering the queue
   - TODO: **Reorder using drag & drop**
@@ -9,9 +8,7 @@ Song queue:
   - [ ] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once
   - [ ] Rating multiple items at once
-- [-] Allow adding songs to the queue
-  - TODO: Support adding albums
-  - TODO: Support adding artists
+- [x] Allow adding songs to the queue
 - [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)
 - [x] Access song lyrics using a header-bar icon

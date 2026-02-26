@@ -105,7 +105,7 @@ impl Window {
         self.playing.connect_popped(glib::clone!(
             #[weak(rename_to=window)]
             self,
-            move |_, page| if let Some(_) = page.downcast_ref::<QueueSubpage>() {
+            move |_, page| if page.downcast_ref::<QueueSubpage>().is_some() {
                 window.queue_subpage_visible.set(false);
             },
         ));
@@ -168,7 +168,7 @@ impl Window {
 
                 UpdateUI::RunAction(action) => {
                     WidgetExt::activate_action(&self.main_player.get(), action, None)
-                        .expect(ACTION_ERR)
+                        .expect(ACTION_ERR);
                 }
 
                 UpdateUI::Shutdown => loop {

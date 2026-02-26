@@ -1,18 +1,23 @@
-#![deny(unused_unsafe, clippy::undocumented_unsafe_blocks)]
+#![deny(clippy::missing_safety_doc, clippy::undocumented_unsafe_blocks)]
 #![warn(
     clippy::clear_with_drain,
     clippy::deref_by_slicing,
     clippy::doc_markdown,
     clippy::fallible_impl_from,
+    // clippy::missing_errors_doc,
+    // clippy::missing_panics_doc,
     clippy::mixed_read_write_in_expression,
     clippy::must_use_candidate,
     clippy::needless_collect,
     clippy::needless_for_each,
     clippy::needless_pass_by_ref_mut,
     clippy::needless_pass_by_value,
+    clippy::semicolon_if_nothing_returned,
     clippy::single_option_map,
-    clippy::str_to_string
+    clippy::str_to_string,
+    unused_unsafe
 )]
+#![allow(clippy::match_bool)]
 
 use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
 use gtk::glib;

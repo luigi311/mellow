@@ -167,6 +167,10 @@ impl LibraryConfig {
         self.uri_opt
     }
 
+    /// Creates the config directory if it does not exist yet
+    ///
+    /// # Panics
+    /// Panics if directory creation fails
     #[inline]
     pub fn config_dir_create_if_missing() {
         fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT))

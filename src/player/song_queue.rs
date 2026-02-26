@@ -214,10 +214,9 @@ impl SongQueue {
 
     /// Moves a song in the queue from `from` to `to`
     pub fn reorder(&mut self, from: usize, to: usize) {
-        if self.shuffle {
-            self.shuffled.reorder(from, to);
-        } else {
-            self.songs.reorder(from, to);
+        match self.shuffle {
+            true => self.shuffled.reorder(from, to),
+            false => self.songs.reorder(from, to),
         }
 
         if self.index == from {
