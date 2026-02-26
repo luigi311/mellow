@@ -689,19 +689,19 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
+    /// Uninitializes the queue and writes it to disk (if queue restoration is enabled)
+    /// Sends a message through `tx` once all background tasks have been started
     fn shutdown(&mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
         let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
+        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            SongQueue::save_shuffled_queue(save_queue && shuffle, &shuffled_queue);
+        });
+        let _ = tx.send(());
+
         let time = match self.current_time().map(ClockTime::mseconds) {
             Some(time) if time > 0 && save_time => Some(time),
             _ => None,
         };
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        Library::run_task(library_tx, move || {
-            SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
-        });
-        Library::run_task(library_tx, move || {
-            SongQueue::save_shuffled_queue(save_queue && shuffle, &shuffled_queue);
-        });
-        let _ = tx.send(());
+        SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
     }
 }
