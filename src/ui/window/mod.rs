@@ -6,12 +6,10 @@ use glib::Object;
 use gtk::{Orientation, gdk, gio, glib};
 use std::rc::Rc;
 use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryConfig, LibraryRequest};
+use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
 use crate::ui::application::Application;
@@ -122,9 +120,9 @@ impl Window {
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
         let remember_time = settings_page.remembers_time();
-        let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
 
-        thread::spawn(move || {
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        Library::run_task(library_tx, move || {
             LibraryConfig::create_config_dir();
 
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
@@ -139,9 +137,7 @@ impl Window {
             // Wait for the player shutdown request to be processed
             // before shutting down the library (and thread pool)
             let _ = player_shutdown_rx.recv();
-            (LIBRARY_TX.get().expect(EXP_INIT))
-                .send(LibraryRequest::Shutdown(library_shutdown_tx))
-                .expect(EXP_RX);
+            library_tx.send(LibraryRequest::Shutdown).expect(EXP_RX);
         });
 
         imp.artists_page.uninit();
@@ -164,8 +160,6 @@ impl Window {
         settings.set_boolean("albums-shuffle", imp.albums_page.get_shuffle())?;
         settings.set_boolean("artists-shuffle", imp.artists_page.get_shuffle())?;
 
-        // Wait for all background tasks to complete before closing
-        library_shutdown_rx.recv_timeout(Duration::from_millis(1500))?;
         Ok(())
     }
 

@@ -181,7 +181,7 @@ pub enum LibraryRequest {
     RunTask(BoxedTask),
     OnAlbumsSet(LibraryTask),
     OnArtistsSet(LibraryTask),
-    Shutdown(mpsc::Sender<()>),
+    Shutdown,
 }
 
 impl Library {
@@ -230,7 +230,7 @@ impl Library {
     /// The function may panic upon handling a request if
     /// a poisoned `Mutex` is passed
     #[inline]
-    pub fn request_handler(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn request_handler(mut self) -> Result<(), Box<dyn Error>> {
         // FIX: Library requests blocked while building the library?
         // `AddLibrary` worked, but `RemoveLibrary` did not...
         loop {
@@ -252,7 +252,8 @@ impl Library {
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
                 LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
-                LibraryRequest::Shutdown(notify_done) => self.shutdown(&notify_done),
+
+                LibraryRequest::Shutdown => return Ok(self.shutdown()),
             }
         }
     }
@@ -885,12 +886,8 @@ impl Library {
         (data.split("\n\n").filter_map(SharedSong::deserialize)).collect()
     }
 
-    /// Writes the configuration to disk and shuts down gracefully.
-    /// Notifies the caller over the `notify_done` channel when done.
-    ///
-    /// # Panics
-    /// The function panics if the `notify_done`'s receiver is closed
-    pub fn shutdown(&mut self, notify_done: &mpsc::Sender<()>) {
+    /// Consumes `self`, writes the configuration to disk and shuts down gracefully
+    pub fn shutdown(mut self) {
         let mut songs = mem::take(&mut self.songs);
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
@@ -903,7 +900,6 @@ impl Library {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
-        notify_done.send(()).expect(EXP_RX);
     }
 }
 

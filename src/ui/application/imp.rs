@@ -1,8 +1,13 @@
 use adw::subclass::prelude::*;
 use gtk::glib;
 
+use core::cell::Cell;
+use std::thread::JoinHandle;
+
 #[derive(Default)]
-pub struct Application {}
+pub struct Application {
+    pub library_handle: Cell<Option<JoinHandle<()>>>,
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for Application {

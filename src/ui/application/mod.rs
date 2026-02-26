@@ -1,4 +1,4 @@
-use adw::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gio, glib};
 use std::thread;
 
@@ -22,22 +22,15 @@ impl Application {
             .property("application-id", about::app_id())
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .build();
-        app.connect_open(|_, files, _| {
-            let files = files
-                .iter()
-                .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
-                .collect();
-            (LIBRARY_TX.get().expect(EXP_INIT))
-                .send(LibraryRequest::QueueFromPaths(files))
-                .expect(EXP_RX);
-        });
         app.connect_startup(Self::init);
+        app.connect_open(Self::open_files);
+        app.connect_shutdown(Self::shutdown);
         app
     }
 
     #[inline]
-    fn init(app: &Application) {
-        let (mut player, player_tx, ui_tx, ui_rx) = Player::init();
+    fn init(&self) {
+        let (player, player_tx, ui_tx, ui_rx) = Player::init();
         thread::Builder::new()
             .name("player".to_owned())
             .spawn(move || player.controller().unwrap())
@@ -54,15 +47,32 @@ impl Application {
             player_tx,
             ui_tx,
         );
-        thread::Builder::new()
-            .name("library".to_owned())
-            .spawn(move || {
-                library.discover_files();
-                library.init_queue(startup_queue).unwrap();
-                library.request_handler().unwrap();
-            })
-            .expect(INIT_ERR);
+        self.imp().library_handle.set(Some(
+            thread::Builder::new()
+                .name("library".to_owned())
+                .spawn(move || {
+                    library.discover_files();
+                    library.init_queue(startup_queue).unwrap();
+                    library.request_handler().unwrap();
+                })
+                .expect(INIT_ERR),
+        ));
 
-        ui::init(app, settings, ui_rx);
+        ui::init(self, settings, ui_rx);
+    }
+
+    #[inline]
+    fn open_files(&self, files: &[gio::File], _: &str) {
+        let files = files
+            .iter()
+            .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
+            .collect();
+        (LIBRARY_TX.get().expect(EXP_INIT))
+            .send(LibraryRequest::QueueFromPaths(files))
+            .expect(EXP_RX);
+    }
+
+    fn shutdown(&self) {
+        self.imp().library_handle.take().unwrap().join().unwrap();
     }
 }
