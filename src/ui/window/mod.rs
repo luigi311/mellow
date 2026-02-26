@@ -141,10 +141,14 @@ impl Window {
                 .expect(EXP_RX);
         });
         Library::run_task(library_tx, move || {
-            // Wait for the player shutdown request to be processed
-            // before shutting down the library (and thread pool)
+            // Wait for the player to start its tasks before
+            // shutting down the library (and thread pool)
             let _ = player_shutdown_rx.recv();
+
             library_tx.send(LibraryRequest::Shutdown).expect(EXP_RX);
+
+            // Wait until the player shutdown completes in full
+            let _ = player_shutdown_rx.recv();
         });
 
         imp.artists_page.uninit();
