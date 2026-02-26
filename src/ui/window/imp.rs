@@ -483,9 +483,7 @@ impl ObjectImpl for Window {
 }
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
-        self.obj()
-            .save_and_uninit()
-            .expect("Errors were encountered during shutdown");
+        self.obj().save_window_size().unwrap();
         glib::Propagation::Proceed
     }
 }

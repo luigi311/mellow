@@ -111,6 +111,13 @@ impl Window {
         self.add_controller(drop_target);
     }
 
+    pub fn save_window_size(&self) -> Result<(), glib::error::BoolError> {
+        let settings = self.settings();
+        settings.set_int("window-width", self.size(Orientation::Horizontal))?;
+        settings.set_int("window-height", self.size(Orientation::Vertical))?;
+        Ok(())
+    }
+
     /// Saves all settings and the player state and prepares
     /// for shutdown, uninitializing various components
     pub fn save_and_uninit(&self) -> Result<(), Box<dyn Error>> {
@@ -146,8 +153,6 @@ impl Window {
         imp.queue_page.uninit();
 
         let settings = self.settings();
-        settings.set_int("window-width", self.size(Orientation::Horizontal))?;
-        settings.set_int("window-height", self.size(Orientation::Vertical))?;
         settings.set_double("volume", settings_page.volume())?;
         settings.set_boolean("gapless", settings_page.gapless())?;
         settings.set_enum("startup-queue", *settings_page.startup_queue() as i32)?;

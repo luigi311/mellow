@@ -11,7 +11,7 @@ pub fn main() -> glib::ExitCode {
     register_resources();
     mellow::init_globals();
 
-    let app = Application::new();
+    let app = Application::setup();
 
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);

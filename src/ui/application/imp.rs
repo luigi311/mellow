@@ -1,11 +1,15 @@
 use adw::subclass::prelude::*;
 use gtk::glib;
 
-use core::cell::Cell;
+use core::cell::{Cell, OnceCell};
 use std::thread::JoinHandle;
+
+use crate::ui::Window;
 
 #[derive(Default)]
 pub struct Application {
+    /// Only one appication window may be open at a time
+    pub window: OnceCell<Window>,
     pub library_handle: Cell<Option<JoinHandle<()>>>,
 }
 

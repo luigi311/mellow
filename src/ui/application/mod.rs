@@ -1,13 +1,14 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gio, glib};
 use std::thread;
+use tokio::sync::mpsc as tokio_mpsc;
 
 mod imp;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::Player;
-use crate::ui;
+use crate::ui::{UpdateUI, Window};
 use crate::{MUSIC_DIR, about, unescaped_split};
 
 glib::wrapper! {
@@ -17,7 +18,7 @@ glib::wrapper! {
 }
 
 impl Application {
-    pub fn new() -> Self {
+    pub fn setup() -> Self {
         let app: Self = glib::Object::builder()
             .property("application-id", about::app_id())
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
@@ -58,7 +59,23 @@ impl Application {
                 .expect(INIT_ERR),
         ));
 
-        ui::init(self, settings, ui_rx);
+        self.create_window(settings, ui_rx);
+    }
+
+    #[inline]
+    fn create_window(
+        &self,
+        settings: gio::Settings,
+        ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
+    ) {
+        let window = Window::new(self, settings);
+        window.set_title(Some(about::app_name()));
+        window.set_icon_name(Some(about::app_id()));
+        window.present();
+
+        let _ = self.imp().window.set(window.clone());
+
+        glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
     }
 
     #[inline]
@@ -73,6 +90,8 @@ impl Application {
     }
 
     fn shutdown(&self) {
-        self.imp().library_handle.take().unwrap().join().unwrap();
+        let imp = self.imp();
+        imp.window.get().unwrap().save_and_uninit().unwrap();
+        imp.library_handle.take().unwrap().join().unwrap();
     }
 }
