@@ -671,14 +671,14 @@ impl Player {
         }
     }
 
-    /// Removes the current track from queue and resets player state
+    /// Skips the current track and resets player state
     /// Should only be used for error handling
     fn force_skip_track(&mut self, new_state: State) {
         // TODO: Display a toast informing the user of the issue
         eprintln!("Skipping song due to an issue");
         self.backend.set_state(State::Null).unwrap();
-        self.queue.remove_current();
-        // self.move_next();
+        // self.queue.remove_current();
+        self.move_next(false);
         self.request_state(new_state);
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
