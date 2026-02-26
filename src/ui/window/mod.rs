@@ -101,13 +101,13 @@ impl Window {
             gtk::DropTarget::new(FileList::static_type(), DragAction::COPY | DragAction::MOVE);
         // TODO: Add visual feedback when the file is over the window
         drop_target.connect_drop(|_, value, _, _| {
-            let files: Vec<String> = (value.get::<FileList>().unwrap())
+            let files = (value.get::<FileList>().unwrap())
                 .files()
                 .iter()
                 .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
                 .collect();
             (LIBRARY_TX.get().expect(EXP_INIT))
-                .send(LibraryRequest::QueueFromPaths(files.into()))
+                .send(LibraryRequest::QueueFromPaths(files))
                 .expect(EXP_RX);
             true
         });

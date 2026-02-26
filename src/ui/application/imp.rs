@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::subclass::prelude::*;
 use gtk::glib;
 
 #[derive(Default)]

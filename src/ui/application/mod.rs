@@ -14,6 +14,7 @@ impl Application {
     pub fn new() -> Self {
         glib::Object::builder()
             .property("application-id", about::app_id())
+            .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .build()
     }
 }

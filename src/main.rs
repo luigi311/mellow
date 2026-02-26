@@ -2,9 +2,9 @@ use adw::prelude::*;
 use gtk::{gio, glib};
 use std::thread;
 
-use mellow::excuses::INIT_ERR;
-use mellow::library::Library;
+use mellow::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use mellow::library::config::LibraryConfig;
+use mellow::library::{LIBRARY_TX, Library, LibraryRequest};
 use mellow::player::Player;
 use mellow::ui::application::Application;
 use mellow::{MUSIC_DIR, about, unescaped_split};
@@ -18,13 +18,22 @@ pub fn main() -> glib::ExitCode {
 
     let app = Application::new();
     app.connect_startup(init);
-    // TODO: If app is already open, load a new queue from args (with %F in `.desktop`)
-    // app.connect_activate(init);
+    app.connect_open(|_, files, _| {
+        let files = files
+            .iter()
+            .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
+            .collect();
+        (LIBRARY_TX.get().expect(EXP_INIT))
+            .send(LibraryRequest::QueueFromPaths(files))
+            .expect(EXP_RX);
+    });
+
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
     // TODO: Ignore shortcut when the overlay is open
     // app.set_accels_for_action("player.play_pause", &["space"]);
-    app.run_with_args(&[] as &[&str])
+
+    app.run()
 }
 
 #[inline]
