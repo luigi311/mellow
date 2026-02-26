@@ -16,8 +16,7 @@ glib::wrapper! {
 impl QueuePage {
     #[inline]
     pub fn init(&self, song_page: QueueSubpage) {
-        let queue_page = self.imp();
-        let _ = queue_page.song_page.set(song_page);
+        let _ = self.imp().song_page.set(song_page);
     }
 
     #[inline]

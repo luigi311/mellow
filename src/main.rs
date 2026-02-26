@@ -17,6 +17,7 @@ pub fn main() -> glib::ExitCode {
     register_resources();
     mellow::init_globals();
 
+    // IDEA: Move most of the `Window` code into a custom `Application`
     let app = Application::builder()
         .application_id(mellow::about::app_id())
         .build();
@@ -44,7 +45,7 @@ fn register_resources() {
 fn init(app: &Application) {
     let (mut player, player_tx, ui_tx, ui_rx) = Player::init();
     thread::Builder::new()
-        .name("player".to_string())
+        .name("player".to_owned())
         .spawn(move || player.controller().unwrap())
         .expect(INIT_ERR);
 
@@ -60,7 +61,7 @@ fn init(app: &Application) {
         ui_tx,
     );
     thread::Builder::new()
-        .name("library".to_string())
+        .name("library".to_owned())
         .spawn(move || {
             library.discover_files();
             library.init_queue(startup_queue).unwrap();

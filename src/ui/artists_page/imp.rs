@@ -65,10 +65,7 @@ impl ArtistsPage {
 
         for i in 0..n_items {
             artists.push(
-                model
-                    .item(i)
-                    .unwrap()
-                    .downcast_ref::<ArtistObject>()
+                (model.item(i).unwrap().downcast_ref::<ArtistObject>())
                     .unwrap()
                     .shared_artist(),
             );

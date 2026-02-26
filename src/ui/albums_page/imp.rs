@@ -65,10 +65,7 @@ impl AlbumsPage {
 
         for i in 0..n_items {
             albums.push(
-                model
-                    .item(i)
-                    .unwrap()
-                    .downcast_ref::<AlbumObject>()
+                (model.item(i).unwrap().downcast_ref::<AlbumObject>())
                     .unwrap()
                     .shared_album(),
             );

@@ -65,10 +65,7 @@ impl SongsPage {
 
         for i in 0..n_items {
             songs.push(
-                model
-                    .item(i)
-                    .unwrap()
-                    .downcast_ref::<SongObject>()
+                (model.item(i).unwrap().downcast_ref::<SongObject>())
                     .unwrap()
                     .shared_song(),
             );

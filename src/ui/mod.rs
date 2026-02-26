@@ -44,7 +44,7 @@ pub enum UpdateUI {
     PlayerState(bool, bool),
     PlayerTime(Option<ClockTime>),
     SongInfo,
-    NewQueue(Box<[QueueItem]>), // TODO: QueueInsert, QueueRemove, QueueReorder, QueueSwap
+    NewQueue(Box<[QueueItem]>),
     QueueIndex(usize),
     RedrawQueue,
     OpenQueueSubpage(usize),

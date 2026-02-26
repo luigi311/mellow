@@ -92,6 +92,19 @@ pub struct Window {
 impl Window {
     #[inline]
     pub fn init_ui_elements(&self, style_manager: adw::StyleManager) {
+        self.main_player.init();
+        self.queue_page.init(self.queue_subpage.get());
+        self.settings_page.init(
+            style_manager,
+            vec![
+                self.sheet.get().upcast::<gtk::Widget>(),
+                self.bottom_bar.get().upcast::<gtk::Widget>(),
+            ],
+            vec![
+                self.sheet_content.get().upcast::<gtk::Widget>(),
+                (self.main_player.imp().media_controls.get()).upcast::<gtk::Widget>(),
+            ],
+        );
         self.library.connect_popped(glib::clone!(
             #[weak(rename_to=window)]
             self,
@@ -109,19 +122,6 @@ impl Window {
                 window.queue_subpage_visible.set(false);
             },
         ));
-        self.main_player.init();
-        self.queue_page.init(self.queue_subpage.get());
-        self.settings_page.init(
-            style_manager,
-            vec![
-                self.sheet.get().upcast::<gtk::Widget>(),
-                self.bottom_bar.get().upcast::<gtk::Widget>(),
-            ],
-            vec![
-                self.sheet_content.get().upcast::<gtk::Widget>(),
-                (self.main_player.imp().media_controls.get()).upcast::<gtk::Widget>(),
-            ],
-        );
     }
 
     #[allow(clippy::future_not_send)]
@@ -447,7 +447,7 @@ impl ObjectSubclass for Window {
                 .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
                 .build();
 
-            // TODO: If possible, allow files OR folders
+            // TODO: If possible, allow files _or_ folders
             if let Ok(dirs) = file_picker.open_multiple_future(Some(&window)).await {
                 let mut paths = vec![];
                 let mut index = 0;
