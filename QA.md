@@ -54,10 +54,7 @@ User Experience:
 - [ ] Does not leak memory
   - FIX: Song queue memory leak (see TODO.md)
   - FIX: Memory leak related to artwork loading in songs/albums pages
-- [ ] No other issues found while testing
-  - FIX: Songs/albums/artists page shuffle mode dropdown has incorrect initial selection
-  - FIX: Song/album/artist page shuffle mode dropdown has incorrect initial selection
-  - FIX: The above would also apply to the sort mode dropdown if it were saved/restored
+- [x] No other issues found while testing
 
 Design Consistency:
 

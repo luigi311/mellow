@@ -369,12 +369,20 @@ impl Window {
         self.library_subpages.borrow_mut().push(SubpageType::Song);
     }
     fn open_album_page(&self, album: &SharedAlbum) {
+        let _ = self.library.activate_action(
+            "menu.album_page_play_mode",
+            Some(&"Sequential".to_variant()),
+        );
         let album_page = AlbumPage::new(album);
         self.library.push(&album_page);
         self.album_pages.borrow_mut().push(album_page);
         self.library_subpages.borrow_mut().push(SubpageType::Album);
     }
     fn open_artist_page(&self, artist: &SharedArtist) {
+        let _ = self.library.activate_action(
+            "menu.artist_page_play_mode",
+            Some(&"Sequential".to_variant()),
+        );
         let artist_page = ArtistPage::new(artist);
         self.library.push(&artist_page);
         self.artist_pages.borrow_mut().push(artist_page);
@@ -458,10 +466,6 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
-
-        let obj = self.obj();
-        obj.setup_actions();
-        obj.setup_drag_and_drop();
     }
 }
 impl WindowImpl for Window {

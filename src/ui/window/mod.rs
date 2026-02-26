@@ -37,6 +37,8 @@ impl Window {
         let _ = imp.settings.set(settings);
         imp.init_ui_elements(app.style_manager());
         window.load_state();
+        window.setup_actions();
+        window.setup_drag_and_drop();
         window
     }
 

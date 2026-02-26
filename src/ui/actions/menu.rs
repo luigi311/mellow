@@ -13,8 +13,6 @@ use crate::ui::artists_page::ArtistsPage;
 use crate::ui::song_object::SongOrdering;
 use crate::ui::songs_page::SongsPage;
 
-// FIX: Menus should use the correct initial state
-
 #[inline]
 pub fn songs_sort_mode(songs_page: SongsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("songs_sort_mode")
@@ -77,7 +75,10 @@ pub fn artists_sort_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::Sim
 pub fn artists_play_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("artists_play_mode")
         .parameter_type(Some(VariantTy::STRING))
-        .state("Sequential".to_variant())
+        .state(match artists_page.get_shuffle() {
+            false => "Sequential".to_variant(),
+            true => "Shuffled".to_variant(),
+        })
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
@@ -93,7 +94,10 @@ pub fn artists_play_mode(artists_page: ArtistsPage) -> gio::ActionEntry<gio::Sim
 pub fn albums_play_mode(albums_page: AlbumsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("albums_play_mode")
         .parameter_type(Some(VariantTy::STRING))
-        .state("Sequential".to_variant())
+        .state(match albums_page.get_shuffle() {
+            false => "Sequential".to_variant(),
+            true => "Shuffled".to_variant(),
+        })
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
@@ -109,7 +113,10 @@ pub fn albums_play_mode(albums_page: AlbumsPage) -> gio::ActionEntry<gio::Simple
 pub fn songs_play_mode(songs_page: SongsPage) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("songs_play_mode")
         .parameter_type(Some(VariantTy::STRING))
-        .state("Sequential".to_variant())
+        .state(match songs_page.get_shuffle() {
+            false => "Sequential".to_variant(),
+            true => "Shuffled".to_variant(),
+        })
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
@@ -137,7 +144,7 @@ pub fn artist_page_play_mode(
                     "Sequential" => false,
                     "Shuffled" => true,
                     _ => unimplemented!(),
-                })
+                });
             });
         })
         .build()
@@ -157,7 +164,7 @@ pub fn album_page_play_mode(
                     "Sequential" => false,
                     "Shuffled" => true,
                     _ => unimplemented!(),
-                })
+                });
             });
         })
         .build()
