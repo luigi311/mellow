@@ -1,4 +1,4 @@
-use adw::{self, Application, prelude::*, subclass::prelude::*};
+use adw::{self, prelude::*, subclass::prelude::*};
 use gst::ClockTime;
 use gtk::{self, gdk, gio, glib};
 use std::cell::Cell;
@@ -28,6 +28,7 @@ mod song_row;
 mod songs_page;
 mod window;
 
+pub mod application;
 pub mod settings_page;
 
 use crate::about;
@@ -36,6 +37,7 @@ use crate::library::artist::SharedArtist;
 use crate::library::song::SharedSong;
 use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::player::queue_item::QueueItem;
+use crate::ui::application::Application;
 use crate::ui::window::Window;
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();

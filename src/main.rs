@@ -1,14 +1,13 @@
-use adw::{Application, prelude::*};
+use adw::prelude::*;
 use gtk::{gio, glib};
-use mellow::library::config::LibraryConfig;
 use std::thread;
 
 use mellow::excuses::INIT_ERR;
 use mellow::library::Library;
+use mellow::library::config::LibraryConfig;
 use mellow::player::Player;
+use mellow::ui::application::Application;
 use mellow::{MUSIC_DIR, about, unescaped_split};
-
-// FIX: Crashes when opening a second instance (with %F in `.desktop`)
 
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(about::app_name());
@@ -17,11 +16,10 @@ pub fn main() -> glib::ExitCode {
     register_resources();
     mellow::init_globals();
 
-    // IDEA: Move most of the `Window` code into a custom `Application`
-    let app = Application::builder()
-        .application_id(mellow::about::app_id())
-        .build();
-    app.connect_activate(init);
+    let app = Application::new();
+    app.connect_startup(init);
+    // TODO: If app is already open, load a new queue from args (with %F in `.desktop`)
+    // app.connect_activate(init);
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
     // TODO: Ignore shortcut when the overlay is open

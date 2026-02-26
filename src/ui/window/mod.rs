@@ -1,4 +1,3 @@
-use adw::Application;
 use adw::{prelude::*, subclass::prelude::*};
 use core::error::Error;
 use gdk::{DragAction, FileList};
@@ -16,6 +15,7 @@ use crate::library::config::LibraryConfig;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
+use crate::ui::application::Application;
 use crate::ui::{UI_TX, UpdateUI, actions};
 
 mod imp;
