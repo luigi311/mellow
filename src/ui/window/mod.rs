@@ -129,10 +129,9 @@ impl Window {
         let remember_time = settings_page.remembers_time();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
             LibraryConfig::create_config_dir();
-
-            let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             (PLAYER_TX.get().expect(EXP_INIT))
                 .send(PlayerRequest::Shutdown(
                     remember_queue,
@@ -140,7 +139,8 @@ impl Window {
                     player_shutdown_tx,
                 ))
                 .expect(EXP_RX);
-
+        });
+        Library::run_task(library_tx, move || {
             // Wait for the player shutdown request to be processed
             // before shutting down the library (and thread pool)
             let _ = player_shutdown_rx.recv();
