@@ -898,7 +898,7 @@ impl Library {
             };
             songs.insert(index, missing);
         }
-        self.tasks.run(move || Library::serialize_songs(&songs));
+        Library::serialize_songs(&songs);
         self.tasks.shutdown();
     }
 }
