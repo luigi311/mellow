@@ -6,7 +6,8 @@ use std::cell::{OnceCell, RefCell};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{library::song::SharedSong, ui::queue_item_object::QueueItemData};
+use crate::library::SharedSong;
+use crate::ui::queue_item_object::QueueItemData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::QueueItemObject)]

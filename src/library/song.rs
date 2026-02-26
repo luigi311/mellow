@@ -8,7 +8,7 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
-use crate::library::album::SharedAlbum;
+use crate::library::SharedAlbum;
 use crate::serializer::serialize_list;
 use crate::unescaped_split;
 use crate::{deserialize, serialize};

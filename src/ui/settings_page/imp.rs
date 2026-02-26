@@ -6,10 +6,8 @@ use std::cell::{Cell, OnceCell, RefCell};
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::lerp;
-use crate::library::LIBRARY_TX;
-use crate::library::LibraryRequest;
-use crate::player::PLAYER_TX;
-use crate::player::PlayerRequest;
+use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::settings_page::StartupQueueChoice;
 
 #[derive(Default, CompositeTemplate)]

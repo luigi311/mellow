@@ -5,9 +5,7 @@ use std::cmp;
 use std::sync::{Arc, atomic};
 
 use crate::excuses::EXP_INIT;
-use crate::library::album::SharedAlbum;
-use crate::library::song::SharedSongExt;
-use crate::library::{LIBRARY_TX, Library, song::SharedSong};
+use crate::library::{LIBRARY_TX, Library, SharedAlbum, SharedSong, SharedSongExt};
 use crate::ui::{SortConfig, UI_TX, UpdateUI};
 
 mod imp;

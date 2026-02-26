@@ -4,17 +4,11 @@ use gtk::glib;
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
-use crate::excuses::ACTION_ERR;
-use crate::excuses::EXP_INIT;
-use crate::excuses::EXP_RX;
-use crate::library::ToQueue;
-use crate::library::song::{SharedSong, SharedSongExt};
-use crate::player::PLAYER_TX;
-use crate::player::PlayerRequest;
-use crate::player::queue_item::QueueItem;
-use crate::ui::UI_TX;
-use crate::ui::UpdateUI;
+use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::library::{SharedSong, SharedSongExt, ToQueue};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::rating::Rating;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]

@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gdk, glib};
 
-use crate::player::queue_item::QueueItem;
+use crate::player::QueueItem;
 use crate::ui::queue_subpage::QueueSubpage;
 
 mod imp;

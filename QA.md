@@ -20,7 +20,7 @@ Song Queue:
   - FIX: Starting an empty queue does not unload the currently playing song
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [-] Reordering the queue works as expected
+- [ ] Reordering the queue works as expected
   - TODO: Reorder using drag & drop
 - [ ] Stoppers work and behave as expected
   - FIX: Stoppers shift when toggling shuffle mode
@@ -52,7 +52,7 @@ User Experience:
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)
 - [ ] Does not leak memory
-  - FIX: Song queue memory leak (see TODO.md)
+  - FIX: Memory leak when toggling shuffle
   - FIX: Memory leak related to artwork loading in songs/albums pages
 - [x] No other issues found while testing
 

@@ -4,8 +4,7 @@ mod tests {
     use std::sync::mpsc;
     use tokio::sync::mpsc as tokio_mpsc;
 
-    use mellow::library::config::LibraryConfig;
-    use mellow::library::{LIBRARY_TX, LibraryRequest};
+    use mellow::library::{LIBRARY_TX, LibraryConfig, LibraryRequest};
     use mellow::ui::{UI_TX, UpdateUI};
 
     struct ConfigTester {

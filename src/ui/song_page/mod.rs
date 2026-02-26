@@ -3,7 +3,7 @@ use glib::Object;
 use gtk::glib;
 use std::sync::Arc;
 
-use crate::library::{ToQueue, song::SharedSong};
+use crate::library::{SharedSong, ToQueue};
 
 mod imp;
 

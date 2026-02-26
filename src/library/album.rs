@@ -1,9 +1,8 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::library::artist::SharedArtist;
-use crate::library::{Song, SongInfo, ToQueue};
-use crate::player::queue_item::QueueItem;
+use crate::library::{SharedArtist, Song, SongInfo, ToQueue};
+use crate::player::QueueItem;
 
 // TODO: Save/load album info (such as ratings)
 

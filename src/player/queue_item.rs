@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::library::{Song, song::SharedSong};
+use crate::library::{SharedSong, Song};
 
 #[derive(Clone)]
 pub enum QueueItem {

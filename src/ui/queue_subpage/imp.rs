@@ -5,10 +5,8 @@ use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::song::{SharedSong, SharedSongExt};
-use crate::player::PLAYER_TX;
-use crate::player::PlayerRequest;
-use crate::player::queue_item::QueueItem;
+use crate::library::{SharedSong, SharedSongExt};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::UI_TX;
 use crate::ui::UpdateUI;
 use crate::ui::rating::Rating;

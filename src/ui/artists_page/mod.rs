@@ -1,7 +1,8 @@
 use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
 
-use crate::{library::Artists, ui::artist_object::ArtistOrdering};
+use crate::library::Artists;
+use crate::ui::artist_object::ArtistOrdering;
 
 mod imp;
 

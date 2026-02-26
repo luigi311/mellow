@@ -11,8 +11,7 @@ use std::time::Duration;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::config::LibraryConfig;
-use crate::library::{LIBRARY_TX, LibraryRequest};
+use crate::library::{LIBRARY_TX, LibraryConfig, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
 use crate::ui::application::Application;

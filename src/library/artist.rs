@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
 use crate::library::{Album, SongInfo, ToQueue, ToShuffledQueue};
-use crate::player::queue_item::QueueItem;
+use crate::player::QueueItem;
 
 pub struct Artist {
     pub name: String,

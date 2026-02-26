@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
 use std::sync::Arc;
 
-use crate::library::song::SharedSong;
+use crate::library::SharedSong;
 
 mod imp;
 

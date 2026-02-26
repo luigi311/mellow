@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::excuses::EXP_INIT;
-use crate::library::{LIBRARY_TX, Library, song::SharedSong};
+use crate::library::{LIBRARY_TX, Library, SharedSong};
 use crate::ui::{UI_TX, UpdateUI};
 
 mod imp;

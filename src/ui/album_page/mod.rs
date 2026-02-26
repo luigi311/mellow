@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
-use crate::library::album::SharedAlbum;
+use crate::library::SharedAlbum;
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 

@@ -10,11 +10,9 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::album::SharedAlbum;
-use crate::library::artist::SharedArtist;
-use crate::library::song::SharedSong;
-use crate::library::{Albums, Artists, LIBRARY_TX, Library, LibraryRequest, Songs, ToQueue};
-use crate::player::queue_item::QueueItem;
+use crate::library::{Albums, Artists, SharedAlbum, SharedArtist, SharedSong, Songs, ToQueue};
+use crate::library::{LIBRARY_TX, Library, LibraryRequest};
+use crate::player::QueueItem;
 use crate::ui::album_page::AlbumPage;
 use crate::ui::albums_page::AlbumsPage;
 use crate::ui::artist_page::ArtistPage;

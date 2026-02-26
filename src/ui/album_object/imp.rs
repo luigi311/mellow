@@ -6,7 +6,8 @@ use std::cell::{OnceCell, RefCell};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{library::song::SharedSong, ui::album_object::AlbumData};
+use crate::library::SharedSong;
+use crate::ui::album_object::AlbumData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::AlbumObject)]

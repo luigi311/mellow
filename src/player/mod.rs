@@ -8,11 +8,13 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, Library};
-use crate::player::{queue_item::QueueItem, song_queue::SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 
 pub mod queue_item;
 pub mod song_queue;
+
+pub use queue_item::QueueItem;
+pub use song_queue::SongQueue;
 
 // TODO: MPRIS support for Gnome Shell media controls
 

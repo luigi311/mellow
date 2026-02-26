@@ -31,13 +31,12 @@ mod window;
 pub mod application;
 pub mod settings_page;
 
+pub use application::Application;
+
 use crate::about;
-use crate::library::album::SharedAlbum;
-use crate::library::artist::SharedArtist;
-use crate::library::song::SharedSong;
 use crate::library::{Albums, Artists, Songs, ToQueue};
-use crate::player::queue_item::QueueItem;
-use crate::ui::application::Application;
+use crate::library::{SharedAlbum, SharedArtist, SharedSong};
+use crate::player::QueueItem;
 use crate::ui::window::Window;
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();

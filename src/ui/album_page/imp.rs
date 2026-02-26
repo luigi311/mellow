@@ -5,7 +5,7 @@ use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{ToQueue, album::SharedAlbum};
+use crate::library::{SharedAlbum, ToQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::rating::Rating;
 use crate::ui::song_row::SongRow;

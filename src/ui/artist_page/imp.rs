@@ -4,8 +4,7 @@ use gtk::{CompositeTemplate, glib};
 use std::cell::{Cell, RefCell};
 
 use crate::excuses::EXP_INIT;
-use crate::library::artist::SharedArtist;
-use crate::library::{ToQueue, ToShuffledQueue};
+use crate::library::{SharedArtist, ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI};

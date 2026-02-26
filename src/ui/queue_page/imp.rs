@@ -6,10 +6,8 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
-use crate::library::song::SharedSong;
-use crate::library::{LIBRARY_TX, Library};
-use crate::player::queue_item::QueueItem;
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::library::{LIBRARY_TX, Library, SharedSong};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::queue_item_object::QueueItemObject;
 use crate::ui::queue_subpage::QueueSubpage;
 use crate::ui::song_row::SongRow;

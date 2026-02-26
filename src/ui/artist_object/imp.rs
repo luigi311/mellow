@@ -3,7 +3,8 @@ use glib::Properties;
 use gtk::{gdk, glib};
 use std::cell::{OnceCell, RefCell};
 
-use crate::{library::artist::SharedArtist, ui::artist_object::ArtistData};
+use crate::library::SharedArtist;
+use crate::ui::artist_object::ArtistData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::ArtistObject)]
