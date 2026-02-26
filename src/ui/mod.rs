@@ -47,7 +47,8 @@ pub enum UpdateUI {
     NewQueue(Box<[QueueItem]>), // TODO: QueueInsert, QueueRemove, QueueReorder, QueueSwap
     QueueIndex(usize),
     RedrawQueue,
-    QueueSupbage(usize),
+    OpenQueueSubpage(usize),
+    CloseQueueSubpage,
     Shuffle(bool),
     Repeat(bool),
     Progress(Option<f64>),

@@ -1,9 +1,5 @@
 Song queue:
 
-- FIX: Queue subpage should close (or update) when the queue changes
-(for example, starting a new queue still shows old info, which leads
-to misleading behavior - pressing play would jump to a different song
-than shown on the page, or even try to index out of bounds)
 - [-] Display the song queue
   - TODO: Draw the entire queue (using a more performant approach)
   - FIX: Memory leak when toggling shuffle

@@ -160,6 +160,7 @@ impl SongQueue {
         }
         self.ui_update_shuffle();
         self.ui_update_queue();
+        self.ui_close_queue_subpage();
     }
 
     /// Restarts the queue from the beginning
@@ -202,12 +203,13 @@ impl SongQueue {
         }
     }
 
-    /// Removes all upcomming songs from the queue
+    /// Removes all songs from the queue except the currently playing one
     pub fn clear_queue(&mut self) {
         let current_song = self.remove(self.current_index());
         self.songs = vec![current_song];
         self.shuffled = vec![0];
         self.ui_update_queue();
+        self.ui_close_queue_subpage();
     }
 
     /// Moves a song in the queue from `from` to `to`
@@ -247,6 +249,8 @@ impl SongQueue {
 
         if self.index >= index {
             self.index += 1;
+        } else {
+            self.ui_close_queue_subpage();
         }
 
         self.ui_update_queue();
@@ -432,6 +436,15 @@ impl SongQueue {
         self.ui_tx
             .send(UpdateUI::QueueIndex(self.index))
             .expect(EXP_RX);
+    }
+
+    /// Closes the UI queue subpage if visible
+    ///
+    /// # Panics
+    /// The function panics if the UI channel receiver is closed
+    fn ui_close_queue_subpage(&self) {
+        println!("ui_close_queue_subpage({})", self.index);
+        self.ui_tx.send(UpdateUI::CloseQueueSubpage).expect(EXP_RX);
     }
 
     /// Empties the queues and returns the following info:

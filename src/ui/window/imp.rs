@@ -70,7 +70,8 @@ pub struct Window {
     #[template_child]
     pub queue_page: TemplateChild<QueuePage>,
     #[template_child]
-    queue_song_page: TemplateChild<QueueSubpage>,
+    queue_subpage: TemplateChild<QueueSubpage>,
+    queue_subpage_visible: Cell<bool>,
     #[template_child]
     lyrics_page: TemplateChild<LyricsPage>,
 
@@ -101,8 +102,15 @@ impl Window {
                 None => (),
             }
         ));
+        self.playing.connect_popped(glib::clone!(
+            #[weak(rename_to=window)]
+            self,
+            move |_, page| if let Some(_) = page.downcast_ref::<QueueSubpage>() {
+                window.queue_subpage_visible.set(false);
+            },
+        ));
         self.main_player.init();
-        self.queue_page.init(self.queue_song_page.get());
+        self.queue_page.init(self.queue_subpage.get());
         self.settings_page.init(
             style_manager,
             vec![
@@ -132,7 +140,8 @@ impl Window {
                 UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
                 UpdateUI::QueueIndex(index) => self.update_song_index(index),
                 UpdateUI::RedrawQueue => self.update_song_index(self.song_queue_index.get()),
-                UpdateUI::QueueSupbage(index) => self.open_queue_subpage(index),
+                UpdateUI::OpenQueueSubpage(index) => self.open_queue_subpage(index),
+                UpdateUI::CloseQueueSubpage => self.close_queue_subpage(),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
@@ -181,7 +190,7 @@ impl Window {
 
         let index = self.song_queue_index.get();
         let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
-        self.queue_song_page.set_stop_after(stop_after);
+        self.queue_subpage.set_stop_after(stop_after);
 
         let song = &queue[index];
         if song.is_stopper() {
@@ -258,21 +267,25 @@ impl Window {
             .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
     }
     fn open_queue_subpage(&self, index: usize) {
+        self.playing.push_by_tag("info");
+        self.queue_subpage_visible.set(true);
         let queue = self.song_queue.borrow();
         let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
-        self.queue_song_page
-            .activate_action("ui.playing_nav_push", Some(&"info".to_variant()))
-            .expect(ACTION_ERR);
-        self.queue_song_page.update(
+        self.queue_subpage.update(
             index,
             Arc::clone(match &queue[index] {
                 QueueItem::Song(song) => song,
                 _ => unreachable!(),
             }),
         );
-        self.queue_song_page.set_stop_after(stop_after);
+        self.queue_subpage.set_stop_after(stop_after);
     }
-
+    fn close_queue_subpage(&self) {
+        println!("close_queue_subpage()");
+        while self.queue_subpage_visible.get() {
+            self.playing.pop();
+        }
+    }
     fn update_progress(&self, progress: Option<f64>) {
         self.library_page.update_progress(progress);
         if let Some(progress) = progress {

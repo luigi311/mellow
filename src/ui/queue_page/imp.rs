@@ -268,7 +268,7 @@ impl ObjectImpl for QueuePage {
                 let object_index = queue_item_object.index() as usize;
                 queue_row.connect_activated(move |_| {
                     (UI_TX.get().expect(EXP_INIT))
-                        .send(UpdateUI::QueueSupbage(object_index))
+                        .send(UpdateUI::OpenQueueSubpage(object_index))
                         .expect(EXP_RX);
                 });
             } else {
