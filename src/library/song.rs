@@ -84,7 +84,7 @@ impl<'s> Song {
         }
     }
 
-    /// Returns a `String` containing serialized `SongInfo` data,
+    /// Returns a `String` containing serialized song info,
     /// which can be used with the `deserialize()` method
     #[inline]
     #[must_use]
@@ -114,9 +114,9 @@ impl<'s> Song {
         }
     }
 
-    /// Returns an `Option<String>` containing serialized `SongInfo`
-    /// data, which can be used with the `deserialize()` method. If
-    /// the song info is not loaded, the function returns `None`.
+    /// Returns an `Option<String>` containing serialized song info,
+    /// which can be used with the `deserialize()` method.
+    /// If the song info is not loaded, the function returns `None`.
     #[inline]
     #[must_use]
     pub fn try_serlialize(&self) -> Option<String> {
@@ -143,12 +143,12 @@ impl<'s> Song {
         })
     }
 
-    /// Loads the `data` and constructs a `Song` instance
-    /// with parsed `SongInfo` values
+    /// Constructs a new `Song` instance, assigning the info
+    /// from the serialized `data`
     ///
     /// # Errors
-    /// If a value cannot be parsed into the required type,
-    /// the function returns an error
+    /// - If a value cannot be parsed into the required type
+    /// - If the `uri` field is missing from the `data`
     #[inline]
     fn deserialize(data: &str) -> Result<Song, String> {
         let mut uri = "";
