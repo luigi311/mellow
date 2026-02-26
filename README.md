@@ -15,10 +15,9 @@ minimal distraction. Elements of the interface are purposefully abstracted away,
 letting music be the central point of focus.
 
 > [!CAUTION]
-> This software is still in early development. It may be buggy or missing crucial
-> features, and may or may not maintain backward/forward compatibility going
-> forward. See the [Roadmap](#roadmap), [QA.md](QA.md), and [TODO.md](TODO.md)
-> for more information.
+> This software is in active development. Certain features may be missing, buggy, or
+> incomplete. See the [Roadmap](#roadmap), [QA.md](QA.md), and [TODO.md](TODO.md) for
+> more details.
 
 > [!WARNING]
 > In its current (unfinished) state, Mellow may consume a lot of system resources due
