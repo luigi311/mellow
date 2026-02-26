@@ -290,13 +290,12 @@ impl Player {
 
                 PlayerRequest::Shutdown(save_queue, save_time, tx) => {
                     self.shutdown(save_queue, save_time, &tx);
-                    return Ok(());
-                    // loop {
-                    //     // Ignore any further requests without closing the channel
-                    //     self.rx.recv()?;
-                    //     #[cfg(debug_assertions)]
-                    //     println!("Note: Player requests are ignored during shutdown");
-                    // }
+                    loop {
+                        // Ignore any further requests without closing the channel
+                        self.rx.recv()?;
+                        #[cfg(debug_assertions)]
+                        println!("Note: Player requests are ignored during shutdown");
+                    }
                 }
             } {
                 self.update();
@@ -690,7 +689,7 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    fn shutdown(mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
+    fn shutdown(&mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
         let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
         let time = match self.current_time().map(ClockTime::mseconds) {
             Some(time) if time > 0 && save_time => Some(time),
