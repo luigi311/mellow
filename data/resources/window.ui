@@ -154,7 +154,7 @@
 
                         Song info page
                         <child>
-                          <object class="MellowQueueSubpage" id="queue_song_page">
+                          <object class="MellowQueueSubpage" id="queue_subpage">
                             <property name="title" translatable="yes">Song Info</property>
                             <property name="tag">info</property>
                           </object>

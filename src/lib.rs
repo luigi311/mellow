@@ -101,7 +101,7 @@ pub fn format_duration_ms(milliseconds_total: u64) -> String {
 /// use mellow::format_duration_minutes;
 ///
 /// assert_eq!(format_duration_minutes(1), "1m");
-/// assert_eq!(format_duration_minutes(83), "1h, 23m");
+/// assert_eq!(format_duration_minutes(60 + 23), "1h, 23m");
 /// assert_eq!(format_duration_minutes(24 * 60 + 2 * 60 + 3), "1d, 2h, 3m");
 /// ```
 #[inline]
