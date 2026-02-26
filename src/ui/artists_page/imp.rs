@@ -166,10 +166,10 @@ impl ArtistsPage {
     #[template_callback]
     pub fn handle_reverse_sort(&self) {
         let reversed = self.sort_mode.get().expect(EXP_INIT).reversed;
-        let old_rev = reversed.get();
-        reversed.set(!old_rev);
+        let reverse = !reversed.get();
+        reversed.set(reverse);
         self.sorter.borrow().changed(gtk::SorterChange::Inverted);
-        self.sort_button.set_icon_name(match !old_rev {
+        self.sort_button.set_icon_name(match reverse {
             true => "view-sort-ascending-symbolic",
             false => "view-sort-descending-symbolic",
         });
