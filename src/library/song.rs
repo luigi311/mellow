@@ -143,11 +143,12 @@ impl<'s> Song {
         })
     }
 
-    /// Constructs a new `Song` instance, assigning the info
-    /// from the serialized `data`
+    /// Constructs a new `Song` instance using the serialized song info `data`
+    ///
+    /// # Panics
+    /// - If a value cannot be parsed into the required type
     ///
     /// # Errors
-    /// - If a value cannot be parsed into the required type
     /// - If the `uri` field is missing from the `data`
     #[inline]
     fn deserialize(data: &str) -> Result<Song, String> {
