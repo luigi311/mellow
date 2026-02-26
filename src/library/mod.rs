@@ -888,6 +888,7 @@ impl Library {
 
     /// Consumes `self`, writes the configuration to disk and shuts down gracefully
     pub fn shutdown(mut self) {
+        self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         let mut songs = mem::take(&mut self.songs);
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
@@ -897,7 +898,6 @@ impl Library {
             };
             songs.insert(index, missing);
         }
-        self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         self.tasks.run(move || Library::serialize_songs(&songs));
         self.tasks.shutdown();
     }
