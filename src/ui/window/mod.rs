@@ -126,7 +126,7 @@ impl Window {
         let (library_shutdown_tx, library_shutdown_rx) = mpsc::channel();
 
         thread::spawn(move || {
-            LibraryConfig::config_dir_create_if_missing();
+            LibraryConfig::create_config_dir();
 
             let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
             (PLAYER_TX.get().expect(EXP_INIT))
