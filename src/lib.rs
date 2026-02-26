@@ -92,10 +92,32 @@ pub fn format_duration(seconds_total: u64) -> String {
 pub fn format_duration_ms(milliseconds_total: u64) -> String {
     format_duration(milliseconds_total / 1000)
 }
+/// Takes a duration in minutes and returns a nicely formatted
+/// `String` for display (`(([x]d,) [y]h,) [z]m`)
+///
+/// # Example:
+/// ```rust
+/// use std::time::Duration;
+/// use mellow::format_duration_minutes;
+///
+/// assert_eq!(format_duration_minutes(1), "1m");
+/// assert_eq!(format_duration_minutes(83), "1h, 23m");
+/// assert_eq!(format_duration_minutes(24 * 60 + 2 * 60 + 3), "1d, 2h, 3m");
+/// ```
 #[inline]
 #[must_use]
 pub fn format_duration_minutes(minutes_total: u64) -> String {
-    todo!("TODO: Format long times (minutes, hours, days)")
+    // TODO: Could use "days"/"hours"/"minutes", but it should to respect plural/singular
+    let minutes = minutes_total % 60;
+    if minutes_total < 60 {
+        format!("{minutes}m")
+    } else if minutes_total < 60 * 24 {
+        format!("{}h, {minutes}m", (minutes_total - minutes) / 60)
+    } else {
+        let hours_total = (minutes_total - minutes) / 60;
+        let hours = hours_total % 24;
+        format!("{}d, {hours}h, {minutes}m", (hours_total - hours) / 24)
+    }
 }
 
 /// Returns a value between `left` and `right` at point `mid`
