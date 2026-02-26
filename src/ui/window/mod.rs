@@ -155,6 +155,7 @@ impl Window {
         let settings = self.settings();
         settings.set_double("volume", settings_page.volume())?;
         settings.set_boolean("gapless", settings_page.gapless())?;
+        settings.set_boolean("play-in-background", settings_page.play_in_background())?;
         settings.set_enum("startup-queue", *settings_page.startup_queue() as i32)?;
         settings.set_boolean("remember-time", remember_time)?;
         settings.set_boolean("adaptive-colors", settings_page.adaptive_colors())?;
@@ -181,6 +182,7 @@ impl Window {
             .handle_set_volume(gtk::ScrollType::Jump, volume);
         settings_page.set_volume(volume);
         settings_page.set_gapless(settings.boolean("gapless"));
+        settings_page.set_play_in_background(settings.boolean("play-in-background"));
         settings_page.set_startup_queue(settings.enum_("startup-queue").into());
         settings_page.set_remember_time(settings.boolean("remember-time"));
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));

@@ -13,6 +13,7 @@ pub fn main() -> glib::ExitCode {
 
     let app = Application::setup();
 
+    // TODO: CTRL+Q should quit the application (in case of background playback)
     app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
     app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
     // TODO: Ignore shortcut when the overlay is open

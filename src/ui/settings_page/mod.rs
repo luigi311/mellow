@@ -101,6 +101,18 @@ impl SettingsPage {
         self.imp().gapless.set_active(gapless);
     }
 
+    /// Returns the current background playback setting
+    #[inline]
+    #[must_use]
+    pub fn play_in_background(&self) -> bool {
+        self.imp().play_in_background.is_active()
+    }
+    /// Enables or disables background playback
+    #[inline]
+    pub fn set_play_in_background(&self, play_in_background: bool) {
+        self.imp().play_in_background.set_active(play_in_background);
+    }
+
     /// Returns the currently selected choice of startup queue
     #[inline]
     #[must_use]

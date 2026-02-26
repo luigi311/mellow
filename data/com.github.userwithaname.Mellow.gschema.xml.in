@@ -33,6 +33,10 @@
       <default>true</default>
       <summary>When enabled, the next song starts loading before the current one ends, to ensure uninterrupted playback</summary>
     </key>
+    <key name="play-in-background" type="b">
+      <default>false</default>
+      <summary>When enabled, playback will continue in the background when the window is closed</summary>
+    </key>
     <key name="startup-queue" enum="com.github.userwithaname.Mellow.startup-queue">
       <default>'RestoreQueue'</default>
     </key>

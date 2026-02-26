@@ -18,6 +18,8 @@ pub struct SettingsPage {
     pub volume: TemplateChild<gtk::Scale>,
     #[template_child]
     pub gapless: TemplateChild<adw::SwitchRow>,
+    #[template_child]
+    pub play_in_background: TemplateChild<adw::SwitchRow>,
 
     // Appearance settings
     #[template_child]

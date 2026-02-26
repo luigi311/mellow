@@ -25,6 +25,7 @@ impl Application {
             .build();
         app.connect_startup(Self::init);
         app.connect_open(Self::open_files);
+        app.connect_activate(Self::present_window);
         app.connect_shutdown(Self::shutdown);
         app
     }
@@ -87,6 +88,11 @@ impl Application {
         (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::QueueFromPaths(files))
             .expect(EXP_RX);
+    }
+
+    #[inline]
+    fn present_window(&self) {
+        self.imp().window.get().expect(EXP_INIT).set_visible(true);
     }
 
     fn shutdown(&self) {
