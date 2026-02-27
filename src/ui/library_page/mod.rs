@@ -13,20 +13,16 @@ glib::wrapper! {
 impl LibraryPage {
     #[inline]
     pub fn update_progress(&self, progress: Option<f64>) {
-        match progress {
-            Some(progress) => {
-                let ui = self.imp();
-                ui.progress_bar.set_fraction(progress);
-                if ui.needs_refresh.get() {
-                    ui.view_stack.set_visible_child_name("loading");
-                    ui.needs_refresh.set(false);
-                }
+        let ui = self.imp();
+        if let Some(progress) = progress {
+            ui.progress_bar.set_fraction(progress);
+            if ui.needs_refresh.get() {
+                ui.view_stack.set_visible_child_name("loading");
+                ui.needs_refresh.set(false);
             }
-            None => {
-                let ui = self.imp();
-                ui.view_stack.set_visible_child_name("ready");
-                ui.needs_refresh.set(true);
-            }
+        } else {
+            ui.view_stack.set_visible_child_name("ready");
+            ui.needs_refresh.set(true);
         }
     }
 

@@ -39,7 +39,7 @@ pub struct QueuePage {
 }
 
 #[derive(Debug)]
-struct IndexNotFoundError;
+struct ItemNotFoundError;
 
 #[gtk::template_callbacks]
 impl QueuePage {
@@ -65,7 +65,6 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to(&self, scroll_target: f64) {
         let scrolled_window = self.scrolled_window.get();
-        scrolled_window.vadjustment().set_value(scroll_target);
         // WORKAROUND: Setting the scroll position in an idle task because it
         // doesn't update otherwise
         glib::idle_add_local(move || {
@@ -186,15 +185,15 @@ impl QueuePage {
     /// # Panics
     /// Panics if `self.queue_item_objects` `RefCell` is mutably borrowed
     #[inline]
-    fn queue_index_to_model(&self, index: usize) -> Result<usize, IndexNotFoundError> {
+    fn queue_index_to_model(&self, index: usize) -> Result<usize, ItemNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
         if index < playing_index.saturating_sub(NUM_ITEMS_BEHIND) {
-            return Err(IndexNotFoundError);
+            return Err(ItemNotFoundError);
         }
         let model_index = index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
         if model_index >= queue_items_len {
-            return Err(IndexNotFoundError);
+            return Err(ItemNotFoundError);
         }
         Ok(model_index)
     }

@@ -56,8 +56,6 @@ pub enum UpdateUI {
     Shuffle(bool),
     /// Informs the UI of the new repeat mode (so icons can be updated)
     Repeat(bool),
-    /// Shows the progress bar with the specified progress value, or hides it
-    Progress(Option<f64>),
 
     /// Updates the directory list on the settings page
     SetLibraryDirs(Box<[String]>),
@@ -101,6 +99,8 @@ pub enum UpdateUI {
 
     /// Runs a `gio` action
     RunAction(&'static str),
+    /// Shows a progress bar with the specified progress value, or hides it
+    Progress(Option<f64>),
 
     /// Causes the channel to ignore any further requests (but does not close it)
     Shutdown,
