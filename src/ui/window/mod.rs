@@ -36,9 +36,9 @@ impl Window {
 
         window.load_state(&settings);
         window.setup_actions(
-            settings.string("songs-sort"),
-            settings.string("albums-sort"),
-            settings.string("artists-sort"),
+            &settings.string("songs-sort"),
+            &settings.string("albums-sort"),
+            &settings.string("artists-sort"),
         );
         window.setup_drag_and_drop();
 
@@ -54,7 +54,7 @@ impl Window {
         self.imp().settings.get().expect(EXP_INIT)
     }
 
-    fn setup_actions(&self, songs_sort: GString, albums_sort: GString, artists_sort: GString) {
+    fn setup_actions(&self, songs_sort: &GString, albums_sort: &GString, artists_sort: &GString) {
         let player_actions = gio::SimpleActionGroup::new();
         player_actions.add_action_entries([
             actions::player::skip_prev(self),

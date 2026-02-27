@@ -194,7 +194,7 @@ pub enum AlbumOrdering {
 }
 
 impl AlbumOrdering {
-    pub fn to_str(&self) -> &'static str {
+    pub fn to_str(self) -> &'static str {
         match self {
             AlbumOrdering::Default => "Default",
             AlbumOrdering::Rating => "Rating",

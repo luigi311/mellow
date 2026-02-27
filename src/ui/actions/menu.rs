@@ -16,7 +16,7 @@ use crate::ui::songs_page::SongsPage;
 #[inline]
 pub fn songs_sort_mode(
     songs_page: SongsPage,
-    initial_state: GString,
+    initial_state: &GString,
 ) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("songs_sort_mode")
         .parameter_type(Some(VariantTy::STRING))
@@ -24,14 +24,14 @@ pub fn songs_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            songs_page.set_sort_mode(SongOrdering::from_str(&*variant.get::<String>().unwrap()));
+            songs_page.set_sort_mode(SongOrdering::from_str(&variant.get::<String>().unwrap()));
         })
         .build()
 }
 #[inline]
 pub fn albums_sort_mode(
     albums_page: AlbumsPage,
-    initial_state: GString,
+    initial_state: &GString,
 ) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("albums_sort_mode")
         .parameter_type(Some(VariantTy::STRING))
@@ -39,14 +39,14 @@ pub fn albums_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            albums_page.set_sort_mode(AlbumOrdering::from_str(&*variant.get::<String>().unwrap()));
+            albums_page.set_sort_mode(AlbumOrdering::from_str(&variant.get::<String>().unwrap()));
         })
         .build()
 }
 #[inline]
 pub fn artists_sort_mode(
     artists_page: ArtistsPage,
-    initial_state: GString,
+    initial_state: &GString,
 ) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("artists_sort_mode")
         .parameter_type(Some(VariantTy::STRING))
@@ -54,8 +54,7 @@ pub fn artists_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            artists_page
-                .set_sort_mode(ArtistOrdering::from_str(&*variant.get::<String>().unwrap()));
+            artists_page.set_sort_mode(ArtistOrdering::from_str(&variant.get::<String>().unwrap()));
         })
         .build()
 }
