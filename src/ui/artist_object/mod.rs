@@ -51,7 +51,7 @@ impl ArtistObject {
 
     #[inline]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {
-        let mut ord = match other.rank().total_cmp(&self.rank()) {
+        let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
                 ArtistOrdering::Default => self.cmp_artist(other),
                 ArtistOrdering::Added => self.cmp_added_newer(other),
@@ -60,7 +60,7 @@ impl ArtistObject {
             ordering => ordering,
         };
         if order_by.reversed.get() {
-            ord = ord.reverse();
+            return ord.reverse().into();
         }
         ord.into()
     }

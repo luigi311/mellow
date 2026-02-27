@@ -69,7 +69,7 @@ impl AlbumObject {
 
     #[inline]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
-        let mut ord = match other.rank().total_cmp(&self.rank()) {
+        let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
                 AlbumOrdering::Default => self.cmp_artist_year_album(other),
                 AlbumOrdering::ReleaseDate => self.cmp_release_date(other),
@@ -81,7 +81,7 @@ impl AlbumObject {
             ordering => ordering,
         };
         if order_by.reversed.get() {
-            ord = ord.reverse();
+            return ord.reverse().into();
         }
         ord.into()
     }

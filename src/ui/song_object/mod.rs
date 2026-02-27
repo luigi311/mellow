@@ -77,7 +77,7 @@ impl SongObject {
 
     #[inline]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<SongOrdering>) -> gtk::Ordering {
-        let mut ord = match other.rank().total_cmp(&self.rank()) {
+        let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
                 SongOrdering::Default => self.cmp_default(other),
                 SongOrdering::Rating => self.cmp_best_rating(other),
@@ -89,7 +89,7 @@ impl SongObject {
             ordering => ordering,
         };
         if order_by.reversed.get() {
-            ord = ord.reverse();
+            return ord.reverse().into();
         }
         ord.into()
     }
