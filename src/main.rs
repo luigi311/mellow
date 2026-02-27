@@ -1,8 +1,5 @@
-use adw::prelude::*;
 use gtk::{gio, glib};
-
 use mellow::about;
-use mellow::ui::Application;
 
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(about::app_name());
@@ -11,15 +8,7 @@ pub fn main() -> glib::ExitCode {
     register_resources();
     mellow::init_globals();
 
-    let app = Application::setup();
-
-    // TODO: CTRL+Q should quit the application (in case of background playback)
-    app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
-    app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
-    // TODO: Ignore shortcut when the overlay is open
-    // app.set_accels_for_action("player.play_pause", &["space"]);
-
-    app.run()
+    mellow::ui::Application::run()
 }
 
 #[inline]

@@ -18,16 +18,25 @@ glib::wrapper! {
 }
 
 impl Application {
-    pub fn setup() -> Self {
+    #[inline]
+    pub fn run() -> glib::ExitCode {
         let app: Self = glib::Object::builder()
             .property("application-id", about::app_id())
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .build();
+
         app.connect_startup(Self::init);
         app.connect_open(Self::open_files);
         app.connect_activate(Self::present_window);
         app.connect_shutdown(Self::shutdown);
-        app
+
+        // TODO: CTRL+Q should quit the application (in case of background playback)
+        app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
+        app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
+        // TODO: Ignore shortcut when the overlay is open
+        // app.set_accels_for_action("player.play_pause", &["space"]);
+
+        app.run()
     }
 
     #[inline]
