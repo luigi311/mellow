@@ -12,7 +12,6 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
-use crate::ui::{AlbumOrdering, ArtistOrdering, SongOrdering};
 use crate::ui::{Application, UI_TX, UpdateUI, actions};
 
 mod imp;
@@ -211,12 +210,9 @@ impl Window {
         let songs_sort = settings.string("songs-sort");
         let albums_sort = settings.string("albums-sort");
         let artists_sort = settings.string("artists-sort");
-        imp.songs_page
-            .set_sort_mode(SongOrdering::from_str(&songs_sort));
-        imp.albums_page
-            .set_sort_mode(AlbumOrdering::from_str(&albums_sort));
-        imp.artists_page
-            .set_sort_mode(ArtistOrdering::from_str(&artists_sort));
+        imp.songs_page.set_sort_mode((&*songs_sort).into());
+        imp.albums_page.set_sort_mode((&*albums_sort).into());
+        imp.artists_page.set_sort_mode((&*artists_sort).into());
 
         imp.songs_page
             .set_shuffle(settings.boolean("songs-shuffle"));

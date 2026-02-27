@@ -20,6 +20,7 @@ impl Default for ItemRow {
 
 impl ItemRow {
     #[inline]
+    #[must_use]
     pub fn builder() -> ItemRowBuilder {
         ItemRowBuilder {
             item_row: Self::default(),
@@ -56,36 +57,42 @@ pub struct ItemRowBuilder {
 
 impl ItemRowBuilder {
     #[inline]
+    #[must_use]
     pub fn artwork(self, artwork: &impl IsA<gdk::Paintable>) -> Self {
         self.item_row.set_artwork(artwork);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn titles(self, album: &str, artist: &str) -> Self {
         self.item_row.set_info(album, artist);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn image_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn title_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn subtitle_css_classes(self, classes: &[&str]) -> Self {
         self.item_row.imp().image.set_css_classes(classes);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn build(self) -> ItemRow {
         self.item_row
     }

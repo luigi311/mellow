@@ -4,9 +4,9 @@ use glib::{GString, VariantTy};
 use gtk::{gio, glib};
 use std::rc::Rc;
 
-use crate::ui::{AlbumOrdering, AlbumPage, AlbumsPage};
-use crate::ui::{ArtistOrdering, ArtistPage, ArtistsPage};
-use crate::ui::{SongOrdering, SongsPage};
+use crate::ui::SongsPage;
+use crate::ui::{AlbumPage, AlbumsPage};
+use crate::ui::{ArtistPage, ArtistsPage};
 
 #[inline]
 pub fn songs_sort_mode(
@@ -19,7 +19,7 @@ pub fn songs_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            songs_page.set_sort_mode(SongOrdering::from_str(&variant.get::<String>().unwrap()));
+            songs_page.set_sort_mode((&*variant.get::<String>().unwrap()).into());
         })
         .build()
 }
@@ -34,7 +34,7 @@ pub fn albums_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            albums_page.set_sort_mode(AlbumOrdering::from_str(&variant.get::<String>().unwrap()));
+            albums_page.set_sort_mode((&*variant.get::<String>().unwrap()).into());
         })
         .build()
 }
@@ -49,7 +49,7 @@ pub fn artists_sort_mode(
         .activate(move |_, action, variant| {
             let variant = variant.unwrap();
             action.set_state(variant);
-            artists_page.set_sort_mode(ArtistOrdering::from_str(&variant.get::<String>().unwrap()));
+            artists_page.set_sort_mode((&*variant.get::<String>().unwrap()).into());
         })
         .build()
 }

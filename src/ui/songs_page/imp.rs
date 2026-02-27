@@ -97,6 +97,7 @@ impl SongsPage {
         });
     }
     #[inline]
+    #[must_use]
     pub const fn get_shuffle(&self) -> bool {
         self.shuffle.get()
     }
@@ -171,6 +172,7 @@ impl SongsPage {
         self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[inline]
+    #[must_use]
     pub fn get_sort_mode(&self) -> &SortConfig<SongOrdering> {
         self.sort_mode.get().expect(EXP_INIT)
     }

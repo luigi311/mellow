@@ -26,6 +26,7 @@ impl Default for ArtistPage {
 
 impl ArtistPage {
     #[inline]
+    #[must_use]
     pub fn new(artist: &SharedArtist) -> ArtistPage {
         let artist_page = Self::default();
         artist_page.update(artist);

@@ -20,6 +20,7 @@ impl QueuePage {
     }
 
     #[inline]
+    #[must_use]
     pub fn get_shuffle(&self) -> bool {
         self.imp().shuffle_toggle.is_active()
     }
@@ -33,6 +34,7 @@ impl QueuePage {
     }
 
     #[inline]
+    #[must_use]
     pub fn get_repeat(&self) -> bool {
         self.imp().repeat_toggle.is_active()
     }

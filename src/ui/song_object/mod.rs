@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl SongObject {
+    #[must_use]
     pub fn new(index: u32, song: SharedSong) -> Self {
         let (title, album, artist, year) = {
             let mut info = song.info();
@@ -71,11 +72,13 @@ impl SongObject {
         });
     }
 
+    #[must_use]
     pub fn shared_song(&self) -> SharedSong {
         Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
     }
 
     #[inline]
+    #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<SongOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
@@ -94,6 +97,7 @@ impl SongObject {
         ord.into()
     }
     #[inline]
+    #[must_use]
     fn cmp_default(&self, other: &Self) -> cmp::Ordering {
         match self.artist().cmp(&other.artist()) {
             cmp::Ordering::Equal => self.index().cmp(&other.index()),
@@ -101,6 +105,7 @@ impl SongObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
         // TODO: Add `rating` to `SongObject` (and update so it stays in sync)
         let rating_a = match self.shared_song().info().user().rating {
@@ -117,6 +122,7 @@ impl SongObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
         // TODO: Add `play_count` to `SongObject` (and update so it stays in sync)
         let play_count_a = self.shared_song().info().user().play_count;
@@ -127,6 +133,7 @@ impl SongObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
         match other.year().cmp(&self.year()) {
             cmp::Ordering::Equal => self.cmp_default(other),
@@ -134,6 +141,7 @@ impl SongObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
         // TODO: Add `added` to `SongObject`
         let added_a = self.shared_song().info().user().added;
@@ -144,6 +152,7 @@ impl SongObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // TODO: Add `modified` to `SongObject`
         let modified_a = self.shared_song().info().user().modified;
@@ -177,6 +186,7 @@ pub enum SongOrdering {
 }
 
 impl SongOrdering {
+    #[must_use]
     pub fn to_str(self) -> &'static str {
         match self {
             SongOrdering::Default => "Default",
@@ -187,8 +197,10 @@ impl SongOrdering {
             SongOrdering::Modified => "Modified",
         }
     }
-    pub fn from_str(input: &str) -> SongOrdering {
-        match input {
+}
+impl From<&str> for SongOrdering {
+    fn from(value: &str) -> Self {
+        match value {
             "Default" => SongOrdering::Default,
             "Rating" => SongOrdering::Rating,
             "Play Count" => SongOrdering::PlayCount,

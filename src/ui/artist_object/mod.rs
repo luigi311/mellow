@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl ArtistObject {
+    #[must_use]
     pub fn new(index: u32, artist: &str, albums: u64, shared_artist: SharedArtist) -> Self {
         let artist_object: ArtistObject = Object::builder()
             .property("index", index)
@@ -45,11 +46,13 @@ impl ArtistObject {
         self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 
+    #[must_use]
     pub fn shared_artist(&self) -> SharedArtist {
         Arc::clone(self.imp().shared_artist.get().expect(EXP_INIT))
     }
 
     #[inline]
+    #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
@@ -65,10 +68,12 @@ impl ArtistObject {
         ord.into()
     }
     #[inline]
+    #[must_use]
     fn cmp_artist(&self, other: &Self) -> cmp::Ordering {
         self.artist().cmp(&other.artist())
     }
     #[inline]
+    #[must_use]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing added time using the oldest
         // album's first song is not necessarily correct
@@ -92,6 +97,7 @@ impl ArtistObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing added time using the newest
         // album's first song is not necessarily correct
@@ -137,6 +143,7 @@ pub enum ArtistOrdering {
 }
 
 impl ArtistOrdering {
+    #[must_use]
     pub fn to_str(self) -> &'static str {
         match self {
             ArtistOrdering::Default => "Default",
@@ -144,8 +151,10 @@ impl ArtistOrdering {
             ArtistOrdering::Modified => "Modified",
         }
     }
-    pub fn from_str(input: &str) -> ArtistOrdering {
-        match input {
+}
+impl From<&str> for ArtistOrdering {
+    fn from(value: &str) -> Self {
+        match value {
             "Default" => ArtistOrdering::Default,
             "Added" => ArtistOrdering::Added,
             "Modified" => ArtistOrdering::Modified,

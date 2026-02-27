@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl QueueItemObject {
+    #[must_use]
     pub fn new(index: u32, playing: bool, song: Option<SharedSong>) -> Self {
         let song_object: QueueItemObject = Object::builder()
             .property("index", index)
@@ -45,10 +46,12 @@ impl QueueItemObject {
         });
     }
 
+    #[must_use]
     pub fn shared_song(&self) -> Option<&SharedSong> {
         self.imp().shared_song.get().expect(EXP_INIT).as_ref()
     }
 
+    #[must_use]
     pub fn is_visible(&self) -> &Arc<AtomicBool> {
         &self.imp().is_visible
     }

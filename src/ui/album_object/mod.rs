@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl AlbumObject {
+    #[must_use]
     pub fn new(index: u32, album: &str, artist: &str, year: u32, first_song: SharedSong) -> Self {
         let album_object: AlbumObject = Object::builder()
             .property("index", index)
@@ -60,6 +61,7 @@ impl AlbumObject {
         });
     }
 
+    #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
         (self.imp().first_song.get().expect(EXP_INIT))
             .album()
@@ -68,6 +70,7 @@ impl AlbumObject {
     }
 
     #[inline]
+    #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
@@ -86,6 +89,7 @@ impl AlbumObject {
         ord.into()
     }
     #[inline]
+    #[must_use]
     pub fn cmp_artist_year_album(&self, other: &Self) -> cmp::Ordering {
         match self.artist().cmp(&other.artist()) {
             cmp::Ordering::Equal => match self.year().cmp(&other.year()) {
@@ -96,6 +100,7 @@ impl AlbumObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
         let play_count_a = self
             .shared_album()
@@ -113,6 +118,7 @@ impl AlbumObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
         let rating_a = self
             .shared_album()
@@ -130,6 +136,7 @@ impl AlbumObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
         match other.year().cmp(&self.year()) {
             cmp::Ordering::Equal => self.cmp_artist_year_album(other),
@@ -137,6 +144,7 @@ impl AlbumObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing modification time using the first song is not necessarily correct
         let modified_a = self.shared_album().lock().unwrap().songs[0]
@@ -153,6 +161,7 @@ impl AlbumObject {
         }
     }
     #[inline]
+    #[must_use]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
         let added_a = self.shared_album().lock().unwrap().songs[0]
             .info()
@@ -190,6 +199,7 @@ pub enum AlbumOrdering {
 }
 
 impl AlbumOrdering {
+    #[must_use]
     pub fn to_str(self) -> &'static str {
         match self {
             AlbumOrdering::Default => "Default",
@@ -200,8 +210,10 @@ impl AlbumOrdering {
             AlbumOrdering::Modified => "Modified",
         }
     }
-    pub fn from_str(input: &str) -> AlbumOrdering {
-        match input {
+}
+impl From<&str> for AlbumOrdering {
+    fn from(value: &str) -> Self {
+        match value {
             "Default" => AlbumOrdering::Default,
             "Rating" => AlbumOrdering::Rating,
             "Play Count" => AlbumOrdering::PlayCount,

@@ -139,6 +139,7 @@ impl QueuePage {
     }
 
     #[inline]
+    #[must_use]
     fn new_song(&self, queue_index: u32, is_playing: bool, song: &SharedSong) -> QueueItemObject {
         let object = QueueItemObject::new(queue_index, is_playing, Some(Arc::clone(song)));
 
@@ -165,6 +166,7 @@ impl QueuePage {
     }
 
     #[inline]
+    #[must_use]
     fn new_stopper(&self, queue_index: u32) -> QueueItemObject {
         let queue_item_object = QueueItemObject::new(queue_index, false, None);
         queue_item_object.set_title("Pause");

@@ -19,6 +19,7 @@ impl Default for ItemTile {
 }
 
 impl ItemTile {
+    #[must_use]
     pub fn builder() -> ItemTileBuilder {
         ItemTileBuilder {
             item_tile: Self::default(),
@@ -55,24 +56,28 @@ pub struct ItemTileBuilder {
 
 impl ItemTileBuilder {
     #[inline]
+    #[must_use]
     pub fn artwork(self, artwork: &impl IsA<gdk::Paintable>) -> Self {
         self.item_tile.set_artwork(artwork);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn info(self, title: &str, subtitle: &str) -> Self {
         self.item_tile.set_info(title, subtitle);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn image_css_classes(self, classes: &[&str]) -> Self {
         self.item_tile.imp().image.set_css_classes(classes);
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn title_css_classes(self, classes: &[&str]) -> Self {
         self.item_tile.imp().image.set_css_classes(classes);
         self
@@ -85,6 +90,7 @@ impl ItemTileBuilder {
     }
 
     #[inline]
+    #[must_use]
     pub fn build(self) -> ItemTile {
         self.item_tile
     }

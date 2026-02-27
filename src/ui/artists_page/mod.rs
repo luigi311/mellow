@@ -29,6 +29,7 @@ impl ArtistsPage {
         self.imp().set_sort_mode(sort_mode);
     }
     #[inline]
+    #[must_use]
     pub fn get_sort_config(&self) -> &SortConfig<ArtistOrdering> {
         self.imp().get_sort_mode()
     }
@@ -38,6 +39,7 @@ impl ArtistsPage {
         self.imp().set_shuffle(shuffle);
     }
     #[inline]
+    #[must_use]
     pub fn get_shuffle(&self) -> bool {
         self.imp().get_shuffle()
     }

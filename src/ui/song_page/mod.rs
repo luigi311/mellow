@@ -23,6 +23,7 @@ impl Default for SongPage {
 
 impl SongPage {
     #[inline]
+    #[must_use]
     pub fn new(index: usize, song: SharedSong, to_queue: Box<dyn ToQueue + Send>) -> SongPage {
         let song_page = Self::default();
         song_page.update(index, song, to_queue);

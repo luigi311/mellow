@@ -27,6 +27,7 @@ impl Default for AlbumPage {
 
 impl AlbumPage {
     #[inline]
+    #[must_use]
     pub fn new(album: &SharedAlbum) -> AlbumPage {
         let album_page = Self::default();
         album_page.update(album);
