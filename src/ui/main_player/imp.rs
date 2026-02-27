@@ -34,25 +34,19 @@ pub struct MainPlayer {
 impl MainPlayer {
     #[template_callback]
     pub fn handle_skip_prev(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SkipPrevious)
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_play_pause(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::TogglePlay(None))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_skip_next(&self) {
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::SkipNext)
             .expect(EXP_RX);
     }
@@ -61,9 +55,7 @@ impl MainPlayer {
         if crate::approx_eq(value, self.seek_bar.value()) {
             return glib::Propagation::Stop;
         }
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
+        (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::Seek(value))
             .expect(EXP_RX);
         glib::Propagation::Proceed

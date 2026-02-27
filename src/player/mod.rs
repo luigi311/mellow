@@ -289,7 +289,7 @@ impl Player {
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
                 PlayerRequest::Shutdown(save_queue, save_time, tx) => {
-                    return Ok(self.shutdown(save_queue, save_time, &tx));
+                    return Ok(self.shutdown(save_queue, save_time, tx));
                 }
             } {
                 self.update();
@@ -686,7 +686,7 @@ impl Player {
     /// Uninitializes the queue and writes it to disk (if queue restoration is enabled)
     /// Sends a message through `tx` once all background tasks have been started, and
     /// another one when the player thread finished its part
-    fn shutdown(mut self, save_queue: bool, save_time: bool, tx: &mpsc::Sender<()>) {
+    fn shutdown(mut self, save_queue: bool, save_time: bool, tx: mpsc::Sender<()>) {
         let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             SongQueue::save_shuffled_queue(save_queue && shuffle, &shuffled_queue);
@@ -698,6 +698,7 @@ impl Player {
             _ => None,
         };
         SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
+
         let _ = self.backend.set_state(State::Null);
         let _ = tx.send(());
     }

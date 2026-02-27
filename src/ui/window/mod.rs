@@ -33,8 +33,7 @@ impl Window {
     #[must_use]
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
-        let imp = window.imp();
-        // window.set_hide_on_close(true);
+
         window.load_state(&settings);
         window.setup_actions(
             settings.string("songs-sort"),
@@ -43,8 +42,10 @@ impl Window {
         );
         window.setup_drag_and_drop();
 
+        let imp = window.imp();
         let _ = imp.settings.set(settings);
         imp.init_ui_elements(app.style_manager());
+
         window
     }
 
