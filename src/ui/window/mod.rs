@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use core::error::Error;
 use gdk::{DragAction, FileList};
 use gio::Settings;
 use glib::{GString, Object};
@@ -113,6 +112,10 @@ impl Window {
         self.add_controller(drop_target);
     }
 
+    /// Saves the current window size to the settings
+    ///
+    /// # Errors
+    /// The function errors if a `gio::Settings` value cannot be saved
     pub fn save_window_size(&self) -> Result<(), glib::error::BoolError> {
         let settings = self.settings();
         settings.set_int("window-width", self.size(Orientation::Horizontal))?;
@@ -122,7 +125,10 @@ impl Window {
 
     /// Saves all settings and the player state and prepares
     /// for shutdown, uninitializing various components
-    pub fn save_and_uninit(&self) -> Result<(), Box<dyn Error>> {
+    ///
+    /// # Errors
+    /// The function errors if a `gio::Settings` value cannot be saved
+    pub fn save_and_uninit(&self) -> Result<(), glib::error::BoolError> {
         let _ = UI_TX.get().expect(EXP_INIT).send(UpdateUI::Shutdown);
 
         let imp = self.imp();

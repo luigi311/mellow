@@ -4,7 +4,7 @@
     clippy::deref_by_slicing,
     clippy::doc_markdown,
     clippy::fallible_impl_from,
-    // clippy::missing_errors_doc,
+    clippy::missing_errors_doc,
     // clippy::missing_panics_doc,
     clippy::mixed_read_write_in_expression,
     clippy::must_use_candidate,
@@ -14,7 +14,7 @@
     // clippy::needless_pass_by_value,
     clippy::semicolon_if_nothing_returned,
     clippy::single_option_map,
-    // clippy::std_instead_of_core,
+    clippy::std_instead_of_core,
     clippy::str_to_string,
     unused_unsafe
 )]

@@ -288,6 +288,7 @@ impl Player {
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
+                #[allow(clippy::unit_arg)]
                 PlayerRequest::Shutdown(save_queue, save_time, tx) => {
                     return Ok(self.shutdown(save_queue, save_time, tx));
                 }

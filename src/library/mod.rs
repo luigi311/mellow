@@ -267,6 +267,7 @@ impl Library {
                 LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
                 LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
 
+                #[allow(clippy::unit_arg)]
                 LibraryRequest::Shutdown => return Ok(self.shutdown()),
             }
         }
