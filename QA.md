@@ -19,10 +19,10 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [ ] Reordering the queue works as expected
-  - TODO: Reorder using drag & drop
-- [ ] Stoppers work and behave as expected
-  - FIX: Stoppers shift when toggling shuffle mode
+- [x] Reordering the queue works as expected
+  - TODO: Improvement: Reorder using drag & drop
+- [x] Stoppers work and behave as expected
+  - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
 - [x] Scrolling works without issues
 
 Music Library:
@@ -40,7 +40,7 @@ Music Library:
 - [x] Searching is quick and works as expected
 - [x] Sort modes work as expected
 - [ ] Filtering works as expected
-  - TODO: Implement filters
+  - TODO: **Implement filters**
 
 User Experience:
 

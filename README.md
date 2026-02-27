@@ -20,7 +20,7 @@ letting music be the central point of focus.
 > more details.
 
 > [!WARNING]
-> In its current (unfinished) state, Mellow may consume a lot of system resources due
+> In its current (unfinished) state, Mellow can consume a lot of system resources due
 > to lack of artwork/thumbnail caching. There may also be memory leaks. For a decent
 > experience, ensure that you have enough free and available memory before trying it
 > on your system. With my configuration, Mellow takes up about 3 GB of RAM, and can

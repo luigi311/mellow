@@ -3,8 +3,8 @@ Song queue:
 - [-] Display the song queue
   - FIX: Memory leak when toggling shuffle
 - [-] Allow reordering the queue
-  - TODO: **Reorder using drag & drop**
-- [ ] **Multi-selection mode**
+  - TODO: Reorder using drag & drop
+- [ ] Multi-selection mode
   - [ ] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once
   - [ ] Rating multiple items at once
@@ -36,7 +36,7 @@ Music library:
   - [x] Best/worst rating
   - [x] Most/least played
   - [x] Default
-- [ ] Songs/albums/artists filtering
+- [ ] **Songs/albums/artists filtering**
   - TODO: Create a submenu in the sort dropdown for selecting filters
   - [ ] Filter by tags, ratings, year, etc
   - IDEA: Conditional filters: year < 2000, rating > 3, play-count = 0, etc
