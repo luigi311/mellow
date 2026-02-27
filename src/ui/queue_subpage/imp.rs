@@ -7,9 +7,8 @@ use std::sync::Arc;
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{SharedSong, SharedSongExt};
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
-use crate::ui::UI_TX;
-use crate::ui::UpdateUI;
-use crate::ui::rating::Rating;
+use crate::ui::Rating;
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_subpage.ui")]

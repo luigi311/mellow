@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::SharedArtist;
-use crate::ui::list_row::ListRow;
+use crate::ui::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 mod imp;

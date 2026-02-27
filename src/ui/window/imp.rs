@@ -13,18 +13,9 @@ use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{Albums, Artists, SharedAlbum, SharedArtist, SharedSong, Songs, ToQueue};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::QueueItem;
-use crate::ui::album_page::AlbumPage;
-use crate::ui::albums_page::AlbumsPage;
-use crate::ui::artist_page::ArtistPage;
-use crate::ui::artists_page::ArtistsPage;
-use crate::ui::library_page::{LibraryPage, SubpageType};
-use crate::ui::lyrics_page::LyricsPage;
-use crate::ui::main_player::MainPlayer;
-use crate::ui::queue_page::QueuePage;
-use crate::ui::queue_subpage::QueueSubpage;
-use crate::ui::settings_page::SettingsPage;
-use crate::ui::song_page::SongPage;
-use crate::ui::songs_page::SongsPage;
+use crate::ui::{AlbumPage, AlbumsPage, ArtistPage, ArtistsPage, SongPage, SongsPage};
+use crate::ui::{LibraryPage, LyricsPage, MainPlayer, SettingsPage, SubpageType};
+use crate::ui::{QueuePage, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]

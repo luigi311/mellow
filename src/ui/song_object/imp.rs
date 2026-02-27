@@ -6,7 +6,7 @@ use gtk::{gdk, glib};
 use std::sync::Arc;
 
 use crate::library::SharedSong;
-use crate::ui::song_object::SongData;
+use crate::ui::SongData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::SongObject)]

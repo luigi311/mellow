@@ -6,7 +6,7 @@ use gtk::{gdk, glib};
 use std::sync::Arc;
 
 use crate::library::SharedSong;
-use crate::ui::queue_item_object::QueueItemData;
+use crate::ui::QueueItemData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::QueueItemObject)]

@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::SharedAlbum;
-use crate::ui::list_row::ListRow;
+use crate::ui::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
 mod imp;

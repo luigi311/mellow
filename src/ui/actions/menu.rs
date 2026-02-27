@@ -4,14 +4,9 @@ use glib::{GString, VariantTy};
 use gtk::{gio, glib};
 use std::rc::Rc;
 
-use crate::ui::album_object::AlbumOrdering;
-use crate::ui::album_page::AlbumPage;
-use crate::ui::albums_page::AlbumsPage;
-use crate::ui::artist_object::ArtistOrdering;
-use crate::ui::artist_page::ArtistPage;
-use crate::ui::artists_page::ArtistsPage;
-use crate::ui::song_object::SongOrdering;
-use crate::ui::songs_page::SongsPage;
+use crate::ui::{AlbumOrdering, AlbumPage, AlbumsPage};
+use crate::ui::{ArtistOrdering, ArtistPage, ArtistsPage};
+use crate::ui::{SongOrdering, SongsPage};
 
 #[inline]
 pub fn songs_sort_mode(

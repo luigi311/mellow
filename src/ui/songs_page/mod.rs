@@ -2,7 +2,7 @@ use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
 
 use crate::library::Songs;
-use crate::ui::{SortConfig, song_object::SongOrdering};
+use crate::ui::{SongOrdering, SortConfig};
 
 mod imp;
 

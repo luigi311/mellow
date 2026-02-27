@@ -8,8 +8,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::{PlayerRequest, QueueItem};
-use crate::ui::UpdateUI;
-use crate::ui::settings_page::StartupQueueChoice;
+use crate::ui::{StartupQueueChoice, UpdateUI};
 use crate::{CONFIG_DIR, ReorderVecExt};
 
 pub struct SongQueue {

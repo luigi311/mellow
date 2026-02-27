@@ -8,9 +8,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::{LIBRARY_TX, Library, SharedSong};
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
-use crate::ui::list_row::ListRow;
-use crate::ui::queue_item_object::QueueItemObject;
-use crate::ui::queue_subpage::QueueSubpage;
+use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 const NUM_ITEMS_AHEAD: usize = 45;

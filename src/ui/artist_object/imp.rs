@@ -4,7 +4,7 @@ use glib::Properties;
 use gtk::{gdk, glib};
 
 use crate::library::SharedArtist;
-use crate::ui::artist_object::ArtistData;
+use crate::ui::ArtistData;
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::ArtistObject)]

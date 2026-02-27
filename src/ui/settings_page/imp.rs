@@ -8,7 +8,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::lerp;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::settings_page::StartupQueueChoice;
+use crate::ui::StartupQueueChoice;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]

@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{SharedAlbum, ToQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::rating::Rating;
+use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]

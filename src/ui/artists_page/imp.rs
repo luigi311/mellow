@@ -8,9 +8,8 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue, search};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::artist_object::{ArtistObject, ArtistOrdering};
-use crate::ui::item_tile::ItemTile;
-use crate::ui::{SortConfig, UI_TX, UpdateUI};
+use crate::ui::{ArtistObject, ArtistOrdering, ItemTile, SortConfig};
+use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/artists_page.ui")]

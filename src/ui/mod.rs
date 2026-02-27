@@ -7,6 +7,7 @@ mod actions;
 mod album_object;
 mod album_page;
 mod albums_page;
+mod application;
 mod artist_object;
 mod artist_page;
 mod artists_page;
@@ -20,20 +21,38 @@ mod queue_item_object;
 mod queue_page;
 mod queue_subpage;
 mod rating;
+mod settings_page;
 mod song_object;
 mod song_page;
 mod songs_page;
 mod window;
 
-pub mod application;
-pub mod settings_page;
-
+pub use album_object::{AlbumData, AlbumObject, AlbumOrdering};
+pub use album_page::AlbumPage;
+pub use albums_page::AlbumsPage;
 pub use application::Application;
+pub use artist_object::{ArtistData, ArtistObject, ArtistOrdering};
+pub use artist_page::ArtistPage;
+pub use artists_page::ArtistsPage;
+pub use item_row::ItemRow;
+pub use item_tile::ItemTile;
+pub use library_page::{LibraryPage, SubpageType};
+pub use list_row::ListRow;
+pub use lyrics_page::LyricsPage;
+pub use main_player::MainPlayer;
+pub use queue_item_object::{QueueItemData, QueueItemObject};
+pub use queue_page::QueuePage;
+pub use queue_subpage::QueueSubpage;
+pub use rating::Rating;
+pub use settings_page::{SettingsPage, StartupQueueChoice};
+pub use song_object::{SongData, SongObject, SongOrdering};
+pub use song_page::SongPage;
+pub use songs_page::SongsPage;
+pub use window::Window;
 
 use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::library::{SharedAlbum, SharedArtist, SharedSong};
 use crate::player::QueueItem;
-use crate::ui::window::Window;
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
 pub enum UpdateUI {
