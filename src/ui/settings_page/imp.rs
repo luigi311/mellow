@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::{Cell, OnceCell, RefCell};
 use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
-use std::cell::{Cell, OnceCell, RefCell};
 
 use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};

@@ -1,9 +1,8 @@
 use adw::subclass::prelude::*;
+use core::sync::atomic::{AtomicBool, Ordering};
 use glib::Object;
 use gtk::{gdk, glib};
-
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, SharedSong};

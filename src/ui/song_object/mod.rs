@@ -1,8 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
+use core::{cmp, sync::atomic};
 use glib::Object;
 use gtk::{gdk, glib};
-use std::cmp;
-use std::sync::{Arc, atomic};
+use std::sync::Arc;
 
 use crate::excuses::EXP_INIT;
 use crate::library::{LIBRARY_TX, Library, SharedSong};

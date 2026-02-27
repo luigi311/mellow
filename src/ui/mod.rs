@@ -1,6 +1,6 @@
+use core::cell::Cell;
 use gst::ClockTime;
 use gtk::gdk;
-use std::cell::Cell;
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
 

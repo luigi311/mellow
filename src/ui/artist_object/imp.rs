@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::{OnceCell, RefCell};
 use glib::Properties;
 use gtk::{gdk, glib};
-use std::cell::{OnceCell, RefCell};
 
 use crate::library::SharedArtist;
 use crate::ui::artist_object::ArtistData;

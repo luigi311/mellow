@@ -1,8 +1,8 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::{Cell, OnceCell, RefCell};
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gio, glib};
-use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;

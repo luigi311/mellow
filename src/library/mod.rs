@@ -1,12 +1,12 @@
-use core::error::Error;
+use core::cmp::Ordering;
+use core::sync::atomic::{self, AtomicBool};
+use core::{error::Error, mem};
 use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
-use std::cmp::Ordering;
 use std::path::Path;
-use std::sync::atomic::{self, AtomicBool};
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
-use std::{fs, mem, thread};
+use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;

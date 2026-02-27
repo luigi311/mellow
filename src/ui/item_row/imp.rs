@@ -1,8 +1,7 @@
 use adw::subclass::prelude::*;
+use core::cell::RefCell;
 use gtk::CompositeTemplate;
 use gtk::glib;
-
-use std::cell::RefCell;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/item_row.ui")]

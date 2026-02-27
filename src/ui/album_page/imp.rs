@@ -1,7 +1,7 @@
 use adw::subclass::prelude::*;
+use core::cell::{Cell, RefCell};
 use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
-use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};

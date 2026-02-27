@@ -1,8 +1,8 @@
-use core::error::Error;
+use core::{error::Error, mem};
 use gst::ClockTime;
 use rand::random_range;
+use std::fs;
 use std::sync::mpsc;
-use std::{fs, mem};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};

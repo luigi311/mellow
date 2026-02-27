@@ -1,7 +1,7 @@
 use adw::subclass::prelude::*;
+use core::cell::{Cell, RefCell};
 use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
-use std::cell::{Cell, RefCell};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{SharedArtist, ToQueue, ToShuffledQueue};

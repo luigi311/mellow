@@ -1,7 +1,7 @@
+use core::cell::RefCell;
 use gio::prelude::*;
 use glib::{GString, VariantTy};
 use gtk::{gio, glib};
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::ui::album_object::AlbumOrdering;

@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::{Cell, OnceCell, RefCell};
 use gtk::CompositeTemplate;
 use gtk::glib;
-use std::cell::{Cell, OnceCell, RefCell};
 
 use crate::excuses::{EXP_INIT, INIT_ERR};
 

@@ -1,10 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::{OnceCell, RefCell};
+use core::sync::atomic::{AtomicBool, Ordering};
 use glib::Properties;
 use gtk::{gdk, glib};
-
-use std::cell::{OnceCell, RefCell};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::library::SharedSong;
 use crate::ui::song_object::SongData;

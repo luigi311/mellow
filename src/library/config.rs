@@ -1,7 +1,7 @@
+use core::str::Chars;
 use gio::prelude::FileExt;
 use gtk::gio;
 use std::fs;
-use std::str::Chars;
 
 use crate::CONFIG_DIR;
 use crate::excuses::EXP_INIT;

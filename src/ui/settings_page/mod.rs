@@ -1,6 +1,5 @@
-use std::cell::Ref;
-
 use adw::{prelude::*, subclass::prelude::*};
+use core::cell::Ref;
 use gtk::{gdk, glib};
 
 use crate::excuses::INIT_ERR;

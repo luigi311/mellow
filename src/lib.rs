@@ -11,20 +11,21 @@
     clippy::needless_collect,
     clippy::needless_for_each,
     clippy::needless_pass_by_ref_mut,
-    clippy::needless_pass_by_value,
+    // clippy::needless_pass_by_value,
     clippy::semicolon_if_nothing_returned,
     clippy::single_option_map,
+    // clippy::std_instead_of_core,
     clippy::str_to_string,
     unused_unsafe
 )]
 #![allow(clippy::match_bool)]
 
+use core::{mem, ptr};
 use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
 use gtk::glib;
-use std::fs::{self, DirEntry};
 use std::path::Path;
 use std::sync::OnceLock;
-use std::{io, mem, ptr};
+use std::{fs, fs::DirEntry, io};
 
 pub mod about;
 pub mod excuses;

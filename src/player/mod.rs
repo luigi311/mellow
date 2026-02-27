@@ -1,9 +1,9 @@
 use core::error::Error;
+use core::time::Duration;
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{Arc, OnceLock, mpsc};
 use std::thread;
-use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
@@ -75,8 +75,8 @@ pub enum PlayerRequest {
 }
 
 // Required by certain variants
-impl std::fmt::Debug for PlayerRequest {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for PlayerRequest {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "{}",
