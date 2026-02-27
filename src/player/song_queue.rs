@@ -534,22 +534,6 @@ impl SongQueue {
     ) -> Result<(), Box<dyn Error>> {
         let player_tx = &library.player_tx;
 
-        // Opening files is handled by the application
-        // NOTE: This assumes that every argument is a file/directory, so not ideal
-        if std::env::args().len() > 1 {
-            return Ok(());
-        }
-        // let mut args = std::env::args();
-        // args.next();
-        // Start a queue from arguments, if they contain any supported files
-        // if args.len() > 0 {
-        //     let queue = library.songs_from_paths(&args.collect::<Box<[String]>>());
-        //     if !queue.is_empty() {
-        //         player_tx.send(PlayerRequest::LoadQueue(queue, None, 0))?;
-        //         return Ok(());
-        //     }
-        // }
-
         // Load the previous queue if file exists
         if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
             && let mut lines = queue.lines()

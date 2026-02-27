@@ -37,6 +37,7 @@ pub struct Library {
     pub artists: Artists,
     pub missing_songs: Songs,
 
+    queue_initialized: bool,
     cancel_pending: Arc<AtomicBool>,
 
     on_albums_set: Vec<LibraryTask>,
@@ -207,6 +208,7 @@ impl Library {
             artists: Vec::new(),
             missing_songs: Vec::new(),
 
+            queue_initialized: false,
             cancel_pending: Arc::new(AtomicBool::new(false)),
 
             on_albums_set: Vec::new(),
@@ -698,7 +700,10 @@ impl Library {
     /// Function may error if the player or UI channel receiver is closed
     #[inline]
     pub fn init_queue(&self, queue_startup_choice: i32) -> Result<(), Box<dyn Error>> {
-        SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into())
+        match self.queue_initialized {
+            false => SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into()),
+            true => Ok(()),
+        }
     }
 
     /// Starts a queue of all songs in the library
@@ -783,7 +788,7 @@ impl Library {
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_from_paths(&self, paths: &[String]) -> Result<(), Box<dyn Error>> {
+    pub fn play_from_paths(&mut self, paths: &[String]) -> Result<(), Box<dyn Error>> {
         let queue = self.songs_from_paths(paths);
         if queue.is_empty() {
             return Ok(());
@@ -793,6 +798,7 @@ impl Library {
         self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
         self.ui_tx.send(UpdateUI::OpenSheet(false))?;
         self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        self.queue_initialized = true;
         Ok(())
     }
 
