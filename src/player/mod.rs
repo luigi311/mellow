@@ -619,8 +619,7 @@ impl Player {
 
     /// Sends the current playback time to the UI receiver
     fn ui_set_time(&self) {
-        let time = self.current_time();
-        // println!("ui_set_time({time:?})");
+        let time = self.current_time().map(ClockTime::mseconds);
         self.ui_tx.send(UpdateUI::PlayerTime(time)).expect(EXP_RX);
     }
 

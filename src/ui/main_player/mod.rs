@@ -1,5 +1,4 @@
 use adw::{prelude::*, subclass::prelude::*};
-use gst::ClockTime;
 use gtk::Orientation;
 use gtk::{gdk, glib};
 
@@ -71,9 +70,9 @@ impl MainPlayer {
     }
 
     #[inline]
-    pub fn set_time(&self, time: Option<ClockTime>, duration_ms: f64) {
+    pub fn set_time(&self, time_ms: Option<u64>, duration_ms: f64) {
         let ui = self.imp();
-        if let Some(time_ms) = time.map(gst::ClockTime::mseconds) {
+        if let Some(time_ms) = time_ms {
             ui.current_time.set_label(&format_duration_ms(time_ms));
             ui.seek_bar.set_child_visible(true);
             if duration_ms > 0.0 {

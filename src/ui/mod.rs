@@ -1,5 +1,4 @@
 use core::cell::Cell;
-use gst::ClockTime;
 use gtk::gdk;
 use std::sync::OnceLock;
 use tokio::sync::mpsc as tokio_mpsc;
@@ -41,7 +40,7 @@ pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::ne
 pub enum UpdateUI {
     /// (playing: bool, interactive: bool)
     PlayerState(bool, bool),
-    PlayerTime(Option<ClockTime>),
+    PlayerTime(Option<u64>),
     SongInfo,
     NewQueue(Box<[QueueItem]>),
     QueueIndex(usize),

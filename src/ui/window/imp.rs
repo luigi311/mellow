@@ -130,8 +130,8 @@ impl Window {
         loop {
             match ui_rx.recv().await.unwrap() {
                 UpdateUI::SongInfo => self.update_song_info(&mut song_duration_ms),
-                UpdateUI::PlayerTime(time) => {
-                    self.main_player.set_time(time, song_duration_ms as f64);
+                UpdateUI::PlayerTime(time_ms) => {
+                    self.main_player.set_time(time_ms, song_duration_ms as f64);
                 }
                 UpdateUI::PlayerState(playing, interactive) => {
                     self.main_player.set_state(playing, interactive);
