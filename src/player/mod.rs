@@ -699,7 +699,7 @@ impl Player {
         };
         SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
 
-        let _ = self.backend.set_state(State::Null);
         let _ = tx.send(());
+        let _ = self.backend.set_state(State::Null);
     }
 }
