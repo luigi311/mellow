@@ -1,5 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use core::cell::{Cell, OnceCell, RefCell};
+use core::mem;
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::sync::Arc;
@@ -30,6 +31,7 @@ pub struct QueuePage {
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
 
+    queue_length: Cell<usize>,
     playing_index: Cell<usize>,
     queue_item_objects: RefCell<Vec<QueueItemObject>>,
     pub song_page: OnceCell<QueueSubpage>,
@@ -77,6 +79,7 @@ impl QueuePage {
     }
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
+        self.queue_length.set(queue.len());
         self.view_stack
             .set_visible_child_name(match queue.is_empty() {
                 true => "queue_empty",
@@ -119,7 +122,7 @@ impl QueuePage {
         });
 
         let previous_scroll_position = self.scrolled_window.vadjustment().value();
-        let items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
+        let mut items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
             .map(|index_item| {
                 let q_index = index_item.0;
                 match index_item.1 {
@@ -128,6 +131,44 @@ impl QueuePage {
                 }
             })
             .collect();
+
+        if self.repeat_toggle.is_active() {
+            let n_items_behind = (NUM_ITEMS_BEHIND - (index - start)).min(queue.len() - 1);
+            if n_items_behind > 0 {
+                let from = queue.len() - n_items_behind;
+                let mut items_before: Vec<QueueItemObject> =
+                    (queue.iter().enumerate().skip(from.max(index + 1)))
+                        .map(|index_item| {
+                            let q_index = index_item.0;
+                            match index_item.1 {
+                                QueueItem::Song(song) => {
+                                    self.new_song(q_index as u32, q_index == index, song)
+                                }
+                                QueueItem::Stopper => self.new_stopper(q_index as u32),
+                            }
+                        })
+                        .collect();
+                mem::swap(&mut items, &mut items_before);
+                items.extend(items_before);
+            }
+            let n_items_ahead = NUM_ITEMS_AHEAD - (end - index);
+            if n_items_ahead > 0 {
+                let items_ahead: Vec<QueueItemObject> =
+                    (queue.iter().enumerate().take(n_items_ahead.min(index)))
+                        .map(|index_item| {
+                            let q_index = index_item.0;
+                            match index_item.1 {
+                                QueueItem::Song(song) => {
+                                    self.new_song(q_index as u32, q_index == index, song)
+                                }
+                                QueueItem::Stopper => self.new_stopper(q_index as u32),
+                            }
+                        })
+                        .collect();
+                items.extend(items_ahead);
+            }
+        }
+
         list_model.splice(0, list_model.n_items(), &items);
         self.queue_item_objects.replace(items);
 
@@ -188,14 +229,45 @@ impl QueuePage {
     fn queue_index_to_model(&self, index: usize) -> Result<usize, ItemNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
-        if index < playing_index.saturating_sub(NUM_ITEMS_BEHIND) {
-            return Err(ItemNotFoundError);
+        match self.repeat_toggle.is_active() {
+            false => {
+                let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
+                if index < start {
+                    return Err(ItemNotFoundError);
+                }
+                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index {
+                    value if value >= queue_items_len => Err(ItemNotFoundError),
+                    value => Ok(value),
+                }
+            }
+            true => {
+                let queue_length = self.queue_length.get();
+                let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
+                let n_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
+                if n_before > 0 {
+                    if index > playing_index + NUM_ITEMS_AHEAD {
+                        let from = queue_length - n_before;
+                        match index - from {
+                            value if value >= queue_items_len => return Err(ItemNotFoundError),
+                            value => return Ok(value),
+                        };
+                    }
+                }
+
+                let n_after = queue_length - playing_index.saturating_sub(NUM_ITEMS_AHEAD);
+                if index <= n_after {
+                    match index + n_after {
+                        value if value >= queue_items_len => return Err(ItemNotFoundError),
+                        value => return Ok(dbg!(value)),
+                    }
+                }
+
+                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index + n_before {
+                    value if value >= queue_items_len => return Err(ItemNotFoundError),
+                    value => return Ok(value),
+                }
+            }
         }
-        let model_index = index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index;
-        if model_index >= queue_items_len {
-            return Err(ItemNotFoundError);
-        }
-        Ok(model_index)
     }
     // /// Takes a model index and returns the index to access its queue item
     // #[inline]

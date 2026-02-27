@@ -25,6 +25,7 @@ Song queue:
 Music library:
 
 - [ ] Save/load user settings and application state
+  - TODO: Remember repeat mode
   - IDEA: Remember filters?
   - IDEA: Remember if sort order was reversed(?)
 - [ ] Allow initiating a full library rebuild

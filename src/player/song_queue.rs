@@ -383,6 +383,7 @@ impl SongQueue {
         }
         self.repeat = repeat;
         self.ui_update_repeat();
+        self.ui_update_queue();
     }
 
     /// Returns the current repeat mode for the queue
