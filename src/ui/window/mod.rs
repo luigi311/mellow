@@ -34,12 +34,7 @@ impl Window {
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
 
-        window.load_state(&settings);
-        window.setup_actions(
-            &settings.string("songs-sort"),
-            &settings.string("albums-sort"),
-            &settings.string("artists-sort"),
-        );
+        window.load_and_setup_actions(&settings);
         window.setup_drag_and_drop();
 
         let imp = window.imp();
@@ -103,6 +98,7 @@ impl Window {
             .build()]);
     }
 
+    #[inline]
     pub fn setup_drag_and_drop(&self) {
         let drop_target =
             gtk::DropTarget::new(FileList::static_type(), DragAction::COPY | DragAction::MOVE);
@@ -196,7 +192,8 @@ impl Window {
         Ok(())
     }
 
-    pub fn load_state(&self, settings: &Settings) {
+    #[inline]
+    pub fn load_and_setup_actions(&self, settings: &Settings) {
         let imp = self.imp();
         let settings_page = &imp.settings_page;
 
@@ -214,12 +211,15 @@ impl Window {
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));
         settings_page.set_color_scheme(settings.enum_("color-scheme").cast_unsigned());
 
+        let songs_sort = settings.string("songs-sort");
+        let albums_sort = settings.string("albums-sort");
+        let artists_sort = settings.string("artists-sort");
         imp.songs_page
-            .set_sort_mode(SongOrdering::from_str(&settings.string("songs-sort")));
+            .set_sort_mode(SongOrdering::from_str(&songs_sort));
         imp.albums_page
-            .set_sort_mode(AlbumOrdering::from_str(&settings.string("albums-sort")));
+            .set_sort_mode(AlbumOrdering::from_str(&albums_sort));
         imp.artists_page
-            .set_sort_mode(ArtistOrdering::from_str(&settings.string("artists-sort")));
+            .set_sort_mode(ArtistOrdering::from_str(&artists_sort));
 
         imp.songs_page
             .set_shuffle(settings.boolean("songs-shuffle"));
@@ -229,5 +229,11 @@ impl Window {
             .set_shuffle(settings.boolean("artists-shuffle"));
 
         self.set_default_size(settings.int("window-width"), settings.int("window-height"));
+
+        self.setup_actions(&songs_sort, &albums_sort, &artists_sort);
+    }
+
+    pub fn quit(&self) {
+        // TODO: Function for closing the window regardless of play-in-background preference
     }
 }
