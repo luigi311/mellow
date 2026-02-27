@@ -133,9 +133,9 @@ impl QueuePage {
             .collect();
 
         if self.repeat_toggle.is_active() {
-            let n_items_behind = (NUM_ITEMS_BEHIND - (index - start)).min(queue.len() - 1);
-            if n_items_behind > 0 {
-                let from = queue.len() - n_items_behind;
+            let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue.len() - 1);
+            if n_items_before > 0 {
+                let from = queue.len() - n_items_before;
                 let mut items_before: Vec<QueueItemObject> =
                     (queue.iter().enumerate().skip(from.max(index + 1)))
                         .map(|index_item| {
@@ -151,10 +151,10 @@ impl QueuePage {
                 mem::swap(&mut items, &mut items_before);
                 items.extend(items_before);
             }
-            let n_items_ahead = NUM_ITEMS_AHEAD - (end - index);
-            if n_items_ahead > 0 {
-                let items_ahead: Vec<QueueItemObject> =
-                    (queue.iter().enumerate().take(n_items_ahead.min(index)))
+            let n_items_after = NUM_ITEMS_AHEAD - (end - index);
+            if n_items_after > 0 {
+                let items_after: Vec<QueueItemObject> =
+                    (queue.iter().enumerate().take(n_items_after.min(index)))
                         .map(|index_item| {
                             let q_index = index_item.0;
                             match index_item.1 {
@@ -165,7 +165,7 @@ impl QueuePage {
                             }
                         })
                         .collect();
-                items.extend(items_ahead);
+                items.extend(items_after);
             }
         }
 
@@ -243,26 +243,24 @@ impl QueuePage {
             true => {
                 let queue_length = self.queue_length.get();
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
-                let n_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
-                if n_before > 0 {
-                    if index > playing_index + NUM_ITEMS_AHEAD {
-                        let from = queue_length - n_before;
-                        match index - from {
-                            value if value >= queue_items_len => return Err(ItemNotFoundError),
-                            value => return Ok(value),
-                        };
-                    }
-                }
-
-                let n_after = queue_length - playing_index.saturating_sub(NUM_ITEMS_AHEAD);
-                if index <= n_after {
-                    match index + n_after {
+                let n_items_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
+                if n_items_before > 0 && index > playing_index + NUM_ITEMS_AHEAD {
+                    let from = queue_length - n_items_before;
+                    match index - from {
                         value if value >= queue_items_len => return Err(ItemNotFoundError),
-                        value => return Ok(dbg!(value)),
+                        value => return Ok(value),
+                    };
+                }
+
+                let n_items_after = queue_length - playing_index.saturating_sub(NUM_ITEMS_AHEAD);
+                if index <= n_items_after {
+                    match index + n_items_after {
+                        value if value >= queue_items_len => return Err(ItemNotFoundError),
+                        value => return Ok(value),
                     }
                 }
 
-                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index + n_before {
+                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index + n_items_before {
                     value if value >= queue_items_len => return Err(ItemNotFoundError),
                     value => return Ok(value),
                 }
