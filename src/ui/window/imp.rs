@@ -333,8 +333,7 @@ impl Window {
         let Some(ref info) = *info.inspect_detailed() else {
             return;
         };
-        self.songs_page
-            .assign_artwork(index as u32, info.artwork.as_ref());
+        self.songs_page.assign_artwork(index, info.artwork.as_ref());
     }
     fn album_loaded(&self, index: usize) {
         let album = &self.albums.borrow()[index];
@@ -344,13 +343,11 @@ impl Window {
             return;
         };
         self.albums_page
-            .assign_artwork(index as u32, info.artwork.as_ref());
+            .assign_artwork(index, info.artwork.as_ref());
     }
     fn artist_loaded(&self, index: usize) {
         self.artists_page.assign_artwork(
-            index as u32,
-            // TODO: Decide what to show
-            None,
+            index, None, // TODO: Decide what to show
         );
     }
     fn queue_song_loaded(&self, index: usize) {

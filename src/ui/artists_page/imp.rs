@@ -153,8 +153,11 @@ impl ArtistsPage {
     }
 
     #[inline]
-    pub fn assign_artwork(&self, index: u32, artwork: Option<gdk::Texture>) {
-        self.artists.borrow()[index as usize].set_property("artwork", artwork);
+    pub fn assign_artwork(&self, index: usize, artwork: Option<gdk::Texture>) {
+        let artists = self.artists.borrow();
+        if index < artists.len() {
+            artists[index].set_property("artwork", artwork);
+        }
     }
 
     #[template_callback]

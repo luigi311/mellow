@@ -147,8 +147,11 @@ impl SongsPage {
     }
 
     #[inline]
-    pub fn assign_artwork(&self, index: u32, artwork: Option<&gdk::Texture>) {
-        self.songs.borrow()[index as usize].set_property("artwork", artwork);
+    pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
+        let songs = self.songs.borrow();
+        if index < songs.len() {
+            songs[index].set_property("artwork", artwork);
+        }
     }
 
     #[template_callback]
