@@ -22,7 +22,11 @@ impl LibraryPage {
                     ui.needs_refresh.set(false);
                 }
             }
-            None => self.imp().view_stack.set_visible_child_name("ready"),
+            None => {
+                let ui = self.imp();
+                ui.view_stack.set_visible_child_name("ready");
+                ui.needs_refresh.set(true);
+            }
         }
     }
 
