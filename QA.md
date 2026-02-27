@@ -19,9 +19,7 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [ ] Reordering the queue works as expected
-  - FIX: Trying to move the last item down crashes due to index out of bounds
-  - TODO: When repeat mode is on, last/first item should wrap around when moved
+- [x] Reordering the queue works as expected
   - TODO: Improvement: Reorder using drag & drop
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode

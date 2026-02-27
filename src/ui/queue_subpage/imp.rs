@@ -81,10 +81,7 @@ impl QueueSubpage {
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::Reorder(
-                self.index.get(),
-                self.index.get() - 1,
-            ))
+            .send(PlayerRequest::Shift(self.index.get(), -1))
             .expect(EXP_RX);
     }
     #[template_callback]
@@ -93,10 +90,7 @@ impl QueueSubpage {
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::Reorder(
-                self.index.get(),
-                self.index.get() + 1,
-            ))
+            .send(PlayerRequest::Shift(self.index.get(), 1))
             .expect(EXP_RX);
     }
     #[template_callback]

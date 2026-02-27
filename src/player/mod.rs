@@ -52,6 +52,8 @@ pub enum PlayerRequest {
     Append(QueueItem),
     /// Move a queue item from the first argument index to the second
     Reorder(usize, usize),
+    /// Same as `Reorder`, but the second argument is relative to the index
+    Shift(usize, isize),
     /// Inserts an item into the queue
     InsertAt(Box<(usize, QueueItem)>),
     /// Inserts an item into the queue relative to the currently playing index
@@ -101,6 +103,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::AppendQueue(queue) => format!("AppendQueue(…): {} items", queue.len()),
                 Self::Append(_) => "Append(…)".to_owned(),
                 Self::Reorder(from, to) => format!("Reorder({from}, {to})"),
+                Self::Shift(from, by) => format!("Reorder({from}, {by})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
@@ -254,6 +257,7 @@ impl Player {
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
+                PlayerRequest::Shift(from, by) => self.shift(from, by) == (),
                 PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
                 PlayerRequest::InsertRelative(item) => {
                     self.insert_to_queue(
@@ -573,6 +577,23 @@ impl Player {
             self.unload_gapless();
         }
         self.queue.reorder(from, to);
+    }
+
+    fn shift(&mut self, from: usize, by: isize) {
+        let mut to = from as isize + by;
+        let queue_len = self.queue.len() as isize;
+        if to < 0 {
+            if !self.queue.get_repeat() {
+                return;
+            }
+            to += queue_len - 1;
+        } else if to >= queue_len {
+            if !self.queue.get_repeat() {
+                return;
+            }
+            to -= queue_len - 1;
+        }
+        self.reorder(from, to as usize);
     }
 
     /// Inserts a `QueueItem` into the current queue at the specified `index`
