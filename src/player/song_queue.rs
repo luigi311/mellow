@@ -147,6 +147,7 @@ impl SongQueue {
     /// `Some` but empty, a new one is created.
     pub fn load_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
         self.songs = queue;
+        self.repeat = false;
         match shuffled {
             Some(shuffled) => {
                 self.shuffle = true;
@@ -158,6 +159,7 @@ impl SongQueue {
             None => self.shuffle = false,
         }
         self.ui_update_shuffle();
+        self.ui_update_repeat();
         self.ui_update_queue();
         self.ui_close_queue_subpage();
     }
