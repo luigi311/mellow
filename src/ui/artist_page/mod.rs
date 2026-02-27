@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::SharedArtist;
-use crate::ui::album_row::AlbumRow;
+use crate::ui::list_row::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 mod imp;
@@ -41,11 +41,11 @@ impl ArtistPage {
 
         ui.albums_list.remove_all();
         for album in &artist.albums {
-            let entry = AlbumRow::new();
+            let album_row = ListRow::new();
 
             let album_locked = album.lock().unwrap();
-            entry.set_title(&album_locked.title);
-            entry.set_subtitle(&match album_locked.year {
+            album_row.set_title(&album_locked.title);
+            album_row.set_subtitle(&match album_locked.year {
                 year if year > 0 => year.to_string(),
                 _ => String::new(),
             });
@@ -55,19 +55,19 @@ impl ArtistPage {
             // SAFETY: `load_detailed` ensures the value is `Some`
             let artwork = unsafe { info.as_ref().unwrap_unchecked().artwork.as_ref() };
             if artwork.is_some() {
-                entry.set_prefix_image(artwork);
+                album_row.set_prefix_image(artwork);
             } else {
-                entry.set_prefix_image(Some(&fallback_song_image()));
+                album_row.set_prefix_image(Some(&fallback_song_image()));
             }
 
             let album = Arc::clone(album);
-            entry.connect_activated(move |_| {
+            album_row.connect_activated(move |_| {
                 (UI_TX.get().expect(EXP_INIT))
                     .send(UpdateUI::AlbumPage(Arc::clone(&album)))
                     .expect(EXP_RX);
             });
 
-            ui.albums_list.append(&entry);
+            ui.albums_list.append(&album_row);
         }
     }
     #[inline]

@@ -19,12 +19,6 @@ impl Default for ItemTile {
 }
 
 impl ItemTile {
-    #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn builder() -> ItemTileBuilder {
         ItemTileBuilder {
             item_tile: Self::default(),

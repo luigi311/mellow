@@ -112,13 +112,13 @@ impl SettingsPage {
         self.imp().play_in_background.set_active(play_in_background);
     }
 
-    /// Returns the currently selected choice of startup queue
+    /// Returns the currently selected startup queue preference
     #[inline]
     #[must_use]
     pub fn startup_queue(&self) -> Ref<'_, StartupQueueChoice> {
         self.imp().startup_choice.borrow()
     }
-    /// Sets the type of queue the player should start with when opened
+    /// Sets the startup queue preference to the specified choice
     #[inline]
     pub fn set_startup_queue(&self, choice: StartupQueueChoice) {
         let settings = self.imp();

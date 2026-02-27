@@ -51,7 +51,7 @@ impl ArtistObject {
 
     #[inline]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {
-        let ord = match other.rank().total_cmp(&self.rank()) {
+        let mut ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
                 ArtistOrdering::Default => self.cmp_artist(other),
                 ArtistOrdering::Added => self.cmp_added_newer(other),
@@ -59,11 +59,10 @@ impl ArtistObject {
             },
             ordering => ordering,
         };
-        match order_by.reversed.get() {
-            false => ord,
-            true => ord.reverse(),
+        if order_by.reversed.get() {
+            ord = ord.reverse();
         }
-        .into()
+        ord.into()
     }
     #[inline]
     fn cmp_artist(&self, other: &Self) -> cmp::Ordering {
@@ -96,12 +95,7 @@ impl ArtistObject {
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing added time using the newest
         // album's first song is not necessarily correct
-        let modified_a = self
-            .shared_artist()
-            .lock()
-            .unwrap()
-            .albums
-            .last()
+        let modified_a = (self.shared_artist().lock().unwrap().albums.last())
             .unwrap()
             .lock()
             .unwrap()
@@ -109,12 +103,7 @@ impl ArtistObject {
             .info()
             .user()
             .modified;
-        let modified_b = other
-            .shared_artist()
-            .lock()
-            .unwrap()
-            .albums
-            .last()
+        let modified_b = (other.shared_artist().lock().unwrap().albums.last())
             .unwrap()
             .lock()
             .unwrap()

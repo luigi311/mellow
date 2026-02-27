@@ -299,16 +299,12 @@ impl SettingsPage {
             InterfaceColorScheme::Light => process_color_light(r, g, b),
             _ => match process_color_auto(r, g, b) {
                 (color, luminance) if luminance < 0.5 => {
-                    self.style_manager
-                        .get()
-                        .unwrap()
+                    (self.style_manager.get().unwrap())
                         .set_color_scheme(adw::ColorScheme::ForceDark);
                     color
                 }
                 (color, _) => {
-                    self.style_manager
-                        .get()
-                        .unwrap()
+                    (self.style_manager.get().unwrap())
                         .set_color_scheme(adw::ColorScheme::ForceLight);
                     color
                 }

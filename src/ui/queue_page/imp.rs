@@ -8,9 +8,9 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::{LIBRARY_TX, Library, SharedSong};
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::ui::list_row::ListRow;
 use crate::ui::queue_item_object::QueueItemObject;
 use crate::ui::queue_subpage::QueueSubpage;
-use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 const NUM_ITEMS_AHEAD: usize = 45;
@@ -235,7 +235,7 @@ impl ObjectImpl for QueuePage {
         self.list_box.bind_model(Some(&model), move |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
-            let queue_row = SongRow::default();
+            let queue_row = ListRow::default();
             queue_row.set_title(&queue_item_object.title());
             queue_row.set_subtitle(&queue_item_object.subtitle());
 

@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::SharedAlbum;
-use crate::ui::song_row::SongRow;
+use crate::ui::list_row::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 
 mod imp;
@@ -68,7 +68,7 @@ impl AlbumPage {
         // TODO: Divide discs into separate groups
         ui.songs_list.remove_all();
         for (i, song) in album_locked.songs.iter().enumerate() {
-            let song_row = SongRow::new();
+            let song_row = ListRow::new();
 
             let mut info = song.info();
             let info = info.load_basic();

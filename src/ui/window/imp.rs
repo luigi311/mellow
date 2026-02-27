@@ -22,7 +22,6 @@ use crate::ui::lyrics_page::LyricsPage;
 use crate::ui::main_player::MainPlayer;
 use crate::ui::queue_page::QueuePage;
 use crate::ui::queue_subpage::QueueSubpage;
-use crate::ui::rating::Rating;
 use crate::ui::settings_page::SettingsPage;
 use crate::ui::song_page::SongPage;
 use crate::ui::songs_page::SongsPage;
@@ -406,10 +405,6 @@ impl ObjectSubclass for Window {
     type ParentType = ApplicationWindow;
 
     fn class_init(class: &mut Self::Class) {
-        LibraryPage::static_type();
-        AlbumPage::static_type();
-        Rating::static_type();
-
         class.bind_template();
 
         class.install_action_async("win.add_library", None, async |window, _, _| {

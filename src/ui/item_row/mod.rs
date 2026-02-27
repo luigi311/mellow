@@ -20,12 +20,6 @@ impl Default for ItemRow {
 
 impl ItemRow {
     #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[inline]
     pub fn builder() -> ItemRowBuilder {
         ItemRowBuilder {
             item_row: Self::default(),

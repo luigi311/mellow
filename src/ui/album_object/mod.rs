@@ -61,19 +61,16 @@ impl AlbumObject {
     }
 
     pub fn shared_album(&self) -> SharedAlbum {
-        self.imp()
-            .first_song
-            .get()
-            .expect(EXP_INIT)
+        (self.imp().first_song.get().expect(EXP_INIT))
             .album()
             .clone()
             .expect(EXP_INIT)
     }
 
     #[inline]
-    pub fn order_cmp(&self, other: &Self, sort_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
-        let ord = match other.rank().total_cmp(&self.rank()) {
-            cmp::Ordering::Equal => match sort_by.ordering.get() {
+    pub fn order_cmp(&self, other: &Self, order_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
+        let mut ord = match other.rank().total_cmp(&self.rank()) {
+            cmp::Ordering::Equal => match order_by.ordering.get() {
                 AlbumOrdering::Default => self.cmp_artist_year_album(other),
                 AlbumOrdering::ReleaseDate => self.cmp_release_date(other),
                 AlbumOrdering::Modified => self.cmp_modified_newer(other),
@@ -83,11 +80,10 @@ impl AlbumObject {
             },
             ordering => ordering,
         };
-        match sort_by.reversed.get() {
-            false => ord,
-            true => ord.reverse(),
+        if order_by.reversed.get() {
+            ord = ord.reverse();
         }
-        .into()
+        ord.into()
     }
     #[inline]
     pub fn cmp_artist_year_album(&self, other: &Self) -> cmp::Ordering {

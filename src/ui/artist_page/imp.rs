@@ -1,12 +1,10 @@
 use adw::subclass::prelude::*;
 use core::cell::{Cell, RefCell};
-use glib::types::StaticType;
 use gtk::{CompositeTemplate, glib};
 
 use crate::excuses::EXP_INIT;
 use crate::library::{SharedArtist, ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::song_row::SongRow;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
@@ -83,8 +81,6 @@ impl ObjectSubclass for ArtistPage {
     type ParentType = adw::NavigationPage;
 
     fn class_init(class: &mut Self::Class) {
-        SongRow::static_type();
-
         class.bind_template();
         class.bind_template_callbacks();
     }

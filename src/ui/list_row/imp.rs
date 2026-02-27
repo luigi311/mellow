@@ -1,0 +1,36 @@
+use adw::subclass::prelude::*;
+use core::cell::RefCell;
+use gtk::CompositeTemplate;
+use gtk::glib;
+
+#[derive(Default, CompositeTemplate)]
+#[template(resource = "/com/github/userwithaname/Mellow/list_row.ui")]
+pub struct ListRow {
+    #[template_child]
+    pub prefix_image: TemplateChild<gtk::Picture>,
+    #[template_child]
+    pub suffix_label: TemplateChild<gtk::Label>,
+
+    pub bindings: RefCell<Vec<glib::Binding>>,
+}
+
+#[glib::object_subclass]
+impl ObjectSubclass for ListRow {
+    const NAME: &str = "MellowListRow";
+    type Type = super::ListRow;
+    type ParentType = adw::ActionRow;
+
+    fn class_init(class: &mut Self::Class) {
+        class.bind_template();
+    }
+
+    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+        obj.init_template();
+    }
+}
+
+impl ObjectImpl for ListRow {}
+impl WidgetImpl for ListRow {}
+impl ActionRowImpl for ListRow {}
+impl PreferencesRowImpl for ListRow {}
+impl ListBoxRowImpl for ListRow {}
