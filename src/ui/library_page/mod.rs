@@ -17,7 +17,10 @@ impl LibraryPage {
             Some(progress) => {
                 let ui = self.imp();
                 ui.progress_bar.set_fraction(progress);
-                ui.view_stack.set_visible_child_name("loading"); // TODO: Optimize?
+                if ui.needs_refresh.get() {
+                    ui.view_stack.set_visible_child_name("loading");
+                    ui.needs_refresh.set(false);
+                }
             }
             None => self.imp().view_stack.set_visible_child_name("ready"),
         }
@@ -29,6 +32,7 @@ impl LibraryPage {
             false => self.imp().ready_stack.set_visible_child_name("library"),
             true => self.imp().ready_stack.set_visible_child_name("empty"),
         }
+        self.imp().needs_refresh.set(true);
     }
 }
 
