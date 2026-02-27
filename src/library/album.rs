@@ -68,7 +68,11 @@ impl ToQueue for SharedAlbum {
 
 pub type AlbumSongs = Vec<Arc<Song>>;
 pub trait SortedAlbumSongs {
-    /// Returns `Ok(index)` if found, or `Err(index)` if not
+    /// Returns `Ok(index)` if the item was found found
+    ///
+    /// # Errors
+    /// If the item was not found, the returned `Err(index)`
+    /// can be used to insert the item to the proper position
     fn find_album_song(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbumSongs for AlbumSongs {

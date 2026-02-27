@@ -60,7 +60,11 @@ pub trait ToShuffledQueue {
 
 pub type Songs = Vec<Arc<Song>>;
 pub trait SortedSongs {
-    /// Returns `Ok(index)` if found, or `Err(index)` if not
+    /// Returns `Ok(index)` if the item was found found
+    ///
+    /// # Errors
+    /// If the item was not found, the returned `Err(index)`
+    /// can be used to insert the item to the proper position
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize>;
 }
 impl SortedSongs for Songs {
@@ -77,7 +81,11 @@ impl ToQueue for Songs {
 
 pub type Albums = Vec<Arc<Mutex<Album>>>;
 pub trait SortedAlbums {
-    /// Returns `Ok(index)` if found, or `Err(index)` if not
+    /// Returns `Ok(index)` if the item was found found
+    ///
+    /// # Errors
+    /// If the item was not found, the returned `Err(index)`
+    /// can be used to insert the item to the proper position
     fn find_album(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedAlbums for Albums {
@@ -122,7 +130,11 @@ impl ToShuffledQueue for Albums {
 
 pub type Artists = Vec<Arc<Mutex<Artist>>>;
 pub trait SortedArtists {
-    /// Returns `Ok(index)` if found, or `Err(index)` if not
+    /// Returns `Ok(index)` if the item was found found
+    ///
+    /// # Errors
+    /// If the item was not found, the returned `Err(index)`
+    /// can be used to insert the item to the proper position
     fn find_artist(&self, info: &SongInfo) -> Result<usize, usize>;
 }
 impl SortedArtists for Artists {
