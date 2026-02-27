@@ -246,7 +246,7 @@ impl QueuePage {
                 let n_items_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
                 if n_items_before > 0 && index > playing_index + NUM_ITEMS_AHEAD {
                     let from = queue_length - n_items_before;
-                    // FIX: Subtraction overflow error when starting a queue
+                    // NOTE: Starting a new queue with repeat mode can cause an overflow here
                     match index - from {
                         value if value >= queue_items_len => return Err(ItemNotFoundError),
                         value => return Ok(value),
@@ -272,6 +272,7 @@ impl QueuePage {
     // #[inline]
     // #[must_use]
     // fn model_index_to_queue(&self, index: usize) -> usize {
+    //     // TODO: Support repeat mode (this function may come useful for drag-&-drop reordering)
     //     let playing_index = self.playing_index.get();
     //     index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
     // }

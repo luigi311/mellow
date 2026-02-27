@@ -60,7 +60,7 @@ Music library:
     - [x] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
-    - [ ] Ability to set tags
+    - [ ] **User-defined tag management**
     - [x] Go to artist button
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
@@ -73,7 +73,7 @@ Music library:
     - [x] Play Now: Start a new queue and skip to the selected track
     - [x] Play Next: Insert the song to the next position in the queue
     - [x] Add to Queue button
-    - [ ] Ability to set tags
+    - [ ] **User-defined tag management**
     - [x] Go to album button
     - [x] Go to artist button
 - [x] Play counting
