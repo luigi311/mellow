@@ -422,7 +422,7 @@ impl SongQueue {
         println!("ui_update_queue()");
         self.ui_update_queue_index();
         self.ui_tx
-            .send(UpdateUI::NewQueue(self.ordered_queue()))
+            .send(UpdateUI::SetQueue(self.ordered_queue()))
             .expect(EXP_RX);
     }
 
@@ -433,7 +433,7 @@ impl SongQueue {
     pub fn ui_update_queue_index(&self) {
         println!("ui_update_queue_index({})", self.index);
         self.ui_tx
-            .send(UpdateUI::QueueIndex(self.index))
+            .send(UpdateUI::SetQueueIndex(self.index))
             .expect(EXP_RX);
     }
 

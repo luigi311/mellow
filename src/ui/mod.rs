@@ -38,44 +38,71 @@ use crate::ui::window::Window;
 
 pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
 pub enum UpdateUI {
-    /// (playing: bool, interactive: bool)
+    /// (playing: `bool`, interactive: `bool`)
     PlayerState(bool, bool),
+    /// Current song time in milliseconds
     PlayerTime(Option<u64>),
+    /// Prompts the UI to refresh the song information
     SongInfo,
-    NewQueue(Box<[QueueItem]>),
-    QueueIndex(usize),
-    RedrawQueue,
+    /// Replaces the UI song queue with a new one
+    SetQueue(Box<[QueueItem]>),
+    /// Updates the playing song index and redraws the queue
+    SetQueueIndex(usize),
+    /// Opens the subpage for the queue song at the given index
     OpenQueueSubpage(usize),
+    /// Closes the subpage if it is open
     CloseQueueSubpage,
+    /// Informs the UI of the new shuffle mode (so icons can be updated)
     Shuffle(bool),
+    /// Informs the UI of the new repeat mode (so icons can be updated)
     Repeat(bool),
+    /// Shows the progress bar with the specified progress value, or hides it
     Progress(Option<f64>),
 
-    LibraryDirs(Box<[String]>),
-    LibrarySongs(Songs),
-    LibraryAlbums(Albums),
-    LibraryArtists(Artists),
+    /// Updates the directory list on the settings page
+    SetLibraryDirs(Box<[String]>),
+    /// Updates the library songs
+    SetLibrarySongs(Songs),
+    /// Updates the library albums
+    SetLibraryAlbums(Albums),
+    /// Updates the library artists
+    SetLibraryArtists(Artists),
 
+    /// Prompts the library UI to assign the now-loaded song artwork for the specified item index
     LibrarySongLoaded(usize),
+    /// Prompts the library UI to assign the now-loaded album artwork for the specified item index
     LibraryAlbumLoaded(usize),
+    /// Prompts the library UI to assign the now-loaded artist artwork for the specified item index
     LibraryArtistLoaded(usize),
+    /// Prompts the queue UI to assign the now-loaded song artwork for the specified item index
     QueueSongLoaded(usize),
 
+    /// Opens the library song page for the item at the given index
     SongPageByIndex(usize),
     // Maybe `dyn Fn() -> Vec<QueueItem>` would be more useful?
     // Or `Vec<QueueItem>` directly, which would also remove the
     // need for the second field
+    /// Opens a song page, with the following arguments:
+    /// (index: `usize`, song: `SharedSong`, a closure returning the queue for starting playback)
     SongPage(Box<(usize, SharedSong, Box<dyn ToQueue + Send>)>),
+    /// Opens an album page using a `SharedAlbum`
     AlbumPage(SharedAlbum),
+    /// Opens an album page using a `SharedArtist`
     ArtistPage(SharedArtist),
 
+    /// Focuses the 'Library' tab
     FocusLibrary,
+    /// Focuses the 'Playing' tab
     FocusPlaying,
+    /// Focuses the 'Settings' tab
     FocusSettings,
+    /// Opens or closes the bottom sheet overlay
     OpenSheet(bool),
 
+    /// Runs a `gio` action
     RunAction(&'static str),
 
+    /// Causes the channel to ignore any further requests (but does not close it)
     Shutdown,
 }
 

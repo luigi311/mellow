@@ -199,7 +199,7 @@ impl Library {
     ) -> Library {
         let (tx, rx) = mpsc::channel();
         LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
-        let _ = ui_tx.send(UpdateUI::LibraryDirs(config.directories.clone().into()));
+        let _ = ui_tx.send(UpdateUI::SetLibraryDirs(config.directories.clone().into()));
 
         Library {
             songs: Vec::new(),
@@ -654,7 +654,7 @@ impl Library {
     #[inline]
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
-            .send(UpdateUI::LibrarySongs(songs.clone()))
+            .send(UpdateUI::SetLibrarySongs(songs.clone()))
             .expect(EXP_RX);
         self.songs = songs;
     }
@@ -665,7 +665,7 @@ impl Library {
     #[inline]
     fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
-            .send(UpdateUI::LibraryAlbums(albums.clone()))
+            .send(UpdateUI::SetLibraryAlbums(albums.clone()))
             .expect(EXP_RX);
         self.albums = albums;
         for f in mem::take(&mut self.on_albums_set) {
@@ -679,7 +679,7 @@ impl Library {
     #[inline]
     fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
-            .send(UpdateUI::LibraryArtists(artists.clone()))
+            .send(UpdateUI::SetLibraryArtists(artists.clone()))
             .expect(EXP_RX);
         self.artists = artists;
         for f in mem::take(&mut self.on_artists_set) {

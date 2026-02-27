@@ -137,19 +137,18 @@ impl Window {
                     self.main_player.set_state(playing, interactive);
                 }
 
-                UpdateUI::NewQueue(queue) => self.update_song_queue(Some(queue)),
-                UpdateUI::QueueIndex(index) => self.update_song_index(index),
-                UpdateUI::RedrawQueue => self.update_song_index(self.song_queue_index.get()),
+                UpdateUI::SetQueue(queue) => self.update_song_queue(Some(queue)),
+                UpdateUI::SetQueueIndex(index) => self.update_song_index(index),
                 UpdateUI::OpenQueueSubpage(index) => self.open_queue_subpage(index),
                 UpdateUI::CloseQueueSubpage => self.close_queue_subpage(),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
                 UpdateUI::Repeat(repeat) => self.queue_page.update_repeat(repeat),
                 UpdateUI::Progress(progress) => self.update_progress(progress),
 
-                UpdateUI::LibraryDirs(dirs) => self.set_library_dirs(&dirs),
-                UpdateUI::LibrarySongs(songs) => self.load_library_songs(&songs),
-                UpdateUI::LibraryAlbums(albums) => self.load_library_albums(&albums),
-                UpdateUI::LibraryArtists(artists) => self.load_library_artists(&artists),
+                UpdateUI::SetLibraryDirs(dirs) => self.set_library_dirs(&dirs),
+                UpdateUI::SetLibrarySongs(songs) => self.load_library_songs(&songs),
+                UpdateUI::SetLibraryAlbums(albums) => self.load_library_albums(&albums),
+                UpdateUI::SetLibraryArtists(artists) => self.load_library_artists(&artists),
 
                 UpdateUI::LibrarySongLoaded(index) => self.song_loaded(index),
                 UpdateUI::LibraryAlbumLoaded(index) => self.album_loaded(index),
