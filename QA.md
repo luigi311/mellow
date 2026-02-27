@@ -16,8 +16,7 @@ Playback:
 
 Song Queue:
 
-- [ ] Starting a new queue works as expected
-  - FIX: Starting an empty queue does not unload the currently playing song
+- [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
 - [ ] Reordering the queue works as expected

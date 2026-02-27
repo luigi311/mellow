@@ -68,6 +68,18 @@ impl MainPlayer {
             _ => ui.duration.set_label(&format_duration_ms(song_duration_ms)),
         }
     }
+    pub fn reset_info(&self) {
+        let ui = self.imp();
+
+        ui.album_cover.set_paintable(Some(&fallback_song_image()));
+
+        ui.song_title.set_label("");
+        ui.album_title.set_label("");
+        ui.artist_name.set_label("");
+
+        ui.current_time.set_label("-:--");
+        ui.duration.set_label("-:--");
+    }
 
     #[inline]
     pub fn set_time(&self, time_ms: Option<u64>, duration_ms: f64) {

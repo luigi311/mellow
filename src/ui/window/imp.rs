@@ -183,6 +183,8 @@ impl Window {
         println!("update_song_info()");
         let queue = self.song_queue.borrow();
         if queue.is_empty() {
+            self.settings_page.reset_background_color();
+            self.main_player.reset_info();
             return;
         }
 

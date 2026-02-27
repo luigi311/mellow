@@ -349,6 +349,7 @@ impl Player {
         if queue.is_empty() {
             let _ = self.backend.set_state(State::Null);
             self.queue.load_new(queue, shuffled);
+            self.ui_update_song_info();
             self.ui_open_playing();
             return;
         }
