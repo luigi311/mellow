@@ -176,3 +176,27 @@ pub enum SongOrdering {
     Added,
     Modified,
 }
+
+impl SongOrdering {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            SongOrdering::Default => "Default",
+            SongOrdering::Rating => "Rating",
+            SongOrdering::PlayCount => "Play Count",
+            SongOrdering::ReleaseDate => "Release Date",
+            SongOrdering::Added => "Added",
+            SongOrdering::Modified => "Modified",
+        }
+    }
+    pub fn from_str(input: &str) -> SongOrdering {
+        match input {
+            "Default" => SongOrdering::Default,
+            "Rating" => SongOrdering::Rating,
+            "Play Count" => SongOrdering::PlayCount,
+            "Release Date" => SongOrdering::ReleaseDate,
+            "Added" => SongOrdering::Added,
+            "Modified" => SongOrdering::Modified,
+            _ => unimplemented!(),
+        }
+    }
+}

@@ -25,8 +25,8 @@ Song queue:
 Music library:
 
 - [ ] Save/load user settings and application state
-  - TODO: Remember sort mode preference
   - IDEA: Remember filters?
+  - IDEA: Remember if sort order was reversed(?)
 - [ ] Allow initiating a full library rebuild
 - [-] Search/filtering for songs/albums/artists pages
   - FIX: Cannot drag-select text because it drags the header bar

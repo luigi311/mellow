@@ -150,12 +150,6 @@ impl SongsPage {
         self.songs.borrow()[index as usize].set_property("artwork", artwork);
     }
 
-    #[inline]
-    pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
-        let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
-        ordering.replace(sort_mode);
-        self.sorter.borrow().changed(gtk::SorterChange::Different);
-    }
     #[template_callback]
     pub fn handle_reverse_sort(&self) {
         let reversed = self.sort_mode.get().expect(EXP_INIT).reversed;
@@ -166,6 +160,16 @@ impl SongsPage {
             true => "view-sort-ascending-symbolic",
             false => "view-sort-descending-symbolic",
         });
+    }
+    #[inline]
+    pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
+        let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
+        ordering.replace(sort_mode);
+        self.sorter.borrow().changed(gtk::SorterChange::Different);
+    }
+    #[inline]
+    pub fn get_sort_mode(&self) -> &SortConfig<SongOrdering> {
+        self.sort_mode.get().expect(EXP_INIT)
     }
 
     pub fn uninit(&self) {

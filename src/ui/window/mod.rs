@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use core::error::Error;
 use gdk::{DragAction, FileList};
 use gio::Settings;
-use glib::Object;
+use glib::{GString, Object};
 use gtk::{Orientation, gdk, gio, glib};
 use std::rc::Rc;
 use std::sync::mpsc;
@@ -12,7 +12,10 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::serializer::serialize_list;
+use crate::ui::album_object::AlbumOrdering;
 use crate::ui::application::Application;
+use crate::ui::artist_object::ArtistOrdering;
+use crate::ui::song_object::SongOrdering;
 use crate::ui::{UI_TX, UpdateUI, actions};
 
 mod imp;
@@ -31,11 +34,17 @@ impl Window {
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
         let imp = window.imp();
+        // window.set_hide_on_close(true);
+        window.load_state(&settings);
+        window.setup_actions(
+            settings.string("songs-sort"),
+            settings.string("albums-sort"),
+            settings.string("artists-sort"),
+        );
+        window.setup_drag_and_drop();
+
         let _ = imp.settings.set(settings);
         imp.init_ui_elements(app.style_manager());
-        window.load_state();
-        window.setup_actions();
-        window.setup_drag_and_drop();
         window
     }
 
@@ -44,7 +53,7 @@ impl Window {
         self.imp().settings.get().expect(EXP_INIT)
     }
 
-    fn setup_actions(&self) {
+    fn setup_actions(&self, songs_sort: GString, albums_sort: GString, artists_sort: GString) {
         let player_actions = gio::SimpleActionGroup::new();
         player_actions.add_action_entries([
             actions::player::skip_prev(self),
@@ -77,9 +86,9 @@ impl Window {
         let window = self.imp();
         let menu_actions = gio::SimpleActionGroup::new();
         menu_actions.add_action_entries([
-            actions::menu::songs_sort_mode(window.songs_page.get()),
-            actions::menu::albums_sort_mode(window.albums_page.get()),
-            actions::menu::artists_sort_mode(window.artists_page.get()),
+            actions::menu::songs_sort_mode(window.songs_page.get(), songs_sort),
+            actions::menu::albums_sort_mode(window.albums_page.get(), albums_sort),
+            actions::menu::artists_sort_mode(window.artists_page.get(), artists_sort),
             actions::menu::songs_play_mode(window.songs_page.get()),
             actions::menu::albums_play_mode(window.albums_page.get()),
             actions::menu::artists_play_mode(window.artists_page.get()),
@@ -166,6 +175,19 @@ impl Window {
         settings.set_enum("color-scheme", settings_page.color_scheme().cast_signed())?;
         settings.set_string("directories", &serialize_list(&settings_page.directories()))?;
 
+        settings.set_string(
+            "songs-sort",
+            imp.songs_page.get_sort_config().ordering.get().to_str(),
+        )?;
+        settings.set_string(
+            "albums-sort",
+            imp.albums_page.get_sort_config().ordering.get().to_str(),
+        )?;
+        settings.set_string(
+            "artists-sort",
+            imp.artists_page.get_sort_config().ordering.get().to_str(),
+        )?;
+
         settings.set_boolean("songs-shuffle", imp.songs_page.get_shuffle())?;
         settings.set_boolean("albums-shuffle", imp.albums_page.get_shuffle())?;
         settings.set_boolean("artists-shuffle", imp.artists_page.get_shuffle())?;
@@ -173,10 +195,9 @@ impl Window {
         Ok(())
     }
 
-    pub fn load_state(&self) {
+    pub fn load_state(&self, settings: &Settings) {
         let imp = self.imp();
         let settings_page = &imp.settings_page;
-        let settings = self.settings();
 
         // Slider callback `change_value` doesn't work for `set_value()`,
         // so the volume has to be set manually before setting the slider
@@ -191,6 +212,13 @@ impl Window {
         settings_page.set_remember_time(settings.boolean("remember-time"));
         settings_page.set_adaptive_colors(settings.boolean("adaptive-colors"));
         settings_page.set_color_scheme(settings.enum_("color-scheme").cast_unsigned());
+
+        imp.songs_page
+            .set_sort_mode(SongOrdering::from_str(&settings.string("songs-sort")));
+        imp.albums_page
+            .set_sort_mode(AlbumOrdering::from_str(&settings.string("albums-sort")));
+        imp.artists_page
+            .set_sort_mode(ArtistOrdering::from_str(&settings.string("artists-sort")));
 
         imp.songs_page
             .set_shuffle(settings.boolean("songs-shuffle"));

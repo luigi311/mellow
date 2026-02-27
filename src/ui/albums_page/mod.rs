@@ -2,7 +2,7 @@ use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
 
 use crate::library::Albums;
-use crate::ui::album_object::AlbumOrdering;
+use crate::ui::{SortConfig, album_object::AlbumOrdering};
 
 mod imp;
 
@@ -27,6 +27,10 @@ impl AlbumsPage {
     #[inline]
     pub fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
         self.imp().set_sort_mode(sort_mode);
+    }
+    #[inline]
+    pub fn get_sort_config(&self) -> &SortConfig<AlbumOrdering> {
+        self.imp().get_sort_mode()
     }
 
     #[inline]

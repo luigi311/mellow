@@ -53,7 +53,7 @@ impl ArtistObject {
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match order_by.ordering.get() {
-                ArtistOrdering::Artist => self.cmp_artist(other),
+                ArtistOrdering::Default => self.cmp_artist(other),
                 ArtistOrdering::Added => self.cmp_added_newer(other),
                 ArtistOrdering::Modified => self.cmp_modified_newer(other),
             },
@@ -142,7 +142,25 @@ pub struct ArtistData {
 pub enum ArtistOrdering {
     // IDEA: Sort by average play count
     // IDEA: Sort by best average rating
-    Artist,
+    Default,
     Added,
     Modified,
+}
+
+impl ArtistOrdering {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            ArtistOrdering::Default => "Default",
+            ArtistOrdering::Added => "Added",
+            ArtistOrdering::Modified => "Modified",
+        }
+    }
+    pub fn from_str(input: &str) -> ArtistOrdering {
+        match input {
+            "Default" => ArtistOrdering::Default,
+            "Added" => ArtistOrdering::Added,
+            "Modified" => ArtistOrdering::Modified,
+            _ => unimplemented!(),
+        }
+    }
 }

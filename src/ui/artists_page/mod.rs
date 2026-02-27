@@ -2,7 +2,7 @@ use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
 
 use crate::library::Artists;
-use crate::ui::artist_object::ArtistOrdering;
+use crate::ui::{SortConfig, artist_object::ArtistOrdering};
 
 mod imp;
 
@@ -27,6 +27,10 @@ impl ArtistsPage {
     #[inline]
     pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
         self.imp().set_sort_mode(sort_mode);
+    }
+    #[inline]
+    pub fn get_sort_config(&self) -> &SortConfig<ArtistOrdering> {
+        self.imp().get_sort_mode()
     }
 
     #[inline]

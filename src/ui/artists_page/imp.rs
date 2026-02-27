@@ -157,12 +157,6 @@ impl ArtistsPage {
         self.artists.borrow()[index as usize].set_property("artwork", artwork);
     }
 
-    #[inline]
-    pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
-        let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
-        ordering.replace(sort_mode);
-        self.sorter.borrow().changed(gtk::SorterChange::Different);
-    }
     #[template_callback]
     pub fn handle_reverse_sort(&self) {
         let reversed = self.sort_mode.get().expect(EXP_INIT).reversed;
@@ -173,6 +167,16 @@ impl ArtistsPage {
             true => "view-sort-ascending-symbolic",
             false => "view-sort-descending-symbolic",
         });
+    }
+    #[inline]
+    pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
+        let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
+        ordering.replace(sort_mode);
+        self.sorter.borrow().changed(gtk::SorterChange::Different);
+    }
+    #[inline]
+    pub fn get_sort_mode(&self) -> &SortConfig<ArtistOrdering> {
+        self.sort_mode.get().expect(EXP_INIT)
     }
 
     #[inline]
@@ -202,7 +206,7 @@ impl ObjectImpl for ArtistsPage {
     fn constructed(&self) {
         let _ = self
             .sort_mode
-            .set(SortConfig::new(ArtistOrdering::Artist, false));
+            .set(SortConfig::new(ArtistOrdering::Default, false));
         self.init_search();
 
         self.artists_grid.connect_activate(|grid, index| {

@@ -2,7 +2,7 @@ use adw::subclass::prelude::*;
 use gtk::{gdk, glib};
 
 use crate::library::Songs;
-use crate::ui::song_object::SongOrdering;
+use crate::ui::{SortConfig, song_object::SongOrdering};
 
 mod imp;
 
@@ -27,6 +27,10 @@ impl SongsPage {
     #[inline]
     pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
         self.imp().set_sort_mode(sort_mode);
+    }
+    #[inline]
+    pub fn get_sort_config(&self) -> &SortConfig<SongOrdering> {
+        self.imp().get_sort_mode()
     }
 
     #[inline]

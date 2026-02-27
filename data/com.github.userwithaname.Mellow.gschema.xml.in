@@ -55,6 +55,19 @@
       <default>":"</default>
       <summary>Directories within which the player will look for music files</summary>
     </key>
+    <!-- TODO: Could these be defined as enums? -->
+    <key name="songs-sort" type="s">
+      <default>"Default"</default>
+      <summary>Selects the sort mode for the songs page</summary>
+    </key>
+    <key name="albums-sort" type="s">
+      <default>"Default"</default>
+      <summary>Selects the sort mode for the albums page</summary>
+    </key>
+    <key name="artists-sort" type="s">
+      <default>"Default"</default>
+      <summary>Selects the sort mode for the artists page</summary>
+    </key>
     <key name="songs-shuffle" type="b">
       <default>false</default>
       <summary>Whether the play button on the songs page should start a shuffled queue</summary>

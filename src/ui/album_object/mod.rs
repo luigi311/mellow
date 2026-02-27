@@ -74,7 +74,7 @@ impl AlbumObject {
     pub fn order_cmp(&self, other: &Self, sort_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
         let ord = match other.rank().total_cmp(&self.rank()) {
             cmp::Ordering::Equal => match sort_by.ordering.get() {
-                AlbumOrdering::ArtistYearAlbum => self.cmp_artist_year_album(other),
+                AlbumOrdering::Default => self.cmp_artist_year_album(other),
                 AlbumOrdering::ReleaseDate => self.cmp_release_date(other),
                 AlbumOrdering::Modified => self.cmp_modified_newer(other),
                 AlbumOrdering::Added => self.cmp_added_newer(other),
@@ -185,10 +185,34 @@ pub struct AlbumData {
 
 #[derive(Clone, Copy)]
 pub enum AlbumOrdering {
-    ArtistYearAlbum,
+    Default,
     ReleaseDate,
     Modified,
     Added,
     Rating,
     PlayCount,
+}
+
+impl AlbumOrdering {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            AlbumOrdering::Default => "Default",
+            AlbumOrdering::Rating => "Rating",
+            AlbumOrdering::PlayCount => "Play Count",
+            AlbumOrdering::ReleaseDate => "Release Date",
+            AlbumOrdering::Added => "Added",
+            AlbumOrdering::Modified => "Modified",
+        }
+    }
+    pub fn from_str(input: &str) -> AlbumOrdering {
+        match input {
+            "Default" => AlbumOrdering::Default,
+            "Rating" => AlbumOrdering::Rating,
+            "Play Count" => AlbumOrdering::PlayCount,
+            "Release Date" => AlbumOrdering::ReleaseDate,
+            "Added" => AlbumOrdering::Added,
+            "Modified" => AlbumOrdering::Modified,
+            _ => unimplemented!(),
+        }
+    }
 }
