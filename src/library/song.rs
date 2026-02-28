@@ -485,6 +485,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn inspect_detailed(&self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_write().is_err() {
+            eprintln!(
+                "Note: Blocking on read lock for `inspect_detailed` (would `try_inspect_detailed` make sense here?)"
+            );
+        }
         self.detailed_info.read().unwrap()
     }
     /// Returns the basic song info if accessible without blocking

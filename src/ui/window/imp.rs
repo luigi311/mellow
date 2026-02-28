@@ -321,7 +321,12 @@ impl Window {
     fn song_loaded(&self, index: usize) {
         let song = &self.songs.borrow()[index];
         let info = song.info();
-        let Some(ref info) = *info.inspect_detailed() else {
+        let Ok(info) = info.try_inspect_detailed() else {
+            // If the info is not instantly accessible without blocking, try again later
+            let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index));
+            return;
+        };
+        let Some(ref info) = *info else {
             return;
         };
         self.songs_page.assign_artwork(index, info.artwork.as_ref());
@@ -330,7 +335,12 @@ impl Window {
         let album = &self.albums.borrow()[index];
         let album = album.lock().unwrap();
         let info = album.songs[0].info();
-        let Some(ref info) = *info.inspect_detailed() else {
+        let Ok(info) = info.try_inspect_detailed() else {
+            // If the info is not instantly accessible without blocking, try again later
+            let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibraryAlbumLoaded(index));
+            return;
+        };
+        let Some(ref info) = *info else {
             return;
         };
         self.albums_page
@@ -350,7 +360,12 @@ impl Window {
             return;
         };
         let info = song.info();
-        let Some(ref info) = *info.inspect_detailed() else {
+        let Ok(info) = info.try_inspect_detailed() else {
+            // If the info is not instantly accessible without blocking, try again later
+            let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index));
+            return;
+        };
+        let Some(ref info) = *info else {
             return;
         };
         if info.artwork.is_none() {
