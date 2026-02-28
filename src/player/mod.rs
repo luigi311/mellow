@@ -682,16 +682,23 @@ impl Player {
                 }
                 gst::MessageType::Warning => eprintln!("gstreamer warning: {message:?}\n"),
                 gst::MessageType::Error => {
-                    let dbg = format!("{message:?}");
-                    eprintln!("gstreamer error: {dbg}\n");
+                    let error = format!("{message:?}");
+                    eprintln!("gstreamer error: {error}\n");
 
-                    if dbg.contains(&self.queue.current().as_song().info().file_uri()) {
+                    let QueueItem::Song(song) = self.queue.current() else {
+                        return;
+                    };
+                    let mut info = song.info();
+                    if error.contains(&info.file_uri()) {
+                        info.unload_basic(); // Causes song info to be re-read from the file
+
                         // FIX: Seeking to (or close to) 0 sometimes causes a gstreamer error:
                         // gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed
                         if self.seeking {
                             let _ = self.backend.set_state(State::Null);
                             return;
                         }
+
                         self.force_skip_track(self.current_state);
                     }
                 }
