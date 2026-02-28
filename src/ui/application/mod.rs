@@ -8,7 +8,7 @@ mod imp;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::Player;
-use crate::ui::{UpdateUI, Window};
+use crate::ui::{UpdateUI, Window, actions};
 use crate::{MUSIC_DIR, about, unescaped_split};
 
 glib::wrapper! {
@@ -74,6 +74,12 @@ impl Application {
     }
 
     #[inline]
+    #[must_use]
+    fn window(&self) -> &Window {
+        self.imp().window.get().expect(EXP_INIT)
+    }
+
+    #[inline]
     fn create_window(
         &self,
         settings: gio::Settings,
@@ -102,23 +108,12 @@ impl Application {
 
     #[inline]
     fn present_window(&self) {
-        self.imp().window.get().expect(EXP_INIT).set_visible(true);
+        self.window().set_visible(true);
     }
 
     #[inline]
     fn setup_actions(&self) {
-        self.add_action_entries([gio::ActionEntry::builder("quit")
-            .activate(glib::clone!(
-                #[weak(rename_to=app)]
-                self,
-                #[weak(rename_to=window)]
-                self.imp().window.get().expect(EXP_INIT),
-                move |_, _, _| {
-                    window.close();
-                    app.quit();
-                }
-            ))
-            .build()]);
+        self.add_action_entries([actions::app::quit(self, self.window())]);
     }
 
     fn shutdown(&self) {
