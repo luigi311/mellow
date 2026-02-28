@@ -692,8 +692,11 @@ impl Player {
                     if error.contains(&info.file_uri()) {
                         info.unload_basic(); // Causes song info to be re-read from the file
 
-                        // FIX: Seeking to (or close to) 0 sometimes causes a gstreamer error:
+                        // NOTE: Seeking to (or close to) 0 sometimes causes a gstreamer error:
                         // gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed
+                        // NOTE: The issue only happens in the `toolbx` container
+                        // (debug and submit a bug report?)
+
                         if self.seeking {
                             let _ = self.backend.set_state(State::Null);
                             return;

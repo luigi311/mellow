@@ -258,7 +258,7 @@ impl Window {
             index,
             Arc::clone(match &queue[index] {
                 QueueItem::Song(song) => song,
-                _ => unreachable!(),
+                _ => unreachable!("Stoppers don't (currently) have subpages"),
             }),
         );
         self.queue_subpage.set_stop_after(stop_after);

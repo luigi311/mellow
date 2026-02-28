@@ -77,8 +77,8 @@ impl QueuePage {
 
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
-        if let Ok(item_pos) = self.queue_index_to_model(index) {
-            self.scroll_to_pos((item_pos * 54) as f64);
+        if let Ok(model_index) = self.queue_index_to_model(index) {
+            self.scroll_to_pos((model_index * 54) as f64);
         }
     }
 
@@ -233,6 +233,7 @@ impl QueuePage {
     fn queue_index_to_model(&self, index: usize) -> Result<usize, ItemNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
+        // FIX: Returns `Err` when both shuffle and repeat are enabled
         match self.repeat_toggle.is_active() {
             false => {
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
