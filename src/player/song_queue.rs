@@ -18,6 +18,7 @@ pub struct SongQueue {
     pub pending_track: bool,
 
     index: usize,
+    last_ui_index: usize,
     songs: Vec<QueueItem>,
     shuffled: Vec<usize>,
 
@@ -38,6 +39,7 @@ impl SongQueue {
             pending_track: true,
 
             index: 0,
+            last_ui_index: 0,
             songs: vec![],
             shuffled: vec![],
 
@@ -145,6 +147,8 @@ impl SongQueue {
     /// and optionally enables shuffle mode and sets the
     /// shuffled queue to `shuffled`. If `shuffled` is
     /// `Some` but empty, a new one is created.
+    ///
+    /// Note: `ui_update_queue` must be called manually
     pub fn load_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
         self.songs = queue;
         self.repeat = false;
@@ -160,7 +164,6 @@ impl SongQueue {
         }
         self.ui_update_shuffle();
         self.ui_update_repeat();
-        self.ui_update_queue();
         self.ui_close_queue_subpage();
     }
 
@@ -420,22 +423,27 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
-    fn ui_update_queue(&self) {
+    pub fn ui_update_queue(&mut self) {
         println!("ui_update_queue()");
         self.ui_tx
             .send(UpdateUI::SetQueue(self.ordered_queue(), self.index))
             .expect(EXP_RX);
+        self.last_ui_index = self.index;
     }
 
     /// Updates the UI with the current queue index
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
-    pub fn ui_update_queue_index(&self) {
+    pub fn ui_update_queue_index(&mut self) {
+        if self.index == self.last_ui_index {
+            return;
+        }
         println!("ui_update_queue_index({})", self.index);
         self.ui_tx
             .send(UpdateUI::SetQueueIndex(self.index))
             .expect(EXP_RX);
+        self.last_ui_index = self.index;
     }
 
     /// Closes the UI queue subpage if visible

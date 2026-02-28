@@ -353,6 +353,7 @@ impl Player {
         if queue.is_empty() {
             let _ = self.backend.set_state(State::Null);
             self.queue.load_new(queue, shuffled);
+            self.queue.ui_update_queue();
             self.ui_update_song_info();
             self.ui_open_playing();
             return;
@@ -365,13 +366,14 @@ impl Player {
             let load_artwork = thread::spawn(move || {
                 let mut info = song.info();
                 drop(info.load_detailed());
-                drop(info.load_basic());
+                drop(info.try_load_basic());
             });
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
                 load_artwork.join().unwrap();
             });
         }
         self.skip_to(index);
+        self.queue.ui_update_queue();
     }
 
     /// Starts or pauses playback depending on state

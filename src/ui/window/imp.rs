@@ -240,12 +240,11 @@ impl Window {
 
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>, index: usize) {
         self.song_queue_index.set(index);
-        match queue {
-            Some(queue) => {
-                println!("update_song_queue(Some(…)): {} items", queue.len());
-                self.song_queue.replace(queue);
-            }
-            None => println!("update_song_queue(None)"),
+        if let Some(queue) = queue {
+            println!("update_song_queue(Some(…), {index}): {} items", queue.len());
+            self.song_queue.replace(queue);
+        } else {
+            println!("update_song_queue(None, {index})");
         }
         self.queue_page
             .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
