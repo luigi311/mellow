@@ -231,8 +231,4 @@ impl Window {
 
         self.setup_actions(&songs_sort, &albums_sort, &artists_sort);
     }
-
-    pub fn quit(&self) {
-        // TODO: Function for closing the window regardless of play-in-background preference
-    }
 }

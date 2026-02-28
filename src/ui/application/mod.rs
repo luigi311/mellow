@@ -30,8 +30,8 @@ impl Application {
         app.connect_activate(Self::present_window);
         app.connect_shutdown(Self::shutdown);
 
-        // TODO: CTRL+Q should quit the application (in case of background playback)
-        app.set_accels_for_action("window.close", &["<Ctrl>W", "<Ctrl>Q"]);
+        app.set_accels_for_action("app.quit", &["<Ctrl>Q"]);
+        app.set_accels_for_action("window.close", &["<Ctrl>W"]);
         app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
         // TODO: Ignore shortcut when the overlay is open
         // app.set_accels_for_action("player.play_pause", &["space"]);
@@ -70,6 +70,7 @@ impl Application {
         ));
 
         self.create_window(settings, ui_rx);
+        self.setup_actions();
     }
 
     #[inline]
@@ -102,6 +103,22 @@ impl Application {
     #[inline]
     fn present_window(&self) {
         self.imp().window.get().expect(EXP_INIT).set_visible(true);
+    }
+
+    #[inline]
+    fn setup_actions(&self) {
+        self.add_action_entries([gio::ActionEntry::builder("quit")
+            .activate(glib::clone!(
+                #[weak(rename_to=app)]
+                self,
+                #[weak(rename_to=window)]
+                self.imp().window.get().expect(EXP_INIT),
+                move |_, _, _| {
+                    window.close();
+                    app.quit();
+                }
+            ))
+            .build()]);
     }
 
     fn shutdown(&self) {
