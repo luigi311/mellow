@@ -356,20 +356,7 @@ impl SongInfoLoader<'_> {
             return info;
         }
         drop(info);
-        let mut info_writer = self.info.write().unwrap();
-        // Check if the info was already loaded by another
-        // writer while waiting to acquire the write lock
-        #[cfg(debug_assertions)]
-        if info_writer.is_some() {
-            println!(
-                "⚠️ Basic song info already loaded - enable the check for release builds as well ({})",
-                line!()
-            );
-            drop(info_writer);
-            return self.info.read().unwrap();
-        }
-        *info_writer = Some(self.basic_or_default());
-        drop(info_writer);
+        self.assign_basic();
         self.info.read().unwrap()
     }
     /// Returns the basic song info if it is currently accessible without
@@ -392,22 +379,29 @@ impl SongInfoLoader<'_> {
             return Ok(info);
         }
         drop(info);
+        self.assign_basic();
+        Ok(self.info.read().unwrap())
+    }
+    /// Loads the basic song info and assigns it if it is not already loaded
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
+    fn assign_basic(&mut self) {
         let mut info_writer = self.info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
-        #[cfg(debug_assertions)]
         if info_writer.is_some() {
+            #[cfg(debug_assertions)]
             println!(
-                "⚠️ Basic song info already loaded - enable the check for release builds as well ({})",
+                "⚠️ Basic song info already loaded (decide whether to include this check it in release builds) ({})",
                 line!()
             );
-            drop(info_writer);
-            return Ok(self.info.read().unwrap());
+            return;
         }
         *info_writer = Some(self.basic_or_default());
-        drop(info_writer);
-        Ok(self.info.read().unwrap())
     }
+    /// Reads and returns the basic song info from file,
+    /// or returns a fallback if unavailable
     #[inline]
     fn basic_or_default(&mut self) -> SongInfo {
         self.load_basic_from_file().unwrap_or_else(|e| {
@@ -516,20 +510,7 @@ impl SongInfoLoader<'_> {
             return detailed_info;
         }
         drop(detailed_info);
-        let mut info_writer = self.detailed_info.write().unwrap();
-        // Check if the info was already loaded by another
-        // writer while waiting to acquire the write lock
-        if info_writer.is_some() {
-            #[cfg(debug_assertions)]
-            println!(
-                "⚠️ Detailed song info already loaded (this is to confirm that this check is necessary) ({})",
-                line!()
-            );
-            drop(info_writer);
-            return self.detailed_info.read().unwrap();
-        }
-        *info_writer = Some(self.detailed_or_default());
-        drop(info_writer);
+        self.assign_detailed();
         self.detailed_info.read().unwrap()
     }
     /// Returns the detailed song info if it is currently accessible without
@@ -551,21 +532,27 @@ impl SongInfoLoader<'_> {
         if detailed_info.is_some() {
             return Ok(detailed_info);
         }
+        self.assign_detailed();
+        Ok(self.detailed_info.read().unwrap())
+    }
+    /// Loads the detailed song info and assigns it if it is not already loaded
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
+    #[inline]
+    fn assign_detailed(&mut self) {
         let mut info_writer = self.detailed_info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
         if info_writer.is_some() {
             #[cfg(debug_assertions)]
             println!(
-                "⚠️ Detailed song info already loaded (this is to confirm that this check is necessary) ({})",
+                "⚠️ Detailed song info already loaded (decide whether to include this check it in release builds) ({})",
                 line!()
             );
-            drop(info_writer);
-            return Ok(self.detailed_info.read().unwrap());
+            return;
         }
         *info_writer = Some(self.detailed_or_default());
-        drop(info_writer);
-        Ok(self.detailed_info.read().unwrap())
     }
     /// Attempts to read detailed info from tags and returns it,
     /// or returns a default value if it cannot
