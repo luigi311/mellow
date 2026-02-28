@@ -340,14 +340,14 @@ impl Library {
             move || {
                 // Wait before starting background tasks in case they aren't needed
                 thread::sleep(Duration::from_millis(100));
+                if cancel.load(atomic::Ordering::Relaxed) {
+                    return;
+                }
 
                 // Spawning more tasks may improve parallel distribution
-                let chunk_size = songs.len() / 64;
-                let mut iter = 0;
-                for i in 0..64 {
-                    if cancel.load(atomic::Ordering::Relaxed) {
-                        return;
-                    }
+                let num_tasks = 64;
+                let chunk_size = songs.len() / num_tasks;
+                for i in 0..num_tasks {
                     let cancel = Arc::clone(&cancel);
                     let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
                     Library::run_task(library_tx, move || {
@@ -358,13 +358,9 @@ impl Library {
                             drop(song.info().try_load_basic());
                         }
                     });
-                    iter += 1;
-                    if iter == 8 {
-                        iter = 0;
-                        // Avoid sending too many `run_task` requests at once
-                        thread::yield_now();
-                    }
                 }
+                #[cfg(debug_assertions)]
+                println!("Loading song info in the background ({num_tasks} tasks queued)");
             }
         });
 
@@ -482,6 +478,8 @@ impl Library {
         if !cancel.load(atomic::Ordering::Relaxed) {
             let _ = library_tx.send(LibraryRequest::CancelRebuild);
         }
+        // Waiting may not be required, but it's okay since the function
+        // is on a different thread, and has already updated the library
         let _ = background_task_spawner.join();
 
         Ok(())
@@ -818,7 +816,6 @@ impl Library {
     }
 
     /// Takes a list of file or directory paths and returns a queue
-    // #[inline]
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Vec<QueueItem> {
         let mut queue = Vec::with_capacity(paths.len());
