@@ -6,6 +6,7 @@ use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::time::Duration;
 use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -337,8 +338,10 @@ impl Library {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
-                // Spawning more tasks than there are workers,
-                // in case some finish sooner than expected
+                // Wait before starting background tasks in case they aren't needed
+                thread::sleep(Duration::from_millis(100));
+
+                // Spawning more tasks may improve parallel distribution
                 let chunk_size = songs.len() / 64;
                 let mut iter = 0;
                 for i in 0..64 {
@@ -355,13 +358,12 @@ impl Library {
                             drop(song.info().try_load_basic());
                         }
                     });
-                    if iter == 7 {
+                    iter += 1;
+                    if iter == 8 {
                         iter = 0;
                         // Avoid sending too many `run_task` requests at once
                         thread::yield_now();
-                        continue;
                     }
-                    iter += 1;
                 }
             }
         });
