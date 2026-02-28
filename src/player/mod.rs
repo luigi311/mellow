@@ -686,6 +686,12 @@ impl Player {
                     eprintln!("gstreamer error: {dbg}\n");
 
                     if dbg.contains(&self.queue.current().as_song().info().file_uri()) {
+                        // FIX: Seeking to (or close to) 0 sometimes causes a gstreamer error:
+                        // gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed
+                        if self.seeking {
+                            let _ = self.backend.set_state(State::Null);
+                            return;
+                        }
                         self.force_skip_track(self.current_state);
                     }
                 }
