@@ -127,8 +127,8 @@ impl Window {
                     self.main_player.set_state(playing, interactive);
                 }
 
-                UpdateUI::SetQueue(queue) => self.update_song_queue(Some(queue)),
-                UpdateUI::SetQueueIndex(index) => self.update_song_index(index),
+                UpdateUI::SetQueue(queue, index) => self.update_song_queue(Some(queue), index),
+                UpdateUI::SetQueueIndex(index) => self.update_song_queue(None, index),
                 UpdateUI::OpenQueueSubpage(index) => self.open_queue_subpage(index),
                 UpdateUI::CloseQueueSubpage => self.close_queue_subpage(),
                 UpdateUI::Shuffle(shuffle) => self.queue_page.update_shuffle(shuffle),
@@ -238,15 +238,8 @@ impl Window {
         }
     }
 
-    fn update_song_index(&self, index: usize) {
-        println!("update_song_index({index})");
+    fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>, index: usize) {
         self.song_queue_index.set(index);
-        // FIX: Toggling shuffle mode calls `update_song_queue()` twice
-        // NOTE: This call is only needed so the highlighted queue item
-        // is updated, and would not be necessary with a proper list view
-        self.update_song_queue(None);
-    }
-    fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>) {
         match queue {
             Some(queue) => {
                 println!("update_song_queue(Some(…)): {} items", queue.len());

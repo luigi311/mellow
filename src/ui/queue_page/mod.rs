@@ -31,6 +31,7 @@ impl QueuePage {
             false => "media-playlist-consecutive-symbolic",
         });
         ui.shuffle_toggle.set_active(shuffle);
+        ui.next_scroll_pos.set(QueueScrollAction::ToPlaying);
     }
 
     #[inline]
@@ -40,7 +41,9 @@ impl QueuePage {
     }
     #[inline]
     pub fn update_repeat(&self, repeat: bool) {
-        self.imp().repeat_toggle.set_active(repeat);
+        let ui = self.imp();
+        ui.repeat_toggle.set_active(repeat);
+        ui.next_scroll_pos.set(QueueScrollAction::ToPlaying);
     }
 
     #[inline]
@@ -57,4 +60,11 @@ impl QueuePage {
     pub fn uninit(&self) {
         self.imp().uninit();
     }
+}
+
+#[derive(Default, Debug, Clone, Copy)]
+pub enum QueueScrollAction {
+    #[default]
+    Retain,
+    ToPlaying,
 }

@@ -62,8 +62,8 @@ pub enum UpdateUI {
     PlayerTime(Option<u64>),
     /// Prompts the UI to refresh the song information
     SongInfo,
-    /// Replaces the UI song queue with a new one
-    SetQueue(Box<[QueueItem]>),
+    /// Replaces the UI song queue with a new one, with the playing index as the second argument
+    SetQueue(Box<[QueueItem]>, usize),
     /// Updates the playing song index and redraws the queue
     SetQueueIndex(usize),
     /// Opens the subpage for the queue song at the given index

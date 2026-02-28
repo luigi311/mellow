@@ -227,9 +227,8 @@ impl Player {
                 continue;
             };
 
-            dbg!(&player_request);
             #[allow(clippy::unit_cmp)]
-            if match player_request {
+            if match dbg!(player_request) {
                 PlayerRequest::Update => true,
                 PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
                 PlayerRequest::TogglePlay(Some(play)) => match self.current_state {

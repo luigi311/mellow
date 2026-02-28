@@ -422,9 +422,8 @@ impl SongQueue {
     /// The function panics if the UI channel receiver is closed
     fn ui_update_queue(&self) {
         println!("ui_update_queue()");
-        self.ui_update_queue_index();
         self.ui_tx
-            .send(UpdateUI::SetQueue(self.ordered_queue()))
+            .send(UpdateUI::SetQueue(self.ordered_queue(), self.index))
             .expect(EXP_RX);
     }
 

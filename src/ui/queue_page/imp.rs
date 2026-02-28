@@ -9,6 +9,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::{LIBRARY_TX, Library, SharedSong};
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::ui::queue_page::QueueScrollAction;
 use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
@@ -36,6 +37,7 @@ pub struct QueuePage {
     queue_item_objects: RefCell<Vec<QueueItemObject>>,
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
+    pub next_scroll_pos: Cell<QueueScrollAction>,
 }
 
 #[derive(Debug)]
@@ -63,7 +65,7 @@ impl QueuePage {
     }
 
     #[inline]
-    pub fn scroll_to(&self, scroll_target: f64) {
+    pub fn scroll_to_pos(&self, scroll_target: f64) {
         let scrolled_window = self.scrolled_window.get();
         // WORKAROUND: Setting the scroll position in an idle task because it
         // doesn't update otherwise
@@ -73,9 +75,11 @@ impl QueuePage {
         });
     }
 
-    pub fn scroll_to_playing(&self) {
-        let index = self.playing_index.get();
-        self.scroll_to(((index - index.saturating_sub(NUM_ITEMS_BEHIND)) * 54) as f64);
+    #[inline]
+    pub fn scroll_to_item(&self, index: usize) {
+        if let Ok(item_pos) = self.queue_index_to_model(index) {
+            self.scroll_to_pos((item_pos * 54) as f64);
+        }
     }
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
@@ -172,11 +176,11 @@ impl QueuePage {
         list_model.splice(0, list_model.n_items(), &items);
         self.queue_item_objects.replace(items);
 
-        // Re-applying the scroll position, because it resets when the `list_box` rows change
-        self.scroll_to(previous_scroll_position);
-
-        // IDEA: Maybe scroll to the current song when the queue starts,
-        // or the shuffle mode is updated?
+        match self.next_scroll_pos.take() {
+            // Re-applying the scroll position, because it resets when the `list_box` rows change
+            QueueScrollAction::Retain => self.scroll_to_pos(previous_scroll_position),
+            QueueScrollAction::ToPlaying => self.scroll_to_item(index),
+        }
     }
 
     #[inline]
@@ -305,6 +309,7 @@ impl ObjectImpl for QueuePage {
         self.obj().update_shuffle(false);
         self.obj().update_repeat(false);
 
+        self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
         let model = gio::ListStore::new::<QueueItemObject>();
         self.list_box.bind_model(Some(&model), move |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
