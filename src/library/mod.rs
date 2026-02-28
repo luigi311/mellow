@@ -1,12 +1,12 @@
 use core::cmp::Ordering;
 use core::sync::atomic::{self, AtomicBool};
+use core::time::Duration;
 use core::{error::Error, mem};
 use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
-use std::time::Duration;
 use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -818,62 +818,67 @@ impl Library {
     }
 
     /// Takes a list of file or directory paths and returns a queue
-    ///
-    /// # Panics
-    /// The function panics if passed a directory containing files
-    /// whose paths are not valid UTF-8
+    // #[inline]
     #[must_use]
     pub fn songs_from_paths(&self, paths: &[String]) -> Vec<QueueItem> {
         let mut queue = Vec::with_capacity(paths.len());
         for file in paths {
             if file_supported(file) {
-                queue.push(self.queue_from_library_or_new(file));
+                queue.push(QueueItem::Song(self.song_from_library_or_new(file)));
             } else if file == "Stopper" {
                 queue.push(QueueItem::Stopper);
-            } else if let path = Path::new(&file)
-                && path.is_dir()
-                && path.exists()
-            {
-                let mut songs = Vec::with_capacity(16);
-                let _ = visit_dirs(path, &mut |file| {
-                    let file = file.path();
-                    let file = file.to_str().unwrap();
-                    if !file_supported(file) {
-                        return;
-                    }
-
-                    let song = self.queue_from_library_or_new(file);
-                    match songs.binary_search_by(|existing: &QueueItem| {
-                        (existing.as_song().info().file_path())
-                            .cmp(&song.as_song().info().file_path())
-                    }) {
-                        Err(index) | Ok(index) => songs.insert(index, song),
-                    }
-                });
-                queue.extend(songs);
+            } else {
+                self.extend_queue_from_dir(&mut queue, file);
             }
         }
         queue
     }
-
     /// Attempts to locate the given `file` within the library and
-    /// returns it, otherwise a new instance of `Song` is returned
+    /// returns it, otherwise it returns a new `SharedSong`
     #[inline]
     #[must_use]
-    fn queue_from_library_or_new(&self, file: &str) -> QueueItem {
+    fn song_from_library_or_new(&self, file: &str) -> SharedSong {
         for dir in &self.config.directories {
             if file.starts_with(dir) {
                 let file = gio::File::for_path(file);
                 if let Ok(index) = self.songs.find_song(&file.uri(), self.config.uri_opt()) {
-                    return QueueItem::Song(Arc::clone(
-                        // SAFETY: `index` is `Ok`, therefore within bounds
-                        unsafe { self.songs.get_unchecked(index) },
-                    ));
+                    // SAFETY: `index` is `Ok`, therefore within bounds
+                    return Arc::clone(unsafe { self.songs.get_unchecked(index) });
                 }
                 break;
             }
         }
-        QueueItem::Song(SharedSong::from_path(file))
+        SharedSong::from_path(file)
+    }
+    /// Extends `queue` with songs found on disk within `dir`. If files are
+    /// part of the music library, their existing instances will be used.
+    ///
+    /// The input `dir` must be a directory and exist on disk, otherwise
+    /// the function does nothing.
+    ///
+    /// # Panics
+    /// The function panics if any contained file paths are not valid UTF-8
+    fn extend_queue_from_dir(&self, queue: &mut Vec<QueueItem>, dir: &str) {
+        let path = Path::new(&dir);
+        if !path.is_dir() || !path.exists() {
+            return;
+        }
+        let mut songs = Vec::with_capacity(16);
+        let _ = visit_dirs(path, &mut |file| {
+            let file = file.path();
+            let file = file.to_str().unwrap();
+            if !file_supported(file) {
+                return;
+            }
+
+            let song = QueueItem::Song(self.song_from_library_or_new(file));
+            match songs.binary_search_by(|existing: &QueueItem| {
+                (existing.as_song().info().file_path()).cmp(&song.as_song().info().file_path())
+            }) {
+                Err(index) | Ok(index) => songs.insert(index, song),
+            }
+        });
+        queue.extend(songs);
     }
 
     /// Serializes `songs` and writes the data to disk,
