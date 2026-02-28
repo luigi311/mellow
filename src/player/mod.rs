@@ -111,7 +111,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
                 Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
-                Self::Shutdown(save, time, _) => format!("SaveQueue({save}, {time}, …)"),
+                Self::Shutdown(save, time, _) => format!("Shutdown({save}, {time}, …)"),
             }
         )
     }
@@ -720,8 +720,8 @@ impl Player {
             _ => None,
         };
         SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
-
         let _ = tx.send(());
+
         let _ = self.backend.set_state(State::Null);
     }
 }
