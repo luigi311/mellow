@@ -152,15 +152,14 @@ impl SongQueue {
     pub fn load_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
         self.songs = queue;
         self.repeat = false;
-        match shuffled {
-            Some(shuffled) => {
-                self.shuffle = true;
-                match shuffled.is_empty() {
-                    false => self.shuffled = shuffled,
-                    true => self.new_shuffled_queue(),
-                }
+        if let Some(shuffled) = shuffled {
+            self.shuffle = true;
+            match shuffled.is_empty() {
+                false => self.shuffled = shuffled,
+                true => self.new_shuffled_queue(),
             }
-            None => self.shuffle = false,
+        } else {
+            self.shuffle = false;
         }
         self.ui_update_shuffle();
         self.ui_update_repeat();
