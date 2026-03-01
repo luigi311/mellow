@@ -251,7 +251,6 @@ impl SongQueue {
 
         if self.index >= index {
             self.index += 1;
-        } else {
             self.ui_close_queue_subpage();
         }
 
@@ -300,6 +299,9 @@ impl SongQueue {
         if index < self.index {
             self.index -= 1;
             // self.ui_update_queue_index();
+        }
+        if index <= self.index {
+            self.ui_close_queue_subpage();
         }
         self.ui_update_queue();
         previous
