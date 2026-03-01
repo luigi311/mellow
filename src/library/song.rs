@@ -609,6 +609,7 @@ impl SongInfoLoader<'_> {
 
     #[inline]
     fn load_tags_detailed(tagged: &TaggedFile) -> Result<DetailedSongInfo, Box<dyn Error>> {
+        // TODO: Would it be possible to cancel artowrk loading while it is in progress?
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
@@ -619,6 +620,9 @@ impl SongInfoLoader<'_> {
                 .unwrap_or_default()
                 .to_owned(),
             // TODO: Look for a `cover` file in the song directroy
+            // IDEA: Once `cover` files are supported, load both and compare their resolutions
+            // and average color delta (to see if they differ) to pick the best one
+            // (for average colors, the logic could be factored out from the `settings_page`)
             artwork: if tag.picture_count() > 0 {
                 Some(gdk::Texture::from_bytes(&glib::Bytes::from(
                     tag.pictures()[0].data(),
