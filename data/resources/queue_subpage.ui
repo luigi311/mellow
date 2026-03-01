@@ -104,6 +104,18 @@
                     </child>
                   </object>
                 </child>
+                <child>
+                  <object class="AdwActionRow" id="remove_stopper_button">
+                    <signal name="activated" handler="handle_remove_item" swapped="true"/>
+                    <property name="title" translatable="yes">Remove Stopper</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">list-remove-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
               </object>
             </child>
 
@@ -139,7 +151,7 @@
             <child>
               <object class="AdwPreferencesGroup">
                 <child>
-                  <object class="AdwActionRow">
+                  <object class="AdwActionRow" id="remove_song_button">
                     <signal name="activated" handler="handle_remove_item" swapped="true"/>
                     <property name="title" translatable="yes">Remove From Queue</property>
                     <property name="activatable">True</property>

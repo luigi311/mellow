@@ -63,6 +63,8 @@ impl QueueSubpage {
         subpage.play_now_button.set_visible(is_song);
         subpage.stop_after_button.set_visible(is_song);
         subpage.stopper_closes_player.set_visible(!is_song);
+        subpage.remove_song_button.set_visible(is_song);
+        subpage.remove_stopper_button.set_visible(!is_song);
         subpage.go_to_album_button.set_visible(is_song);
         subpage.go_to_artist_button.set_visible(is_song);
     }

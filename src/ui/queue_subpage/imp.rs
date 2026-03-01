@@ -35,6 +35,11 @@ pub struct QueueSubpage {
     pub stopper_closes_player: TemplateChild<adw::SwitchRow>,
 
     #[template_child]
+    pub remove_song_button: TemplateChild<adw::ActionRow>,
+    #[template_child]
+    pub remove_stopper_button: TemplateChild<adw::ActionRow>,
+
+    #[template_child]
     pub go_to_album_button: TemplateChild<adw::ActionRow>,
     #[template_child]
     pub go_to_artist_button: TemplateChild<adw::ActionRow>,
