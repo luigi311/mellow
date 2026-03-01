@@ -1,12 +1,12 @@
 use adw::ApplicationWindow;
 use adw::{prelude::*, subclass::prelude::*};
 use core::cell::{Cell, OnceCell, RefCell};
+use core::time::Duration;
 use glib::subclass::InitializingObject;
 use gtk::{CompositeTemplate, gio, glib};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
@@ -429,8 +429,7 @@ impl ObjectSubclass for Window {
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx
+                (LIBRARY_TX.get().expect(EXP_INIT))
                     .send(LibraryRequest::AddLibrary(
                         dir.path().unwrap().to_str().unwrap().into(),
                     ))
@@ -455,10 +454,7 @@ impl ObjectSubclass for Window {
                 let mut index = 0;
                 while let Some(path) = dirs.item(index) {
                     paths.push(
-                        path.downcast::<gio::File>()
-                            .unwrap()
-                            .path()
-                            .unwrap()
+                        (path.downcast::<gio::File>().unwrap().path().unwrap())
                             .to_str()
                             .unwrap()
                             .to_owned(),
@@ -466,8 +462,7 @@ impl ObjectSubclass for Window {
                     index += 1;
                 }
                 dbg!(&paths);
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx
+                (LIBRARY_TX.get().expect(EXP_INIT))
                     .send(LibraryRequest::QueueFromPaths(paths.into()))
                     .expect(EXP_RX);
             }
