@@ -45,11 +45,9 @@ impl QueueSubpage {
 
         let closes_player = stopper.should_close_player();
         stopper_page.stopper_closes_player.set_active(closes_player);
-        match closes_player {
-            // TODO: Support translations
-            false => stopper_page.song_title.set_label("Pause"),
-            true => stopper_page.song_title.set_label("Pause & Close Player"),
-        };
+        stopper_page
+            .song_title
+            .set_label(SharedStopper::display_name_from_bool(closes_player));
 
         self.show_song_elements(false);
     }

@@ -218,10 +218,7 @@ impl QueuePage {
     #[must_use]
     fn new_stopper(&self, queue_index: u32, stopper: &SharedStopper) -> QueueItemObject {
         let queue_item_object = QueueItemObject::new(queue_index, false, None);
-        queue_item_object.set_title(match stopper.should_close_player() {
-            false => "Pause",
-            true => "Pause & Close Player",
-        });
+        queue_item_object.set_title(stopper.display_name());
         queue_item_object
     }
 

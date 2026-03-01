@@ -29,6 +29,18 @@ impl SharedStopper {
     pub fn set_close_player(&self, should_close: bool) {
         self.0.store(should_close, Ordering::Relaxed)
     }
+    #[inline]
+    pub fn display_name(&self) -> &'static str {
+        Self::display_name_from_bool(self.should_close_player())
+    }
+    #[inline]
+    pub fn display_name_from_bool(should_close: bool) -> &'static str {
+        match should_close {
+            // TODO: Support translations
+            false => "Pause",
+            true => "Pause & Close Player",
+        }
+    }
 }
 
 impl QueueItem {
