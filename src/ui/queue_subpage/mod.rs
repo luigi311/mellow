@@ -39,14 +39,17 @@ impl QueueSubpage {
     pub fn show_stopper_info(&self, index: usize, stopper: &SharedStopper) {
         let stopper_page = self.imp();
         stopper_page.index.set(index);
-        match stopper.should_close_player() {
+        stopper_page
+            .queue_item
+            .replace(QueueItem::from_stopper(stopper));
+
+        let closes_player = stopper.should_close_player();
+        stopper_page.stopper_closes_player.set_active(closes_player);
+        match closes_player {
             // TODO: Support translations
             false => stopper_page.song_title.set_label("Pause"),
             true => stopper_page.song_title.set_label("Pause & Close Player"),
         };
-        stopper_page
-            .queue_item
-            .replace(QueueItem::from_stopper(stopper));
 
         self.show_song_elements(false);
     }
