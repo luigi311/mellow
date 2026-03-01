@@ -315,17 +315,11 @@ impl Window {
         let song = &self.songs.borrow()[index];
         let info = song.info();
         let Ok(info) = info.try_inspect_detailed() else {
-            // NOTE: `RwLock` availability polling disabled, because it is likely to be
-            // unavailable because the artwork is being unloaded due to going out of view
-            // between when the "loaded" message was sent and when it was received.
-            // If there are issuses with artworks not showing up, uncomment the code below
-
-            // #[cfg(debug_assertions)]
-            // println!("{index}: song artwork would block; retrying later...");
-            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            //     thread::sleep(Duration::from_millis(30));
-            //     let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index));
-            // });
+            // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
+            // the item went out of view between when the message was sent and when it was
+            // received by the UI, so it is currently being unloaded. If there are issues
+            // with artworks not showing up, a background taks could try resending the
+            // message (possibly in a background task, after a short delay).
             return;
         };
         let Some(ref info) = *info else {
@@ -338,17 +332,11 @@ impl Window {
         let album = album.lock().unwrap();
         let info = album.songs[0].info();
         let Ok(info) = info.try_inspect_detailed() else {
-            // NOTE: `RwLock` availability polling disabled, because it is likely to be
-            // unavailable because the artwork is being unloaded due to going out of view
-            // between when the "loaded" message was sent and when it was received.
-            // If there are issuses with artworks not showing up, uncomment the code below
-
-            // #[cfg(debug_assertions)]
-            // println!("{index}: album artwork would block; retrying later...");
-            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            //     thread::sleep(Duration::from_millis(30));
-            //     let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibraryAlbumLoaded(index));
-            // });
+            // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
+            // the item went out of view between when the message was sent and when it was
+            // received by the UI, so it is currently being unloaded. If there are issues
+            // with artworks not showing up, a background taks could try resending the
+            // message (possibly in a background task, after a short delay).
             return;
         };
         let Some(ref info) = *info else {
