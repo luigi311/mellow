@@ -107,11 +107,11 @@
                 <child>
                   <object class="AdwActionRow" id="remove_stopper_button">
                     <signal name="activated" handler="handle_remove_item" swapped="true"/>
-                    <property name="title" translatable="yes">Remove Stopper</property>
+                    <property name="title" translatable="yes">Do Not Pause</property>
                     <property name="activatable">True</property>
                     <child type="prefix">
                       <object class="GtkImage">
-                        <property name="icon_name">list-remove-symbolic</property>
+                        <property name="icon_name">alarm-symbolic</property>
                       </object>
                     </child>
                   </object>
