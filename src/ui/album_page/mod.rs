@@ -60,7 +60,7 @@ impl AlbumPage {
         });
 
         ui.rating
-            .set_rating_silent(album_locked.compute_average_rating(0.0).round() as u8);
+            .set_rating_silent(album_locked.average_rating(0.0).round() as u8);
         ui.rating.connect_rating_set({
             let album = Arc::clone(album);
             move |rating| album.lock().unwrap().rate_all_songs(rating)

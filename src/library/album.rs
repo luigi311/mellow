@@ -15,9 +15,10 @@ pub struct Album {
 
 impl Album {
     /// Loops through all album songs and returns the average rating,
-    /// or returns `default_to` if no songs have a rating assigned
+    /// or returns `fallback` if no songs have a rating assigned. Songs
+    /// with no rating assigned do not contribute to the average.
     #[must_use]
-    pub fn compute_average_rating(&self, default_to: f64) -> f64 {
+    pub fn average_rating(&self, fallback: f64) -> f64 {
         let mut rating_total = 0.0;
         let mut num_songs = 0;
         for song in &self.songs {
@@ -28,13 +29,27 @@ impl Album {
             num_songs += 1;
         }
         match num_songs {
-            0 => default_to,
+            0 => fallback,
             n => rating_total / n as f64,
         }
     }
+    /// Loops through all album songs and returns the average rating,
+    /// defaulting to `fallback` for songs which do not have a rating
+    /// assigned
+    #[must_use]
+    pub fn sort_rating(&self, fallback: f64) -> f64 {
+        let mut rating_total = 0.0;
+        for song in &self.songs {
+            match song.info().user().rating {
+                0 => rating_total += fallback,
+                n => rating_total += n as f64,
+            }
+        }
+        rating_total / self.songs.len() as f64
+    }
     /// Loops through all album songs and returns the average play count
     #[must_use]
-    pub fn compute_average_play_count(&self) -> f64 {
+    pub fn average_play_count(&self) -> f64 {
         let mut play_count_total = 0;
         for song in &self.songs {
             play_count_total += song.info().user().play_count;

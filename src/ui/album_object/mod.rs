@@ -102,16 +102,8 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
-        let play_count_a = self
-            .shared_album()
-            .lock()
-            .unwrap()
-            .compute_average_play_count();
-        let play_count_b = other
-            .shared_album()
-            .lock()
-            .unwrap()
-            .compute_average_play_count();
+        let play_count_a = self.shared_album().lock().unwrap().average_play_count();
+        let play_count_b = other.shared_album().lock().unwrap().average_play_count();
         match play_count_b.total_cmp(&play_count_a) {
             cmp::Ordering::Equal => self.cmp_artist_year_album(other),
             ordering => ordering,
@@ -120,16 +112,8 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
-        let rating_a = self
-            .shared_album()
-            .lock()
-            .unwrap()
-            .compute_average_rating(3.0);
-        let rating_b = other
-            .shared_album()
-            .lock()
-            .unwrap()
-            .compute_average_rating(3.0);
+        let rating_a = self.shared_album().lock().unwrap().sort_rating(3.0);
+        let rating_b = other.shared_album().lock().unwrap().sort_rating(3.0);
         match rating_b.total_cmp(&rating_a) {
             cmp::Ordering::Equal => self.cmp_most_played(other),
             ordering => ordering,
