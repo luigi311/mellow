@@ -53,7 +53,7 @@ impl QueueItem {
         matches!(self, Self::Song(_))
     }
     /// Assumes the `QueueItem` is a `Stopper`, and returns a
-    /// reference to its inner `SharedSong` value
+    /// reference to its inner `SharedStopper` value
     ///
     /// # Panics
     /// The function panics if the `QueueItem` is not a `Stopper`
