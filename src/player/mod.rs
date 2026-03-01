@@ -69,7 +69,8 @@ pub enum PlayerRequest {
     /// Turn gapless playback on or off
     SetGapless(bool),
 
-    /// Saves the current queue to disk (save queue: `bool`, save time: `bool`)
+    /// Uninitializes the player and saves the current queue to disk
+    /// (save queue: `bool`, save time: `bool`)
     Shutdown(bool, bool),
 }
 
