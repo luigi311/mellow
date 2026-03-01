@@ -27,9 +27,6 @@ use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::{CONFIG_DIR, visit_dirs};
 
-// TODO: Implement song/album/artist search/filtering
-// TODO: Efficient search/filter by tag, rating, titles, etc
-
 type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
 
 pub struct Library {
@@ -246,8 +243,6 @@ impl Library {
     /// a poisoned `Mutex` is passed
     #[inline]
     pub fn request_handler(mut self) -> Result<(), Box<dyn Error>> {
-        // FIX: Library requests blocked while building the library?
-        // `AddLibrary` worked, but `RemoveLibrary` did not...
         loop {
             match self.rx.recv()? {
                 LibraryRequest::Rebuild => self.discover_files(),

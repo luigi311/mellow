@@ -34,8 +34,7 @@ Music Library:
   - FIX: Performance issues while scrolling at large window sizes
 - [ ] The 'Artists' page and its subpages do not have performance issues
   - FIX: Artwork loading on the artist subpage blocks the main thread
-- [ ] Library building works in the background and doesn't affect functionality
-  - FIX: Rebuilding sometimes blocks library requests (is this still an issue?)
+- [x] Library building works in the background and doesn't affect functionality
 - [x] Album grouping works as expected
 - [x] Searching is quick and works as expected
 - [x] Sort modes work as expected
