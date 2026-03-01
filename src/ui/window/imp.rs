@@ -6,6 +6,7 @@ use gtk::{CompositeTemplate, gio, glib};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::MUSIC_DIR;
@@ -371,8 +372,12 @@ impl Window {
         };
         let info = song.info();
         let Ok(info) = info.try_inspect_detailed() else {
-            // If the info is not instantly accessible without blocking, try again later
-            let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index));
+            #[cfg(debug_assertions)]
+            println!("{index}: queue song artwork would block; retrying later...");
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                thread::sleep(Duration::from_millis(30));
+                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibraryAlbumLoaded(index));
+            });
             return;
         };
         let Some(ref info) = *info else {
