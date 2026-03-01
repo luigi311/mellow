@@ -42,10 +42,13 @@ impl Application {
     #[inline]
     fn init(&self) {
         let (player, player_tx, ui_tx, ui_rx) = Player::init();
-        thread::Builder::new()
-            .name("player".to_owned())
-            .spawn(move || player.controller().unwrap())
-            .expect(INIT_ERR);
+        let imp = self.imp();
+        imp.player_handle.set(Some(
+            thread::Builder::new()
+                .name("player".to_owned())
+                .spawn(move || player.controller().unwrap())
+                .expect(INIT_ERR),
+        ));
 
         let settings = gio::Settings::new(about::app_id());
         let startup_queue = settings.enum_("startup-queue");
@@ -58,7 +61,7 @@ impl Application {
             player_tx,
             ui_tx,
         );
-        self.imp().library_handle.set(Some(
+        imp.library_handle.set(Some(
             thread::Builder::new()
                 .name("library".to_owned())
                 .spawn(move || {
@@ -120,5 +123,6 @@ impl Application {
         let imp = self.imp();
         imp.window.get().unwrap().save_and_uninit().unwrap();
         imp.library_handle.take().unwrap().join().unwrap();
+        imp.player_handle.take().unwrap().join().unwrap();
     }
 }

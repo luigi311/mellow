@@ -1,5 +1,4 @@
-use core::error::Error;
-use core::time::Duration;
+use core::{error::Error, time::Duration};
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{Arc, OnceLock, mpsc};
@@ -73,7 +72,7 @@ pub enum PlayerRequest {
     /// Saves the current queue to disk if the first value is `true`, and responds
     /// back using the second argument when all tasks have started. Always wait for
     /// the response before shutting down the library to ensure proper behavior.
-    Shutdown(bool, bool, mpsc::Sender<()>),
+    Shutdown(bool, bool),
 }
 
 // Required by certain variants
@@ -111,7 +110,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
                 Self::SetGapless(gapless) => format!("SetGapless({gapless})"),
-                Self::Shutdown(save, time, _) => format!("Shutdown({save}, {time}, …)"),
+                Self::Shutdown(save, time) => format!("Shutdown({save}, {time})"),
             }
         )
     }
@@ -292,8 +291,8 @@ impl Player {
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
                 #[allow(clippy::unit_arg)]
-                PlayerRequest::Shutdown(save_queue, save_time, tx) => {
-                    return Ok(self.shutdown(save_queue, save_time, tx));
+                PlayerRequest::Shutdown(save_queue, save_time) => {
+                    return Ok(self.shutdown(save_queue, save_time));
                 }
             } {
                 self.update();
@@ -722,23 +721,14 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    /// Uninitializes the queue and writes it to disk (if queue restoration is enabled)
-    /// Sends a message through `tx` once all background tasks have been started, and
-    /// another one when the player thread finished its part
-    fn shutdown(mut self, save_queue: bool, save_time: bool, tx: mpsc::Sender<()>) {
-        let (index, queue, shuffled_queue, shuffle) = self.queue.uninit();
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-            SongQueue::save_shuffled_queue(save_queue && shuffle, &shuffled_queue);
-        });
-        let _ = tx.send(());
-
+    /// Uninitializes the player and writes the queue to disk (if enabled)
+    fn shutdown(self, save_queue: bool, save_time: bool) {
         let time = match self.current_time().map(ClockTime::mseconds) {
             Some(time) if time > 0 && save_time => Some(time),
             _ => None,
         };
-        SongQueue::save_queue(save_queue, index, &queue, shuffle, time);
-        let _ = tx.send(());
-
+        self.queue.save_queue(save_queue, time);
+        self.queue.save_shuffled_queue(save_queue);
         let _ = self.backend.set_state(State::Null);
     }
 }

@@ -4,7 +4,6 @@ use gio::Settings;
 use glib::{GString, Object};
 use gtk::{Orientation, gdk, gio, glib};
 use std::rc::Rc;
-use std::sync::mpsc;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -137,26 +136,12 @@ impl Window {
         let remember_time = settings_page.remembers_time();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let (player_shutdown_tx, player_shutdown_rx) = mpsc::channel();
         Library::run_task(library_tx, move || {
             LibraryConfig::create_config_dir();
-            (PLAYER_TX.get().expect(EXP_INIT))
-                .send(PlayerRequest::Shutdown(
-                    remember_queue,
-                    remember_time,
-                    player_shutdown_tx,
-                ))
-                .expect(EXP_RX);
-        });
-        Library::run_task(library_tx, move || {
-            // Wait for the player to start its tasks before
-            // shutting down the library (and thread pool)
-            let _ = player_shutdown_rx.recv();
-
             library_tx.send(LibraryRequest::Shutdown).expect(EXP_RX);
-
-            // Wait until the player shutdown completes in full
-            let _ = player_shutdown_rx.recv();
+            (PLAYER_TX.get().expect(EXP_INIT))
+                .send(PlayerRequest::Shutdown(remember_queue, remember_time))
+                .expect(EXP_RX);
         });
 
         imp.artists_page.uninit();

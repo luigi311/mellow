@@ -1,4 +1,4 @@
-use core::{error::Error, mem};
+use core::error::Error;
 use gst::ClockTime;
 use rand::random_range;
 use std::fs;
@@ -454,43 +454,26 @@ impl SongQueue {
         self.ui_tx.send(UpdateUI::CloseQueueSubpage).expect(EXP_RX);
     }
 
-    /// Empties the queues and returns the following info:
-    /// Playback index, sequential queue, shuffled queue, shuffle mode
-    #[inline]
-    pub fn uninit(&mut self) -> (usize, Vec<QueueItem>, Vec<usize>, bool) {
-        (
-            self.index,
-            mem::take(&mut self.songs),
-            mem::take(&mut self.shuffled),
-            self.shuffle,
-        )
-    }
-
-    /// Saves the `song_queue` to a file on disk, or removes
+    /// Serializes `self.queue` to a file on disk, or removes
     /// the file if `remember` is `false`
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     #[inline]
-    pub fn save_queue(
-        remember: bool,
-        playing_index: usize,
-        song_queue: &[QueueItem],
-        shuffle: bool,
-        time: Option<u64>,
-    ) {
+    pub fn save_queue(&self, remember: bool, time: Option<u64>) {
         let queue_file = Self::queue_file(CONFIG_DIR.get().expect(EXP_INIT));
         if !remember {
             let _ = fs::remove_file(&queue_file);
             return;
         }
-        let contents = playing_index.to_string()
+        let contents = self.index.to_string()
             + "\n"
             + &time.map_or_else(|| String::from("-"), |time| time.to_string())
             + "\n"
-            + &shuffle.to_string()
+            + &self.shuffle.to_string()
             + "\n"
-            + song_queue
+            + self
+                .songs
                 .iter()
                 .map(|item| match item {
                     QueueItem::Song(song) => song.info().file_path() + "\n",
@@ -503,19 +486,20 @@ impl SongQueue {
             Err(e) => eprintln!("Problems writing queue state: {e}"),
         }
     }
-    /// Saves the provided shuffled queue to a file on disk, or
+    /// Saves `self.shuffled` queue to a file on disk, or
     /// removes the file if `remember` is `false`
     ///
     /// # Panics
     /// The function panics if `CONFIG_DIR` is unititialized
     #[inline]
-    pub fn save_shuffled_queue(remember: bool, shuffled_queue: &[usize]) {
+    pub fn save_shuffled_queue(&self, remember: bool) {
         let shuffled_file = Self::shuffled_queue_file(CONFIG_DIR.get().expect(EXP_INIT));
-        if !remember {
+        if !(self.shuffle && remember) {
             let _ = fs::remove_file(&shuffled_file);
             return;
         }
-        let contents = shuffled_queue
+        let contents = self
+            .shuffled
             .iter()
             .map(|i| i.to_string() + "\n")
             .collect::<String>();
