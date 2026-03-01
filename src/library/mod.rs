@@ -822,9 +822,10 @@ impl Library {
         for file in paths {
             if file_supported(file) {
                 queue.push(QueueItem::Song(self.song_from_library_or_new(file)));
-            } else if file == "Stopper" {
-                // TODO: Save/load stopper `should_close_player` preference
+            } else if file == "Pause" {
                 queue.push(QueueItem::new_stopper(false));
+            } else if file == "Close Player" {
+                queue.push(QueueItem::new_stopper(true));
             } else {
                 self.extend_queue_from_dir(&mut queue, file);
             }

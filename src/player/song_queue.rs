@@ -477,8 +477,10 @@ impl SongQueue {
                 .iter()
                 .map(|item| match item {
                     QueueItem::Song(song) => song.info().file_path() + "\n",
-                    // TODO: Save/load stopper `should_close_player` preference
-                    QueueItem::Stopper(_) => String::from("Stopper\n"),
+                    QueueItem::Stopper(stopper) => match stopper.should_close_player() {
+                        false => String::from("Pause\n"),
+                        true => String::from("Close Player\n")
+                    },
                 })
                 .collect::<String>()
                 .trim();
