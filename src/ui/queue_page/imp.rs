@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::format_duration_ms;
 use crate::library::{LIBRARY_TX, Library, SharedSong};
-use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem, SharedStopper};
 use crate::ui::queue_page::QueueScrollAction;
 use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
@@ -131,7 +131,7 @@ impl QueuePage {
                 let q_index = index_item.0;
                 match index_item.1 {
                     QueueItem::Song(song) => self.new_song(q_index as u32, q_index == index, song),
-                    QueueItem::Stopper => self.new_stopper(q_index as u32),
+                    QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
                 }
             })
             .collect();
@@ -140,35 +140,39 @@ impl QueuePage {
             let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue.len() - 1);
             if n_items_before > 0 {
                 let from = queue.len() - n_items_before;
-                let mut items_before: Vec<QueueItemObject> =
-                    (queue.iter().enumerate().skip(from.max(index + 1)))
-                        .map(|index_item| {
-                            let q_index = index_item.0;
-                            match index_item.1 {
-                                QueueItem::Song(song) => {
-                                    self.new_song(q_index as u32, q_index == index, song)
-                                }
-                                QueueItem::Stopper => self.new_stopper(q_index as u32),
-                            }
-                        })
-                        .collect();
+                let mut items_before: Vec<QueueItemObject> = (queue
+                    .iter()
+                    .enumerate()
+                    .skip(from.max(index + 1)))
+                .map(|index_item| {
+                    let q_index = index_item.0;
+                    match index_item.1 {
+                        QueueItem::Song(song) => {
+                            self.new_song(q_index as u32, q_index == index, song)
+                        }
+                        QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
+                    }
+                })
+                .collect();
                 mem::swap(&mut items, &mut items_before);
                 items.extend(items_before);
             }
             let n_items_after = NUM_ITEMS_AHEAD - (end - index);
             if n_items_after > 0 {
-                let items_after: Vec<QueueItemObject> =
-                    (queue.iter().enumerate().take(n_items_after.min(index)))
-                        .map(|index_item| {
-                            let q_index = index_item.0;
-                            match index_item.1 {
-                                QueueItem::Song(song) => {
-                                    self.new_song(q_index as u32, q_index == index, song)
-                                }
-                                QueueItem::Stopper => self.new_stopper(q_index as u32),
-                            }
-                        })
-                        .collect();
+                let items_after: Vec<QueueItemObject> = (queue
+                    .iter()
+                    .enumerate()
+                    .take(n_items_after.min(index)))
+                .map(|index_item| {
+                    let q_index = index_item.0;
+                    match index_item.1 {
+                        QueueItem::Song(song) => {
+                            self.new_song(q_index as u32, q_index == index, song)
+                        }
+                        QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
+                    }
+                })
+                .collect();
                 items.extend(items_after);
             }
         }
@@ -212,9 +216,12 @@ impl QueuePage {
 
     #[inline]
     #[must_use]
-    fn new_stopper(&self, queue_index: u32) -> QueueItemObject {
+    fn new_stopper(&self, queue_index: u32, stopper: &SharedStopper) -> QueueItemObject {
         let queue_item_object = QueueItemObject::new(queue_index, false, None);
-        queue_item_object.set_title("Pause");
+        queue_item_object.set_title(match stopper.should_close_player() {
+            false => "Pause",
+            true => "Pause & Close Player",
+        });
         queue_item_object
     }
 
@@ -341,13 +348,6 @@ impl ObjectImpl for QueuePage {
                     queue_item_object.load_artwork();
                     queue_row.set_prefix_image(Some(&fallback_song_image()));
                 }
-
-                let object_index = queue_item_object.index() as usize;
-                queue_row.connect_activated(move |_| {
-                    (UI_TX.get().expect(EXP_INIT))
-                        .send(UpdateUI::OpenQueueSubpage(object_index))
-                        .expect(EXP_RX);
-                });
             } else {
                 // The queue item is a `Stopper`
 
@@ -355,6 +355,14 @@ impl ObjectImpl for QueuePage {
                 queue_row.add_css_class("dimmed");
                 // IDEA: Draw a pause icon in place of the album cover
             }
+
+            let object_index = queue_item_object.index() as usize;
+            queue_row.connect_activated(move |_| {
+                // TODO: Support stopper subpages
+                (UI_TX.get().expect(EXP_INIT))
+                    .send(UpdateUI::OpenQueueSubpage(object_index))
+                    .expect(EXP_RX);
+            });
 
             queue_row.upcast::<gtk::Widget>()
         });

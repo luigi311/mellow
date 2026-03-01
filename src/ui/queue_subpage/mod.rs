@@ -1,8 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
-use std::sync::Arc;
 
 use crate::library::SharedSong;
+use crate::player::{QueueItem, SharedStopper};
 
 mod imp;
 
@@ -14,7 +14,7 @@ glib::wrapper! {
 }
 
 impl QueueSubpage {
-    pub fn update(&self, index: usize, song: SharedSong) {
+    pub fn show_song_info(&self, index: usize, song: SharedSong) {
         let song_page = self.imp();
         song_page.index.set(index);
         let mut info = song.info();
@@ -28,12 +28,43 @@ impl QueueSubpage {
         song_page.rating.set_rating_silent(user_info.rating);
         drop(user_info);
         drop(info);
-        song_page.shared_song.replace(Some(Arc::clone(&song)));
+        song_page.queue_item.replace(QueueItem::from_song(&song));
         song_page.rating.connect_rating_set(move |rating| {
             song.info().set_rating(rating);
         });
+
+        self.show_song_elements(true);
     }
 
+    pub fn show_stopper_info(&self, index: usize, stopper: &SharedStopper) {
+        let stopper_page = self.imp();
+        stopper_page.index.set(index);
+        match stopper.should_close_player() {
+            // TODO: Support translations
+            false => stopper_page.song_title.set_label("Pause"),
+            true => stopper_page.song_title.set_label("Pause & Close Player"),
+        };
+        stopper_page
+            .queue_item
+            .replace(QueueItem::from_stopper(stopper));
+
+        self.show_song_elements(false);
+    }
+
+    #[inline]
+    fn show_song_elements(&self, is_song: bool) {
+        let subpage = self.imp();
+        subpage.album_title.set_visible(is_song);
+        subpage.artist_name.set_visible(is_song);
+        subpage.rating.set_visible(is_song);
+        subpage.play_now_button.set_visible(is_song);
+        subpage.stop_after_button.set_visible(is_song);
+        subpage.stopper_closes_player.set_visible(!is_song);
+        subpage.go_to_album_button.set_visible(is_song);
+        subpage.go_to_artist_button.set_visible(is_song);
+    }
+
+    #[inline]
     pub fn set_stop_after(&self, stop_after: bool) {
         let song_page = self.imp();
         song_page.stop_after.set(stop_after);

@@ -12,7 +12,7 @@ use crate::ui::{UI_TX, UpdateUI};
 pub mod queue_item;
 pub mod song_queue;
 
-pub use queue_item::QueueItem;
+pub use queue_item::{QueueItem, SharedStopper};
 pub use song_queue::SongQueue;
 
 // TODO: MPRIS support for Gnome Shell media controls
@@ -309,7 +309,10 @@ impl Player {
 
         let file_uri = match self.queue.current() {
             QueueItem::Song(song) => song.info().file_uri(),
-            QueueItem::Stopper => {
+            QueueItem::Stopper(stopper) => {
+                if stopper.should_close_player() {
+                    let _ = self.ui_tx.send(UpdateUI::RunAction("app.quit"));
+                }
                 self.queue.remove_current();
                 let _ = self.backend.set_state(State::Null);
                 self.request_state(State::Paused);

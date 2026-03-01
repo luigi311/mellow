@@ -823,7 +823,8 @@ impl Library {
             if file_supported(file) {
                 queue.push(QueueItem::Song(self.song_from_library_or_new(file)));
             } else if file == "Stopper" {
-                queue.push(QueueItem::Stopper);
+                // TODO: Save/load stopper `should_close_player` preference
+                queue.push(QueueItem::new_stopper(false));
             } else {
                 self.extend_queue_from_dir(&mut queue, file);
             }

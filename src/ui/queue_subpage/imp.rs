@@ -5,7 +5,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::{SharedSong, SharedSongExt};
+use crate::library::SharedSongExt;
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
@@ -15,7 +15,7 @@ use crate::ui::{UI_TX, UpdateUI};
 pub struct QueueSubpage {
     pub index: Cell<usize>,
     pub stop_after: Cell<bool>,
-    pub shared_song: RefCell<Option<SharedSong>>,
+    pub queue_item: RefCell<QueueItem>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -28,7 +28,16 @@ pub struct QueueSubpage {
     pub rating: TemplateChild<Rating>,
 
     #[template_child]
+    pub play_now_button: TemplateChild<adw::ActionRow>,
+    #[template_child]
     pub stop_after_button: TemplateChild<adw::ActionRow>,
+    #[template_child]
+    pub stopper_closes_player: TemplateChild<adw::SwitchRow>,
+
+    #[template_child]
+    pub go_to_album_button: TemplateChild<adw::ActionRow>,
+    #[template_child]
+    pub go_to_artist_button: TemplateChild<adw::ActionRow>,
 }
 
 #[gtk::template_callbacks]
@@ -54,41 +63,31 @@ impl QueueSubpage {
         self.obj()
             .activate_action("ui.playing_nav_pop", None)
             .expect(ACTION_ERR);
-        PLAYER_TX
-            .get()
-            .expect(EXP_INIT)
-            .send({
-                let index = self.index.get() + 1;
-                match self.stop_after.get() {
-                    false => PlayerRequest::InsertAt(Box::new((index, QueueItem::Stopper))),
-                    true => PlayerRequest::RemoveAt(index),
-                }
+        let index = self.index.get() + 1;
+        (PLAYER_TX.get().expect(EXP_INIT))
+            .send(match self.stop_after.get() {
+                false => PlayerRequest::InsertAt(Box::new((index, QueueItem::new_stopper(false)))),
+                true => PlayerRequest::RemoveAt(index),
             })
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_remove_item(&self) {
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::RemoveAt(self.index.get()))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_move_up(&self) {
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::Shift(self.index.get(), -1))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_move_down(&self) {
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
             .send(PlayerRequest::Shift(self.index.get(), 1))
             .expect(EXP_RX);
@@ -98,21 +97,19 @@ impl QueueSubpage {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
         let _ = ui_tx.send(UpdateUI::AlbumPage(Arc::clone(
-            (self.shared_song.borrow().as_ref().unwrap())
+            (self.queue_item.borrow().as_song())
                 .album()
                 .as_ref()
                 .unwrap(),
         )));
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
         let _ = ui_tx.send(UpdateUI::ArtistPage(Arc::clone(
-            &(self.shared_song.borrow().as_ref().unwrap())
+            &(self.queue_item.borrow().as_song())
                 .album()
                 .as_ref()
                 .unwrap()
@@ -120,9 +117,14 @@ impl QueueSubpage {
                 .unwrap()
                 .artist,
         )));
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
+    }
+    #[template_callback]
+    pub fn handle_stopper_closes_player(&self) {
+        let stopper = self.queue_item.borrow().as_stopper().clone();
+        stopper.set_close_player(self.stopper_closes_player.is_active());
+        self.obj().show_stopper_info(self.index.get(), &stopper);
+        let _ = UI_TX.get().expect(EXP_INIT).send(UpdateUI::RedrawQueue);
     }
 }
 

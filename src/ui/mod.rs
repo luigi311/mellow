@@ -66,6 +66,8 @@ pub enum UpdateUI {
     SetQueue(Box<[QueueItem]>, usize),
     /// Updates the playing song index and redraws the queue
     SetQueueIndex(usize),
+    /// Redraws the current queue
+    RedrawQueue,
     /// Opens the subpage for the queue song at the given index
     OpenQueueSubpage(usize),
     /// Closes the subpage if it is open

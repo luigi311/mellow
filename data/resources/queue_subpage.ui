@@ -68,7 +68,7 @@
               <object class="AdwPreferencesGroup">
 
                 <child>
-                  <object class="AdwActionRow">
+                  <object class="AdwActionRow" id="play_now_button">
                     <signal name="activated" handler="handle_play_now" swapped="true"/>
                     <property name="title" translatable="yes">Play Now</property>
                     <property name="activatable">True</property>
@@ -83,6 +83,19 @@
                   <object class="AdwActionRow" id="stop_after_button">
                     <signal name="activated" handler="handle_stop_after" swapped="true"/>
                     <property name="title" translatable="yes">Pause After</property>
+                    <property name="activatable">True</property>
+                    <child type="prefix">
+                      <object class="GtkImage">
+                        <property name="icon_name">alarm-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="AdwSwitchRow" id="stopper_closes_player">
+                    <signal name="notify::active" handler="handle_stopper_closes_player" swapped="true"/>
+                    <property name="title" translatable="yes">Close Player</property>
                     <property name="activatable">True</property>
                     <child type="prefix">
                       <object class="GtkImage">
@@ -144,7 +157,7 @@
               <object class="AdwPreferencesGroup">
 
                 <child>
-                  <object class="AdwActionRow">
+                  <object class="AdwActionRow" id="go_to_album_button">
                     <signal name="activated" handler="handle_go_to_album" swapped="true"/>
                     <property name="title" translatable="yes">Go To Album</property>
                     <property name="activatable">True</property>
@@ -162,7 +175,7 @@
                 </child>
 
                 <child>
-                  <object class="AdwActionRow">
+                  <object class="AdwActionRow" id="go_to_artist_button">
                     <signal name="activated" handler="handle_go_to_artist" swapped="true"/>
                     <property name="title" translatable="yes">Go To Artist</property>
                     <property name="activatable">True</property>
