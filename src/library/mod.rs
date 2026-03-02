@@ -335,7 +335,7 @@ impl Library {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config, &cancel);
+        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config, cancel);
 
         let background_task_spawner = thread::spawn({
             let cancel = Arc::clone(cancel);

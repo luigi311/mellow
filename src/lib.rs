@@ -44,7 +44,7 @@ pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 /// # Panics
 /// The function panics if user directories are not valid UTF-8
 pub fn init_globals() {
-    let _ = CONFIG_DIR.set(user_config_dir().to_str().unwrap().to_owned() + "/mellow/");
+    let _ = CONFIG_DIR.set([user_config_dir().to_str().unwrap(), "/mellow/"].concat());
     let _ = MUSIC_DIR.set(user_special_dir(UserDirectory::Music).map_or_else(
         || [home_dir().to_str().unwrap(), "/Music/"].concat(),
         |dir| dir.to_str().unwrap().to_owned(),
