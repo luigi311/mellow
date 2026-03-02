@@ -1,7 +1,7 @@
 use core::error::Error;
 use gio::prelude::*;
 use gtk::{gdk, gio, glib};
-use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use lofty::file::TaggedFile;
@@ -194,7 +194,10 @@ impl<'s> Song {
         Ok(Song {
             album: Mutex::new(None),
             file: gio::File::for_uri(uri),
-            info: RwLock::new(Some(info)),
+            info: RwLock::new(match user_info.modified {
+                0 => None,
+                _ => Some(info),
+            }),
             user_info: Mutex::new(user_info),
             detailed_info: RwLock::new(None),
         })
@@ -227,6 +230,25 @@ pub struct SongInfoLoader<'i> {
 }
 
 impl SongInfoLoader<'_> {
+    /// Whether the two `SongInfoLoader`s are likely to belong to the same `Song`
+    ///
+    /// Note: if either `SongInfo` is not loaded, equality is determined using the
+    /// file URIs only. For more accurate matching, calling `load_basic` beforehand
+    /// might be preferable.
+    #[inline]
+    #[must_use]
+    pub fn matches(&self, other: &SongInfoLoader) -> bool {
+        self.inspect_basic().as_ref().map_or_else(
+            || self.file_uri() == other.file_uri(),
+            |own_info| {
+                other.inspect_basic().as_ref().map_or_else(
+                    || self.file_uri() == other.file_uri(),
+                    |other_info| own_info == other_info,
+                )
+            },
+        )
+    }
+
     /// Returns a reference to the `gio::File`
     #[must_use]
     pub const fn file(&self) -> &gio::File {
