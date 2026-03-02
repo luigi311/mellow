@@ -101,6 +101,7 @@ impl Runner {
     }
 
     #[inline]
+    #[must_use]
     pub const fn num_workers(&self) -> usize {
         self.threads.len()
     }

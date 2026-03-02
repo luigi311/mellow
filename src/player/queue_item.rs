@@ -18,22 +18,26 @@ impl Default for SharedStopper {
 }
 impl SharedStopper {
     #[inline]
+    #[must_use]
     pub fn new(should_close: bool) -> SharedStopper {
         SharedStopper(Arc::new(AtomicBool::new(should_close)))
     }
     #[inline]
+    #[must_use]
     pub fn should_close_player(&self) -> bool {
         self.0.load(Ordering::Relaxed)
     }
     #[inline]
     pub fn set_close_player(&self, should_close: bool) {
-        self.0.store(should_close, Ordering::Relaxed)
+        self.0.store(should_close, Ordering::Relaxed);
     }
     #[inline]
+    #[must_use]
     pub fn display_name(&self) -> &'static str {
         Self::display_name_from_bool(self.should_close_player())
     }
     #[inline]
+    #[must_use]
     pub fn display_name_from_bool(should_close: bool) -> &'static str {
         match should_close {
             // TODO: Support translations
