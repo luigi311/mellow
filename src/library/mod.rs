@@ -575,8 +575,7 @@ impl Library {
                     return;
                 }
                 let mut info = song.info();
-                let file_modification_time = info.file_modification_time();
-                if file_modification_time == info.known_modification_time() {
+                if info.file_modification_time() == info.known_modification_time() {
                     continue;
                 }
                 #[cfg(debug_assertions)]
@@ -587,9 +586,7 @@ impl Library {
                 let mut basic = info.inspect_basic_mut();
                 if basic.is_some() {
                     *basic = None;
-                    drop(basic);
                     needs_rebuild = true;
-                    info.set_modification_time(file_modification_time);
                 }
             }
             // If files were modified, queue another rebuild so the new info gets loaded
