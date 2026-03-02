@@ -592,11 +592,12 @@ impl Library {
                     info.set_modification_time(file_modification_time);
                 }
             }
+            // If files were modified, queue another rebuild so the new info gets loaded
             if !cancel.load(atomic::Ordering::Relaxed) && needs_rebuild {
-                // If files were modified, cancel and rebuild so the new info gets loaded
-                let _ = library_tx.send(LibraryRequest::CancelRebuild);
-                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-                println!("Modifications detected, restarting library build");
+                let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(move |_| {
+                    library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                })));
+                println!("Modifications detected, library will rebuild shortly");
             }
         });
 
