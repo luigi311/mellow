@@ -491,7 +491,7 @@ impl Library {
         old_songs.append(missing);
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs {
-            let mut info = song.info();
+            let info = song.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {
                 match fs::exists(dir).unwrap_or(false) {
                     false => Some(gio::File::for_path(dir).uri()),
@@ -501,22 +501,13 @@ impl Library {
             match songs.find_song(&info.file_uri(), config.uri_opt()) {
                 // Valid song entry
                 Err(index)
-                    if info
-                        .file()
-                        .path()
+                    if (info.file().path())
                         .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
                 {
                     for dir in &config.directories {
                         // Filter songs outside of `config.directories`
                         if !info.file_path().starts_with(dir) {
                             continue;
-                        }
-                        if info.file_modification_time() != info.known_modification_time() {
-                            if info.known_modification_time() != 0 {
-                                // Only print if it isn't a new file
-                                println!("{}: reloading info", info.filename());
-                            }
-                            info.unload_basic();
                         }
                         drop(info);
                         songs.insert(index, song);
@@ -566,6 +557,32 @@ impl Library {
                 }
             }
         }
+
+        // Check for file modifications in the background
+        let check_songs = songs.clone();
+        let library_tx = LIBRARY_TX.get().expect(EXP_RX);
+        Library::run_task(library_tx, move || {
+            let mut needs_rebuild = false;
+            for song in check_songs {
+                let mut info = song.info();
+                if info.file_modification_time() == info.known_modification_time() {
+                    return;
+                }
+                #[cfg(debug_assertions)]
+                if info.known_modification_time() != 0 {
+                    // Only print if it isn't a new file
+                    println!("{}: reloading info", info.filename());
+                }
+                info.unload_basic();
+                needs_rebuild = true;
+            }
+            if needs_rebuild {
+                // If files were modified, cancel and rebuild so the new info gets loaded
+                let _ = library_tx.send(LibraryRequest::CancelRebuild);
+                let _ = library_tx.send(LibraryRequest::Rebuild);
+            }
+        });
+
         possibly_moved
     }
 
