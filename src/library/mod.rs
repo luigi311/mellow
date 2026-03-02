@@ -246,23 +246,22 @@ impl Library {
     pub fn request_handler(mut self) -> Result<(), Box<dyn Error>> {
         loop {
             match self.rx.recv()? {
+                LibraryRequest::RunTask(task) => self.tasks.run(task),
                 LibraryRequest::Rebuild => self.discover_files(),
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
+
+                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
                 LibraryRequest::SetArtists(artists) => self.set_artists(artists),
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
-
-                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
+                LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
+                LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
-
-                LibraryRequest::RunTask(task) => self.tasks.run(task),
-                LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
-                LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
 
                 #[allow(clippy::unit_arg)]
                 LibraryRequest::Shutdown => return Ok(self.shutdown()),
