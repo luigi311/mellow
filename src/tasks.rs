@@ -18,6 +18,7 @@ impl Runner {
     ///
     /// # Panics
     /// The function panics if any threads fail to spawn
+    #[inline]
     #[must_use]
     pub fn new(count: usize) -> Self {
         debug_assert!(count > 0, "Cannot create a thread pool with no threads");
@@ -46,6 +47,7 @@ impl Runner {
     }
     /// Runs a new task in the thread pool. If all available
     /// threads are busy, the task will wait in a queue.
+    #[inline]
     pub fn run<T>(&self, task: T)
     where
         T: FnOnce() + Into<Box<T>> + Send + 'static,
@@ -63,6 +65,7 @@ impl Runner {
     ///
     /// Note: The caller must not use the receiver to handle more than
     /// one message, otherwise workers could become permanently stuck
+    #[inline]
     #[must_use]
     pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
         let (unblock_tx, unblock_rx) = mpsc::channel();
@@ -95,6 +98,11 @@ impl Runner {
         for thread in self.threads.drain(..) {
             let _ = thread.join();
         }
+    }
+
+    #[inline]
+    pub const fn num_workers(&self) -> usize {
+        self.threads.len()
     }
 }
 
