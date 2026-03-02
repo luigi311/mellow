@@ -237,7 +237,6 @@ impl QueuePage {
     fn queue_index_to_model(&self, index: usize) -> Result<usize, ItemNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
-        // FIX: Returns `Err` when both shuffle and repeat are enabled
         match self.repeat_toggle.is_active() {
             false => {
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
@@ -249,12 +248,13 @@ impl QueuePage {
                     value => Ok(value),
                 }
             }
-            #[allow(clippy::needless_return)]
             true => {
                 let queue_length = self.queue_length.get();
+
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
                 let n_items_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
 
+                // Wrapping over the start of the queue
                 if n_items_before > 0 && index > playing_index + NUM_ITEMS_AHEAD {
                     let from = queue_length - n_items_before;
                     // NOTE: Starting a new queue with repeat mode can cause an overflow here
@@ -264,6 +264,16 @@ impl QueuePage {
                     };
                 }
 
+                // Non-wrapped items
+                if let Some(value) = (index + NUM_ITEMS_BEHIND.min(playing_index))
+                    .checked_sub(playing_index)
+                    .map(|i| i + n_items_before)
+                    && value < queue_items_len
+                {
+                    return Ok(value);
+                }
+
+                // Wrapping over the end of the queue
                 let n_items_after = queue_length - playing_index.saturating_sub(NUM_ITEMS_AHEAD);
                 if index <= n_items_after {
                     match index + n_items_after {
@@ -272,10 +282,7 @@ impl QueuePage {
                     }
                 }
 
-                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index + n_items_before {
-                    value if value >= queue_items_len => return Err(ItemNotFoundError),
-                    value => return Ok(value),
-                }
+                Err(ItemNotFoundError)
             }
         }
     }
