@@ -83,7 +83,8 @@ impl QueuePage {
     }
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
-        self.queue_length.set(queue.len());
+        let queue_length = queue.len();
+        self.queue_length.set(queue_length);
         self.view_stack
             .set_visible_child_name(match queue.is_empty() {
                 true => "queue_empty",
@@ -136,8 +137,8 @@ impl QueuePage {
             })
             .collect();
 
-        if self.repeat_toggle.is_active() {
-            let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue.len() - 1);
+        if self.repeat_toggle.is_active() && queue_length != 0 {
+            let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue_length - 1);
             if n_items_before > 0 {
                 let from = queue.len() - n_items_before;
                 let mut items_before: Vec<QueueItemObject> = (queue
@@ -250,14 +251,18 @@ impl QueuePage {
             }
             true => {
                 let queue_length = self.queue_length.get();
+                if queue_length == 0 {
+                    return Err(ItemNotFoundError);
+                }
 
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
-                let n_items_before = NUM_ITEMS_BEHIND.saturating_sub(playing_index - start);
+                let n_items_before = NUM_ITEMS_BEHIND
+                    .min(queue_length - 1 - start)
+                    .saturating_sub(playing_index - start);
 
                 // Wrapping over the start of the queue
                 if n_items_before > 0 && index > playing_index + NUM_ITEMS_AHEAD {
                     let from = queue_length - n_items_before;
-                    // NOTE: Starting a new queue with repeat mode can cause an overflow here
                     match index - from {
                         value if value >= queue_items_len => return Err(ItemNotFoundError),
                         value => return Ok(value),
