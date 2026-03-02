@@ -136,6 +136,7 @@ impl Window {
         let remember_time = settings_page.remembers_time();
 
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        (library_tx.send(LibraryRequest::CancelRebuild)).expect(EXP_RX);
         Library::run_task(library_tx, move || {
             LibraryConfig::create_config_dir();
             library_tx.send(LibraryRequest::Shutdown).expect(EXP_RX);
