@@ -410,7 +410,8 @@ impl SongInfoLoader<'_> {
                 self.file.path().unwrap_or_default()
             );
             SongInfo {
-                title: self.filename(),
+                title: (self.filename().rsplit_once('.'))
+                    .map_or(String::new(), |name| name.0.to_owned()),
                 ..SongInfo::default()
             }
         })
@@ -440,7 +441,8 @@ impl SongInfoLoader<'_> {
             title: tag.title().map_or_else(
                 || self.filename(),
                 |title| match title.trim().is_empty() {
-                    true => self.filename(),
+                    true => (self.filename().rsplit_once('.'))
+                        .map_or(String::new(), |name| name.0.to_owned()),
                     false => title.to_string(),
                 },
             ),
