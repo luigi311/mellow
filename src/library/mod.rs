@@ -940,7 +940,7 @@ impl Library {
     fn serialize_songs(songs: &Songs) {
         let serialized = songs
             .iter()
-            .filter_map(|song| song.try_serlialize().map(|s| s + "\n"))
+            .map(|song| song.serlialize() + "\n")
             .collect::<String>();
         match fs::write(
             [CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),

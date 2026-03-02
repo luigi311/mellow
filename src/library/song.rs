@@ -86,32 +86,44 @@ impl<'s> Song {
 
     /// Returns a `String` containing serialized song info,
     /// which can be used with the `deserialize()` method
+    /// If the song info is not loaded, only the user info
+    /// is serialized
     #[inline]
     #[must_use]
     pub fn serlialize(&self) -> String {
-        let mut info = self.info();
+        let info = self.info();
         let uri = info.file_uri();
         let user_info = info.user().clone();
-        let info = info.load_basic();
-        // SAFETY: `load_basic` ensures the value is `Some`
-        let info = unsafe { info.as_ref().unwrap_unchecked() };
-
-        serialize! {
-            uri => "uri",
-            user_info.added => "added",
-            user_info.modified => "modified",
-            info.title => "title",
-            info.album => "album",
-            info.artist => "artist",
-            info.album_artist => "album_artist",
-            info.track => "track",
-            info.disc => "disc",
-            info.year => "year",
-            info.duration_ms => "duration",
-            user_info.play_count => "play_count",
-            user_info.rating => "rating",
-            serialize_list(&user_info.tags) => "tags",
-        }
+        (info.inspect_basic().as_ref()).map_or_else(
+            || {
+                serialize! {
+                    uri => "uri",
+                    user_info.added => "added",
+                    0 => "modified",
+                    user_info.play_count => "play_count",
+                    user_info.rating => "rating",
+                    serialize_list(&user_info.tags) => "tags",
+                }
+            },
+            |info| {
+                serialize! {
+                    uri => "uri",
+                    user_info.added => "added",
+                    user_info.modified => "modified",
+                    info.title => "title",
+                    info.album => "album",
+                    info.artist => "artist",
+                    info.album_artist => "album_artist",
+                    info.track => "track",
+                    info.disc => "disc",
+                    info.year => "year",
+                    info.duration_ms => "duration",
+                    user_info.play_count => "play_count",
+                    user_info.rating => "rating",
+                    serialize_list(&user_info.tags) => "tags",
+                }
+            },
+        )
     }
 
     /// Returns an `Option<String>` containing serialized song info,
