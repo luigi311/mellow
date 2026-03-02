@@ -339,28 +339,46 @@ impl Library {
                     return;
                 }
 
-                let mut chunk_size = 8;
-                let mut n = 0;
-                loop {
-                    let cancel = Arc::clone(&cancel);
-                    let range = chunk_size / 2 * n..(chunk_size * (n + 1)).min(songs.len());
-                    if range.is_empty() {
-                        break;
+                let num_tasks = 3;
+                let mut target_worker = 0;
+                let mut worker_songs = Vec::with_capacity(num_tasks);
+                let vec_cap = songs.len() / num_tasks;
+                (0..num_tasks).for_each(|_| worker_songs.push(Vec::with_capacity(vec_cap)));
+                for song in songs {
+                    worker_songs[target_worker].push(song);
+
+                    target_worker += 1;
+                    if target_worker == num_tasks {
+                        target_worker = 0;
                     }
-                    let songs = songs[range].to_vec();
-                    chunk_size += n / 3;
+                }
+
+                #[cfg(debug_assertions)]
+                {
+                    target_worker = 0;
+                }
+
+                for songs in worker_songs {
+                    let cancel = Arc::clone(&cancel);
                     Library::run_task(library_tx, move || {
+                        #[cfg(debug_assertions)]
+                        println!("Song info task {target_worker} has started");
+
                         for song in songs {
                             if cancel.load(atomic::Ordering::Relaxed) {
-                                println!("Cancelled task {n}");
+                                #[cfg(debug_assertions)]
+                                println!("Song info task {target_worker} was cancelled");
                                 return;
                             }
                             drop(song.info().try_load_basic());
                         }
                     });
-                    n += 1;
+
+                    #[cfg(debug_assertions)]
+                    {
+                        target_worker += 1;
+                    }
                 }
-                println!("Loading song info in the background ({n} tasks queued)");
             }
         });
 
