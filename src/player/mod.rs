@@ -723,10 +723,10 @@ impl Player {
         self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
     }
 
-    /// Uninitializes the player and writes the queue to disk (if enabled)
+    /// Uninitializes the player and writes the queue to disk
     fn shutdown(self, save_queue: bool, save_time: bool) {
         let time = match self.current_time().map(ClockTime::mseconds) {
-            Some(time) if time > 0 && save_time => Some(time),
+            Some(time) if time > 999 && save_time => Some(time),
             _ => None,
         };
         self.queue.save_queue(save_queue, time);
