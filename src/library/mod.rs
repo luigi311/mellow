@@ -7,6 +7,7 @@ use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::time::Instant;
 use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -365,13 +366,10 @@ impl Library {
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
 
-        // NOTE: Less frequent steps also make cancellation less responsive
-        const PROGRESS_BAR_STEPS: usize = 320;
-        let mut progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
-        progress_interval -= songs.len() % progress_interval;
-        let progress_step = progress_interval as f64 / songs.len() as f64;
+        let progress_step = 1.0 / songs.len() as f64;
         let mut progress = 0.0;
-        let mut iter = 0;
+        let mut timer = Instant::now();
+        let report_rate = Duration::from_secs_f64(1.0 / 60.0);
 
         for song in &songs {
             let mut info = song.info();
@@ -452,15 +450,14 @@ impl Library {
                 }
             }
 
-            iter += 1;
-            if iter == progress_interval {
+            progress += progress_step;
+            if timer.elapsed() > report_rate {
+                timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
-                progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 0;
             }
         }
 
@@ -628,12 +625,10 @@ impl Library {
 
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        const PROGRESS_BAR_STEPS: usize = 320;
-        let mut progress_interval = possibly_moved.len() / PROGRESS_BAR_STEPS + 1;
-        progress_interval -= possibly_moved.len() % progress_interval;
-        let progress_step = progress_interval as f64 / possibly_moved.len() as f64;
+        let progress_step = 1.0 / possibly_moved.len() as f64;
         let mut progress = 0.0;
-        let mut iter = 0;
+        let mut timer = Instant::now();
+        let report_rate = Duration::from_secs_f64(1.0 / 60.0);
 
         for missing in possibly_moved {
             let old_info = missing.info();
@@ -653,15 +648,14 @@ impl Library {
                 }
             }
 
-            iter += 1;
-            if iter == progress_interval {
+            progress += progress_step;
+            if timer.elapsed() > report_rate {
+                timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
-                progress += progress_step;
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
-                iter = 0;
             }
         }
     }
