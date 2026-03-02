@@ -225,7 +225,12 @@ impl Library {
             on_albums_set: Vec::new(),
             on_artists_set: Vec::new(),
 
-            tasks: Runner::new(4),
+            tasks: Runner::new(
+                thread::available_parallelism()
+                    .map_or(4, |cores| usize::from(cores).saturating_sub(4).max(4)),
+            ),
+            // IDEA: Maybe there could be a power-saver option?
+            // tasks: Runner::new(4),
             config,
             player_tx,
             ui_tx,
@@ -304,8 +309,10 @@ impl Library {
             let config = self.config.clone();
             let cancel = Arc::clone(&self.cancel_pending);
             let missing_songs = self.missing_songs.clone();
+            let num_workers = self.tasks.num_workers();
             move || {
-                Library::create_connections(songs, missing_songs, &config, &cancel).expect(EXP_RX);
+                Library::create_connections(songs, missing_songs, &config, &cancel, num_workers)
+                    .expect(EXP_RX);
             }
         });
     }
@@ -323,6 +330,7 @@ impl Library {
         mut missing: Songs,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
+        num_workers: usize,
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
@@ -339,7 +347,8 @@ impl Library {
                     return;
                 }
 
-                let num_tasks = 3;
+                // let num_tasks = 3;
+                let num_tasks = num_workers - 1;
                 let mut target_worker = 0;
                 let mut worker_songs = Vec::with_capacity(num_tasks);
                 let vec_cap = songs.len() / num_tasks;
