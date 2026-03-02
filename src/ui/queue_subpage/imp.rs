@@ -49,19 +49,11 @@ pub struct QueueSubpage {
 impl QueueSubpage {
     #[template_callback]
     pub fn handle_play_now(&self) {
-        self.obj()
-            .activate_action("ui.close_sheet", None)
-            .expect(ACTION_ERR);
-        self.obj()
-            .activate_action("ui.playing_nav_pop", None)
-            .expect(ACTION_ERR);
+        (self.obj().activate_action("ui.close_sheet", None)).expect(ACTION_ERR);
+        (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::SkipTo(self.index.get()))
-            .expect(EXP_RX);
-        player_tx
-            .send(PlayerRequest::TogglePlay(Some(true)))
-            .expect(EXP_RX);
+        (player_tx.send(PlayerRequest::SkipTo(self.index.get()))).expect(EXP_RX);
+        (player_tx.send(PlayerRequest::TogglePlay(Some(true)))).expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_stop_after(&self) {
