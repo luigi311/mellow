@@ -308,7 +308,7 @@ impl Library {
         self.tasks.run({
             let config = self.config.clone();
             let cancel = Arc::clone(&self.cancel_pending);
-            let missing_songs = self.missing_songs.clone();
+            let missing_songs = mem::take(&mut self.missing_songs);
             let num_workers = self.tasks.num_workers();
             move || {
                 Library::create_connections(songs, missing_songs, &config, &cancel, num_workers)
