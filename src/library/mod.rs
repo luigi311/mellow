@@ -327,7 +327,7 @@ impl Library {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config);
+        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config, &cancel);
 
         let background_task_spawner = thread::spawn({
             let cancel = Arc::clone(cancel);
@@ -365,6 +365,7 @@ impl Library {
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
 
+        // NOTE: Less frequent steps also make cancellation less responsive
         const PROGRESS_BAR_STEPS: usize = 320;
         let mut progress_interval = songs.len() / PROGRESS_BAR_STEPS + 1;
         progress_interval -= songs.len() % progress_interval;
@@ -485,7 +486,12 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
-    pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
+    pub fn validate_songs(
+        songs: &mut Songs,
+        missing: &mut Songs,
+        config: &LibraryConfig,
+        cancel: &Arc<AtomicBool>,
+    ) -> Songs {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
         let mut possibly_moved = Vec::new();
@@ -561,9 +567,13 @@ impl Library {
         // Check for file modifications in the background
         let check_songs = songs.clone();
         let library_tx = LIBRARY_TX.get().expect(EXP_RX);
+        let cancel = Arc::clone(cancel);
         Library::run_task(library_tx, move || {
             let mut needs_rebuild = false;
             for song in check_songs {
+                if cancel.load(atomic::Ordering::Relaxed) {
+                    return;
+                }
                 let mut info = song.info();
                 let file_modification_time = info.file_modification_time();
                 if file_modification_time == info.known_modification_time() {
@@ -582,7 +592,7 @@ impl Library {
                     info.set_modification_time(file_modification_time);
                 }
             }
-            if needs_rebuild {
+            if !cancel.load(atomic::Ordering::Relaxed) && needs_rebuild {
                 // If files were modified, cancel and rebuild so the new info gets loaded
                 let _ = library_tx.send(LibraryRequest::CancelRebuild);
                 library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
