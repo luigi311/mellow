@@ -285,6 +285,13 @@ impl SongInfoLoader<'_> {
     pub fn update_modification_time(&self) {
         self.user_info.lock().unwrap().modified = self.file_modification_time();
     }
+    /// Sets the known modification time to the provided value
+    ///
+    /// # Panics
+    /// The function panics if the user info `Mutex` is poisoned
+    pub fn set_modification_time(&self, time: i64) {
+        self.user_info.lock().unwrap().modified = time;
+    }
 
     /// Returns the user song info `MutexGuard`
     ///
@@ -340,6 +347,16 @@ impl SongInfoLoader<'_> {
     #[inline]
     pub fn inspect_basic(&self) -> RwLockReadGuard<'_, Option<SongInfo>> {
         self.info.read().unwrap()
+    }
+    /// Returns the basic song info if loaded, but does not load it
+    ///
+    /// This function blocks until the `RwLock` write lock can be obtained
+    ///
+    /// # Panics
+    /// The function panics if the basic info `RwLock` is poisoned
+    #[inline]
+    pub fn inspect_basic_mut(&mut self) -> RwLockWriteGuard<'_, Option<SongInfo>> {
+        self.info.write().unwrap()
     }
     /// Returns the basic song info if accessible without blocking
     /// the current thread, but does not load it

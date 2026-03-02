@@ -486,7 +486,6 @@ impl Library {
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
     pub fn validate_songs(songs: &mut Songs, missing: &mut Songs, config: &LibraryConfig) -> Songs {
-        // TODO: The current approach is slow and might be worth optimizing
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
         let mut possibly_moved = Vec::new();
@@ -528,6 +527,7 @@ impl Library {
                                 // a library directory which is currently missing
                                 // (otherwise, they were either moved or removed)
                                 if uri[config.uri_opt()..].starts_with(&dir[config.uri_opt()..]) {
+                                    #[cfg(debug_assertions)]
                                     println!(
                                         "Remembering {} because its library is missing",
                                         info.filename()
@@ -565,21 +565,28 @@ impl Library {
             let mut needs_rebuild = false;
             for song in check_songs {
                 let mut info = song.info();
-                if info.file_modification_time() == info.known_modification_time() {
-                    return;
+                let file_modification_time = info.file_modification_time();
+                if file_modification_time == info.known_modification_time() {
+                    continue;
                 }
                 #[cfg(debug_assertions)]
                 if info.known_modification_time() != 0 {
                     // Only print if it isn't a new file
                     println!("{}: reloading info", info.filename());
                 }
-                info.unload_basic();
-                needs_rebuild = true;
+                let mut basic = info.inspect_basic_mut();
+                if basic.is_some() {
+                    *basic = None;
+                    drop(basic);
+                    needs_rebuild = true;
+                    info.set_modification_time(file_modification_time);
+                }
             }
             if needs_rebuild {
                 // If files were modified, cancel and rebuild so the new info gets loaded
                 let _ = library_tx.send(LibraryRequest::CancelRebuild);
-                let _ = library_tx.send(LibraryRequest::Rebuild);
+                library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                println!("Modifications detected, restarting library build");
             }
         });
 
