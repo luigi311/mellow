@@ -105,7 +105,7 @@
                             </child>
                             <child>
                               <object class="GtkLabel" id="year">
-                                <!-- <property name="margin_bottom">8</property> -->
+                                <property name="margin_bottom">8</property>
                                 <style>
                                   <class name="caption-heading"/>
                                 </style>
