@@ -248,6 +248,12 @@ impl SongInfoLoader<'_> {
             |f| f.to_str().unwrap().to_owned(),
         )
     }
+    /// Determines a fallback title using the filename
+    #[inline]
+    #[must_use]
+    fn fallback_title(&self) -> String {
+        (self.filename().rsplit_once('.')).map_or(String::new(), |name| name.0.to_owned())
+    }
     /// Returns the song file modification time
     #[inline]
     #[must_use]
@@ -410,8 +416,7 @@ impl SongInfoLoader<'_> {
                 self.file.path().unwrap_or_default()
             );
             SongInfo {
-                title: (self.filename().rsplit_once('.'))
-                    .map_or(String::new(), |name| name.0.to_owned()),
+                title: self.fallback_title(),
                 ..SongInfo::default()
             }
         })
@@ -439,10 +444,9 @@ impl SongInfoLoader<'_> {
 
         Ok(SongInfo {
             title: tag.title().map_or_else(
-                || self.filename(),
+                || self.fallback_title(),
                 |title| match title.trim().is_empty() {
-                    true => (self.filename().rsplit_once('.'))
-                        .map_or(String::new(), |name| name.0.to_owned()),
+                    true => self.fallback_title(),
                     false => title.to_string(),
                 },
             ),
