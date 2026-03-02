@@ -641,6 +641,7 @@ impl Library {
         cancel: &Arc<AtomicBool>,
     ) {
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
+            drop(info.load_basic());
             if cmp_info.matches(info) {
                 // Copy the user-assigned song info to the new entry
                 println!("Found moved file: {}", cmp_info.filename());
