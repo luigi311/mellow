@@ -29,6 +29,9 @@ pub struct AlbumPage {
     pub rating: TemplateChild<Rating>,
 
     #[template_child]
+    pub details: TemplateChild<gtk::Label>,
+
+    #[template_child]
     pub songs_list: TemplateChild<gtk::ListBox>,
 
     shuffle: Cell<bool>,

@@ -113,11 +113,13 @@ pub fn format_duration_minutes(minutes_total: u64) -> String {
     if minutes_total < 60 {
         format!("{minutes}m")
     } else if minutes_total < 60 * 24 {
-        format!("{}h, {minutes}m", (minutes_total - minutes) / 60)
+        format!("{}h, {minutes}m", (minutes_total - minutes) / 60).replace(", 0m", "")
     } else {
         let hours_total = (minutes_total - minutes) / 60;
         let hours = hours_total % 24;
         format!("{}d, {hours}h, {minutes}m", (hours_total - hours) / 24)
+            .replace(", 0m", "")
+            .replace(", 0h", "")
     }
 }
 

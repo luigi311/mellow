@@ -4,10 +4,10 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::format_duration_ms;
 use crate::library::SharedAlbum;
 use crate::ui::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::{format_duration_minutes, format_duration_ms};
 
 mod imp;
 
@@ -66,6 +66,8 @@ impl AlbumPage {
             move |rating| album.lock().unwrap().rate_all_songs(rating)
         });
 
+        let mut duration_total_ms = 0;
+
         // TODO: Divide discs into separate groups
         ui.songs_list.remove_all();
         for (i, song) in album_locked.songs.iter().enumerate() {
@@ -86,6 +88,7 @@ impl AlbumPage {
             song_row.set_title(&info.title);
             let duration = song.info().load_basic().as_ref().unwrap().duration_ms;
             song_row.set_suffix_label(&format_duration_ms(duration));
+            duration_total_ms += duration;
 
             let song = Arc::clone(song);
             let album = Arc::clone(album);
@@ -98,6 +101,9 @@ impl AlbumPage {
                     ))))
                     .expect(EXP_RX);
             });
+
+            ui.details
+                .set_label(&format_duration_minutes(duration_total_ms / (1000 * 60)));
 
             ui.songs_list.append(&song_row);
         }
