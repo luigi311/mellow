@@ -340,23 +340,28 @@ impl Library {
                     return;
                 }
 
-                // Spawning more tasks may improve parallel distribution
-                let num_tasks = 64;
-                let chunk_size = songs.len() / num_tasks;
-                for i in 0..num_tasks {
+                let mut chunk_size = 8;
+                let mut n = 0;
+                loop {
                     let cancel = Arc::clone(&cancel);
-                    let songs = songs[chunk_size * i..chunk_size * (i + 1)].to_vec();
+                    let range = chunk_size / 2 * n..(chunk_size * (n + 1)).min(songs.len());
+                    if range.is_empty() {
+                        break;
+                    }
+                    let songs = songs[range].to_vec();
+                    chunk_size += n / 3;
                     Library::run_task(library_tx, move || {
                         for song in songs {
                             if cancel.load(atomic::Ordering::Relaxed) {
+                                println!("Cancelled task {n}");
                                 return;
                             }
                             drop(song.info().try_load_basic());
                         }
                     });
+                    n += 1;
                 }
-                #[cfg(debug_assertions)]
-                println!("Loading song info in the background ({num_tasks} tasks queued)");
+                println!("Loading song info in the background ({n} tasks queued)");
             }
         });
 
