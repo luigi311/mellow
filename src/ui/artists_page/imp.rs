@@ -226,6 +226,7 @@ impl ObjectImpl for ArtistsPage {
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             let artist_tile = ItemTile::default();
+            artist_tile.set_height_request(-1);
             artist_tile.set_width_request(180);
             artist_tile.set_margin_top(8);
             artist_tile.set_margin_bottom(8);
