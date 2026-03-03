@@ -22,6 +22,9 @@ Song queue:
 - [x] Go to album button on the queue subpage
 - [x] Go to artist button on the queue subpage
 
+- FIX: Moved songs are not playable in the restored queue,
+  even when the library is able to locate them
+
 Music library:
 
 - [ ] Save/load user settings and application state

@@ -1,7 +1,8 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
+use std::sync::Arc;
 
-use crate::library::SharedSong;
+use crate::library::{SharedSong, SharedSongExt};
 use crate::player::{QueueItem, SharedStopper};
 
 mod imp;
@@ -17,6 +18,15 @@ impl QueueSubpage {
     pub fn show_song_info(&self, index: usize, song: SharedSong) {
         let song_page = self.imp();
         song_page.index.set(index);
+
+        let queue_item = QueueItem::from_song(&song);
+        let album = queue_item.as_song().album().as_ref().map(Arc::clone);
+        let has_album = album.is_some();
+        song_page.go_to_album_button.set_sensitive(has_album);
+        song_page.go_to_artist_button.set_sensitive(has_album);
+        song_page.queue_item.replace(queue_item);
+        song_page.album.replace(album);
+
         let mut info = song.info();
         let song_info_temp = info.load_basic();
         let song_info = song_info_temp.as_ref().unwrap();
@@ -24,11 +34,12 @@ impl QueueSubpage {
         song_page.album_title.set_label(&song_info.album);
         song_page.artist_name.set_label(&song_info.artist);
         drop(song_info_temp);
+
         let user_info = info.user();
         song_page.rating.set_rating_silent(user_info.rating);
         drop(user_info);
         drop(info);
-        song_page.queue_item.replace(QueueItem::from_song(&song));
+
         song_page.rating.connect_rating_set(move |rating| {
             song.info().set_rating(rating);
         });

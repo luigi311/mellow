@@ -5,7 +5,7 @@ use gtk::glib;
 use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
-use crate::library::SharedSongExt;
+use crate::library::SharedAlbum;
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
@@ -16,6 +16,7 @@ pub struct QueueSubpage {
     pub index: Cell<usize>,
     pub stop_after: Cell<bool>,
     pub queue_item: RefCell<QueueItem>,
+    pub album: RefCell<Option<SharedAlbum>>,
 
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,
@@ -91,29 +92,29 @@ impl QueueSubpage {
     }
     #[template_callback]
     pub fn handle_go_to_album(&self) {
+        let Some(album) = self.album.borrow().as_ref().map(Arc::clone) else {
+            // The button is greyed-out if the song is not from the library,
+            // but handling the `None` variant anyway, just in case
+            return;
+        };
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
-        let _ = ui_tx.send(UpdateUI::AlbumPage(Arc::clone(
-            (self.queue_item.borrow().as_song())
-                .album()
-                .as_ref()
-                .unwrap(),
-        )));
+        let _ = ui_tx.send(UpdateUI::AlbumPage(album));
         (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
+        let Some(artist) = (self.album.borrow())
+            .as_ref()
+            .map(|album| Arc::clone(&album.lock().unwrap().artist))
+        else {
+            // The button is greyed-out if the song is not from the library,
+            // but handling the `None` variant anyway, just in case
+            return;
+        };
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         ui_tx.send(UpdateUI::FocusLibrary).expect(EXP_RX);
-        let _ = ui_tx.send(UpdateUI::ArtistPage(Arc::clone(
-            &(self.queue_item.borrow().as_song())
-                .album()
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .artist,
-        )));
+        let _ = ui_tx.send(UpdateUI::ArtistPage(artist));
         (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
     }
     #[template_callback]
