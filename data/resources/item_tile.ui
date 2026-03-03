@@ -5,10 +5,13 @@
     <property name="spacing">6</property>
     <property name="margin_top">6</property>
     <property name="margin_bottom">6</property>
+    <property name="height_request">170</property>
     <property name="orientation">vertical</property>
 
     <child>
       <object class="GtkPicture" id="image">
+        <property name="content_fit">contain</property>
+        <property name="can_shrink">true</property>
         <property name="halign">center</property>
         <property name="width_request">128</property>
         <property name="height_request">128</property>
