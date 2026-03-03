@@ -225,12 +225,13 @@ impl ObjectImpl for ArtistsPage {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
-            let artist_tile = ItemTile::default();
-            artist_tile.set_height_request(-1);
-            artist_tile.set_width_request(180);
-            artist_tile.set_margin_top(8);
-            artist_tile.set_margin_bottom(8);
-            artist_tile.imp().image.set_visible(false);
+            let artist_tile = ItemTile::builder()
+                .show_artwork(false)
+                .width_request(180)
+                .height_request(-1)
+                .margin_bottom(8)
+                .margin_top(8)
+                .build();
             list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")

@@ -1,6 +1,6 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::{Object, object::IsA};
-use gtk::{gdk, glib, prelude::WidgetExt};
+use gtk::{gdk, glib};
 
 mod imp;
 
@@ -71,21 +71,53 @@ impl ItemTileBuilder {
 
     #[inline]
     #[must_use]
+    pub fn show_artwork(self, show: bool) -> Self {
+        self.item_tile.imp().image.set_visible(show);
+        self
+    }
+
+    #[inline]
+    #[must_use]
     pub fn image_css_classes(self, classes: &[&str]) -> Self {
         self.item_tile.imp().image.set_css_classes(classes);
         self
     }
-
     #[inline]
     #[must_use]
     pub fn title_css_classes(self, classes: &[&str]) -> Self {
         self.item_tile.imp().image.set_css_classes(classes);
         self
     }
-
     #[inline]
+    #[must_use]
     pub fn subtitle_css_classes(self, classes: &[&str]) -> Self {
         self.item_tile.imp().image.set_css_classes(classes);
+        self
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn width_request(self, width: i32) -> Self {
+        self.item_tile.set_width_request(width);
+        self
+    }
+    #[inline]
+    #[must_use]
+    pub fn height_request(self, height: i32) -> Self {
+        self.item_tile.set_height_request(height);
+        self
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn margin_top(self, margin: i32) -> Self {
+        self.item_tile.set_margin_top(margin);
+        self
+    }
+    #[inline]
+    #[must_use]
+    pub fn margin_bottom(self, margin: i32) -> Self {
+        self.item_tile.set_margin_bottom(margin);
         self
     }
 
