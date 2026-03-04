@@ -79,6 +79,18 @@ impl QueuePage {
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
             self.scroll_to_pos((model_index * 54) as f64);
+
+            #[cfg(debug_assertions)]
+            match self.model_index_to_queue(model_index) {
+                to_queue_index if to_queue_index != index => {
+                    eprintln!(
+                        "Discrepancy between `queue_index_to_model` and `model_index_to_queue`:"
+                    );
+                    eprintln!("	`queue_index_to_model({index})`:	{model_index}");
+                    eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
+                }
+                _ => (),
+            }
         }
     }
 
@@ -225,8 +237,20 @@ impl QueuePage {
 
     #[inline]
     pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
-        if let Ok(index) = self.queue_index_to_model(index) {
-            self.queue_item_objects.borrow()[index].set_property("artwork", artwork);
+        if let Ok(model_index) = self.queue_index_to_model(index) {
+            self.queue_item_objects.borrow()[model_index].set_property("artwork", artwork);
+
+            #[cfg(debug_assertions)]
+            match self.model_index_to_queue(model_index) {
+                to_queue_index if to_queue_index != index => {
+                    eprintln!(
+                        "Discrepancy between `queue_index_to_model` and `model_index_to_queue`:"
+                    );
+                    eprintln!("	`queue_index_to_model({index})`:	{model_index}");
+                    eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
+                }
+                _ => (),
+            }
         }
     }
 
@@ -292,13 +316,38 @@ impl QueuePage {
         }
     }
     // /// Takes a model index and returns the index to access its queue item
-    // #[inline]
-    // #[must_use]
-    // fn model_index_to_queue(&self, index: usize) -> usize {
-    //     // TODO: Support repeat mode (this function may come useful for drag-&-drop reordering)
-    //     let playing_index = self.playing_index.get();
-    //     index + playing_index - NUM_ITEMS_BEHIND.min(playing_index)
-    // }
+    #[inline]
+    #[must_use]
+    fn model_index_to_queue(&self, index: usize) -> usize {
+        // TODO: Use this function to shift elements once drag-&-drop works
+        let playing_index = self.playing_index.get();
+        match self.repeat_toggle.is_active() {
+            false => index + playing_index - NUM_ITEMS_BEHIND.min(playing_index),
+            true => {
+                let queue_length = self.queue_length.get();
+                assert!(
+                    queue_length != 0,
+                    "`model_index_to_queue` used on an empty queue"
+                );
+
+                let n_items_behind = NUM_ITEMS_AHEAD.saturating_sub(playing_index);
+
+                // Wrapping over the start of the queue
+                if n_items_behind > 0 && n_items_behind <= NUM_ITEMS_BEHIND {
+                    return queue_length - n_items_behind + index;
+                }
+
+                // Non-wrapped items
+                let offset_index = index + playing_index;
+                if offset_index < queue_length {
+                    return offset_index - NUM_ITEMS_BEHIND.min(playing_index);
+                }
+
+                // Wrapping over the end of the queue
+                offset_index - queue_length - NUM_ITEMS_BEHIND.min(playing_index)
+            }
+        }
+    }
 
     /// Empties the list model, cancelling any pending background tasks during drop
     pub fn uninit(&self) {
@@ -367,7 +416,6 @@ impl ObjectImpl for QueuePage {
 
             let object_index = queue_item_object.index() as usize;
             queue_row.connect_activated(move |_| {
-                // TODO: Support stopper subpages
                 (UI_TX.get().expect(EXP_INIT))
                     .send(UpdateUI::OpenQueueSubpage(object_index))
                     .expect(EXP_RX);
