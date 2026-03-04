@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{SharedAlbum, ToQueue};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -32,7 +32,7 @@ pub struct AlbumPage {
     pub details: TemplateChild<gtk::Label>,
 
     #[template_child]
-    pub songs_list: TemplateChild<gtk::ListBox>,
+    pub album_pref_page: TemplateChild<adw::PreferencesPage>,
 
     shuffle: Cell<bool>,
 }
@@ -49,17 +49,17 @@ impl AlbumPage {
     }
     #[template_callback]
     pub fn handle_play_now(&self) {
-        match self.shuffle.get() {
-            true => self.play_shuffled(),
-            false => self.play_sequential(),
-        }
+        self.play_now(self.all_songs(), self.shuffle.get());
     }
     #[inline]
-    pub fn play_sequential(&self) {
+    pub fn play_now(&self, queue: Vec<QueueItem>, shuffle: bool) {
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         let _ = player_tx.send(PlayerRequest::LoadQueue(
-            self.album.borrow().as_ref().unwrap().to_queue(),
-            None,
+            queue,
+            match shuffle {
+                true => Some(vec![]),
+                false => None,
+            },
             0,
         ));
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
@@ -68,24 +68,32 @@ impl AlbumPage {
         let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[inline]
-    pub fn play_shuffled(&self) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        let _ = player_tx.send(PlayerRequest::LoadQueue(
-            self.album.borrow().as_ref().unwrap().to_queue(),
-            Some(vec![]),
-            0,
-        ));
-        let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
-        let _ = ui_tx.send(UpdateUI::OpenSheet(false));
-        let _ = ui_tx.send(UpdateUI::FocusPlaying);
+    pub fn play_disc(&self, disc_number: u32) {
+        self.play_now(self.songs_from_disc(disc_number), false);
     }
     #[inline]
-    pub fn add_to_queue(&self) {
+    pub fn add_to_queue(&self, queue: Vec<QueueItem>) {
+        // TODO: Closing the navigation page makes sense when adding the entire album,
+        // but when adding only a single disc, it might not be as useful (however it
+        // at least provides visual feedback). Maybe show a toast notification instead?
         let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
-        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(
-            self.album.borrow().as_ref().unwrap().to_queue(),
-        ));
+        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(queue));
+    }
+    #[inline]
+    pub fn add_disc_to_queue(&self, disc_number: u32) {
+        self.add_to_queue(self.songs_from_disc(disc_number));
+    }
+    #[inline]
+    pub fn all_songs(&self) -> Vec<QueueItem> {
+        self.album.borrow().as_ref().unwrap().to_queue()
+    }
+    #[inline]
+    pub fn songs_from_disc(&self, disc_number: u32) -> Vec<QueueItem> {
+        (self.album.borrow().as_ref().unwrap())
+            .to_queue()
+            .into_iter()
+            .filter(|item| item.as_song().info().load_basic().as_ref().unwrap().disc == disc_number)
+            .collect()
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {

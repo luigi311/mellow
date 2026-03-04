@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::Object;
-use gtk::glib;
+use glib::{Object, clone};
+use gtk::{Orientation, glib};
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -30,12 +30,8 @@ impl AlbumPage {
     #[must_use]
     pub fn new(album: &SharedAlbum) -> AlbumPage {
         let album_page = Self::default();
-        album_page.update(album);
-        album_page
-    }
-    #[inline]
-    pub fn update(&self, album: &SharedAlbum) {
-        let ui = self.imp();
+
+        let ui = album_page.imp();
         let album_locked = album.lock().unwrap();
         let songs = &album_locked.songs;
 
@@ -48,8 +44,9 @@ impl AlbumPage {
         } else {
             ui.album_cover.set_paintable(Some(&fallback_album_image()));
         }
+        drop(detailed_info);
 
-        self.set_title(&["Album: ", &album_locked.title].concat());
+        album_page.set_title(&["Album: ", &album_locked.title].concat());
         ui.album.replace(Some(Arc::clone(album)));
         ui.album_title.set_label(&album_locked.title);
         ui.artist_name
@@ -67,9 +64,10 @@ impl AlbumPage {
         });
 
         let mut duration_total_ms = 0;
+        let mut album_group = adw::PreferencesGroup::new();
+        let mut album_group_index = 1;
+        let mut disc_number = !0;
 
-        // TODO: Divide discs into separate groups
-        ui.songs_list.remove_all();
         for (i, song) in album_locked.songs.iter().enumerate() {
             let song_row = ListRow::new();
 
@@ -105,8 +103,46 @@ impl AlbumPage {
             ui.details
                 .set_label(&format_duration_minutes(duration_total_ms / (1000 * 60)));
 
-            ui.songs_list.append(&song_row);
+            if info.disc != disc_number {
+                disc_number = info.disc;
+                let play_buttons = gtk::Box::new(Orientation::Horizontal, 16);
+                let queue_disc_button = gtk::Button::builder()
+                    // TODO: Support translations
+                    .tooltip_text(format!("Add Disc {disc_number} To Queue"))
+                    .icon_name("list-add-symbolic")
+                    .css_name("flat")
+                    .build();
+                queue_disc_button.connect_clicked(clone!(
+                    #[weak(rename_to=album_page)]
+                    ui,
+                    move |_| album_page.add_disc_to_queue(disc_number)
+                ));
+                let play_disc_button = gtk::Button::builder()
+                    // TODO: Support translations
+                    .tooltip_text(format!("Play Disc {disc_number}"))
+                    .icon_name("media-playback-start-symbolic")
+                    .css_name("flat")
+                    .build();
+                play_disc_button.connect_clicked(clone!(
+                    #[weak(rename_to=album_page)]
+                    ui,
+                    move |_| album_page.play_disc(disc_number)
+                ));
+                play_buttons.append(&queue_disc_button);
+                play_buttons.append(&play_disc_button);
+                album_group = adw::PreferencesGroup::builder()
+                    // TODO: Support translations
+                    .title(format!("Disc {disc_number}"))
+                    .header_suffix(&play_buttons)
+                    .build();
+                ui.album_pref_page.insert(&album_group, album_group_index);
+                album_group_index += 1;
+            }
+
+            album_group.add(&song_row);
         }
+
+        album_page
     }
     #[inline]
     pub fn set_shuffle(&self, shuffle: bool) {
