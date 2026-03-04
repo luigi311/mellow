@@ -81,16 +81,7 @@ impl QueuePage {
             self.scroll_to_pos((model_index * 54) as f64);
 
             #[cfg(debug_assertions)]
-            match self.model_index_to_queue(model_index) {
-                to_queue_index if to_queue_index != index => {
-                    eprintln!(
-                        "Discrepancy between `queue_index_to_model` and `model_index_to_queue`:"
-                    );
-                    eprintln!("	`queue_index_to_model({index})`:	{model_index}");
-                    eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
-                }
-                _ => (),
-            }
+            self.model_index_to_queue_discrepancy_check(model_index, index);
         }
     }
 
@@ -241,16 +232,7 @@ impl QueuePage {
             self.queue_item_objects.borrow()[model_index].set_property("artwork", artwork);
 
             #[cfg(debug_assertions)]
-            match self.model_index_to_queue(model_index) {
-                to_queue_index if to_queue_index != index => {
-                    eprintln!(
-                        "Discrepancy between `queue_index_to_model` and `model_index_to_queue`:"
-                    );
-                    eprintln!("	`queue_index_to_model({index})`:	{model_index}");
-                    eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
-                }
-                _ => (),
-            }
+            self.model_index_to_queue_discrepancy_check(model_index, index);
         }
     }
 
@@ -259,16 +241,16 @@ impl QueuePage {
     /// # Panics
     /// Panics if `self.queue_item_objects` `RefCell` is mutably borrowed
     #[inline]
-    fn queue_index_to_model(&self, index: usize) -> Result<usize, ItemNotFoundError> {
+    fn queue_index_to_model(&self, queue_index: usize) -> Result<usize, ItemNotFoundError> {
         let queue_items_len = self.queue_item_objects.borrow().len();
         let playing_index = self.playing_index.get();
         match self.repeat_toggle.is_active() {
             false => {
                 let start = playing_index.saturating_sub(NUM_ITEMS_BEHIND);
-                if index < start {
+                if queue_index < start {
                     return Err(ItemNotFoundError);
                 }
-                match index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index {
+                match queue_index + NUM_ITEMS_BEHIND.min(playing_index) - playing_index {
                     value if value >= queue_items_len => Err(ItemNotFoundError),
                     value => Ok(value),
                 }
@@ -285,16 +267,16 @@ impl QueuePage {
                     .saturating_sub(playing_index - start);
 
                 // Wrapping over the start of the queue
-                if n_items_before > 0 && index > playing_index + NUM_ITEMS_AHEAD {
+                if n_items_before > 0 && queue_index > playing_index + NUM_ITEMS_AHEAD {
                     let from = queue_length - n_items_before;
-                    match index - from {
+                    match queue_index - from {
                         value if value >= queue_items_len => return Err(ItemNotFoundError),
                         value => return Ok(value),
                     };
                 }
 
                 // Non-wrapped items
-                if let Some(value) = (index + NUM_ITEMS_BEHIND.min(playing_index))
+                if let Some(value) = (queue_index + NUM_ITEMS_BEHIND.min(playing_index))
                     .checked_sub(playing_index)
                     .map(|i| i + n_items_before)
                     && value < queue_items_len
@@ -304,8 +286,8 @@ impl QueuePage {
 
                 // Wrapping over the end of the queue
                 let n_items_after = queue_length - playing_index.saturating_sub(NUM_ITEMS_AHEAD);
-                if index <= n_items_after {
-                    match index + n_items_after {
+                if queue_index <= n_items_after {
+                    match queue_index + n_items_after {
                         value if value >= queue_items_len => return Err(ItemNotFoundError),
                         value => return Ok(value),
                     }
@@ -318,11 +300,11 @@ impl QueuePage {
     // /// Takes a model index and returns the index to access its queue item
     #[inline]
     #[must_use]
-    fn model_index_to_queue(&self, index: usize) -> usize {
+    fn model_index_to_queue(&self, model_index: usize) -> usize {
         // TODO: Use this function to shift elements once drag-&-drop works
         let playing_index = self.playing_index.get();
         match self.repeat_toggle.is_active() {
-            false => index + playing_index - NUM_ITEMS_BEHIND.min(playing_index),
+            false => model_index + playing_index - NUM_ITEMS_BEHIND.min(playing_index),
             true => {
                 let queue_length = self.queue_length.get();
                 assert!(
@@ -334,11 +316,11 @@ impl QueuePage {
 
                 // Wrapping over the start of the queue
                 if n_items_behind > 0 && n_items_behind <= NUM_ITEMS_BEHIND {
-                    return queue_length - n_items_behind + index;
+                    return queue_length - n_items_behind + model_index;
                 }
 
                 // Non-wrapped items
-                let offset_index = index + playing_index;
+                let offset_index = model_index + playing_index;
                 if offset_index < queue_length {
                     return offset_index - NUM_ITEMS_BEHIND.min(playing_index);
                 }
@@ -346,6 +328,18 @@ impl QueuePage {
                 // Wrapping over the end of the queue
                 offset_index - queue_length - NUM_ITEMS_BEHIND.min(playing_index)
             }
+        }
+    }
+
+    #[inline]
+    fn model_index_to_queue_discrepancy_check(&self, model_index: usize, expected_index: usize) {
+        match self.model_index_to_queue(model_index) {
+            to_queue_index if to_queue_index != expected_index => {
+                eprintln!("Discrepancy between `queue_index_to_model` and `model_index_to_queue`:");
+                eprintln!("	`queue_index_to_model({expected_index})`:	{model_index}");
+                eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
+            }
+            _ => (),
         }
     }
 
