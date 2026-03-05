@@ -402,6 +402,7 @@ impl ObjectImpl for QueuePage {
                 if queue_item_object.playing() {
                     queue_row.add_css_class("heading");
                     queue_row.add_css_class("card");
+                    queue_row.set_image_margins(5);
                 }
 
                 queue_row.add_bindings(&[queue_item_object

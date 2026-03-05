@@ -1,4 +1,4 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use glib::{Object, object::IsA};
 use gtk::{gdk, glib};
 
@@ -29,6 +29,12 @@ impl ListRow {
 
     pub fn set_suffix_label(&self, content: &str) {
         self.imp().suffix_label.set_label(content);
+    }
+
+    pub fn set_image_margins(&self, margin: i32) {
+        let row = self.imp();
+        row.prefix_image.set_margin_top(margin);
+        row.prefix_image.set_margin_bottom(margin);
     }
 
     pub fn add_bindings(&self, bindings: &[glib::Binding]) {
