@@ -80,9 +80,7 @@ pub struct Window {
 
 impl Window {
     #[inline]
-    pub fn init_ui_elements(&self, style_manager: adw::StyleManager) {
-        self.main_player.init();
-        self.queue_page.init(self.queue_subpage.get());
+    pub fn init_settings_page(&self, style_manager: adw::StyleManager) {
         self.settings_page.init(
             style_manager,
             vec![
@@ -94,23 +92,6 @@ impl Window {
                 (self.main_player.imp().media_controls.get()).upcast::<gtk::Widget>(),
             ],
         );
-        self.library.connect_popped(glib::clone!(
-            #[weak(rename_to=window)]
-            self,
-            move |_, _| match window.library_subpages.borrow_mut().pop() {
-                Some(SubpageType::Artist) => drop(window.artist_pages.borrow_mut().pop()),
-                Some(SubpageType::Album) => drop(window.album_pages.borrow_mut().pop()),
-                Some(SubpageType::Song) => drop(window.song_pages.borrow_mut().pop()),
-                None => (),
-            }
-        ));
-        self.playing.connect_popped(glib::clone!(
-            #[weak(rename_to=window)]
-            self,
-            move |_, page| if page.downcast_ref::<QueueSubpage>().is_some() {
-                window.queue_subpage_visible.set(false);
-            },
-        ));
     }
 
     // TODO: Core functionality should be moved into `Application`
@@ -474,6 +455,26 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
+
+        self.main_player.init();
+        self.queue_page.init(self.queue_subpage.get());
+        self.library.connect_popped(glib::clone!(
+            #[weak(rename_to=window)]
+            self,
+            move |_, _| match window.library_subpages.borrow_mut().pop() {
+                Some(SubpageType::Artist) => drop(window.artist_pages.borrow_mut().pop()),
+                Some(SubpageType::Album) => drop(window.album_pages.borrow_mut().pop()),
+                Some(SubpageType::Song) => drop(window.song_pages.borrow_mut().pop()),
+                None => (),
+            }
+        ));
+        self.playing.connect_popped(glib::clone!(
+            #[weak(rename_to=window)]
+            self,
+            move |_, page| if page.downcast_ref::<QueueSubpage>().is_some() {
+                window.queue_subpage_visible.set(false);
+            },
+        ));
     }
 }
 impl WindowImpl for Window {

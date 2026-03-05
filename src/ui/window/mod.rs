@@ -28,12 +28,15 @@ impl Window {
     pub fn new(app: &Application, settings: Settings) -> Self {
         let window: Self = Object::builder().property("application", app).build();
 
+        let imp = window.imp();
+
+        // Settings page has to be initialized before `load_and_setup_actions()`
+        imp.init_settings_page(app.style_manager());
+
         window.load_and_setup_actions(&settings);
         window.setup_drag_and_drop();
 
-        let imp = window.imp();
         let _ = imp.settings.set(settings);
-        imp.init_ui_elements(app.style_manager());
 
         window
     }
