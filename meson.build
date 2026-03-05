@@ -1,5 +1,11 @@
 project('mellow', 'rust', version: '0.1.0', meson_version: '>= 1.4')
 
+dependency('gtk4', version: '>= 4.20', required: get_option('flatpak'))
+dependency('libadwaita-1', version: '>= 1.8', required: get_option('flatpak'))
+dependency('gstreamer-1.0', version: '>= 1.26', required: get_option('flatpak'))
+dependency('gstreamer-plugins-base-1.0', version: '>= 1.26', required: get_option('flatpak'))
+dependency('gstreamer-plugins-bad-1.0', version: '>= 1.26', required: get_option('flatpak'))
+
 gnome = import('gnome')
 
 base_id = 'com.github.userwithaname.Mellow'

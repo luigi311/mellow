@@ -8,3 +8,9 @@ option(
   value: 'release',
   description: 'Profile to use when building (`release` or `devel`)'
 )
+option(
+  'flatpak',
+  type: 'feature',
+  value: 'disabled',
+  description: 'Enables dependencies for Flatpak'
+)
