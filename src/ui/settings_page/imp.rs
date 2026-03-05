@@ -247,7 +247,7 @@ impl SettingsPage {
                 }
 
                 // Desaturate dark colors for more accurate results once normalized
-                let saturation = (1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(3)).min(1.0);
+                let saturation = 1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(3);
                 r = lerp(luminance, r, saturation);
                 g = lerp(luminance, g, saturation);
                 b = lerp(luminance, b, saturation);
