@@ -356,22 +356,29 @@ impl Player {
             self.queue.ui_update_queue();
             self.ui_update_song_info();
             self.ui_open_playing();
+
+            // Has to be called manually due to below optimizations
+            // (does not run after handling the `PlayerRequest`)
+            self.update();
+            self.ui_set_state();
             return;
         }
 
         self.queue.load_new(queue, shuffled);
         self.skip_to(index);
-        self.queue.ui_update_queue();
 
-        // Updating manually, since loading the artworks below briefly blocks the thread
+        // Updating manually before using this thread to load the current artwork
         self.update();
         self.ui_set_state();
+        self.ui_update_song_info();
 
         // Ensure all info is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
-            let mut info = song.info();
-            drop(info.load_detailed());
+            drop(song.info().load_detailed());
         }
+
+        // Only update the UI queue after the playing song's artwork is loaded
+        self.queue.ui_update_queue();
     }
 
     /// Starts or pauses playback depending on state
