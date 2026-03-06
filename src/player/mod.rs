@@ -247,7 +247,7 @@ impl Player {
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
                 PlayerRequest::LoadQueue(queue, shuffled, index) => {
-                    self.load_queue(queue, shuffled, index) == ()
+                    self.load_queue(queue, shuffled, index) != ()
                 }
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
@@ -299,6 +299,7 @@ impl Player {
     }
 
     /// Manages the playback state
+    #[inline]
     fn update(&mut self) {
         if self.queue.is_empty() {
             eprintln!("Queue is empty - cannot update player");
@@ -362,11 +363,14 @@ impl Player {
         self.skip_to(index);
         self.queue.ui_update_queue();
 
+        // Updating manually, since loading the artworks below briefly blocks the thread
+        self.update();
+        self.ui_set_state();
+
         // Ensure all info is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
             let mut info = song.info();
             drop(info.load_detailed());
-            drop(info.try_load_basic());
         }
     }
 
@@ -619,6 +623,7 @@ impl Player {
     }
 
     /// Sends the current state to the UI receiver
+    #[inline]
     fn ui_set_state(&self) {
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
