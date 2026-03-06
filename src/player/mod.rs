@@ -370,9 +370,9 @@ impl Player {
         // Updating manually before using this thread to load the current artwork
         self.update();
         self.ui_set_state();
-        self.ui_update_song_info();
+        self.ui_update_song_info(); // Not strictly necessary, but might display slightly quicker
 
-        // Ensure all info is available to display as soon as possible
+        // Ensure the artwork is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
             drop(song.info().load_detailed());
         }
@@ -644,6 +644,7 @@ impl Player {
     }
 
     /// Sends the current song info to the UI receiver
+    #[inline]
     fn ui_update_song_info(&self) {
         println!("ui_update_song_info()");
         self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
