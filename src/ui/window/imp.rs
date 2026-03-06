@@ -188,30 +188,49 @@ impl Window {
         *song_duration_ms = song_info.duration_ms;
         drop(song_info_temp);
 
-        let detailed_info = info.try_inspect_detailed();
-        let artwork = match detailed_info
-            .as_ref()
-            .map_or_else(|_| None, |info| info.as_ref())
-        {
-            Some(detailed) => {
-                self.lyrics_page.set_content(&title, &detailed.lyrics);
-                detailed.artwork.as_ref()
-            }
-            _ => {
-                drop(detailed_info);
-                let song = Arc::clone(song);
-                let ui_tx = UI_TX.get().expect(EXP_INIT);
-                let load_artwork_handle = thread::spawn(move || {
-                    drop(song.info().load_detailed());
-                    ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
-                });
-                Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
-                    load_artwork_handle.join().unwrap();
-                });
-                None
-            }
-        };
+        // let detailed_info = info.try_inspect_detailed();
+        // let artwork = match detailed_info
+        //     .as_ref()
+        //     .map_or_else(|_| None, |info| info.as_ref())
+        // {
+        //     Some(detailed) => {
+        //         self.lyrics_page.set_content(&title, &detailed.lyrics);
+        //         detailed.artwork.as_ref()
+        //     }
+        //     _ => {
+        //         drop(detailed_info);
+        //         let song = Arc::clone(song);
+        //         let ui_tx = UI_TX.get().expect(EXP_INIT);
+        //         let load_artwork_handle = thread::spawn(move || {
+        //             drop(song.info().load_detailed());
+        //             ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+        //         });
+        //         Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
+        //             load_artwork_handle.join().unwrap();
+        //         });
+        //         None
+        //     }
+        // };
 
+        #[cfg(debug_assertions)]
+        match info.try_inspect_basic() {
+            Err(_) => println!("⚠️ Blocking main to access detailed song info"),
+            Ok(info) if info.is_none() => {
+                println!("⚠️ Detailed info will be loaded on the main thread");
+            }
+            _ => (),
+        }
+        #[cfg(debug_assertions)]
+        if info.inspect_basic().is_none() {
+            println!("⚠️ Detailed info will be loaded on the main thread");
+        }
+
+        let detailed_info = info.load_detailed();
+        // SAFETY: `load_detailed` ensures the value is `Some`
+        let detailed_info = unsafe { detailed_info.as_ref().unwrap_unchecked() };
+        let artwork = detailed_info.artwork.as_ref();
+
+        self.lyrics_page.set_content(&title, &detailed_info.lyrics);
         self.main_player
             .set_info(&title, &album, &artist, artwork, *song_duration_ms);
 

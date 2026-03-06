@@ -370,7 +370,6 @@ impl Player {
         // Updating manually before using this thread to load the current artwork
         self.update();
         self.ui_set_state();
-        self.ui_update_song_info(); // Not strictly necessary, but might display slightly quicker
 
         // Ensure the artwork is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
