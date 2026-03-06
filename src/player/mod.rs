@@ -604,11 +604,13 @@ impl Player {
     }
 
     /// Sets player state the next time `update()` is called
+    #[inline]
     const fn request_state(&mut self, state: State) {
         self.pending_state = Some(state);
     }
 
     /// Current playback time in the song
+    #[inline]
     fn current_time(&self) -> Option<ClockTime> {
         self.backend.query_position::<ClockTime>()
     }

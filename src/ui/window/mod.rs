@@ -118,6 +118,7 @@ impl Window {
     ///
     /// # Errors
     /// The function errors if a `gio::Settings` value cannot be saved
+    #[inline]
     pub fn save_window_size(&self) -> Result<(), glib::error::BoolError> {
         let settings = self.settings();
         settings.set_int("window-width", self.size(Orientation::Horizontal))?;

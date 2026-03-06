@@ -27,6 +27,7 @@ pub struct SongQueue {
 }
 
 impl SongQueue {
+    #[inline]
     #[must_use]
     pub const fn new(
         player_tx: mpsc::Sender<PlayerRequest>,
@@ -49,6 +50,7 @@ impl SongQueue {
     }
 
     /// Moves to the next song in the queue
+    #[inline]
     pub const fn move_next(&mut self) {
         match self.is_last() {
             false => self.index += 1,
@@ -57,6 +59,7 @@ impl SongQueue {
     }
 
     /// Moves to the previous song in the queue
+    #[inline]
     pub const fn move_previous(&mut self) {
         match self.is_first() {
             false => self.index -= 1,
@@ -66,11 +69,13 @@ impl SongQueue {
     }
 
     /// Moves to the song in the queue at specified index
+    #[inline]
     pub const fn set_index(&mut self, index: usize) {
         self.index = index;
     }
 
     /// Returns a mutable reference to the current song
+    #[inline]
     #[must_use]
     pub fn current(&mut self) -> &mut QueueItem {
         let index = self.current_index();
@@ -78,6 +83,7 @@ impl SongQueue {
     }
 
     /// Returns a reference to the next item in the queue
+    #[inline]
     #[must_use]
     pub fn next(&self) -> Option<&QueueItem> {
         if self.is_last() {
@@ -87,6 +93,7 @@ impl SongQueue {
     }
 
     /// Returns a reference to the previous item in the queue
+    #[inline]
     #[must_use]
     pub fn previous(&self) -> Option<&QueueItem> {
         if self.is_first() {
@@ -100,26 +107,31 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if `n` is out of bounds
+    #[inline]
     #[must_use]
     pub fn nth(&self, n: usize) -> &QueueItem {
         &self.songs[self.ordered_index(n)]
     }
 
     /// Returns the current song index based on the shuffle mode option
+    #[inline]
     #[must_use]
     pub fn current_index(&self) -> usize {
         self.ordered_index(self.index)
     }
 
     /// Returns the current queue position index
+    #[inline]
     #[must_use]
     pub const fn index(&self) -> usize {
         self.index
     }
 
     /// Locates a song within the `shuffled` vec and returns its index
+    #[inline]
     #[must_use]
     pub fn shuffled_index(&self, index: usize) -> Option<usize> {
+        // NOTE: This function is unused. Should it be removed?
         (0..self.shuffled.len()).find(|i| self.shuffled[*i] == index)
     }
 
@@ -128,6 +140,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if `index` is out of bounds
+    #[inline]
     #[must_use]
     pub fn ordered_index(&self, index: usize) -> usize {
         match self.shuffle {
@@ -138,6 +151,7 @@ impl SongQueue {
 
     /// Returns references to all songs in the queue,
     /// ordered with respect to shuffle setting
+    #[inline]
     #[must_use]
     pub fn ordered_queue(&self) -> Box<[QueueItem]> {
         (0..self.len()).map(|i| self.nth(i).clone()).collect()
@@ -326,12 +340,14 @@ impl SongQueue {
     }
 
     /// Returns `true` if the current song is first in the queue
+    #[inline]
     #[must_use]
     pub const fn is_first(&self) -> bool {
         self.index == 0
     }
 
     /// Returns `true` if the current song is last in the queue
+    #[inline]
     #[must_use]
     pub const fn is_last(&self) -> bool {
         self.index == self.len() - 1
@@ -340,6 +356,7 @@ impl SongQueue {
     /// Returns `true` if there are more tracks in the queue,
     /// or `false` if there is nothing to play afterwrads
     /// Always returns `true` if `repeat` is enabeld
+    #[inline]
     #[must_use]
     pub const fn has_next(&self) -> bool {
         self.repeat || !self.is_last()
@@ -348,12 +365,14 @@ impl SongQueue {
     /// Returns the total number of songs in the queue
     ///
     /// Note: Do not use to index into `shuffled` when shuffle is disabled
+    #[inline]
     #[must_use]
     pub const fn len(&self) -> usize {
         self.songs.len()
     }
 
     /// Returns `true` if the queue contains no songs
+    #[inline]
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.songs.is_empty()
@@ -377,6 +396,7 @@ impl SongQueue {
     }
 
     /// Returns the current shuffle mode for the queue
+    #[inline]
     #[must_use]
     pub const fn get_shuffle(&self) -> bool {
         self.shuffle
@@ -393,6 +413,7 @@ impl SongQueue {
     }
 
     /// Returns the current repeat mode for the queue
+    #[inline]
     #[must_use]
     pub const fn get_repeat(&self) -> bool {
         self.repeat

@@ -93,6 +93,7 @@ impl Runner {
 
     /// Blocks until all tasks are done then shuts down its worker
     /// threads, leaving the `Runner` in an unusable state
+    #[inline]
     pub fn shutdown(&mut self) {
         self.request = mpsc::channel().0;
         for thread in self.threads.drain(..) {
@@ -108,6 +109,7 @@ impl Runner {
 }
 
 impl Drop for Runner {
+    #[inline]
     fn drop(&mut self) {
         self.shutdown();
     }
