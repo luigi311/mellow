@@ -214,17 +214,17 @@ impl Window {
 
         #[cfg(debug_assertions)]
         match info.try_inspect_basic() {
-            Err(_) => println!("⚠️ Blocking main to access detailed song info"),
+            Err(_) => {
+                println!("⚠️ Blocking main to access detailed song info");
+                if info.inspect_basic().is_none() {
+                    println!("⚠️ Detailed info will be loaded on the main thread");
+                }
+            }
             Ok(info) if info.is_none() => {
                 println!("⚠️ Detailed info will be loaded on the main thread");
             }
             _ => (),
         }
-        #[cfg(debug_assertions)]
-        if info.inspect_basic().is_none() {
-            println!("⚠️ Detailed info will be loaded on the main thread");
-        }
-
         let detailed_info = info.load_detailed();
         // SAFETY: `load_detailed` ensures the value is `Some`
         let detailed_info = unsafe { detailed_info.as_ref().unwrap_unchecked() };
