@@ -54,7 +54,7 @@
 
         <child>
           <object class="AdwSwitchRow" id="play_in_background">
-            <property name="title" translatable="yes">Play In Background</property>
+            <property name="title" translatable="yes">Background Playback</property>
             <property name="tooltip-text" translatable="yes">When enabled, playback will continue in the background when the window is closed</property>
             <property name="active">False</property>
           </object>
