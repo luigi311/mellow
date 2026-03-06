@@ -448,11 +448,6 @@ impl SongInfoLoader<'_> {
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
         if info_writer.is_some() {
-            #[cfg(debug_assertions)]
-            println!(
-                "⚠️ Basic song info already loaded (decide whether to include this check it in release builds) ({})",
-                line!()
-            );
             return;
         }
         *info_writer = Some(self.basic_or_default());

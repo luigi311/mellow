@@ -63,10 +63,10 @@ impl AlbumPage {
             move |rating| album.lock().unwrap().rate_all_songs(rating)
         });
 
-        let mut duration_total_ms = 0;
-        let mut album_group = adw::PreferencesGroup::new();
-        let mut album_group_index = 1;
         let mut disc_number = !0;
+        let mut duration_total_ms = 0;
+        let mut album_group_index = 1;
+        let mut album_group = adw::PreferencesGroup::new();
 
         for (i, song) in album_locked.songs.iter().enumerate() {
             let song_row = ListRow::new();

@@ -155,10 +155,7 @@ impl SettingsPage {
             }
             _ => InterfaceColorScheme::Default,
         });
-        self.style_manager
-            .get()
-            .unwrap()
-            .set_color_scheme(preference);
+        (self.style_manager.get().expect(EXP_INIT)).set_color_scheme(preference);
         let color = self.current_color.get();
         match color {
             Some((r, g, b)) => self.set_background_color(r, g, b),

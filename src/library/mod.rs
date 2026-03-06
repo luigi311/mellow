@@ -1,13 +1,12 @@
 use core::cmp::Ordering;
 use core::sync::atomic::{self, AtomicBool};
-use core::time::Duration;
 use core::{error::Error, mem};
 use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::{fs, thread};
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -347,11 +346,10 @@ impl Library {
                     return;
                 }
 
-                // let num_tasks = 3;
-                let num_tasks = num_workers - 1;
                 let mut target_worker = 0;
-                let mut worker_songs = Vec::with_capacity(num_tasks);
+                let num_tasks = num_workers - 1;
                 let vec_cap = songs.len() / num_tasks;
+                let mut worker_songs = Vec::with_capacity(num_tasks);
                 (0..num_tasks).for_each(|_| worker_songs.push(Vec::with_capacity(vec_cap)));
                 for song in songs {
                     worker_songs[target_worker].push(song);
@@ -644,7 +642,11 @@ impl Library {
             drop(info.load_basic());
             if cmp_info.matches(info) {
                 // Copy the user-assigned song info to the new entry
-                println!("Found moved file: {}", cmp_info.filename());
+                println!(
+                    "Found moved file:\n{} -> {}",
+                    cmp_info.file_path(),
+                    info.file_path()
+                );
                 info.user().merge_with(&cmp_info.user());
                 return true;
             }

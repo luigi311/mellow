@@ -14,7 +14,7 @@
     // clippy::needless_pass_by_value,
     clippy::semicolon_if_nothing_returned,
     clippy::single_option_map,
-    clippy::std_instead_of_core,
+    // clippy::std_instead_of_core,
     clippy::str_to_string,
     unused_unsafe
 )]

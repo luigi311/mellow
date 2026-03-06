@@ -1,5 +1,6 @@
 - TODO: **Toast notifications**
-  - TODO: Show a notification for playing an album disc instead of closing the page
+  - TODO: Show a notification for adding an album disc to queue
+    (instead of closing the page)
   - TODO: Queue undo prompt notifications when removing items
   - TODO: Show notifications for playback errors
 
