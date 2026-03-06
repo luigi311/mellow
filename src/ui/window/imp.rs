@@ -480,7 +480,6 @@ impl ObjectImpl for Window {
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
         self.obj().save_window_size().unwrap();
-        // TODO: Use the XDG desktop portal
         self.obj().set_visible(false);
         match self.main_player.is_playing() && self.settings_page.play_in_background() {
             false => glib::Propagation::Proceed,
