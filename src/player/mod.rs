@@ -1,12 +1,10 @@
 use core::{error::Error, time::Duration};
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
-use std::sync::{Arc, OnceLock, mpsc};
-use std::thread;
+use std::sync::{OnceLock, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::{LIBRARY_TX, Library};
+use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::ui::{UI_TX, UpdateUI};
 
 pub mod queue_item;
@@ -361,20 +359,15 @@ impl Player {
         }
 
         self.queue.load_new(queue, shuffled);
-        // Ensure all info is available to display as soon as possible
-        if let QueueItem::Song(song) = self.queue.nth(index) {
-            let song = Arc::clone(song);
-            let load_artwork = thread::spawn(move || {
-                let mut info = song.info();
-                drop(info.load_detailed());
-                drop(info.try_load_basic());
-            });
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-                load_artwork.join().unwrap();
-            });
-        }
         self.skip_to(index);
         self.queue.ui_update_queue();
+
+        // Ensure all info is available to display as soon as possible
+        if let QueueItem::Song(song) = self.queue.nth(index) {
+            let mut info = song.info();
+            drop(info.load_detailed());
+            drop(info.try_load_basic());
+        }
     }
 
     /// Starts or pauses playback depending on state
