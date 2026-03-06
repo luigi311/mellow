@@ -347,7 +347,7 @@ impl Library {
                 }
 
                 let mut target_worker = 0;
-                let num_tasks = num_workers - 1;
+                let num_tasks = num_workers - 2;
                 let vec_cap = songs.len() / num_tasks;
                 let mut worker_songs = Vec::with_capacity(num_tasks);
                 (0..num_tasks).for_each(|_| worker_songs.push(Vec::with_capacity(vec_cap)));
