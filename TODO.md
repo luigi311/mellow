@@ -1,3 +1,8 @@
+- TODO: **Toast notifications**
+  - TODO: Show a notification for playing an album disc instead of closing the page
+  - TODO: Queue undo prompt notifications when removing items
+  - TODO: Show notifications for playback errors
+
 Song queue:
 
 - [-] Display the song queue
@@ -63,7 +68,7 @@ Music library:
     - [x] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
     - [ ] Visually separate songs from different disks
-    - [ ] **User-defined tag management**
+    - [ ] Tag management (user-specified album tags (inferred from songs?))
     - [x] Go to artist button
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
@@ -76,7 +81,7 @@ Music library:
     - [x] Play Now: Start a new queue and skip to the selected track
     - [x] Play Next: Insert the song to the next position in the queue
     - [x] Add to Queue button
-    - [ ] **User-defined tag management**
+    - [ ] Tag management (user-specified song tags)
     - [x] Go to album button
     - [x] Go to artist button
 - [x] Play counting
@@ -95,7 +100,7 @@ Ideas for improvements:
     - Add a rating widget
     - Move the 'About' button into the menu
     - Could also move the settings, and make it a popup window, then something
-    else can be moved into that overlay tab (maybe current file details/lyrics?)
+      else can be moved into that overlay tab (maybe current file details/lyrics?)
 - Queue page:
   - Show a track number as well?
   - Undo (toast) for removed queue items
@@ -104,5 +109,8 @@ Ideas for improvements:
     about the song, such as track number, disc, year, duration, play count,
     format/sample rate, filename, etc.
   - An 'Open With' or 'Show on Disk' button
+- Library:
+  - The library could get rid of the home page, and instead switch the pages
+    using a dropdown menu in the headerbar instead (in place of the back button)
 - The 'Go To Album/Artist' buttons could pop instead of pushing when the previous
   page is the same as the one that is about to open

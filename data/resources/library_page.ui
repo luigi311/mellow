@@ -35,6 +35,10 @@
               </object>
             </child>
 
+            <!-- IDEA: The 'ready' page could be removed, in favor of a headerbar dropdown -->
+            <!-- In that case, individual views should instead be implemented as view stack -->
+            <!-- pages as well, and switched using this widget's implementation. The header -->
+            <!-- bar widgets would have to be updated when pages are switched. -->
             <child>
               <object class="AdwViewStackPage">
                 <property name="name">ready</property>
