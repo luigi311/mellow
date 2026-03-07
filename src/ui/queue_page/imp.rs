@@ -118,12 +118,7 @@ impl QueuePage {
                     let QueueItem::Song(song) = song else {
                         return;
                     };
-                    if !(start..end).contains(&index)
-                        && let Ok(thumbnail) = song.info().try_inspect_thumbnail().as_ref()
-                        && thumbnail
-                            .as_ref()
-                            .is_some_and(|artwork| artwork.ref_count() < 2)
-                    {
+                    if !(start..end).contains(&index) {
                         song.info().unload_thumbnail();
                     }
 

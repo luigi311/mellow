@@ -714,9 +714,6 @@ impl SongInfoLoader<'_> {
         })
     }
 
-    // FIX: The thread pool sometimes stops responding, likely due to thumbnail loading
-    // Is there a deadlock issue somewhere?
-
     /// Loads the thumbnail or creates it if necessary
     ///
     /// Note: The returned inner `Option` could be `None`
@@ -733,14 +730,11 @@ impl SongInfoLoader<'_> {
         }
         drop(thumbnail);
 
-        let mut thumbnail_writer = self.thumbnail.write().unwrap();
         if let Ok(thumbnail) = self.read_thumbnail_from_disk() {
             // println!("Thumbnail was read successfully from disk");
-            *thumbnail_writer = thumbnail;
-            drop(thumbnail_writer);
+            *self.thumbnail.write().unwrap() = thumbnail;
         } else {
             // println!("Creating a new thumbnail");
-            drop(thumbnail_writer);
             self.create_thumbnail();
         }
 
@@ -771,7 +765,15 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_thumbnail(&mut self) {
-        self.thumbnail.write().unwrap().take();
+        *self.thumbnail.write().unwrap() = None;
+    }
+    /// Unloads the song's thumbnail from memory,
+    /// if possible to do so without blocking
+    #[inline]
+    pub fn try_unload_thumbnail(&mut self) {
+        if let Ok(mut writer) = self.thumbnail.try_write() {
+            *writer = None;
+        }
     }
     /// Unloads the song's thumbnail form memory
     ///
