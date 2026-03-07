@@ -815,7 +815,7 @@ impl SongInfoLoader<'_> {
             )
             .scale_simple(
                 256,
-                (256.0 * artwork.intrinsic_aspect_ratio()) as i32,
+                (256.0 / artwork.intrinsic_aspect_ratio()) as i32,
                 gtk::gdk_pixbuf::InterpType::Bilinear,
             )
             .unwrap();
