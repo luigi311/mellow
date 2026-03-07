@@ -41,7 +41,7 @@ When the overlay is closed, it is time to enjoy the music.
 - ✨ Sleek and minimal interface - less for the eyes, more for the ears
 - 🌈 Adaptive colors - interface colors adapt to match the album cover
 - 🌊 Gapless playback - enjoy stutter-free transitions between songs
-- 📋 Song queue - view or edit the list of playing songs
+- 📋 Song queue - view and edit the list of playing songs, or schedule a pause
 - 📀 Music library - browse and play your local music collection
 - 📂 File discovery - detects changed, moved, removed, or added song files
 - 💾 Removable drives - ratings can be accessed once the library is available again
