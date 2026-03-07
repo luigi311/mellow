@@ -775,7 +775,7 @@ impl SongInfoLoader<'_> {
             *writer = None;
         }
     }
-    /// Unloads the song's thumbnail form memory
+    /// Unloads the song's thumbnail form memory and disk
     ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
