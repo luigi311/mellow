@@ -27,13 +27,9 @@ Song Queue:
 
 Music Library:
 
-- [ ] The 'Songs' page and its subpages do not have performance issues
-  - FIX: Performance issues while scrolling at large window sizes
-- [ ] The 'Albums' page and its subpages do not have performance issues
-  - FIX: Artwork loading on the album subpage blocks the main thread
-  - FIX: Performance issues while scrolling at large window sizes
-- [ ] The 'Artists' page and its subpages do not have performance issues
-  - FIX: Artwork loading on the artist subpage blocks the main thread
+- [x] The 'Songs' page and its subpages do not have performance issues
+- [x] The 'Albums' page and its subpages do not have performance issues
+- [x] The 'Artists' page and its subpages do not have performance issues
 - [x] Library building works in the background and doesn't affect functionality
 - [x] Album grouping works as expected
 - [x] Searching is quick and works as expected

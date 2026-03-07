@@ -69,7 +69,7 @@ Music library:
     - [x] Play/Shuffle buttons
     - [x] Add to Queue button
     - [x] Display a track list, each opening a Song subpage
-    - [ ] Visually separate songs from different disks
+    - [x] Visually separate songs from different disks
     - [ ] Tag management (user-specified album tags (inferred from songs?))
     - [x] Go to artist button
 - [ ] Songs page
