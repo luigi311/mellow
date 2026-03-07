@@ -297,7 +297,7 @@ impl QueuePage {
             }
         }
     }
-    // /// Takes a model index and returns the index to access its queue item
+    /// Takes a model index and returns the index to access its queue item
     #[inline]
     #[must_use]
     fn model_index_to_queue(&self, model_index: usize) -> usize {
@@ -312,21 +312,28 @@ impl QueuePage {
                     "`model_index_to_queue` used on an empty queue"
                 );
 
-                let n_items_behind = NUM_ITEMS_AHEAD.saturating_sub(playing_index);
-
                 // Wrapping over the start of the queue
-                if n_items_behind > 0 && n_items_behind <= NUM_ITEMS_BEHIND {
-                    return queue_length - n_items_behind + model_index;
+                let n_items_behind = NUM_ITEMS_BEHIND.saturating_sub(playing_index);
+                if n_items_behind > 0 {
+                    // println!("Wrapping over the start of the queue");
+                    if model_index < n_items_behind {
+                        return queue_length - n_items_behind + model_index;
+                    }
+                    if model_index == n_items_behind {
+                        return 0;
+                    }
                 }
 
                 // Non-wrapped items
                 let offset_index = model_index + playing_index;
                 if offset_index < queue_length {
-                    return offset_index - NUM_ITEMS_BEHIND.min(playing_index);
+                    // println!("Non-wrapped item");
+                    return offset_index - NUM_ITEMS_BEHIND.max(n_items_behind);
                 }
 
                 // Wrapping over the end of the queue
-                offset_index - queue_length - NUM_ITEMS_BEHIND.min(playing_index)
+                // println!("Wrapping over the end of the queue");
+                offset_index - queue_length - NUM_ITEMS_BEHIND.max(playing_index)
             }
         }
     }
