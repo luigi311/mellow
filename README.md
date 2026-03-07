@@ -122,8 +122,11 @@ meson setup builddir --prefix=~/.local && meson install -C builddir
 The following files and directories will be created:
 ```
 ~
-├── .config
-│   └── mellow ⟵┬─ Created when launched
+├── .cache
+│   └── mellow ⟵╮
+│       └── …  ⟵┤
+├── .config     ├─ Created when launched
+│   └── mellow ⟵┤
 │       └── …  ⟵╯
 └── .local
     ├── bin
