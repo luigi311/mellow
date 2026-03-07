@@ -61,10 +61,14 @@ mod tests {
 
         let meson_build = fs::read_to_string([project_dir, "/meson.build"].concat())?;
         for line in meson_build.lines() {
-            if let Some((_, name)) = line.split_once("project('") {
+            if name_meson == "(none)"
+                && let Some((_, name)) = line.split_once("project('")
+            {
                 name_meson = name.split_once('\'').unwrap().0;
             }
-            if let Some((_, version)) = line.split_once("version: '") {
+            if version_meson == "(none)"
+                && let Some((_, version)) = line.split_once("version: '")
+            {
                 version_meson = version.split_once('\'').unwrap().0;
             }
             if line.starts_with("base_id") {
