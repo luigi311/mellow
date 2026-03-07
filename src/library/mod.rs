@@ -653,6 +653,7 @@ impl Library {
                 let _ = fs::rename(cmp_info.thumbnail_file_path(), info.thumbnail_file_path());
                 return true;
             }
+            let _ = fs::remove_file(cmp_info.thumbnail_file_path());
             false
         }
 
