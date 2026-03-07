@@ -1,6 +1,9 @@
 use core::error::Error;
 use gio::prelude::*;
 use gtk::{gdk, gio, glib};
+use std::fs::{self, File};
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::Read;
 use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -8,9 +11,10 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
+use crate::excuses::EXP_INIT;
 use crate::library::SharedAlbum;
 use crate::serializer::serialize_list;
-use crate::unescaped_split;
+use crate::{CACHE_DIR, unescaped_split};
 use crate::{deserialize, serialize};
 
 pub struct Song {
@@ -19,6 +23,7 @@ pub struct Song {
     info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
     detailed_info: RwLock<Option<DetailedSongInfo>>,
+    thumbnail: RwLock<Option<gdk::Texture>>,
 }
 
 pub type SharedSong = Arc<Song>;
@@ -69,6 +74,7 @@ impl<'s> Song {
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: RwLock::new(None),
+            thumbnail: RwLock::new(None),
         }
     }
     /// Constructs a new `Song` from a file path
@@ -81,6 +87,7 @@ impl<'s> Song {
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: RwLock::new(None),
+            thumbnail: RwLock::new(None),
         }
     }
 
@@ -200,6 +207,7 @@ impl<'s> Song {
             }),
             user_info: Mutex::new(user_info),
             detailed_info: RwLock::new(None),
+            thumbnail: RwLock::new(None),
         })
     }
 
@@ -214,6 +222,7 @@ impl<'s> Song {
             info: &self.info,
             user_info: &self.user_info,
             detailed_info: &self.detailed_info,
+            thumbnail: &self.thumbnail,
             tagged: None,
         }
     }
@@ -226,6 +235,7 @@ pub struct SongInfoLoader<'i> {
     info: &'i RwLock<Option<SongInfo>>,
     user_info: &'i Mutex<UserSongInfo>,
     detailed_info: &'i RwLock<Option<DetailedSongInfo>>,
+    thumbnail: &'i RwLock<Option<gdk::Texture>>,
     tagged: Option<TaggedFile>,
 }
 
@@ -260,6 +270,25 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn file_uri(&self) -> String {
         self.file.uri().to_string()
+    }
+    /// Returns the hash of the `file_uri`, used for thumbnail files
+    #[inline]
+    #[must_use]
+    pub fn uri_hash(&self) -> String {
+        let mut hasher = DefaultHasher::new();
+        self.file_uri().hash(&mut hasher);
+        hasher.finish().to_string()
+    }
+    /// Returns this song's thumbnail file path
+    #[inline]
+    #[must_use]
+    pub fn thumbnail_file_path(&self) -> String {
+        [
+            CACHE_DIR.get().expect(EXP_INIT),
+            "thumbnails/",
+            &self.uri_hash(),
+        ]
+        .concat()
     }
     /// Returns the full song file path
     ///
@@ -683,6 +712,89 @@ impl SongInfoLoader<'_> {
                 None
             },
         })
+    }
+
+    // TODO: Add documentation comments where missing (copy and adapt from functions above)
+
+    /// Loads the thumbnail or creates it if necessary
+    ///
+    /// Note: The returned inner `Option` could be `None`
+    /// if the file does not have an artwork available
+    #[inline]
+    pub fn load_thumbnail(&mut self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
+        let thumbnail = self.thumbnail.read().unwrap();
+        if thumbnail.is_some() {
+            // println!("Thumbnail already loaded, nothing to do");
+            return self.thumbnail.read().unwrap();
+        }
+        drop(thumbnail);
+
+        let mut thumbnail_writer = self.thumbnail.write().unwrap();
+        if let Ok(thumbnail) = self.read_thumbnail_from_disk() {
+            // println!("Thumbnail was read successfully from disk");
+            *thumbnail_writer = thumbnail;
+            drop(thumbnail_writer);
+        } else {
+            // println!("Creating a new thumbnail");
+            drop(thumbnail_writer);
+            self.create_thumbnail();
+        }
+        return self.thumbnail.read().unwrap();
+    }
+    #[inline]
+    pub fn inspect_thumbnail(&self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
+        self.thumbnail.read().unwrap()
+    }
+    /// Returns the thumbnail if accessible without blocking
+    /// the current thread, but does not load it
+    ///
+    /// # Errors
+    /// The function errors if the `RwLock` is currently busy
+    #[inline]
+    pub fn try_inspect_thumbnail(
+        &self,
+    ) -> Result<RwLockReadGuard<'_, Option<gdk::Texture>>, TryLockError> {
+        self.thumbnail.try_read().map_err(|_| TryLockError)
+    }
+    #[inline]
+    pub fn unload_thumbnail(&mut self) {
+        self.thumbnail.write().unwrap().take();
+    }
+    #[inline]
+    pub fn invalidate_thumbnail(&mut self) {
+        println!("Invalidating thumbnail for {}", self.file_uri());
+        let _ = fs::remove_file(self.thumbnail_file_path());
+        self.unload_thumbnail();
+    }
+    #[inline]
+    pub fn read_thumbnail_from_disk(&self) -> Result<Option<gdk::Texture>, Box<dyn Error>> {
+        let mut thumbnail_file = File::open(self.thumbnail_file_path())?;
+        let mut buffer = Vec::new();
+        thumbnail_file.read_to_end(&mut buffer).unwrap();
+        Ok(gdk::Texture::from_bytes(&glib::Bytes::from(&*buffer)).ok())
+    }
+    pub fn create_thumbnail(&mut self) {
+        let thumbnail_file_path = self.thumbnail_file_path();
+        fs::create_dir_all(thumbnail_file_path.rsplit_once('/').unwrap().0).unwrap();
+
+        let detailed = self.load_detailed();
+        // SAFETY: `load_detailed` ensures the value is `Some`
+        let artwork = unsafe { detailed.as_ref().unwrap_unchecked() }
+            .artwork
+            .clone();
+        drop(detailed);
+
+        // TODO: Downscale the artwork
+        // let thumbnail = todo!();
+        let thumbnail = artwork; // Temporary solution just so artworks still show
+
+        // TODO: Uncomment this to write thumbnails to disk once downscaling works
+        // match &thumbnail {
+        //     Some(thumbnail) => thumbnail.save_to_png(thumbnail_file_path).unwrap(),
+        //     None => fs::write(thumbnail_file_path, "").unwrap(),
+        // }
+
+        *self.thumbnail.write().unwrap() = thumbnail;
     }
 }
 

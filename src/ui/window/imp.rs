@@ -312,7 +312,7 @@ impl Window {
     fn song_loaded(&self, index: usize) {
         let song = &self.songs.borrow()[index];
         let info = song.info();
-        let Ok(info) = info.try_inspect_detailed() else {
+        let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
             // the item went out of view between when the message was sent and when it was
             // received by the UI, so it is currently being unloaded. If there are issues
@@ -320,16 +320,16 @@ impl Window {
             // message (possibly in a background task, after a short delay).
             return;
         };
-        let Some(ref info) = *info else {
+        if thumbnail.is_none() {
             return;
-        };
-        self.songs_page.assign_artwork(index, info.artwork.as_ref());
+        }
+        self.songs_page.assign_artwork(index, thumbnail.as_ref());
     }
     fn album_loaded(&self, index: usize) {
         let album = &self.albums.borrow()[index];
         let album = album.lock().unwrap();
         let info = album.songs[0].info();
-        let Ok(info) = info.try_inspect_detailed() else {
+        let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
             // the item went out of view between when the message was sent and when it was
             // received by the UI, so it is currently being unloaded. If there are issues
@@ -337,11 +337,10 @@ impl Window {
             // message (possibly in a background task, after a short delay).
             return;
         };
-        let Some(ref info) = *info else {
+        if thumbnail.is_none() {
             return;
-        };
-        self.albums_page
-            .assign_artwork(index, info.artwork.as_ref());
+        }
+        self.albums_page.assign_artwork(index, thumbnail.as_ref());
     }
     fn artist_loaded(&self, index: usize) {
         self.artists_page.assign_artwork(
@@ -357,22 +356,19 @@ impl Window {
             return;
         };
         let info = song.info();
-        let Ok(info) = info.try_inspect_detailed() else {
+        let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             #[cfg(debug_assertions)]
             println!("{index}: queue song artwork would block; retrying later...");
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
                 thread::sleep(Duration::from_millis(30));
-                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibraryAlbumLoaded(index));
+                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index));
             });
             return;
         };
-        let Some(ref info) = *info else {
-            return;
-        };
-        if info.artwork.is_none() {
+        if thumbnail.is_none() {
             return;
         }
-        self.queue_page.assign_artwork(index, info.artwork.as_ref());
+        self.queue_page.assign_artwork(index, thumbnail.as_ref());
     }
 
     fn open_song_page_by_index(&self, index: usize) {

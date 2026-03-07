@@ -52,7 +52,8 @@ impl SongObject {
             if !is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
-            drop(song.info().load_detailed());
+            drop(song.info().load_thumbnail());
+            song.info().unload_detailed(); // `load_thumbnail` may have loaded it
             let ui_tx = UI_TX.get().expect(EXP_INIT);
             let _ = ui_tx.send(UpdateUI::LibrarySongLoaded(index));
         });
@@ -68,7 +69,7 @@ impl SongObject {
             if is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
-            song.info().unload_detailed();
+            song.info().unload_thumbnail();
         });
     }
 

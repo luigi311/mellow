@@ -614,6 +614,8 @@ impl Library {
                     *basic = None;
                     needs_rebuild = true;
                 }
+                drop(basic);
+                info.invalidate_thumbnail();
             }
             // If files were modified, queue another rebuild so the new info gets loaded
             if !cancel.load(atomic::Ordering::Relaxed) && needs_rebuild {
@@ -648,6 +650,7 @@ impl Library {
                     info.file_path()
                 );
                 info.user().merge_with(&cmp_info.user());
+                let _ = fs::rename(cmp_info.thumbnail_file_path(), info.thumbnail_file_path());
                 return true;
             }
             false

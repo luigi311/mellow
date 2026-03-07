@@ -21,7 +21,7 @@
 #![allow(clippy::match_bool)]
 
 use core::{mem, ptr};
-use glib::{UserDirectory, home_dir, user_config_dir, user_special_dir};
+use glib::{UserDirectory, home_dir, user_cache_dir, user_config_dir, user_special_dir};
 use gtk::glib;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -35,6 +35,7 @@ pub mod serializer;
 pub mod tasks;
 pub mod ui;
 
+pub static CACHE_DIR: OnceLock<String> = OnceLock::new();
 pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
 pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 
@@ -44,6 +45,7 @@ pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 /// # Panics
 /// The function panics if user directories are not valid UTF-8
 pub fn init_globals() {
+    let _ = CACHE_DIR.set([user_cache_dir().to_str().unwrap(), "/mellow/"].concat());
     let _ = CONFIG_DIR.set([user_config_dir().to_str().unwrap(), "/mellow/"].concat());
     let _ = MUSIC_DIR.set(user_special_dir(UserDirectory::Music).map_or_else(
         || [home_dir().to_str().unwrap(), "/Music/"].concat(),

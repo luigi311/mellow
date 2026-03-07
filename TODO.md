@@ -1,3 +1,4 @@
+- TODO: **Downscaled artworks & thumbnail caching**
 - TODO: **Toast notifications**
   - TODO: Show a notification for adding an album disc to queue
     (instead of closing the page)
@@ -64,7 +65,6 @@ Music library:
 - [ ] Albums page
   - [x] Buttons to play all albums (shuffled/sequential)
   - [x] Show all albums
-    > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Album subpage, accessed from each item
     - [x] Display album info (album cover/title/artist/year/average rating)
     - [x] Play/Shuffle buttons
@@ -76,7 +76,6 @@ Music library:
 - [ ] Songs page
   - [x] Buttons to play all songs (shuffled/sequential)
   - [x] Show all songs
-    > Note: could generate downscaled thumbnails to reduce CPU & memory usage
   - [-] Song subpage, accessed from each item
     - [-] Display song info (title/album/artist, maybe album cover)
       - TODO: Needs design improvements

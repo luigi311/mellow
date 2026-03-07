@@ -115,15 +115,12 @@ impl QueuePage {
                 for (index, song) in queue.iter().enumerate() {
                     if !(start..end).contains(&index)
                         && let QueueItem::Song(song) = song
-                        && (song.info().try_inspect_detailed().as_ref()).is_ok_and(|info| {
-                            info.as_ref().is_some_and(|info| {
-                                info.artwork
-                                    .as_ref()
-                                    .is_some_and(|artwork| artwork.ref_count() < 2)
-                            })
-                        })
+                        && let Ok(thumbnail) = song.info().try_inspect_thumbnail().as_ref()
+                        && thumbnail
+                            .as_ref()
+                            .is_some_and(|artwork| artwork.ref_count() < 2)
                     {
-                        song.info().unload_detailed();
+                        song.info().unload_thumbnail();
                     }
                 }
             }
@@ -206,13 +203,10 @@ impl QueuePage {
         object.set_suffix(format_duration_ms(song_info.duration_ms));
         drop(song_info_temp);
 
-        // TODO: Cached low-res album covers
-        if let Ok(info) = info.try_inspect_detailed()
-            && let Some(artwork) = info
-                .as_ref()
-                .map_or_else(|| None, |info| info.artwork.as_ref())
+        if let Ok(thumbnail) = info.try_inspect_thumbnail()
+            && let Some(thumbnail) = thumbnail.as_ref()
         {
-            object.set_artwork(artwork);
+            object.set_artwork(thumbnail);
         }
 
         object
