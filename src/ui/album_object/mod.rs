@@ -110,7 +110,7 @@ impl AlbumObject {
         let play_count_a = self.shared_album().lock().unwrap().average_play_count();
         let play_count_b = other.shared_album().lock().unwrap().average_play_count();
         match play_count_b.total_cmp(&play_count_a) {
-            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
     }
@@ -128,7 +128,7 @@ impl AlbumObject {
     #[must_use]
     fn cmp_release_date(&self, other: &Self) -> cmp::Ordering {
         match other.year().cmp(&self.year()) {
-            cmp::Ordering::Equal => self.cmp_artist_year_album(other),
+            cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
     }

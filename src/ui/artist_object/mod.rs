@@ -96,7 +96,7 @@ impl ArtistObject {
             .user()
             .added;
         match added_b.cmp(&added_a) {
-            cmp::Ordering::Equal => self.cmp_artist(other),
+            cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
     }
@@ -122,7 +122,7 @@ impl ArtistObject {
             .user()
             .modified;
         match modified_b.cmp(&modified_a) {
-            cmp::Ordering::Equal => self.cmp_artist(other),
+            cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
     }
