@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl AlbumObject {
+    #[inline]
     #[must_use]
     pub fn new(index: u32, album: &str, artist: &str, year: u32, first_song: SharedSong) -> Self {
         let album_object: AlbumObject = Object::builder()
@@ -27,6 +28,7 @@ impl AlbumObject {
         album_object
     }
 
+    #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
@@ -47,6 +49,7 @@ impl AlbumObject {
         });
     }
 
+    #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
         let imp = self.imp();
@@ -62,6 +65,7 @@ impl AlbumObject {
         });
     }
 
+    #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
         (self.imp().first_song.get().expect(EXP_INIT))

@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl ArtistObject {
+    #[inline]
     #[must_use]
     pub fn new(index: u32, artist: &str, albums: u64, shared_artist: SharedArtist) -> Self {
         let artist_object: ArtistObject = Object::builder()
@@ -26,6 +27,7 @@ impl ArtistObject {
         artist_object
     }
 
+    #[inline]
     pub fn load_artwork(&self) {
         // TODO: Decide what kind of image to show for library artists and construct it
         // Maybe 4 artworks composed in a grid with a circular cutout might look good
@@ -42,10 +44,12 @@ impl ArtistObject {
         // });
     }
 
+    #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 
+    #[inline]
     #[must_use]
     pub fn shared_artist(&self) -> SharedArtist {
         Arc::clone(self.imp().shared_artist.get().expect(EXP_INIT))

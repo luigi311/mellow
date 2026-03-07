@@ -640,6 +640,8 @@ impl Library {
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
     ) {
+        #[inline]
+        #[must_use]
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
             drop(info.load_basic());
             if cmp_info.matches(info) {

@@ -726,7 +726,7 @@ impl SongInfoLoader<'_> {
         let thumbnail = self.thumbnail.read().unwrap();
         if thumbnail.is_some() {
             // println!("Thumbnail already loaded, nothing to do");
-            return self.thumbnail.read().unwrap();
+            return thumbnail;
         }
         drop(thumbnail);
 

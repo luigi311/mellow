@@ -15,6 +15,7 @@ glib::wrapper! {
 }
 
 impl SongObject {
+    #[inline]
     #[must_use]
     pub fn new(index: u32, song: SharedSong) -> Self {
         let (title, album, artist, year) = {
@@ -40,6 +41,7 @@ impl SongObject {
         song_object
     }
 
+    #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
@@ -59,6 +61,7 @@ impl SongObject {
         });
     }
 
+    #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
         let song = Arc::clone(self.imp().shared_song.get().expect(EXP_INIT));
@@ -73,6 +76,7 @@ impl SongObject {
         });
     }
 
+    #[inline]
     #[must_use]
     pub fn shared_song(&self) -> SharedSong {
         Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
