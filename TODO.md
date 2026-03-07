@@ -1,4 +1,3 @@
-- TODO: **Downscaled artworks & thumbnail caching**
 - TODO: **Toast notifications**
   - TODO: Show a notification for adding an album disc to queue
     (instead of closing the page)

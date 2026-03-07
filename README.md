@@ -19,13 +19,6 @@ letting music be the central point of focus.
 > incomplete. See the [Roadmap](#roadmap), [QA.md](QA.md), and [TODO.md](TODO.md) for
 > more details.
 
-> [!WARNING]
-> In its current (unfinished) state, Mellow can consume a lot of system resources due
-> to lack of artwork/thumbnail caching. There may also be memory leaks. For a decent
-> experience, ensure that you have enough free and available memory before trying it
-> on your system. With my configuration, Mellow takes up about 3 GB of RAM, and can
-> increase to over 6 GB in certain cases.
-
 # Philosophy
 
 Mellow's primary design goal is to minimize distraction and maximize immersion,
@@ -63,8 +56,8 @@ When the overlay is closed, it is time to enjoy the music.
 |  4  | Song queue interface & management         | ⚠️ WIP: No multi-selection or drag-&-drop reordering yet, possible UI element scaling issues |
 |  5  | Music library                             | ⚠️ WIP: Mostly done, but see below |
 | 5.1 | Artists page                              | ⚠️ WIP: Possible UI element scaling issues in subpages |
-| 5.2 | Albums page                               | ⚠️ WIP: High CPU usage while loading artworks, possible UI element scaling issues |
-| 5.3 | Songs page                                | ⚠️ WIP: High CPU usage while loading artworks, possible UI element scaling issues |
+| 5.2 | Albums page                               | ⚠️ WIP: Possible UI element scaling issues |
+| 5.3 | Songs page                                | ⚠️ WIP: Possible UI element scaling issues |
 | 5.4 | Search/filter/sort                        | ⚠️ WIP: No filtering yet (except by query) |
 | 5.5 | Play counts and ratings                   | ⚠️ WIP: Play counts are not shown anywhere yet |
 | 5.6 | User-assigned tags                        | ❌ TODO |

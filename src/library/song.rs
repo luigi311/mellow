@@ -1,5 +1,5 @@
 use core::error::Error;
-use gio::prelude::*;
+use gdk::{gdk_pixbuf::Pixbuf, prelude::*};
 use gtk::{gdk, gio, glib};
 use std::fs::{self, File};
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -797,15 +797,40 @@ impl SongInfoLoader<'_> {
             .clone();
         drop(detailed);
 
-        // TODO: Downscale the artwork
-        // let thumbnail = todo!();
-        let thumbnail = artwork; // Temporary solution just so artworks still show
+        let thumbnail = 'thumbnail: {
+            let Some(artwork) = artwork else {
+                break 'thumbnail None;
+            };
+            let mut tex_dl = gdk::TextureDownloader::new(&artwork);
+            tex_dl.set_format(gdk::MemoryFormat::R8g8b8a8Premultiplied);
+            let (bytes, row_stride) = tex_dl.download_bytes();
+            let pixbuf = Pixbuf::from_bytes(
+                &bytes,
+                gtk::gdk_pixbuf::Colorspace::Rgb,
+                true,
+                8,
+                artwork.width(),
+                artwork.height(),
+                row_stride as i32,
+            )
+            .scale_simple(
+                256,
+                (256.0 * artwork.intrinsic_aspect_ratio()) as i32,
+                gtk::gdk_pixbuf::InterpType::Bilinear,
+            )
+            .unwrap();
 
-        // TODO: Uncomment this to write thumbnails to disk once downscaling works
-        // match &thumbnail {
-        //     Some(thumbnail) => thumbnail.save_to_png(thumbnail_file_path).unwrap(),
-        //     None => fs::write(thumbnail_file_path, "").unwrap(),
-        // }
+            // FIX: `gdk::Texture::for_pixbuf` is deprecated
+            // Some(gdk::Texture::for_pixbuf(&pixbuf))
+            gdk::Texture::from_bytes(&pixbuf.read_pixel_bytes())
+                .inspect_err(|e| eprintln!("{e}"))
+                .ok()
+        };
+
+        match &thumbnail {
+            Some(thumbnail) => thumbnail.save_to_png(thumbnail_file_path).unwrap(),
+            None => fs::write(thumbnail_file_path, "").unwrap(),
+        }
 
         *self.thumbnail.write().unwrap() = thumbnail;
     }
