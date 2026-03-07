@@ -44,7 +44,7 @@ When the overlay is closed, it is time to enjoy the music.
 - 📋 Song queue - view or edit the list of playing songs
 - 📀 Music library - browse and play your local music collection
 - 📂 File discovery - detects changed, moved, removed, or added song files
-- 🔗 Removable drives - ratings can be accessed once the library is available again
+- 💾 Removable drives - ratings can be accessed once the library is available again
 - 🪽 Fast & lightweight - responsive and quick to start, even with large libraries
 
 # Roadmap
