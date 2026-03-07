@@ -821,10 +821,10 @@ impl SongInfoLoader<'_> {
             .unwrap();
 
             // FIX: `gdk::Texture::for_pixbuf` is deprecated
-            // Some(gdk::Texture::for_pixbuf(&pixbuf))
-            gdk::Texture::from_bytes(&pixbuf.read_pixel_bytes())
-                .inspect_err(|e| eprintln!("{e}"))
-                .ok()
+            Some(gdk::Texture::for_pixbuf(&pixbuf))
+            // gdk::Texture::from_bytes(&pixbuf.read_pixel_bytes())
+            //     .inspect_err(|e| eprintln!("{e}"))
+            //     .ok()
         };
 
         match &thumbnail {
