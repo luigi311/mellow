@@ -112,15 +112,26 @@ impl QueuePage {
                 // background-loaded artworks otherwise sometimes not getting assigned.
                 // If there are issues with queue artworks in the future, try disabling
                 // garbage collection first, to verify that it is working properly.
+                let short_start = index.saturating_sub(NUM_ITEMS_BEHIND);
+                let short_end = (index + NUM_ITEMS_AHEAD).min(queue.len());
                 for (index, song) in queue.iter().enumerate() {
+                    let QueueItem::Song(song) = song else {
+                        return;
+                    };
                     if !(start..end).contains(&index)
-                        && let QueueItem::Song(song) = song
                         && let Ok(thumbnail) = song.info().try_inspect_thumbnail().as_ref()
                         && thumbnail
                             .as_ref()
                             .is_some_and(|artwork| artwork.ref_count() < 2)
                     {
                         song.info().unload_thumbnail();
+                    }
+
+                    // Keep detailed artworks loaded for a few items ahead and behind
+                    if (short_start..short_end).contains(&index) {
+                        drop(song.info().load_detailed());
+                    } else {
+                        song.info().try_unload_detailed();
                     }
                 }
             }

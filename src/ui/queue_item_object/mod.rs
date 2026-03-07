@@ -41,7 +41,6 @@ impl QueueItemObject {
                 return;
             };
             drop(song.info().load_thumbnail());
-            song.info().unload_detailed(); // `load_thumbnail` may have loaded it
             let ui_tx = UI_TX.get().expect(EXP_INIT);
             let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index));
         });

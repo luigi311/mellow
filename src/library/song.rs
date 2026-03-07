@@ -714,6 +714,9 @@ impl SongInfoLoader<'_> {
         })
     }
 
+    // FIX: The thread pool sometimes stops responding, likely due to thumbnail loading
+    // Is there a deadlock issue somewhere?
+
     /// Loads the thumbnail or creates it if necessary
     ///
     /// Note: The returned inner `Option` could be `None`
