@@ -1,5 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*};
 use core::cell::{Cell, OnceCell, RefCell};
+use gtk::gdk_pixbuf::Pixbuf;
 use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
 
@@ -329,69 +330,27 @@ impl SettingsPage {
     }
 
     pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
-        let mut r = 0.0;
-        let mut g = 0.0;
-        let mut b = 0.0;
+        let mut tex_dl = gdk::TextureDownloader::new(artwork);
+        tex_dl.set_format(gdk::MemoryFormat::R8g8b8a8Premultiplied);
+        let (image_data, row_stride) = tex_dl.download_bytes();
 
-        // ARGB32
-        let mut image_data = vec![0u8; (artwork.width() * artwork.height()) as usize * 4];
-        artwork.download(&mut image_data, 4 * artwork.width() as usize);
+        let color = Pixbuf::from_bytes(
+            &image_data,
+            gtk::gdk_pixbuf::Colorspace::Rgb,
+            true,
+            8,
+            artwork.width(),
+            artwork.height(),
+            row_stride as i32,
+        )
+        .scale_simple(1, 1, gtk::gdk_pixbuf::InterpType::Bilinear)
+        .unwrap()
+        .read_pixel_bytes();
 
-        // Pixels will be skipped to match the below target resolution
-        const SAMPLE_RES: usize = 128;
-        let mut step_size = image_data.len() / (SAMPLE_RES * SAMPLE_RES * 4);
-        step_size -= step_size % 4;
-        step_size += 1;
-        step_size = step_size.max(5);
-
-        let mut channel = 0u8;
-        // Each color component is 4 bytes (u32)
-        // FIX: This `step_by` is actually sampling different pixels per color component
-        for u32_bytes in image_data.windows(4).step_by(step_size) {
-            let c = u32::from_ne_bytes(u32_bytes.try_into().unwrap());
-            match channel {
-                0 => (),
-                1 => b += c as f64 / u32::MAX as f64,
-                2 => g += c as f64 / u32::MAX as f64,
-                3 => r += c as f64 / u32::MAX as f64,
-                _ => unreachable!(),
-            }
-            channel += 1;
-            if channel == 4 {
-                channel = 0;
-            }
-        }
-
-        if channel != 0 {
-            eprintln!("FIX: {channel} color channels were sampled more times than others");
-        }
-
-        // A failed attempt at a rewrite...
-        // let mut num_pixels = 0;
-        // // NOTE: `take(8)` is just for debugging purposes
-        // for pixel in image_data.chunks(4 * 4).step_by(step_size / 5).take(8) {
-        //     assert!(pixel.len() == 16);
-
-        //     r += u32::from_ne_bytes(pixel[4..8].try_into().unwrap()) as f64 / u32::MAX as f64;
-        //     g += u32::from_ne_bytes(pixel[8..12].try_into().unwrap()) as f64 / u32::MAX as f64;
-        //     b += u32::from_ne_bytes(pixel[12..16].try_into().unwrap()) as f64 / u32::MAX as f64;
-
-        //     num_pixels += 1;
-
-        //     // FIX: For some reason all components have roughly the same value here
-        //     dbg!((
-        //         u32::from_ne_bytes(pixel[0..4].try_into().unwrap()) as f64 / u32::MAX as f64,
-        //         u32::from_ne_bytes(pixel[4..8].try_into().unwrap()) as f64 / u32::MAX as f64,
-        //         u32::from_ne_bytes(pixel[8..12].try_into().unwrap()) as f64 / u32::MAX as f64,
-        //         u32::from_ne_bytes(pixel[12..16].try_into().unwrap()) as f64 / u32::MAX as f64
-        //     ));
-        // }
-
-        let num_pixels = image_data.len() / (step_size * 4);
         self.set_background_color(
-            Self::srgb_to_linear(r / num_pixels as f64),
-            Self::srgb_to_linear(g / num_pixels as f64),
-            Self::srgb_to_linear(b / num_pixels as f64),
+            Self::srgb_to_linear(color[0] as f64 / 255.0),
+            Self::srgb_to_linear(color[1] as f64 / 255.0),
+            Self::srgb_to_linear(color[2] as f64 / 255.0),
         );
     }
 

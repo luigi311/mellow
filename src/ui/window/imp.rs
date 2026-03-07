@@ -227,15 +227,21 @@ impl Window {
         }
         let detailed_info = info.load_detailed();
         // SAFETY: `load_detailed` ensures the value is `Some`
-        let detailed_info = unsafe { detailed_info.as_ref().unwrap_unchecked() };
-        let artwork = detailed_info.artwork.as_ref();
+        let detailed = unsafe { detailed_info.as_ref().unwrap_unchecked() };
+        let artwork = detailed.artwork.as_ref();
 
-        self.lyrics_page.set_content(&title, &detailed_info.lyrics);
+        self.lyrics_page.set_content(&title, &detailed.lyrics);
         self.main_player
             .set_info(&title, &album, &artist, artwork, *song_duration_ms);
+        drop(detailed_info);
 
-        match artwork {
-            Some(artwork) => self.settings_page.set_background_from_artwork(artwork),
+        #[cfg(debug_assertions)]
+        match info.try_inspect_thumbnail() {
+            Err(_) => println!("⚠️ Blocking main to access the thumbnail"),
+            _ => (),
+        }
+        match &*info.load_thumbnail() {
+            Some(thumbnail) => self.settings_page.set_background_from_artwork(thumbnail),
             None => self.settings_page.reset_background_color(),
         }
     }
