@@ -316,8 +316,8 @@ impl Window {
             // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
             // the item went out of view between when the message was sent and when it was
             // received by the UI, so it is currently being unloaded. If there are issues
-            // with artworks not showing up, a background taks could try resending the
-            // message (possibly in a background task, after a short delay).
+            // with artworks not showing up, a background task could try resending the
+            // message (possibly after a short delay).
             return;
         };
         if thumbnail.is_none() {
@@ -333,8 +333,8 @@ impl Window {
             // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
             // the item went out of view between when the message was sent and when it was
             // received by the UI, so it is currently being unloaded. If there are issues
-            // with artworks not showing up, a background taks could try resending the
-            // message (possibly in a background task, after a short delay).
+            // with artworks not showing up, a background task could try resending the
+            // message (possibly after a short delay).
             return;
         };
         if thumbnail.is_none() {

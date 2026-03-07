@@ -714,12 +714,13 @@ impl SongInfoLoader<'_> {
         })
     }
 
-    // TODO: Add documentation comments where missing (copy and adapt from functions above)
-
     /// Loads the thumbnail or creates it if necessary
     ///
     /// Note: The returned inner `Option` could be `None`
     /// if the file does not have an artwork available
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn load_thumbnail(&mut self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
         let thumbnail = self.thumbnail.read().unwrap();
@@ -739,8 +740,13 @@ impl SongInfoLoader<'_> {
             drop(thumbnail_writer);
             self.create_thumbnail();
         }
-        return self.thumbnail.read().unwrap();
+
+        self.thumbnail.read().unwrap()
     }
+    /// Returns the thumbnail, but does not load it
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn inspect_thumbnail(&self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
         self.thumbnail.read().unwrap()
@@ -756,24 +762,31 @@ impl SongInfoLoader<'_> {
     ) -> Result<RwLockReadGuard<'_, Option<gdk::Texture>>, TryLockError> {
         self.thumbnail.try_read().map_err(|_| TryLockError)
     }
+    /// Unloads the song's thumbnail from memory
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_thumbnail(&mut self) {
         self.thumbnail.write().unwrap().take();
     }
+    /// Unloads the song's thumbnail form memory
+    ///
+    /// # Panics
+    /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn invalidate_thumbnail(&mut self) {
-        println!("Invalidating thumbnail for {}", self.file_uri());
         let _ = fs::remove_file(self.thumbnail_file_path());
         self.unload_thumbnail();
     }
     #[inline]
-    pub fn read_thumbnail_from_disk(&self) -> Result<Option<gdk::Texture>, Box<dyn Error>> {
+    fn read_thumbnail_from_disk(&self) -> Result<Option<gdk::Texture>, Box<dyn Error>> {
         let mut thumbnail_file = File::open(self.thumbnail_file_path())?;
         let mut buffer = Vec::new();
         thumbnail_file.read_to_end(&mut buffer).unwrap();
         Ok(gdk::Texture::from_bytes(&glib::Bytes::from(&*buffer)).ok())
     }
-    pub fn create_thumbnail(&mut self) {
+    fn create_thumbnail(&mut self) {
         let thumbnail_file_path = self.thumbnail_file_path();
         fs::create_dir_all(thumbnail_file_path.rsplit_once('/').unwrap().0).unwrap();
 
