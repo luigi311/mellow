@@ -15,6 +15,7 @@ use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;
+const ROW_HEIGHT: usize = 55;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
@@ -78,7 +79,7 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
-            self.scroll_to_pos((model_index * 55) as f64);
+            self.scroll_to_pos((model_index * ROW_HEIGHT) as f64);
 
             #[cfg(debug_assertions)]
             self.model_index_to_queue_discrepancy_check(model_index, index);
@@ -132,7 +133,7 @@ impl QueuePage {
             }
         });
 
-        let previous_scroll_position = self.scrolled_window.vadjustment().value();
+        let last_scroll_pos = self.scrolled_window.vadjustment().value();
         let mut items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
             .map(|index_item| {
                 let q_index = index_item.0;
@@ -189,9 +190,9 @@ impl QueuePage {
 
         match self.next_scroll_pos.take() {
             // Re-applying the scroll position, because it resets when the `list_box` rows change
-            QueueScrollAction::Retain => self.scroll_to_pos(previous_scroll_position),
+            QueueScrollAction::Retain => self.scroll_to_pos(last_scroll_pos),
             QueueScrollAction::Offset(offset) => {
-                self.scroll_to_pos(previous_scroll_position + (offset * 55) as f64)
+                self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64)
             }
             QueueScrollAction::ToPlaying => self.scroll_to_item(index),
         }
