@@ -10,8 +10,8 @@ Song queue:
 
 - [-] Display the song queue
   - FIX: Memory leak when toggling shuffle
-- [-] Allow reordering the queue
-  - TODO: Reorder using drag & drop
+- [x] Allow reordering the queue
+  - TODO: Add visual feedback for drag & drop
 - [ ] Multi-selection mode
   - [ ] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once

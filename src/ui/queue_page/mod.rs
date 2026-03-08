@@ -66,5 +66,6 @@ impl QueuePage {
 pub enum QueueScrollAction {
     #[default]
     Retain,
+    Offset(i32),
     ToPlaying,
 }

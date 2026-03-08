@@ -78,7 +78,7 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
-            self.scroll_to_pos((model_index * 54) as f64);
+            self.scroll_to_pos((model_index * 55) as f64);
 
             #[cfg(debug_assertions)]
             self.model_index_to_queue_discrepancy_check(model_index, index);
@@ -190,6 +190,9 @@ impl QueuePage {
         match self.next_scroll_pos.take() {
             // Re-applying the scroll position, because it resets when the `list_box` rows change
             QueueScrollAction::Retain => self.scroll_to_pos(previous_scroll_position),
+            QueueScrollAction::Offset(offset) => {
+                self.scroll_to_pos(previous_scroll_position + (offset * 55) as f64)
+            }
             QueueScrollAction::ToPlaying => self.scroll_to_item(index),
         }
     }
@@ -301,7 +304,6 @@ impl QueuePage {
     #[inline]
     #[must_use]
     fn model_index_to_queue(&self, model_index: usize) -> usize {
-        // TODO: Use this function to shift elements once drag-&-drop works
         let playing_index = self.playing_index.get();
         match self.repeat_toggle.is_active() {
             false => model_index + playing_index - NUM_ITEMS_BEHIND.min(playing_index),
@@ -396,7 +398,8 @@ impl ObjectImpl for QueuePage {
 
         self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
         let model = gio::ListStore::new::<QueueItemObject>();
-        self.list_box.bind_model(Some(&model), move |object| {
+        let list_box = &self.list_box;
+        list_box.bind_model(Some(&model.clone()), |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
             let queue_row = ListRow::default();
@@ -443,6 +446,44 @@ impl ObjectImpl for QueuePage {
 
             queue_row.upcast::<gtk::Widget>()
         });
+
+        // TODO: Drag-&-drop visual feedback
+        let drag = gtk::GestureDrag::new();
+        drag.connect_end(glib::clone!(
+            #[weak(rename_to=this)]
+            self,
+            #[weak]
+            list_box,
+            move |gesture_drag, _| {
+                let start = gesture_drag.start_point().unwrap().1;
+                let target = start + gesture_drag.offset().unwrap().1;
+                let Some(from) = list_box.row_at_y(start as i32).map(|row| row.index()) else {
+                    return;
+                };
+                let Some(to) = list_box.row_at_y(target as i32).map(|row| row.index()) else {
+                    return;
+                };
+                let from_index = this.model_index_to_queue(from as usize);
+                let to_index = this.model_index_to_queue(to as usize);
+                let playing_index = this.playing_index.get();
+                this.next_scroll_pos.set(QueueScrollAction::Offset(
+                    if playing_index == from_index {
+                        from - to
+                    } else if from_index < playing_index && to_index >= playing_index {
+                        1
+                    } else if from_index > playing_index && to_index <= playing_index {
+                        -1
+                    } else {
+                        0
+                    },
+                ));
+                (PLAYER_TX.get().expect(EXP_INIT))
+                    .send(PlayerRequest::Reorder(from_index, to_index))
+                    .expect(EXP_RX);
+            }
+        ));
+        list_box.add_controller(drag);
+
         let _ = self.list_model.set(model);
     }
 }

@@ -20,7 +20,7 @@ Song Queue:
 - [x] Adding items works as expected
 - [x] Removing items works as expected
 - [x] Reordering the queue works as expected
-  - TODO: Improvement: Reorder using drag & drop
+  - TODO: Improvement: Drag & drop should provide visual feedback
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
 - [x] Scrolling works without issues
