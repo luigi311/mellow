@@ -465,21 +465,20 @@ impl ObjectImpl for QueuePage {
                     return;
                 };
                 let from_index = this.model_index_to_queue(from as usize);
-                let to_index = this.model_index_to_queue(to as usize);
-                let playing_index = this.playing_index.get();
-                this.next_scroll_pos.set(QueueScrollAction::Offset(
-                    if playing_index == from_index {
+                let playing = this.queue_index_to_model(this.playing_index.get()).unwrap() as i32;
+                this.next_scroll_pos.set(QueueScrollAction::Offset({
+                    if playing == from {
                         from - to
-                    } else if from_index < playing_index && to_index >= playing_index {
+                    } else if from < playing && to >= playing {
                         1
-                    } else if from_index > playing_index && to_index <= playing_index {
+                    } else if from > playing && to <= playing {
                         -1
                     } else {
                         0
-                    },
-                ));
+                    }
+                }));
                 (PLAYER_TX.get().expect(EXP_INIT))
-                    .send(PlayerRequest::Reorder(from_index, to_index))
+                    .send(PlayerRequest::Shift(from_index, (to - from) as isize))
                     .expect(EXP_RX);
             }
         ));
