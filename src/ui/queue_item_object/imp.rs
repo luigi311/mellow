@@ -17,6 +17,7 @@ pub struct QueueItemObject {
     #[property(name = "subtitle", get, set, type = String, member = subtitle)]
     #[property(name = "suffix", get, set, type = String, member = suffix)]
     #[property(name = "artwork", get, set, type = Option<gdk::Texture>, member = artwork)]
+    #[property(name = "selected", get, set, type = bool, member = selected)]
     pub data: RefCell<QueueItemData>,
 
     pub shared_song: OnceCell<Option<SharedSong>>,

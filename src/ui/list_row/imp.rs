@@ -10,6 +10,8 @@ pub struct ListRow {
     pub prefix_image: TemplateChild<gtk::Picture>,
     #[template_child]
     pub suffix_label: TemplateChild<gtk::Label>,
+    #[template_child]
+    pub selection_toggle: TemplateChild<gtk::CheckButton>,
 
     pub bindings: RefCell<Vec<glib::Binding>>,
 }

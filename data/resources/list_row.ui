@@ -3,8 +3,6 @@
   <template class="MellowListRow" parent="AdwActionRow">
 
     <!-- FIX: List row should have a fixed height -->
-    <!-- FIX: AdwActionRow doesn't work with GtkListView; a different -->
-    <!-- type of widget will be needed to display the queue item rows -->
 
     <property name="title_lines">1</property>
     <property name="subtitle_lines">1</property>
@@ -20,6 +18,12 @@
         <style>
           <class name="card"/>
         </style>
+      </object>
+    </child>
+    <child type="prefix">
+      <object class="GtkCheckButton" id="selection_toggle">
+        <property name="width_request">36</property>
+        <property name="visible">False</property>
       </object>
     </child>
 

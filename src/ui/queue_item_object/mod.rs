@@ -76,4 +76,5 @@ pub struct QueueItemData {
     subtitle: String,
     suffix: String,
     artwork: Option<gdk::Texture>,
+    selected: bool,
 }

@@ -14,9 +14,10 @@ Song queue:
   - TODO: Add visual feedback
   - TODO: Scroll when reaching top/bottom edges
 - [ ] Multi-selection mode
-  - [ ] Item selection (checkbox in place of the cover image)
+  - [x] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once
   - [ ] Rating multiple items at once
+  - TODO: No way to exit selection mode
 - [x] Allow adding songs to the queue
 - [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)

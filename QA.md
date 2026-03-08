@@ -19,20 +19,25 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [x] Reordering the queue works as expected
+- [-] Reordering the queue works as expected
   - TODO: Improvement: Drag & drop should provide visual feedback
+- [ ] Selection mode works as expected
+  - [ ] Removing multiple items at once works as expected
+  - TODO: Enable selection mode once it works properly
+  - TODO: No way to exit selection mode
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
 - [x] Scrolling works without issues
 
 Music Library:
 
-- [x] The 'Songs' page and its subpages do not have performance issues
-- [x] The 'Albums' page and its subpages do not have performance issues
-- [x] The 'Artists' page and its subpages do not have performance issues
+- [x] The 'Songs' page and its subpages work as expected
+- [x] The 'Albums' page and its subpages work as expected
+- [x] The 'Artists' page and its subpages work as expected
 - [x] Library building works in the background and doesn't affect functionality
-- [x] Album grouping works as expected
-- [x] Searching is quick and works as expected
+- [ ] Searching is quick and works as expected
+  - FIX: Items sometimes don't show up until scrolling after searching
+  - TODO: The escape key should empty the search query when focused
 - [x] Sort modes work as expected
 - [ ] Filtering works as expected
   - TODO: **Implement filters**
@@ -42,6 +47,9 @@ User Experience:
 - [x] The interface is responsive as soon as launched, without delays
   - [x] With existing library
   - [x] On fresh launch
+- [ ] All actions provide visual feedback
+  - TODO: Visual feedback for dragging files onto the player
+  - TODO: Visual feedback for drag-&-dropping queue items
 - [x] All actions respond to user input without delay
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)

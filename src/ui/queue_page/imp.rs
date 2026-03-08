@@ -3,6 +3,7 @@ use core::cell::{Cell, OnceCell, RefCell};
 use core::mem;
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
+use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -35,10 +36,11 @@ pub struct QueuePage {
 
     queue_length: Cell<usize>,
     playing_index: Cell<usize>,
-    queue_item_objects: RefCell<Vec<QueueItemObject>>,
+    queue_item_objects: Rc<RefCell<Vec<QueueItemObject>>>,
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
     pub next_scroll_pos: Cell<QueueScrollAction>,
+    pub selection_mode: Rc<Cell<bool>>,
 }
 
 #[derive(Debug)]
@@ -397,12 +399,13 @@ impl ObjectSubclass for QueuePage {
 impl ObjectImpl for QueuePage {
     fn constructed(&self) {
         self.obj().update_shuffle(false);
-        self.obj().update_repeat(false);
+        // self.obj().update_repeat(false);
 
         self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
         let model = gio::ListStore::new::<QueueItemObject>();
         let list_box = &self.list_box;
-        list_box.bind_model(Some(&model), |object| {
+        let selection_mode = Rc::clone(&self.selection_mode);
+        list_box.bind_model(Some(&model), move |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
             let queue_row = ListRow::default();
@@ -418,10 +421,20 @@ impl ObjectImpl for QueuePage {
                     queue_row.set_image_margins(5);
                 }
 
-                queue_row.add_bindings(&[queue_item_object
-                    .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
-                    .sync_create()
-                    .build()]);
+                queue_row.add_bindings(&[
+                    queue_item_object
+                        .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
+                        .sync_create()
+                        .build(),
+                    queue_item_object
+                        .bind_property(
+                            "selected",
+                            &queue_row.imp().selection_toggle.get(),
+                            "active",
+                        )
+                        .sync_create()
+                        .build(),
+                ]);
 
                 queue_row.set_suffix_label(&queue_item_object.suffix());
 
@@ -441,15 +454,22 @@ impl ObjectImpl for QueuePage {
             }
 
             let object_index = queue_item_object.index() as usize;
-            queue_row.connect_activated(move |_| {
-                (UI_TX.get().expect(EXP_INIT))
-                    .send(UpdateUI::OpenQueueSubpage(object_index))
-                    .expect(EXP_RX);
-            });
+            let selection_mode = Rc::clone(&selection_mode);
+            queue_row.connect_activated(glib::clone!(
+                #[weak]
+                queue_item_object,
+                move |_| match selection_mode.get() {
+                    false => (UI_TX.get().expect(EXP_INIT))
+                        .send(UpdateUI::OpenQueueSubpage(object_index))
+                        .expect(EXP_RX),
+                    true => queue_item_object.set_selected(!queue_item_object.selected()),
+                }
+            ));
 
             queue_row.upcast::<gtk::Widget>()
         });
 
+        let selection_mode = Rc::clone(&self.selection_mode);
         // TODO: Drag-&-drop visual feedback
         let drag = gtk::GestureDrag::new();
         drag.connect_end(glib::clone!(
@@ -457,7 +477,12 @@ impl ObjectImpl for QueuePage {
             self,
             #[weak]
             list_box,
+            #[strong]
+            selection_mode,
             move |gesture_drag, _| {
+                if selection_mode.get() {
+                    return;
+                }
                 let start_y = match gesture_drag.start_point() {
                     Some((start_x, _)) if start_x > 65.0 => return,
                     Some((_, start_y)) => start_y,
@@ -492,6 +517,34 @@ impl ObjectImpl for QueuePage {
             }
         ));
         list_box.add_controller(drag);
+
+        // TODO: Selection mode headerbar buttons (remove, cancel, maybe a rating dropdown)
+        // TODO: Exit selection mode by pressing escape
+        // FIX: Item selections will likely be lost with each queue update
+
+        let hold = gtk::GestureLongPress::new();
+        hold.connect_pressed(glib::clone!(
+            #[weak]
+            list_box,
+            #[strong(rename_to=queue_item_objects)]
+            self.queue_item_objects,
+            move |_, _, y| if !selection_mode.get() {
+                selection_mode.set(true);
+
+                let object_index = list_box.row_at_y(y as i32).unwrap().index();
+                queue_item_objects.borrow()[object_index as usize].set_selected(true);
+
+                let mut i = 0;
+                while let Some(row) = list_box.row_at_index(i) {
+                    let list_row = row.downcast_ref::<ListRow>().unwrap().imp();
+                    list_row.selection_toggle.set_visible(true);
+                    list_row.prefix_image.set_visible(false);
+                    i += 1;
+                }
+            }
+        ));
+        // TODO: Enable once functionality is implemented
+        // list_box.add_controller(hold);
 
         let _ = self.list_model.set(model);
     }
