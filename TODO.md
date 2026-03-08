@@ -8,8 +8,7 @@
 
 Song queue:
 
-- [-] Display the song queue
-  - FIX: Memory leak when toggling shuffle
+- [x] Display the song queue
 - [x] Allow reordering the queue
   - TODO: Add visual feedback for drag & drop
 - [ ] Multi-selection mode

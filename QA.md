@@ -46,8 +46,10 @@ User Experience:
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)
 - [ ] Does not leak memory
-  - FIX: Memory leak when toggling shuffle
-  - FIX: Memory leak related to artwork loading in songs/albums pages
+  - Investigate: Possible issue with thumbnails/artworks not being fully unloaded;
+    By repeatedly toggling the shuffle mode on the queue page, memory usage increases
+    each time, but never exceeds the size of the thumbnails folder (sometimes decreases
+    as well)
 - [x] No other issues found while testing
 
 Design Consistency:
