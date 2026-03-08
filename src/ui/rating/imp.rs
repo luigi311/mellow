@@ -3,7 +3,7 @@ use core::cell::{Cell, OnceCell, RefCell};
 use gtk::CompositeTemplate;
 use gtk::glib;
 
-use crate::excuses::{EXP_INIT, INIT_ERR};
+use crate::excuses::EXP_INIT;
 
 const NUM_STARS: u8 = 5;
 const DEFAULT_STAR_SIZE: i32 = 16;
@@ -21,8 +21,9 @@ pub struct Rating {
 }
 
 impl Rating {
+    /// Initializes the widget controllers
     #[inline]
-    pub fn init_stars(&self) {
+    fn init_stars(&self) {
         let mut stars = Vec::new();
         for _ in 0..NUM_STARS {
             let star = gtk::Image::builder()
@@ -32,7 +33,7 @@ impl Rating {
             self.obj().append(&star);
             stars.push(star);
         }
-        self.stars.set(stars.into()).expect(INIT_ERR);
+        let _ = self.stars.set(stars.into());
 
         let motion = gtk::EventControllerMotion::builder()
             .propagation_phase(gtk::PropagationPhase::Capture)
@@ -68,6 +69,7 @@ impl Rating {
         self.obj().add_controller(click);
     }
 
+    /// Sets the rating to the given value
     #[inline]
     pub fn set_rating(&self, rating: u8) {
         self.rating.set(rating);
@@ -77,6 +79,7 @@ impl Rating {
         }
     }
 
+    /// Highlights the stars to match the `rating`
     #[inline]
     pub fn show_rating(&self, rating: u8) {
         let stars = self.stars.get().expect(EXP_INIT);
@@ -96,6 +99,9 @@ impl Rating {
         }
     }
 
+    /// Highlights the stars to match the `preview` rating,
+    /// and shows inactive stars as either smaller or regular
+    /// sized, to show the previous `rating`
     #[inline]
     pub fn preview_rating(&self, rating: u8, preview: u8) {
         let stars = self.stars.get().expect(EXP_INIT);
@@ -123,6 +129,7 @@ impl Rating {
         }
     }
 
+    /// Returns the rating at the given `pos_x` pixel position
     pub fn pixels_to_rating(&self, pos_x: f64) -> u8 {
         let spacing = self.obj().spacing() as f64;
         let star_width = DEFAULT_STAR_SIZE as f64 + spacing;
