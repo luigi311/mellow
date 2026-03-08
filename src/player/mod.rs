@@ -375,7 +375,9 @@ impl Player {
 
         // Ensure the artwork is available to display as soon as possible
         if let QueueItem::Song(song) = self.queue.nth(index) {
-            drop(song.info().load_detailed());
+            let mut info = song.info();
+            drop(info.load_thumbnail());
+            drop(info.load_detailed());
         }
     }
 

@@ -329,6 +329,7 @@ impl SettingsPage {
         self.handle_adaptive_colors_switch();
     }
 
+    #[inline]
     pub fn set_background_from_artwork(&self, artwork: &gdk::Texture) {
         let mut tex_dl = gdk::TextureDownloader::new(artwork);
         tex_dl.set_format(gdk::MemoryFormat::R8g8b8a8Premultiplied);
