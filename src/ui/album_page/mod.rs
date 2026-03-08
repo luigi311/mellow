@@ -139,9 +139,13 @@ impl AlbumPage {
             album_group.add(&song_row);
         }
 
-        let info = songs[0].info();
+        let mut info = songs[0].info();
         let Some(ref detailed_info) = *info.inspect_detailed() else {
-            drop(info);
+            match info.load_thumbnail().as_ref() {
+                None => ui.album_cover.set_paintable(Some(&fallback_album_image())),
+                thumbnail => ui.album_cover.set_paintable(thumbnail),
+            }
+
             let song = Arc::clone(&songs[0]);
             let cancel = Arc::clone(&ui.cancel_artowrk_loading);
             Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
