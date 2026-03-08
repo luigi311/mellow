@@ -88,7 +88,7 @@ impl QueuePage {
 
     pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
         let queue_length = queue.len();
-        self.queue_length.set(queue_length);
+        let old_queue_length = self.queue_length.replace(queue_length);
         self.view_stack
             .set_visible_child_name(match queue.is_empty() {
                 true => "queue_empty",
@@ -106,32 +106,35 @@ impl QueuePage {
         let end = (index + NUM_ITEMS_AHEAD).min(queue.len());
 
         // Garbage collection
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
-            let queue = queue.to_vec();
-            move || {
-                // NOTE: Garbage collection happens before assigning the items, due to
-                // background-loaded artworks otherwise sometimes not getting assigned.
-                // If there are issues with queue artworks in the future, try disabling
-                // garbage collection first, to verify that it is working properly.
-                let short_start = index.saturating_sub(NUM_ITEMS_BEHIND);
-                let short_end = (index + NUM_ITEMS_AHEAD).min(queue.len());
-                for (index, song) in queue.iter().enumerate() {
-                    let QueueItem::Song(song) = song else {
-                        return;
-                    };
-                    if !(start..end).contains(&index) {
-                        song.info().try_unload_thumbnail();
-                    }
+        if old_queue_length > 0 {
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
+                let queue = queue.to_vec();
+                move || {
+                    // NOTE: Garbage collection happens before assigning the items, due to
+                    // background-loaded artworks otherwise sometimes not getting assigned.
+                    // If there are issues with queue artworks in the future, try disabling
+                    // garbage collection first, to verify that it is working properly.
+                    let short_start = index.saturating_sub(NUM_ITEMS_BEHIND);
+                    let short_end = (index + NUM_ITEMS_AHEAD).min(queue.len());
+                    for (index, song) in queue.iter().enumerate() {
+                        let QueueItem::Song(song) = song else {
+                            return;
+                        };
 
-                    // Keep detailed artworks loaded for a few items ahead and behind
-                    if (short_start..short_end).contains(&index) {
-                        drop(song.info().load_detailed());
-                    } else {
-                        song.info().try_unload_detailed();
+                        if !(start..end).contains(&index) {
+                            song.info().try_unload_thumbnail();
+                        }
+
+                        // Keep detailed artworks loaded for a few items ahead and behind
+                        if (short_start..short_end).contains(&index) {
+                            drop(song.info().load_detailed());
+                        } else {
+                            song.info().try_unload_detailed();
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         let last_scroll_pos = self.scrolled_window.vadjustment().value();
         let mut items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
