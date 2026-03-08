@@ -400,7 +400,7 @@ impl ObjectImpl for QueuePage {
         self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
         let model = gio::ListStore::new::<QueueItemObject>();
         let list_box = &self.list_box;
-        list_box.bind_model(Some(&model.clone()), |object| {
+        list_box.bind_model(Some(&model), |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
             let queue_row = ListRow::default();
