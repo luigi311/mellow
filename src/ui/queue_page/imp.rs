@@ -458,12 +458,15 @@ impl ObjectImpl for QueuePage {
             #[weak]
             list_box,
             move |gesture_drag, _| {
-                let start_point = gesture_drag.start_point().unwrap();
-                if start_point.0 > 65.0 {
-                    return;
-                }
-                let start_y = start_point.1;
-                let end_y = start_y + gesture_drag.offset().unwrap().1;
+                let start_y = match gesture_drag.start_point() {
+                    Some((start_x, _)) if start_x > 65.0 => return,
+                    Some((_, start_y)) => start_y,
+                    None => return,
+                };
+                let end_y = match gesture_drag.offset() {
+                    Some((_, offset_y)) => start_y + offset_y,
+                    None => return,
+                };
                 let Some(from) = list_box.row_at_y(start_y as i32).map(|row| row.index()) else {
                     return;
                 };
