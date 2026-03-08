@@ -120,7 +120,7 @@ impl QueuePage {
                         return;
                     };
                     if !(start..end).contains(&index) {
-                        song.info().unload_thumbnail();
+                        song.info().try_unload_thumbnail();
                     }
 
                     // Keep detailed artworks loaded for a few items ahead and behind
