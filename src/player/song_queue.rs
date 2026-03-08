@@ -424,6 +424,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn ui_update_shuffle(&self) {
+        #[cfg(debug_assertions)]
         println!("ui_update_shuffle({})", self.shuffle);
         self.ui_tx
             .send(UpdateUI::Shuffle(self.shuffle))
@@ -435,6 +436,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn ui_update_repeat(&self) {
+        #[cfg(debug_assertions)]
         println!("ui_update_repeat({})", self.repeat);
         self.ui_tx
             .send(UpdateUI::Repeat(self.repeat))
@@ -446,6 +448,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     pub fn ui_update_queue(&mut self) {
+        #[cfg(debug_assertions)]
         println!("ui_update_queue()");
         self.ui_tx
             .send(UpdateUI::SetQueue(self.ordered_queue(), self.index))
@@ -461,6 +464,7 @@ impl SongQueue {
         if self.index == self.last_ui_index {
             return;
         }
+        #[cfg(debug_assertions)]
         println!("ui_update_queue_index({})", self.index);
         self.ui_tx
             .send(UpdateUI::SetQueueIndex(self.index))
@@ -473,6 +477,7 @@ impl SongQueue {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn ui_close_queue_subpage(&self) {
+        #[cfg(debug_assertions)]
         println!("ui_close_queue_subpage({})", self.index);
         self.ui_tx.send(UpdateUI::CloseQueueSubpage).expect(EXP_RX);
     }

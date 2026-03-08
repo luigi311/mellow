@@ -548,13 +548,7 @@ impl SongInfoLoader<'_> {
     pub fn take_detailed(&mut self) -> DetailedSongInfo {
         drop(self.load_detailed());
         // SAFETY: `load_detailed()` ensures the value is `Some`
-        unsafe {
-            self.detailed_info
-                .write()
-                .unwrap()
-                .take()
-                .unwrap_unchecked()
-        }
+        unsafe { (self.detailed_info.write().unwrap().take()).unwrap_unchecked() }
     }
     /// Returns the detailed song info if loaded, but does not load it
     ///
@@ -668,6 +662,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_detailed(&self) {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_write().is_err() {
+            eprintln!(
+                "Note: Blocking on write lock for `unload_detailed` (would `try_unload_detailed` make sense here?)"
+            );
+        }
         *self.detailed_info.write().unwrap() = None;
     }
     /// Unloads detailed song info if the write lock can be

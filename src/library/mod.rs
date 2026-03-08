@@ -563,11 +563,11 @@ impl Library {
                                 // a library directory which is currently missing
                                 // (otherwise, they were either moved or removed)
                                 if uri[config.uri_opt()..].starts_with(&dir[config.uri_opt()..]) {
-                                    #[cfg(debug_assertions)]
-                                    println!(
-                                        "Remembering {} because its library is missing",
-                                        info.filename()
-                                    );
+                                    // #[cfg(debug_assertions)]
+                                    // println!(
+                                    //     "Remembering {} because its library is missing",
+                                    //     info.filename()
+                                    // );
                                     drop(info);
                                     missing.insert(index, song);
                                     continue 'iter;
@@ -586,7 +586,7 @@ impl Library {
                 }
                 // Duplicate entry
                 Ok(index) => {
-                    println!("Resolving duplicate entry: {}", info.filename());
+                    println!("Resolving duplicate entry: {}", info.file_uri());
                     info.user().merge_with(&songs[index].info().user());
                     drop(info);
                     drop(song);
@@ -607,11 +607,6 @@ impl Library {
                 let mut info = song.info();
                 if info.file_modification_time() == info.known_modification_time() {
                     continue;
-                }
-                #[cfg(debug_assertions)]
-                if info.known_modification_time() != 0 {
-                    // Only print if it isn't a new file
-                    println!("{}: reloading info", info.filename());
                 }
                 let mut basic = info.inspect_basic_mut();
                 if basic.is_some() {

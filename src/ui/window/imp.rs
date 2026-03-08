@@ -155,6 +155,7 @@ impl Window {
     }
 
     fn update_song_info(&self, song_duration_ms: &mut u64) {
+        #[cfg(debug_assertions)]
         println!("update_song_info()");
         let queue = self.song_queue.borrow();
         if queue.is_empty() {
@@ -226,9 +227,11 @@ impl Window {
     fn update_song_queue(&self, queue: Option<Box<[QueueItem]>>, index: usize) {
         self.song_queue_index.set(index);
         if let Some(queue) = queue {
+            #[cfg(debug_assertions)]
             println!("update_song_queue(Some(…), {index}): {} items", queue.len());
             self.song_queue.replace(queue);
         } else {
+            #[cfg(debug_assertions)]
             println!("update_song_queue(None, {index})");
         }
         self.queue_page
@@ -246,6 +249,7 @@ impl Window {
         self.queue_subpage.set_stop_after(stop_after);
     }
     fn close_queue_subpage(&self) {
+        #[cfg(debug_assertions)]
         println!("close_queue_subpage()");
         while self.queue_subpage_visible.get() {
             self.playing.pop();

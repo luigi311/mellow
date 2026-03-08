@@ -302,7 +302,8 @@ impl Player {
     #[inline]
     fn update(&mut self) {
         if self.queue.is_empty() {
-            eprintln!("Queue is empty - cannot update player");
+            #[cfg(debug_assertions)]
+            println!("The queue is empty - player state update skipped");
             return;
         }
 
@@ -456,7 +457,6 @@ impl Player {
             .unwrap_or_default()
             .mseconds() as f64
             * position) as u64;
-        // println!("Target seek position (ms): {target_ms}");
         self.seek_to_time(ClockTime::from_mseconds(target_ms))
     }
 
@@ -630,6 +630,7 @@ impl Player {
         let state = self.backend.state(None);
         let interactive = !self.queue.is_empty();
         let playing = state.0.is_ok() && matches!(state.1, State::Playing);
+        #[cfg(debug_assertions)]
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
         self.ui_tx
             .send(UpdateUI::PlayerState(playing, interactive))
@@ -639,6 +640,7 @@ impl Player {
     /// Sends the current song info to the UI receiver
     #[inline]
     fn ui_update_song_info(&self) {
+        #[cfg(debug_assertions)]
         println!("ui_update_song_info()");
         self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
     }
