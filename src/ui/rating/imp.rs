@@ -21,6 +21,7 @@ pub struct Rating {
 }
 
 impl Rating {
+    #[inline]
     pub fn init_stars(&self) {
         let mut stars = Vec::new();
         for _ in 0..NUM_STARS {
@@ -67,6 +68,7 @@ impl Rating {
         self.obj().add_controller(click);
     }
 
+    #[inline]
     pub fn set_rating(&self, rating: u8) {
         self.rating.set(rating);
         self.show_rating(rating);
@@ -75,6 +77,7 @@ impl Rating {
         }
     }
 
+    #[inline]
     pub fn show_rating(&self, rating: u8) {
         let stars = self.stars.get().expect(EXP_INIT);
         for i in 0..rating {
@@ -93,6 +96,7 @@ impl Rating {
         }
     }
 
+    #[inline]
     pub fn preview_rating(&self, rating: u8, preview: u8) {
         let stars = self.stars.get().expect(EXP_INIT);
         let rating = rating.max(preview);

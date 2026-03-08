@@ -12,17 +12,20 @@ glib::wrapper! {
 
 impl Rating {
     /// Returns the current rating assigned to the widget
+    #[inline]
     #[must_use]
     pub fn get_rating(&self) -> u8 {
         self.imp().rating.get()
     }
 
     /// Sets the rating and runs the `on_rating_set` closure
+    #[inline]
     pub fn set_rating(&self, rating: u8) {
         self.imp().set_rating(rating);
     }
 
     /// Sets the rating without running the `on_rating_set` closure
+    #[inline]
     pub fn set_rating_silent(&self, rating: u8) {
         let ui = self.imp();
         ui.rating.set(rating);
@@ -30,6 +33,7 @@ impl Rating {
     }
 
     /// Connects a closure to run when a new rating is set
+    #[inline]
     pub fn connect_rating_set<F>(&self, f: F)
     where
         F: Fn(u8) + Into<Box<F>> + 'static,
