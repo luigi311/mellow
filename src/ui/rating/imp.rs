@@ -122,7 +122,7 @@ impl Rating {
     pub fn pixels_to_rating(&self, pos_x: f64) -> u8 {
         let spacing = self.obj().spacing() as f64;
         let star_width = DEFAULT_STAR_SIZE as f64 + spacing;
-        ((pos_x + spacing / 2.0) / star_width) as u8 + 1
+        (((pos_x + spacing / 2.0) / star_width) as u8 + 1).min(5)
     }
 }
 
