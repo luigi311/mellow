@@ -458,12 +458,16 @@ impl ObjectImpl for QueuePage {
             #[weak]
             list_box,
             move |gesture_drag, _| {
-                let start = gesture_drag.start_point().unwrap().1;
-                let target = start + gesture_drag.offset().unwrap().1;
-                let Some(from) = list_box.row_at_y(start as i32).map(|row| row.index()) else {
+                let start_point = gesture_drag.start_point().unwrap();
+                if start_point.0 > 65.0 {
+                    return;
+                }
+                let start_y = start_point.1;
+                let end_y = start_y + gesture_drag.offset().unwrap().1;
+                let Some(from) = list_box.row_at_y(start_y as i32).map(|row| row.index()) else {
                     return;
                 };
-                let Some(to) = list_box.row_at_y(target as i32).map(|row| row.index()) else {
+                let Some(to) = list_box.row_at_y(end_y as i32).map(|row| row.index()) else {
                     return;
                 };
                 let from_index = this.model_index_to_queue(from as usize);
