@@ -1,10 +1,10 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::{Object, clone};
-use gtk::{Orientation, glib};
-use std::sync::Arc;
+use gtk::{Orientation, gdk, glib};
+use std::sync::{Arc, atomic::Ordering};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::SharedAlbum;
+use crate::library::{LIBRARY_TX, Library, SharedAlbum};
 use crate::ui::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
 use crate::{format_duration_minutes, format_duration_ms};
@@ -34,23 +34,12 @@ impl AlbumPage {
     /// interaction if `UI_TX` is uninitialized, or the channel is closed.
     #[inline]
     #[must_use]
-    pub fn new(album: &SharedAlbum) -> AlbumPage {
+    pub fn new(album: &SharedAlbum, page_index: usize) -> AlbumPage {
         let album_page = Self::default();
 
         let ui = album_page.imp();
         let album_locked = album.lock().unwrap();
         let songs = &album_locked.songs;
-
-        let mut info = songs[0].info(); // IDEA: Load artwork in the background?
-        let detailed_info = info.load_detailed();
-        // SAFETY: `load_detailed` ensures the value is `Some`
-        let artwork = unsafe { detailed_info.as_ref().unwrap_unchecked().artwork.as_ref() };
-        if artwork.is_some() {
-            ui.album_cover.set_paintable(artwork);
-        } else {
-            ui.album_cover.set_paintable(Some(&fallback_album_image()));
-        }
-        drop(detailed_info);
 
         album_page.set_title(&["Album: ", &album_locked.title].concat());
         ui.album.replace(Some(Arc::clone(album)));
@@ -150,8 +139,48 @@ impl AlbumPage {
             album_group.add(&song_row);
         }
 
+        let info = songs[0].info();
+        let Some(ref detailed_info) = *info.inspect_detailed() else {
+            drop(info);
+            let song = Arc::clone(&songs[0]);
+            let cancel = Arc::clone(&ui.cancel_artowrk_loading);
+            Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
+                if cancel.load(Ordering::Relaxed) {
+                    #[cfg(debug_assertions)]
+                    println!("Arwork loading cancelled");
+                    return;
+                }
+                drop(song.info().load_detailed());
+                if cancel.load(Ordering::Relaxed) {
+                    #[cfg(debug_assertions)]
+                    println!("Arwork assignment cancelled");
+                    return;
+                }
+                let _ = (UI_TX.get().unwrap()).send(UpdateUI::AlbumPageLoaded(page_index, song));
+            });
+
+            return album_page;
+        };
+
+        match detailed_info.artwork.as_ref() {
+            None => ui.album_cover.set_paintable(Some(&fallback_album_image())),
+            artwork => ui.album_cover.set_paintable(artwork),
+        }
+
         album_page
     }
+
+    #[inline]
+    pub fn assign_artwork(&self, artwork: Option<&gdk::Texture>) {
+        if artwork.is_some() {
+            self.imp().album_cover.set_paintable(artwork);
+        } else {
+            self.imp()
+                .album_cover
+                .set_paintable(Some(&fallback_album_image()));
+        }
+    }
+
     /// Sets the shuffle mode for the play button
     #[inline]
     pub fn set_shuffle(&self, shuffle: bool) {

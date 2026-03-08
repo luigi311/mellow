@@ -94,6 +94,8 @@ pub enum UpdateUI {
     LibraryArtistLoaded(usize),
     /// Prompts the queue UI to assign the now-loaded song artwork for the item at index
     QueueSongLoaded(usize),
+    /// Prompts the album page UI to assign the now-loaded album artwork for the page at index
+    AlbumPageLoaded(usize, SharedSong),
 
     /// Opens the library song page for the item at the given index
     SongPageByIndex(usize),

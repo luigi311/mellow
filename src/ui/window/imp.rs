@@ -127,6 +127,7 @@ impl Window {
                 UpdateUI::LibraryAlbumLoaded(index) => self.album_loaded(index),
                 UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
                 UpdateUI::QueueSongLoaded(index) => self.queue_song_loaded(index),
+                UpdateUI::AlbumPageLoaded(index, song) => self.album_page_loaded(index, song),
 
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
                 UpdateUI::SongPage(ctx) => self.open_song_page(ctx.0, ctx.1, ctx.2),
@@ -375,6 +376,17 @@ impl Window {
         }
         self.queue_page.assign_artwork(index, thumbnail.as_ref());
     }
+    fn album_page_loaded(&self, index: usize, first_song: SharedSong) {
+        let album_pages = self.album_pages.borrow();
+        if index >= album_pages.len() {
+            return;
+        }
+        let info = first_song.info();
+        let Some(ref detailed) = *info.inspect_detailed() else {
+            return;
+        };
+        album_pages[index].assign_artwork(detailed.artwork.as_ref());
+    }
 
     fn open_song_page_by_index(&self, index: usize) {
         let songs: Songs = self.songs.borrow().clone();
@@ -391,7 +403,7 @@ impl Window {
             "menu.album_page_play_mode",
             Some(&"Sequential".to_variant()),
         );
-        let album_page = AlbumPage::new(album);
+        let album_page = AlbumPage::new(album, self.album_pages.borrow().len());
         self.library.push(&album_page);
         self.album_pages.borrow_mut().push(album_page);
         self.library_subpages.borrow_mut().push(SubpageType::Album);
