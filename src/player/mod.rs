@@ -99,7 +99,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::AppendQueue(queue) => format!("AppendQueue(…): {} items", queue.len()),
                 Self::Append(_) => "Append(…)".to_owned(),
                 Self::Reorder(from, to) => format!("Reorder({from}, {to})"),
-                Self::Shift(from, by) => format!("Reorder({from}, {by})"),
+                Self::Shift(from, by) => format!("Shift({from}, {by})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
