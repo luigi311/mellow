@@ -28,6 +28,11 @@ impl AlbumObject {
         album_object
     }
 
+    /// Loads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if `first_song`, `LIBRARY_TX`,
+    /// or `UI_TX` is uninitialized
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
@@ -49,6 +54,10 @@ impl AlbumObject {
         });
     }
 
+    /// Unloads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if `first_song` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
@@ -65,6 +74,11 @@ impl AlbumObject {
         });
     }
 
+    /// Returns the `SharedAlbum` associated with this object
+    ///
+    /// # Panics
+    /// The function panics if `first_song` is uninitialized,
+    /// or if `first_song` does not have an associated album
     #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
@@ -74,6 +88,8 @@ impl AlbumObject {
             .expect(EXP_INIT)
     }
 
+    /// Returns the ordering of `self` compared to `other`,
+    /// based on the sort mode specified using `order_by`
     #[inline]
     #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<AlbumOrdering>) -> gtk::Ordering {
@@ -95,7 +111,7 @@ impl AlbumObject {
     }
     #[inline]
     #[must_use]
-    pub fn cmp_artist_year_album(&self, other: &Self) -> cmp::Ordering {
+    fn cmp_artist_year_album(&self, other: &Self) -> cmp::Ordering {
         match self.artist().cmp(&other.artist()) {
             cmp::Ordering::Equal => match self.year().cmp(&other.year()) {
                 cmp::Ordering::Equal => self.album().cmp(&other.album()),

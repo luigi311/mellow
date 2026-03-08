@@ -16,6 +16,9 @@
     clippy::single_option_map,
     // clippy::std_instead_of_core,
     clippy::str_to_string,
+    clippy::unnecessary_safety_comment,
+    clippy::unnecessary_safety_doc,
+    clippy::unnecessary_semicolon,
     unused_unsafe
 )]
 #![allow(clippy::match_bool)]

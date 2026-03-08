@@ -41,6 +41,11 @@ impl SongObject {
         song_object
     }
 
+    /// Loads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if `shared_song`, `LIBRARY_TX`,
+    /// or `UI_TX` is uninitialized
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
@@ -61,6 +66,10 @@ impl SongObject {
         });
     }
 
+    /// Unloads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if `shared_song` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
@@ -76,12 +85,18 @@ impl SongObject {
         });
     }
 
+    /// Returns the `SharedSong` associated with this object
+    ///
+    /// # Panics
+    /// The function panics if `shared_song` is uninitialized
     #[inline]
     #[must_use]
     pub fn shared_song(&self) -> SharedSong {
         Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
     }
 
+    /// Returns the ordering of `self` compared to `other`,
+    /// based on the sort mode specified using `order_by`
     #[inline]
     #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<SongOrdering>) -> gtk::Ordering {

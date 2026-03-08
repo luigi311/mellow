@@ -25,6 +25,11 @@ impl QueueItemObject {
         song_object
     }
 
+    /// Loads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if `shared_song`, `LIBRARY_TX`,
+    /// or `UI_TX` is uninitialized
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
@@ -46,11 +51,17 @@ impl QueueItemObject {
         });
     }
 
+    /// Returns the `SharedSong` associated with this object
+    ///
+    /// # Panics
+    /// The function panics if `shared_song` is uninitialized
     #[must_use]
     pub fn shared_song(&self) -> Option<&SharedSong> {
         self.imp().shared_song.get().expect(EXP_INIT).as_ref()
     }
 
+    /// Returns `true` if the item is currently shown in the UI,
+    /// otherwise it returns `false`
     #[must_use]
     pub fn is_visible(&self) -> &Arc<AtomicBool> {
         &self.imp().is_visible

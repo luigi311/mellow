@@ -49,12 +49,18 @@ impl ArtistObject {
         self.set_property("artwork", Option::<gdk::Texture>::None);
     }
 
+    /// Returns the `SharedArtist` associated with this object
+    ///
+    /// # Panics
+    /// The function panics if `shared_artist` is uninitialized
     #[inline]
     #[must_use]
     pub fn shared_artist(&self) -> SharedArtist {
         Arc::clone(self.imp().shared_artist.get().expect(EXP_INIT))
     }
 
+    /// Returns the ordering of `self` compared to `other`,
+    /// based on the sort mode specified using `order_by`
     #[inline]
     #[must_use]
     pub fn order_cmp(&self, other: &Self, order_by: SortConfig<ArtistOrdering>) -> gtk::Ordering {

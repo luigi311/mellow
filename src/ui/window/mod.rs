@@ -95,8 +95,13 @@ impl Window {
             .build()]);
     }
 
+    /// Sets up functionality to accept external file drops
+    ///
+    /// # Panics
+    /// The function panics if `LIBRARY_TX` is uninitialized,
+    /// or if the file path is not valid UTF-8
     #[inline]
-    pub fn setup_drag_and_drop(&self) {
+    fn setup_drag_and_drop(&self) {
         let drop_target =
             gtk::DropTarget::new(FileList::static_type(), DragAction::COPY | DragAction::MOVE);
         // TODO: Add visual feedback when the file is over the window
@@ -131,6 +136,10 @@ impl Window {
     ///
     /// # Errors
     /// The function errors if a `gio::Settings` value cannot be saved
+    ///
+    /// # Panics
+    /// The function panics if `UI_TX`, `LIBRARY_TX`, or `PLAYER_TX`
+    /// is uninitialized, or if the channels are closed
     pub fn save_and_uninit(&self) -> Result<(), glib::error::BoolError> {
         let _ = UI_TX.get().expect(EXP_INIT).send(UpdateUI::Shutdown);
 
@@ -184,6 +193,7 @@ impl Window {
         Ok(())
     }
 
+    /// Loads the appliaction settings and sets up `gio` actions
     #[inline]
     pub fn load_and_setup_actions(&self, settings: &Settings) {
         let imp = self.imp();

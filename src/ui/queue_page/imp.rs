@@ -194,7 +194,7 @@ impl QueuePage {
             // Re-applying the scroll position, because it resets when the `list_box` rows change
             QueueScrollAction::Retain => self.scroll_to_pos(last_scroll_pos),
             QueueScrollAction::Offset(offset) => {
-                self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64)
+                self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64);
             }
             QueueScrollAction::ToPlaying => self.scroll_to_item(index),
         }

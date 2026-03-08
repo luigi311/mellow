@@ -236,9 +236,8 @@ impl Window {
         drop(detailed_info);
 
         #[cfg(debug_assertions)]
-        match info.try_inspect_thumbnail() {
-            Err(_) => println!("⚠️ Blocking main to access the thumbnail"),
-            _ => (),
+        if info.try_inspect_thumbnail().is_err() {
+            println!("⚠️ Blocking main to access the thumbnail");
         }
         match &*info.load_thumbnail() {
             Some(thumbnail) => self.settings_page.set_background_from_artwork(thumbnail),
@@ -264,7 +263,7 @@ impl Window {
         match &queue[index] {
             QueueItem::Song(song) => self.queue_subpage.show_song_info(index, song.clone()),
             QueueItem::Stopper(stopper) => self.queue_subpage.show_stopper_info(index, stopper),
-        };
+        }
         let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
         self.queue_subpage.set_stop_after(stop_after);
     }
@@ -477,7 +476,7 @@ impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
 
-        self.main_player.init();
+        self.main_player.init_seek();
         self.queue_page.init(self.queue_subpage.get());
         self.library.connect_popped(glib::clone!(
             #[weak(rename_to=window)]

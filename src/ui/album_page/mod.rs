@@ -26,6 +26,12 @@ impl Default for AlbumPage {
 }
 
 impl AlbumPage {
+    /// Creates a new `AlbumPage` instance using the information from `album`
+    ///
+    /// # Panics
+    /// The function panics if any of the `album`'s `Mutex` or the `album.songs`'
+    /// `RwLock`s are in a poisoned state. It may also panic at runtime upon
+    /// interaction if `UI_TX` is uninitialized, or the channel is closed.
     #[inline]
     #[must_use]
     pub fn new(album: &SharedAlbum) -> AlbumPage {
@@ -84,7 +90,7 @@ impl AlbumPage {
                     .build(),
             );
             song_row.set_title(&info.title);
-            let duration = song.info().load_basic().as_ref().unwrap().duration_ms;
+            let duration = info.duration_ms;
             song_row.set_suffix_label(&format_duration_ms(duration));
             duration_total_ms += duration;
 
@@ -94,7 +100,7 @@ impl AlbumPage {
                 (UI_TX.get().expect(EXP_INIT))
                     .send(UpdateUI::SongPage(Box::new((
                         i,
-                        song.clone(),
+                        Arc::clone(&song),
                         Box::new(album.clone() as SharedAlbum),
                     ))))
                     .expect(EXP_RX);
@@ -146,6 +152,7 @@ impl AlbumPage {
 
         album_page
     }
+    /// Sets the shuffle mode for the play button
     #[inline]
     pub fn set_shuffle(&self, shuffle: bool) {
         self.imp().set_shuffle(shuffle);

@@ -15,6 +15,12 @@ glib::wrapper! {
 }
 
 impl QueueSubpage {
+    /// Updates the subpage contents using the info from `song`,
+    /// and sets the `index` for actions such as playing or removing
+    /// the item from the queue
+    ///
+    /// # Panics
+    /// The function panics if `song` is not properly initialized
     pub fn show_song_info(&self, index: usize, song: SharedSong) {
         let song_page = self.imp();
         song_page.index.set(index);
@@ -29,7 +35,8 @@ impl QueueSubpage {
 
         let mut info = song.info();
         let song_info_temp = info.load_basic();
-        let song_info = song_info_temp.as_ref().unwrap();
+        // SAFETY: `load_basic` ensures the value is `Some`
+        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
         song_page.song_title.set_label(&song_info.title);
         song_page.album_title.set_label(&song_info.album);
         song_page.artist_name.set_label(&song_info.artist);

@@ -512,6 +512,10 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
+    ///
+    /// # Panics
+    /// The function may panic if `LIBRARY_TX` is uninitialized,
+    /// or the channel is closed
     pub fn validate_songs(
         songs: &mut Songs,
         missing: &mut Songs,
@@ -618,7 +622,7 @@ impl Library {
                 info.invalidate_thumbnail();
             }
             // If files were modified, queue another rebuild so the new info gets loaded
-            if !cancel.load(atomic::Ordering::Relaxed) && needs_rebuild {
+            if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
                 let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(move |_| {
                     library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
                 })));

@@ -75,6 +75,7 @@ impl Runner {
         // Occupy all but one of the workers with a blocking operation
         for _ in 1..num_tasks {
             let unblock_rx = Arc::clone(&unblock_rx);
+            #[allow(clippy::missing_panics_doc)]
             self.run(move || unblock_rx.lock().unwrap().recv().unwrap());
         }
 

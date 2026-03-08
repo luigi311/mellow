@@ -25,19 +25,21 @@ impl Default for ArtistPage {
 }
 
 impl ArtistPage {
+    /// Creates a new `ArtistPage` instance using the information from `artist`
+    ///
+    /// # Panics
+    /// The function panics if any of the artist albums' `Mutex`es or songs'
+    /// `RwLock`s are in a poisoned state. It may also panic at runtime upon
+    /// interaction if `UI_TX` is uninitialized, or the channel is closed.
     #[inline]
     #[must_use]
     pub fn new(artist: &SharedArtist) -> ArtistPage {
         let artist_page = Self::default();
-        artist_page.update(artist);
-        artist_page
-    }
-    #[inline]
-    pub fn update(&self, artist: &SharedArtist) {
-        let ui = self.imp();
+        let ui = artist_page.imp();
+
         ui.artist.replace(Some(Arc::clone(artist)));
         let artist = artist.lock().unwrap();
-        self.set_title(&["Artist: ", &artist.name].concat());
+        artist_page.set_title(&["Artist: ", &artist.name].concat());
         ui.artist_name.set_label(&artist.name);
 
         ui.albums_list.remove_all();
@@ -68,7 +70,10 @@ impl ArtistPage {
 
             ui.albums_list.append(&album_row);
         }
+
+        artist_page
     }
+    /// Sets the shuffle mode for the play button
     #[inline]
     pub fn set_shuffle(&self, shuffle: bool) {
         self.imp().set_shuffle(shuffle);
