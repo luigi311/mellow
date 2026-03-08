@@ -198,15 +198,7 @@ impl Window {
                 self.lyrics_page.set_content(&title, &detailed.lyrics);
                 (detailed.artwork.as_ref(), true)
             }
-            _ => {
-                let song = Arc::clone(song);
-                let ui_tx = UI_TX.get().expect(EXP_INIT);
-                Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
-                    drop(song.info().load_detailed());
-                    ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
-                });
-                (None, false)
-            }
+            _ => (None, false),
         };
 
         self.main_player

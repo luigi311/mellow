@@ -377,7 +377,14 @@ impl Player {
         if let QueueItem::Song(song) = self.queue.nth(index) {
             let mut info = song.info();
             drop(info.load_thumbnail());
+
+            // Load the artwork and notify the UI when done
+            // The downside of this approach is that player requests
+            // will have to wait until it is done loading. It could
+            // also be done in a background thread or task, with a
+            // little bit more overhead.
             drop(info.load_detailed());
+            self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
         }
     }
 
