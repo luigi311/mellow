@@ -247,7 +247,7 @@ impl Player {
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
                 PlayerRequest::LoadQueue(queue, shuffled, index) => {
-                    self.load_queue(queue, shuffled, index) != ()
+                    self.load_queue(queue, shuffled, index) == ()
                 }
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
@@ -356,11 +356,6 @@ impl Player {
             self.queue.ui_update_queue();
             self.ui_update_song_info();
             self.ui_open_playing();
-
-            // Has to be called manually due to below optimizations
-            // (does not run after handling the `PlayerRequest`)
-            self.update();
-            self.ui_set_state();
             return;
         }
 
@@ -369,22 +364,13 @@ impl Player {
         self.queue.ui_update_queue();
         self.ui_update_song_info();
 
-        // Updating manually before using this thread to load the current artwork
+        // Updating manually before using this thread to load the thumbnail
         self.update();
-        self.ui_set_state();
 
-        // Ensure the artwork is available to display as soon as possible
+        // Ensure the thumbnail is available to display as soon as possible, so
+        // something can be shown before the full-resolution artwork is loaded
         if let QueueItem::Song(song) = self.queue.nth(index) {
-            let mut info = song.info();
-            drop(info.load_thumbnail());
-
-            // Load the artwork and notify the UI when done
-            // The downside of this approach is that player requests
-            // will have to wait until it is done loading. It could
-            // also be done in a background thread or task, with a
-            // little bit more overhead.
-            drop(info.load_detailed());
-            self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+            drop(song.info().load_thumbnail());
         }
     }
 
