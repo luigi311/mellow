@@ -39,5 +39,6 @@ strip = true
 
 [profile.release.package."*"]
 codegen-units = 1
+overflow-checks = false
 debug = false
 strip = true
