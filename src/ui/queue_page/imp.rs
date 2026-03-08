@@ -126,10 +126,9 @@ impl QueuePage {
                         }
 
                         // Keep detailed artworks loaded for a few items ahead and behind
-                        if (short_start..short_end).contains(&index) {
-                            drop(song.info().load_detailed());
-                        } else {
-                            song.info().try_unload_detailed();
+                        match (short_start..short_end).contains(&index) {
+                            true => drop(song.info().load_detailed()),
+                            false => song.info().try_unload_detailed(),
                         }
                     }
                 }
