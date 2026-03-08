@@ -366,6 +366,8 @@ impl Player {
 
         self.queue.load_new(queue, shuffled);
         self.skip_to(index);
+        self.queue.ui_update_queue();
+        self.ui_update_song_info();
 
         // Updating manually before using this thread to load the current artwork
         self.update();
@@ -375,9 +377,6 @@ impl Player {
         if let QueueItem::Song(song) = self.queue.nth(index) {
             drop(song.info().load_detailed());
         }
-
-        // Only update the UI queue after the playing song's artwork is loaded
-        self.queue.ui_update_queue();
     }
 
     /// Starts or pauses playback depending on state

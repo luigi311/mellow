@@ -723,6 +723,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn load_thumbnail(&mut self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
+        #[cfg(debug_assertions)]
+        if self.thumbnail.try_read().is_err() {
+            println!(
+                "Note: Blocking on read lock for `load_thumbnail` (would `try_load_thumbnail` make sense here?)"
+            );
+        }
         let thumbnail = self.thumbnail.read().unwrap();
         if thumbnail.is_some() {
             // println!("Thumbnail already loaded, nothing to do");
@@ -730,6 +736,12 @@ impl SongInfoLoader<'_> {
         }
         drop(thumbnail);
 
+        #[cfg(debug_assertions)]
+        if self.thumbnail.try_write().is_err() {
+            println!(
+                "Note: Blocking on write lock for `load_thumbnail` (would `try_load_thumbnail` make sense here?)"
+            );
+        }
         if let Ok(thumbnail) = self.read_thumbnail_from_disk() {
             // println!("Thumbnail was read successfully from disk");
             *self.thumbnail.write().unwrap() = thumbnail;

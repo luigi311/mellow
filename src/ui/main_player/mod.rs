@@ -49,6 +49,7 @@ impl MainPlayer {
         ui.media_controls.set_sensitive(interactive);
     }
 
+    #[inline]
     pub fn set_info(
         &self,
         song: &str,
@@ -72,6 +73,14 @@ impl MainPlayer {
         match song_duration_ms {
             0 => ui.duration.set_label("-:--"),
             _ => ui.duration.set_label(&format_duration_ms(song_duration_ms)),
+        }
+    }
+    #[inline]
+    pub fn set_artwork(&self, artwork: Option<&gdk::Texture>) {
+        if artwork.is_some() {
+            self.imp().album_cover.set_paintable(artwork);
+        } else {
+            (self.imp().album_cover).set_paintable(Some(&fallback_song_image()));
         }
     }
     pub fn reset_info(&self) {
