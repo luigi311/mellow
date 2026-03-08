@@ -143,6 +143,7 @@ impl ObjectSubclass for Rating {
 impl ObjectImpl for Rating {
     fn constructed(&self) {
         self.init_stars();
+        self.obj().set_cursor_from_name(Some("pointer"));
     }
 }
 impl WidgetImpl for Rating {}

@@ -117,6 +117,7 @@ impl AlbumPage {
                     ui,
                     move |_| album_page.add_disc_to_queue(disc_number)
                 ));
+                queue_disc_button.set_cursor_from_name(Some("pointer"));
                 let play_disc_button = gtk::Button::builder()
                     // TODO: Support translations
                     .tooltip_text(format!("Play Disc {disc_number}"))
@@ -128,6 +129,7 @@ impl AlbumPage {
                     ui,
                     move |_| album_page.play_disc(disc_number)
                 ));
+                play_disc_button.set_cursor_from_name(Some("pointer"));
                 play_buttons.append(&queue_disc_button);
                 play_buttons.append(&play_disc_button);
                 album_group = adw::PreferencesGroup::builder()
