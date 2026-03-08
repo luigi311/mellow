@@ -759,19 +759,27 @@ impl SongInfoLoader<'_> {
     ) -> Result<RwLockReadGuard<'_, Option<gdk::Texture>>, TryLockError> {
         self.thumbnail.try_read().map_err(|_| TryLockError)
     }
-    /// Unloads the song's thumbnail from memory
+    /// Unloads the song's thumbnail from memory if it is no longer used
     ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_thumbnail(&mut self) {
-        *self.thumbnail.write().unwrap() = None;
+        let Ok(mut writer) = self.thumbnail.write() else {
+            return;
+        };
+        if writer.as_ref().is_some_and(|t| t.ref_count() < 2) {
+            *writer = None;
+        }
     }
-    /// Unloads the song's thumbnail from memory,
-    /// if possible to do so without blocking
+    /// Unloads the song's thumbnail from memory if it is no longer used,
+    /// but only if possible to do so without blocking
     #[inline]
     pub fn try_unload_thumbnail(&mut self) {
-        if let Ok(mut writer) = self.thumbnail.try_write() {
+        let Ok(mut writer) = self.thumbnail.try_write() else {
+            return;
+        };
+        if writer.as_ref().is_some_and(|t| t.ref_count() < 2) {
             *writer = None;
         }
     }
