@@ -58,7 +58,7 @@ impl<T> ReorderVecExt for Vec<T> {
         assert!(mem::size_of::<T>() != 0, "Zero-sized types are unsupported");
         assert!(
             from < self.len() && to < self.len(),
-            "Cannot reorder; index out of range:\n\tfrom: {from}\n\tto:{to}\n\tlen:{}",
+            "Cannot reorder; index is out of range of {}:\n\tfrom:\t{from}\n\tto:\t{to}",
             self.len()
         );
 
