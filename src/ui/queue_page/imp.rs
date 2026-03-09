@@ -375,6 +375,17 @@ impl QueuePage {
         }
     }
 
+    fn set_selection_mode(&self, selection_mode: bool) {
+        self.selection_mode.set(selection_mode);
+        let mut i = 0;
+        while let Some(row) = self.list_box.row_at_index(i) {
+            let list_row = row.downcast_ref::<ListRow>().unwrap().imp();
+            list_row.selection_toggle.set_visible(true);
+            list_row.prefix_image.set_visible(false);
+            i += 1;
+        }
+    }
+
     /// Empties the list model, cancelling any pending background tasks during drop
     pub fn uninit(&self) {
         self.list_model.get().expect(EXP_INIT).remove_all();
@@ -473,7 +484,7 @@ impl ObjectImpl for QueuePage {
         // TODO: Drag-&-drop visual feedback
         let drag = gtk::GestureDrag::new();
         drag.connect_end(glib::clone!(
-            #[weak(rename_to=this)]
+            #[weak(rename_to=queue_page)]
             self,
             #[weak]
             list_box,
@@ -498,9 +509,10 @@ impl ObjectImpl for QueuePage {
                 let Some(to) = list_box.row_at_y(end_y as i32).map(|row| row.index()) else {
                     return;
                 };
-                let from_index = this.model_index_to_queue(from as usize);
-                let playing = this.queue_index_to_model(this.playing_index.get()).unwrap() as i32;
-                this.next_scroll_pos.set(QueueScrollAction::Offset({
+                let from_index = queue_page.model_index_to_queue(from as usize);
+                let playing = (queue_page.queue_index_to_model(queue_page.playing_index.get()))
+                    .unwrap() as i32;
+                queue_page.next_scroll_pos.set(QueueScrollAction::Offset({
                     if playing == from {
                         from - to
                     } else if from < playing && to >= playing {
@@ -524,23 +536,17 @@ impl ObjectImpl for QueuePage {
 
         let hold = gtk::GestureLongPress::new();
         hold.connect_pressed(glib::clone!(
+            #[weak(rename_to=queue_page)]
+            self,
             #[weak]
             list_box,
             #[strong(rename_to=queue_item_objects)]
             self.queue_item_objects,
             move |_, _, y| if !selection_mode.get() {
-                selection_mode.set(true);
+                queue_page.set_selection_mode(true);
 
                 let object_index = list_box.row_at_y(y as i32).unwrap().index();
                 queue_item_objects.borrow()[object_index as usize].set_selected(true);
-
-                let mut i = 0;
-                while let Some(row) = list_box.row_at_index(i) {
-                    let list_row = row.downcast_ref::<ListRow>().unwrap().imp();
-                    list_row.selection_toggle.set_visible(true);
-                    list_row.prefix_image.set_visible(false);
-                    i += 1;
-                }
             }
         ));
         // TODO: Enable once functionality is implemented
