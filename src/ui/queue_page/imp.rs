@@ -234,16 +234,6 @@ impl QueuePage {
         queue_item_object
     }
 
-    #[inline]
-    pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
-        if let Ok(model_index) = self.queue_index_to_model(index) {
-            self.queue_item_objects.borrow()[model_index].set_property("artwork", artwork);
-
-            #[cfg(debug_assertions)]
-            self.model_index_to_queue_discrepancy_check(model_index, index);
-        }
-    }
-
     /// Takes a queue item index and returns the index to access its object
     ///
     /// # Panics
@@ -345,36 +335,7 @@ impl QueuePage {
         }
     }
 
-    /// Used to verify that `model_index_to_queue` is working correctly
     #[inline]
-    #[allow(unused)]
-    #[cfg(debug_assertions)]
-    fn model_index_to_queue_discrepancy_check(&self, model_index: usize, expected_index: usize) {
-        match self.model_index_to_queue(model_index) {
-            to_queue_index if to_queue_index != expected_index => {
-                eprintln!("Discrepancy between `queue_index_to_model` and `model_index_to_queue`:");
-                eprintln!("	`queue_index_to_model({expected_index})`:	{model_index}");
-                eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
-            }
-            _ => (),
-        }
-    }
-    /// Used to verify that `queue_index_to_model` is working correctly
-    #[inline]
-    #[allow(unused)]
-    #[cfg(debug_assertions)]
-    fn queue_index_to_model_discrepancy_check(&self, queue_index: usize, expected_index: usize) {
-        match self.queue_index_to_model(queue_index) {
-            Ok(to_model_index) if to_model_index != expected_index => {
-                eprintln!("Discrepancy between `queue_index_to_model` and `model_index_to_queue`:");
-                eprintln!("	`model_index_to_queue({expected_index})`:	{queue_index}");
-                eprintln!("	`queue_index_to_model({queue_index})`:	{to_model_index}");
-            }
-            Err(_) => eprintln!("`queue_index_to_model({queue_index})` returned an error"),
-            _ => (),
-        }
-    }
-
     fn set_selection_mode(&self, selection_mode: bool) {
         self.selection_mode.set(selection_mode);
         let mut i = 0;
@@ -386,37 +347,21 @@ impl QueuePage {
         }
     }
 
-    /// Empties the list model, cancelling any pending background tasks during drop
-    pub fn uninit(&self) {
-        self.list_model.get().expect(EXP_INIT).remove_all();
-    }
-}
+    #[inline]
+    pub fn assign_artwork(&self, index: usize, artwork: Option<&gdk::Texture>) {
+        if let Ok(model_index) = self.queue_index_to_model(index) {
+            self.queue_item_objects.borrow()[model_index].set_property("artwork", artwork);
 
-#[glib::object_subclass]
-impl ObjectSubclass for QueuePage {
-    const NAME: &str = "MellowQueuePage";
-    type Type = super::QueuePage;
-    type ParentType = adw::NavigationPage;
-
-    fn class_init(class: &mut Self::Class) {
-        class.bind_template();
-        class.bind_template_callbacks();
+            #[cfg(debug_assertions)]
+            self.model_index_to_queue_discrepancy_check(model_index, index);
+        }
     }
 
-    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
-        obj.init_template();
-    }
-}
-impl ObjectImpl for QueuePage {
-    fn constructed(&self) {
-        self.obj().update_shuffle(false);
-        // self.obj().update_repeat(false);
-
-        self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
+    #[inline]
+    fn setup_model(&self) {
         let model = gio::ListStore::new::<QueueItemObject>();
-        let list_box = &self.list_box;
         let selection_mode = Rc::clone(&self.selection_mode);
-        list_box.bind_model(Some(&model), move |object| {
+        self.list_box.bind_model(Some(&model), move |object| {
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
             let queue_row = ListRow::default();
@@ -480,16 +425,21 @@ impl ObjectImpl for QueuePage {
             queue_row.upcast::<gtk::Widget>()
         });
 
-        let selection_mode = Rc::clone(&self.selection_mode);
+        let _ = self.list_model.set(model);
+    }
+    #[inline]
+    fn setup_drag_and_drop(&self) {
         // TODO: Drag-&-drop visual feedback
+
+        let list_box = &self.list_box;
         let drag = gtk::GestureDrag::new();
         drag.connect_end(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
             #[weak]
             list_box,
-            #[strong]
-            selection_mode,
+            #[strong(rename_to=selection_mode)]
+            self.selection_mode,
             move |gesture_drag, _| {
                 if selection_mode.get() {
                     return;
@@ -529,30 +479,90 @@ impl ObjectImpl for QueuePage {
             }
         ));
         list_box.add_controller(drag);
-
+    }
+    #[inline]
+    fn setup_selection_mode(&self) {
         // TODO: Selection mode headerbar buttons (remove, cancel, maybe a rating dropdown)
         // TODO: Exit selection mode by pressing escape
         // FIX: Item selections will likely be lost with each queue update
 
+        let selection_mode = Rc::clone(&self.selection_mode);
         let hold = gtk::GestureLongPress::new();
         hold.connect_pressed(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
-            #[weak]
-            list_box,
             #[strong(rename_to=queue_item_objects)]
             self.queue_item_objects,
             move |_, _, y| if !selection_mode.get() {
                 queue_page.set_selection_mode(true);
 
-                let object_index = list_box.row_at_y(y as i32).unwrap().index();
+                let object_index = queue_page.list_box.row_at_y(y as i32).unwrap().index();
                 queue_item_objects.borrow()[object_index as usize].set_selected(true);
             }
         ));
         // TODO: Enable once functionality is implemented
-        // list_box.add_controller(hold);
+        // self.list_box.add_controller(hold);
+    }
 
-        let _ = self.list_model.set(model);
+    /// Empties the list model, cancelling any pending background tasks during drop
+    pub fn uninit(&self) {
+        self.list_model.get().expect(EXP_INIT).remove_all();
+    }
+
+    /// Used to verify that `model_index_to_queue` is working correctly
+    #[inline]
+    #[allow(unused)]
+    #[cfg(debug_assertions)]
+    fn model_index_to_queue_discrepancy_check(&self, model_index: usize, expected_index: usize) {
+        match self.model_index_to_queue(model_index) {
+            to_queue_index if to_queue_index != expected_index => {
+                eprintln!("Discrepancy between `queue_index_to_model` and `model_index_to_queue`:");
+                eprintln!("	`queue_index_to_model({expected_index})`:	{model_index}");
+                eprintln!("	`model_index_to_queue({model_index})`:	{to_queue_index}");
+            }
+            _ => (),
+        }
+    }
+    /// Used to verify that `queue_index_to_model` is working correctly
+    #[inline]
+    #[allow(unused)]
+    #[cfg(debug_assertions)]
+    fn queue_index_to_model_discrepancy_check(&self, queue_index: usize, expected_index: usize) {
+        match self.queue_index_to_model(queue_index) {
+            Ok(to_model_index) if to_model_index != expected_index => {
+                eprintln!("Discrepancy between `queue_index_to_model` and `model_index_to_queue`:");
+                eprintln!("	`model_index_to_queue({expected_index})`:	{queue_index}");
+                eprintln!("	`queue_index_to_model({queue_index})`:	{to_model_index}");
+            }
+            Err(_) => eprintln!("`queue_index_to_model({queue_index})` returned an error"),
+            _ => (),
+        }
+    }
+}
+
+#[glib::object_subclass]
+impl ObjectSubclass for QueuePage {
+    const NAME: &str = "MellowQueuePage";
+    type Type = super::QueuePage;
+    type ParentType = adw::NavigationPage;
+
+    fn class_init(class: &mut Self::Class) {
+        class.bind_template();
+        class.bind_template_callbacks();
+    }
+
+    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+        obj.init_template();
+    }
+}
+impl ObjectImpl for QueuePage {
+    fn constructed(&self) {
+        self.obj().update_shuffle(false);
+        // self.obj().update_repeat(false);
+
+        self.setup_model();
+        self.setup_drag_and_drop();
+        self.setup_selection_mode();
     }
 }
 
