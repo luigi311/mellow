@@ -584,14 +584,14 @@ impl Player {
         if to < 0 {
             assert!(
                 self.queue.get_repeat(),
-                "Shifting to indexes below 0 is only valid in repeat mode"
+                "Shifting to indexes below 0 is only allowed in repeat mode"
             );
             to += queue_len - 1;
         } else {
             while to >= queue_len {
                 assert!(
                     self.queue.get_repeat(),
-                    "Shifting to indexes above queue length is only valid in repeat mode"
+                    "Shifting to indexes above queue length is only allowed in repeat mode"
                 );
                 to -= queue_len - 1;
             }
