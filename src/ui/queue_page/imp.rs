@@ -312,7 +312,9 @@ impl QueuePage {
                 );
 
                 // Wrapping over the start of the queue
-                let n_items_behind = NUM_ITEMS_BEHIND.saturating_sub(playing_index);
+                let n_items_behind = NUM_ITEMS_BEHIND
+                    .saturating_sub(playing_index)
+                    .min(queue_length - 1);
                 if n_items_behind > 0 {
                     // println!("Wrapping over the start of the queue");
                     if model_index < n_items_behind {
@@ -332,7 +334,7 @@ impl QueuePage {
 
                 // Wrapping over the end of the queue
                 // println!("Wrapping over the end of the queue");
-                offset_index - queue_length - NUM_ITEMS_BEHIND.max(playing_index)
+                offset_index - queue_length - NUM_ITEMS_BEHIND.min(playing_index)
             }
         }
     }
@@ -558,14 +560,18 @@ impl QueuePage {
                     return;
                 };
                 let from_index = queue_page.model_index_to_queue(from as usize);
-                let playing = (queue_page.queue_index_to_model(queue_page.playing_index.get()))
-                    .unwrap() as i32;
-                (queue_page.next_scroll_pos).set(QueueScrollAction::Offset(match () {
-                    _ if from > playing && to <= playing => -1,
-                    _ if from < playing && to >= playing => 1,
-                    _ if from == playing => from - to,
-                    _ => 0,
-                }));
+                let playing_index = queue_page.playing_index.get();
+                let playing = (queue_page.queue_index_to_model(playing_index)).unwrap() as i32;
+                (queue_page.next_scroll_pos).set(QueueScrollAction::Offset(
+                    match playing_index > NUM_ITEMS_BEHIND || queue_page.repeat_toggle.is_active() {
+                        true if from > playing && to <= playing => -1,
+                        true if from < playing && to >= playing => 1,
+                        true if from == playing => from - to,
+                        true => 0,
+                        false if from < playing && to > playing => 1,
+                        false => 0,
+                    },
+                ));
                 (PLAYER_TX.get().expect(EXP_INIT))
                     .send(PlayerRequest::Shift(from_index, (to - from) as isize))
                     .expect(EXP_RX);
