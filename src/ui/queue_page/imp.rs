@@ -462,7 +462,7 @@ impl QueuePage {
                     return;
                 }
 
-                // FIX: The cursor does not get set
+                // FIX: The cursor does not update until the mouse button is released
                 list_box.set_cursor_from_name(Some("grabbing"));
 
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
@@ -541,16 +541,11 @@ impl QueuePage {
                 let from_index = queue_page.model_index_to_queue(from as usize);
                 let playing = (queue_page.queue_index_to_model(queue_page.playing_index.get()))
                     .unwrap() as i32;
-                queue_page.next_scroll_pos.set(QueueScrollAction::Offset({
-                    if playing == from {
-                        from - to
-                    } else if from < playing && to >= playing {
-                        1
-                    } else if from > playing && to <= playing {
-                        -1
-                    } else {
-                        0
-                    }
+                (queue_page.next_scroll_pos).set(QueueScrollAction::Offset(match () {
+                    _ if from > playing && to <= playing => -1,
+                    _ if from < playing && to >= playing => 1,
+                    _ if from == playing => from - to,
+                    _ => 0,
                 }));
                 (PLAYER_TX.get().expect(EXP_INIT))
                     .send(PlayerRequest::Shift(from_index, (to - from) as isize))
