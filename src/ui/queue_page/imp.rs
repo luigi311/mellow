@@ -443,6 +443,7 @@ impl QueuePage {
             .width_request(32)
             .css_name("card") // Card style doesn't work here?
             .build();
+        let drag_container = self.drag_widget.parent().unwrap();
         self.drag_widget.put(&image, 0.0, 0.0);
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
 
@@ -485,6 +486,8 @@ impl QueuePage {
             self.selection_mode,
             #[weak]
             image,
+            #[weak]
+            drag_container,
             move |gesture_drag, _| if !selection_mode.get() {
                 let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
@@ -503,7 +506,7 @@ impl QueuePage {
 
                 // Setting here to only show it after moving the cursor
                 // TODO: Is it okay to repeatedly call this?
-                drag_widget.set_visible(true);
+                drag_container.set_visible(true);
             }
         ));
         drag.connect_end(glib::clone!(
@@ -511,15 +514,15 @@ impl QueuePage {
             self,
             #[weak(rename_to=list_box)]
             self.list_box,
-            #[weak(rename_to=drag_widget)]
-            self.drag_widget,
             #[strong(rename_to=selection_mode)]
             self.selection_mode,
             #[weak]
             image,
+            #[weak]
+            drag_container,
             move |gesture_drag, _| if !selection_mode.get() {
                 list_box.set_cursor(None);
-                drag_widget.set_visible(false);
+                drag_container.set_visible(false);
                 image.set_paintable(None::<&gdk::Paintable>);
                 let start_y = match gesture_drag.start_point() {
                     Some((start_x, start_y)) if Self::should_drag(start_x) => start_y,
