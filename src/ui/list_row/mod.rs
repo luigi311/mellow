@@ -27,6 +27,11 @@ impl ListRow {
         self.imp().prefix_image.set_paintable(image);
     }
 
+    #[must_use]
+    pub fn get_paintable(&self) -> Option<gdk::Paintable> {
+        self.imp().prefix_image.paintable()
+    }
+
     pub fn set_suffix_label(&self, content: &str) {
         self.imp().suffix_label.set_label(content);
     }
