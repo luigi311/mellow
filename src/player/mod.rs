@@ -582,15 +582,19 @@ impl Player {
         let mut to = from as isize + by;
         let queue_len = self.queue.len() as isize;
         if to < 0 {
-            if !self.queue.get_repeat() {
-                return;
-            }
+            assert!(
+                self.queue.get_repeat(),
+                "Shifting to indexes below 0 is only valid in repeat mode"
+            );
             to += queue_len - 1;
-        } else if to >= queue_len {
-            if !self.queue.get_repeat() {
-                return;
+        } else {
+            while to >= queue_len {
+                assert!(
+                    self.queue.get_repeat(),
+                    "Shifting to indexes above queue length is only valid in repeat mode"
+                );
+                to -= queue_len - 1;
             }
-            to -= queue_len - 1;
         }
         self.reorder(from, to as usize);
     }
