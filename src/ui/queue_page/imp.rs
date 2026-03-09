@@ -564,12 +564,11 @@ impl QueuePage {
                 let playing = (queue_page.queue_index_to_model(playing_index)).unwrap() as i32;
                 (queue_page.next_scroll_pos).set(QueueScrollAction::Offset(
                     match playing_index > NUM_ITEMS_BEHIND || queue_page.repeat_toggle.is_active() {
+                        false if from < playing && to > playing => 1,
                         true if from > playing && to <= playing => -1,
                         true if from < playing && to >= playing => 1,
                         true if from == playing => from - to,
-                        true => 0,
-                        false if from < playing && to > playing => 1,
-                        false => 0,
+                        _ => 0,
                     },
                 ));
                 (PLAYER_TX.get().expect(EXP_INIT))
