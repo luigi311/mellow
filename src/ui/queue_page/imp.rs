@@ -313,8 +313,8 @@ impl QueuePage {
 
                 // Wrapping over the start of the queue
                 let n_items_behind = NUM_ITEMS_BEHIND
-                    .saturating_sub(playing_index)
-                    .min(queue_length - 1);
+                    .min(queue_length - 1)
+                    .saturating_sub(playing_index);
                 if n_items_behind > 0 {
                     // println!("Wrapping over the start of the queue");
                     if model_index < n_items_behind {
@@ -326,15 +326,17 @@ impl QueuePage {
                 }
 
                 // Non-wrapped items
-                let offset_index = model_index + playing_index;
+                let offset_index = model_index + playing_index
+                    - NUM_ITEMS_BEHIND.min(playing_index)
+                    - n_items_behind;
                 if offset_index < queue_length {
                     // println!("Non-wrapped item");
-                    return offset_index - NUM_ITEMS_BEHIND.max(n_items_behind);
+                    return offset_index;
                 }
 
                 // Wrapping over the end of the queue
                 // println!("Wrapping over the end of the queue");
-                offset_index - queue_length - NUM_ITEMS_BEHIND.min(playing_index)
+                offset_index - queue_length
             }
         }
     }
