@@ -56,7 +56,11 @@ impl<T> ReorderVecExt for Vec<T> {
     /// ```
     fn reorder(&mut self, from: usize, to: usize) {
         assert!(mem::size_of::<T>() != 0, "Zero-sized types are unsupported");
-        assert!(from < self.len() && to < self.len());
+        assert!(
+            from < self.len() && to < self.len(),
+            "Cannot reorder; index out of range:\n\tfrom: {from}\n\tto:{to}\n\tlen:{}",
+            self.len()
+        );
 
         let ptr = self.as_mut_ptr();
         // SAFETY: Assert at the top ensures `from` is within bounds
