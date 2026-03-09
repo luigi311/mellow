@@ -29,6 +29,8 @@ pub struct QueuePage {
     #[template_child]
     list_box: TemplateChild<gtk::ListBox>,
     #[template_child]
+    drag_widget: TemplateChild<gtk::Fixed>,
+    #[template_child]
     scrolled_window: TemplateChild<gtk::ScrolledWindow>,
 
     #[template_child]
@@ -427,27 +429,101 @@ impl QueuePage {
 
         let _ = self.list_model.set(model);
     }
+    /// Returns `true` if interaction at a given `start_pos_x`
+    /// should drag the queue row, or `false` if not
+    #[inline]
+    fn should_drag(start_pos_x: f64) -> bool {
+        start_pos_x < 65.0
+    }
     #[inline]
     fn setup_drag_and_drop(&self) {
-        // TODO: Drag-&-drop visual feedback
-
-        let list_box = &self.list_box;
         let drag = gtk::GestureDrag::new();
+        let image = gtk::Picture::builder()
+            .height_request(32)
+            .width_request(32)
+            .css_name("card") // Card style doesn't work here?
+            .build();
+        self.drag_widget.put(&image, 0.0, 0.0);
+        self.drag_widget.set_cursor_from_name(Some("grabbing"));
+
+        drag.connect_begin(glib::clone!(
+            #[weak(rename_to=list_box)]
+            self.list_box,
+            #[strong(rename_to=selection_mode)]
+            self.selection_mode,
+            #[weak]
+            image,
+            move |gesture_drag, _| if !selection_mode.get() {
+                let Some((start_x, start_y)) = gesture_drag.point(None) else {
+                    return;
+                };
+                if !Self::should_drag(start_x) {
+                    return;
+                }
+
+                // FIX: The cursor does not get set
+                list_box.set_cursor_from_name(Some("grabbing"));
+
+                if let Some(row) = list_box.row_at_y(start_y as i32) {
+                    let new_image = row.downcast_ref::<ListRow>().unwrap().get_paintable();
+                    match new_image.is_some() {
+                        true => image.set_paintable(new_image.as_ref()),
+                        // FIX: Fallback images don't show up
+                        false => image.set_paintable(Some(&fallback_song_image())),
+                    }
+                } else {
+                    image.set_paintable(Some(&fallback_song_image()));
+                }
+            }
+        ));
+        drag.connect_update(glib::clone!(
+            #[weak(rename_to=drag_widget)]
+            self.drag_widget,
+            #[weak(rename_to=scrolled_window)]
+            self.scrolled_window,
+            #[strong(rename_to=selection_mode)]
+            self.selection_mode,
+            #[weak]
+            image,
+            move |gesture_drag, _| if !selection_mode.get() {
+                let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
+                    (gesture_drag.start_point(), gesture_drag.offset())
+                else {
+                    return;
+                };
+                if !Self::should_drag(start_x) {
+                    return;
+                }
+
+                drag_widget.move_(
+                    &image,
+                    start_x + offset_x,
+                    start_y + offset_y - scrolled_window.vadjustment().value(),
+                );
+
+                // Setting here to only show it after moving the cursor
+                // TODO: Is it okay to repeatedly call this?
+                drag_widget.set_visible(true);
+            }
+        ));
         drag.connect_end(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
-            #[weak]
-            list_box,
+            #[weak(rename_to=list_box)]
+            self.list_box,
+            #[weak(rename_to=drag_widget)]
+            self.drag_widget,
             #[strong(rename_to=selection_mode)]
             self.selection_mode,
-            move |gesture_drag, _| {
-                if selection_mode.get() {
-                    return;
-                }
+            #[weak]
+            image,
+            move |gesture_drag, _| if !selection_mode.get() {
+                list_box.set_cursor(None);
+                drag_widget.set_visible(false);
+                image.set_paintable(None::<&gdk::Paintable>);
                 let start_y = match gesture_drag.start_point() {
-                    Some((start_x, _)) if start_x > 65.0 => return,
-                    Some((_, start_y)) => start_y,
-                    None => return,
+                    Some((start_x, start_y)) if Self::should_drag(start_x) => start_y,
+                    _ => return,
                 };
                 let end_y = match gesture_drag.offset() {
                     Some((_, offset_y)) => start_y + offset_y,
@@ -478,7 +554,7 @@ impl QueuePage {
                     .expect(EXP_RX);
             }
         ));
-        list_box.add_controller(drag);
+        self.list_box.add_controller(drag);
     }
     #[inline]
     fn setup_selection_mode(&self) {
@@ -493,18 +569,22 @@ impl QueuePage {
             self,
             #[strong(rename_to=queue_item_objects)]
             self.queue_item_objects,
-            move |_, _, y| if !selection_mode.get() {
+            move |_, x, y| if !selection_mode.get() && !Self::should_drag(x) {
+                // TODO: Enable once functionality is implemented
+                println!("Selection mode is currently disabled");
+                return;
+
                 queue_page.set_selection_mode(true);
 
                 let object_index = queue_page.list_box.row_at_y(y as i32).unwrap().index();
                 queue_item_objects.borrow()[object_index as usize].set_selected(true);
             }
         ));
-        // TODO: Enable once functionality is implemented
-        // self.list_box.add_controller(hold);
+        self.list_box.add_controller(hold);
     }
 
     /// Empties the list model, cancelling any pending background tasks during drop
+    #[inline]
     pub fn uninit(&self) {
         self.list_model.get().expect(EXP_INIT).remove_all();
     }

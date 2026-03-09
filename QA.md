@@ -20,7 +20,7 @@ Song Queue:
 - [x] Adding items works as expected
 - [x] Removing items works as expected
 - [-] Reordering the queue works as expected
-  - TODO: Improvement: Drag & drop should provide visual feedback
+  - TODO: Improvement: Drag & drop visual feedback could be improved
 - [ ] Selection mode works as expected
   - [ ] Removing multiple items at once works as expected
   - TODO: Enable selection mode once it works properly
@@ -49,7 +49,6 @@ User Experience:
   - [x] On fresh launch
 - [ ] All actions provide visual feedback
   - TODO: Visual feedback for dragging files onto the player
-  - TODO: Visual feedback for drag-&-dropping queue items
 - [x] All actions respond to user input without delay
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)

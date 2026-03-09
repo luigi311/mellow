@@ -83,20 +83,34 @@
               <object class="AdwViewStackPage">
                 <property name="name">song_queue</property>
                 <property name="child">
-                  <!-- TODO: Button to scroll back to the playing song -->
-                  <object class="GtkScrolledWindow" id="scrolled_window">
+                  <object class="GtkOverlay">
+                    <child type="overlay">
+                      <object class="GtkFixed" id="drag_widget">
+                        <property name="visible">False</property>
+                        <property name="sensitive">False</property>
+                        <style>
+                          <class name="card"/>
+                        </style>
+                      </object>
+                    </child>
+
                     <child>
-                      <object class="AdwClamp">
+                      <!-- TODO: Button to scroll back to the playing song -->
+                      <object class="GtkScrolledWindow" id="scrolled_window">
                         <child>
-                          <object class="GtkListBox" id="list_box">
-                            <property name="selection_mode">none</property>
-                            <property name="margin_top">18</property>
-                            <property name="margin_bottom">18</property>
-                            <property name="margin_start">12</property>
-                            <property name="margin_end">12</property>
-                            <style>
-                              <class name="boxed-list"/>
-                            </style>
+                          <object class="AdwClamp">
+                            <child>
+                              <object class="GtkListBox" id="list_box">
+                                <property name="selection_mode">none</property>
+                                <property name="margin_top">18</property>
+                                <property name="margin_bottom">18</property>
+                                <property name="margin_start">12</property>
+                                <property name="margin_end">12</property>
+                                <style>
+                                  <class name="boxed-list"/>
+                                </style>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>

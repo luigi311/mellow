@@ -11,7 +11,6 @@ Song queue:
 - [x] Display the song queue
 - [x] Allow reordering the queue
 - [ ] Reorder using drag-&-drop
-  - TODO: Add visual feedback
   - TODO: Scroll when reaching top/bottom edges
 - [ ] Multi-selection mode
   - [x] Item selection (checkbox in place of the cover image)
