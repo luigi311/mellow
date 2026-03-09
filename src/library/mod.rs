@@ -13,7 +13,6 @@ use tokio::sync::mpsc as tokio_mpsc;
 pub mod album;
 pub mod artist;
 pub mod config;
-pub mod search;
 pub mod song;
 
 pub use album::{Album, SharedAlbum, SortedAlbumSongs};
@@ -23,9 +22,9 @@ pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
-use crate::tasks::{BoxedTask, Runner};
 use crate::ui::{UI_TX, UpdateUI};
-use crate::{CONFIG_DIR, visit_dirs};
+use crate::util::tasks::{BoxedTask, Runner};
+use crate::{CONFIG_DIR, util::visit_dirs};
 
 type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
 

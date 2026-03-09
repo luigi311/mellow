@@ -13,9 +13,8 @@ use lofty::probe::Probe;
 
 use crate::excuses::EXP_INIT;
 use crate::library::SharedAlbum;
-use crate::serializer::serialize_list;
-use crate::{CACHE_DIR, unescaped_split};
-use crate::{deserialize, serialize};
+use crate::util::{deserialize, serialize, serialize_list};
+use crate::{CACHE_DIR, util::unescaped_split};
 
 pub struct Song {
     album: Mutex<Option<SharedAlbum>>,

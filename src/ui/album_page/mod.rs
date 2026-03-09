@@ -7,7 +7,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, SharedAlbum};
 use crate::ui::ListRow;
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
-use crate::{format_duration_minutes, format_duration_ms};
+use crate::util::{format_duration_minutes, format_duration_ms};
 
 mod imp;
 

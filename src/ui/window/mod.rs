@@ -9,8 +9,8 @@ use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::serializer::serialize_list;
 use crate::ui::{Application, UI_TX, UpdateUI, actions};
+use crate::util::serialize_list;
 
 mod imp;
 

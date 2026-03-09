@@ -5,6 +5,7 @@ use gtk::glib;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::fallback_song_image;
+use crate::util::approx_eq;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/main_player.ui")]
@@ -52,7 +53,7 @@ impl MainPlayer {
     }
     #[template_callback]
     pub fn handle_seek(&self, _: gtk::ScrollType, value: f64) -> glib::Propagation {
-        if crate::approx_eq(value, self.seek_bar.value()) {
+        if approx_eq(value, self.seek_bar.value()) {
             return glib::Propagation::Stop;
         }
         (PLAYER_TX.get().expect(EXP_INIT))

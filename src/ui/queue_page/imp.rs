@@ -7,12 +7,12 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::format_duration_ms;
 use crate::library::{LIBRARY_TX, Library, SharedSong};
 use crate::player::{PLAYER_TX, PlayerRequest, QueueItem, SharedStopper};
 use crate::ui::queue_page::QueueScrollAction;
 use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+use crate::util::format_duration_ms;
 
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;

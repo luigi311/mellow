@@ -3,9 +3,9 @@ use gtk::Orientation;
 use gtk::{gdk, glib};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::format_duration_ms;
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::fallback_song_image;
+use crate::util::format_duration_ms;
 
 mod imp;
 

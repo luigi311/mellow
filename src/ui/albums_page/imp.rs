@@ -7,10 +7,11 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{Albums, ToQueue, ToShuffledQueue, search};
+use crate::library::{Albums, ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::{AlbumObject, AlbumOrdering, ItemTile, SortConfig};
 use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::util::search;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/albums_page.ui")]

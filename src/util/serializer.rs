@@ -1,5 +1,3 @@
-#![macro_use]
-
 /// Serializes the given value/field pairs into a `String`,
 /// which can be used with `deserialize!()` to retreive the
 /// values afterwards
@@ -10,7 +8,7 @@
 ///
 /// # Example
 /// ```rust
-/// use mellow::{serialize, serializer::serialize_list};
+/// use mellow::util::{serialize, serialize_list};
 /// use gst::ClockTime;
 ///
 /// let number = 5;
@@ -46,13 +44,14 @@ macro_rules! serialize {
         [$($field, ": ", &$value.to_string(), "\n",)+].concat()
     };
 }
+pub use serialize;
 
 /// Combines a list of `String`s into a single `String` which
 /// can be used with the `serialize!()` macro
 ///
 /// # Example
 /// ```rust
-/// use mellow::serializer::serialize_list;
+/// use mellow::util::serialize_list;
 ///
 /// assert_eq!(
 ///     serialize_list(&[
@@ -89,7 +88,7 @@ pub fn serialize_list(list: &[String]) -> String {
 ///
 /// # Example
 /// ```rust
-/// use mellow::{deserialize, unescaped_split};
+/// use mellow::util::{unescaped_split, deserialize};
 /// use gst::ClockTime;
 ///
 /// let mut number = 0;
@@ -183,3 +182,4 @@ macro_rules! deserialize {
         }).collect()
     };
 }
+pub use deserialize;

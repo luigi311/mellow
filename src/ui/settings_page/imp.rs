@@ -4,12 +4,11 @@ use gtk::gdk_pixbuf::Pixbuf;
 use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
 
-use crate::approx_eq;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::lerp;
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::player::{PLAYER_TX, PlayerRequest};
 use crate::ui::StartupQueueChoice;
+use crate::util::{approx_eq, lerp};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/com/github/userwithaname/Mellow/settings_page.ui")]

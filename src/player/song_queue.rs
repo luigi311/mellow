@@ -9,7 +9,7 @@ use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, Library, LibraryRequest};
 use crate::player::{PlayerRequest, QueueItem};
 use crate::ui::{StartupQueueChoice, UpdateUI};
-use crate::{CONFIG_DIR, ReorderVecExt};
+use crate::{CONFIG_DIR, util::ReorderVecExt};
 
 pub struct SongQueue {
     repeat: bool,

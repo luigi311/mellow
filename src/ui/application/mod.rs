@@ -9,7 +9,7 @@ use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
 use crate::player::Player;
 use crate::ui::{UpdateUI, Window, actions};
-use crate::{MUSIC_DIR, about, unescaped_split};
+use crate::{MUSIC_DIR, about, util::unescaped_split};
 
 glib::wrapper! {
     pub struct Application(ObjectSubclass<imp::Application>)
