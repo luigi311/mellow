@@ -308,6 +308,24 @@ impl SettingsPage {
             },
         };
 
+        let r_dark = (r / 2).saturating_sub(4);
+        let g_dark = (g / 2).saturating_sub(4);
+        let b_dark = (b / 2).saturating_sub(4);
+
+        let has_style = self.has_style.get();
+        let r_highlight = match has_style {
+            true => lerp(r as f64, 255.0, 0.4) as u8,
+            false => 255,
+        };
+        let g_highlight = match has_style {
+            true => lerp(g as f64, 255.0, 0.4) as u8,
+            false => 255,
+        };
+        let b_highlight = match has_style {
+            true => lerp(b as f64, 255.0, 0.4) as u8,
+            false => 255,
+        };
+
         css.load_from_string(&format!(
             ".color-main {{
                  background-color: rgba({r}, {g}, {b}, 1);
@@ -317,12 +335,17 @@ impl SettingsPage {
                  border-top: 0px none;
              }}
              .color-menu {{
-                 background-color: rgba({}, {}, {}, 1);
+                 background-color: rgba({r_dark}, {g_dark}, {b_dark}, 1);
+             }}
+             .highlight-top {{
+                 border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
+                 border-top: 1px;
+             }}
+             .highlight-bottom {{
+                 border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
+                 border-bottom: 1px;
              }}
             ",
-            (r / 2).saturating_sub(4),
-            (g / 2).saturating_sub(4),
-            (b / 2).saturating_sub(4),
         ));
 
         self.handle_adaptive_colors_switch();

@@ -338,15 +338,22 @@ impl QueuePage {
     }
 
     #[inline]
-    fn set_selection_mode(&self, selection_mode: bool) {
-        self.selection_mode.set(selection_mode);
+    fn for_each_row<F: Fn(gtk::ListBoxRow, i32)>(&self, f: F) {
         let mut i = 0;
         while let Some(row) = self.list_box.row_at_index(i) {
+            f(row, i);
+            i += 1;
+        }
+    }
+
+    #[inline]
+    fn set_selection_mode(&self, selection_mode: bool) {
+        self.selection_mode.set(selection_mode);
+        self.for_each_row(|row, _| {
             let list_row = row.downcast_ref::<ListRow>().unwrap().imp();
             list_row.selection_toggle.set_visible(true);
             list_row.prefix_image.set_visible(false);
-            i += 1;
-        }
+        });
     }
 
     #[inline]
@@ -444,8 +451,8 @@ impl QueuePage {
             .css_name("card") // Card style doesn't work here?
             .build();
         let drag_container = self.drag_widget.parent().unwrap();
-        self.drag_widget.put(&image, 0.0, 0.0);
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
+        self.drag_widget.put(&image, 0.0, 0.0);
 
         drag.connect_begin(glib::clone!(
             #[weak(rename_to=list_box)]
@@ -478,17 +485,13 @@ impl QueuePage {
             }
         ));
         drag.connect_update(glib::clone!(
-            #[weak(rename_to=drag_widget)]
-            self.drag_widget,
-            #[weak(rename_to=scrolled_window)]
-            self.scrolled_window,
-            #[strong(rename_to=selection_mode)]
-            self.selection_mode,
+            #[weak(rename_to=queue_page)]
+            self,
             #[weak]
             image,
             #[weak]
             drag_container,
-            move |gesture_drag, _| if !selection_mode.get() {
+            move |gesture_drag, _| if !queue_page.selection_mode.get() {
                 let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
                 else {
@@ -498,10 +501,29 @@ impl QueuePage {
                     return;
                 }
 
-                drag_widget.move_(
+                if let Some(row_index) = (queue_page.list_box)
+                    .row_at_y((start_y + offset_y) as i32)
+                    .map(|row| row.index())
+                {
+                    queue_page.for_each_row(|row, index| {
+                        let list_row = row.downcast_ref::<ListRow>().unwrap();
+                        if row_index - 1 == index {
+                            list_row.add_css_class("highlight-top");
+                        } else {
+                            list_row.remove_css_class("highlight-top");
+                        }
+                    });
+                } else {
+                    queue_page.for_each_row(|row, _| {
+                        let list_row = row.downcast_ref::<ListRow>().unwrap();
+                        list_row.remove_css_class("highlight-top");
+                    });
+                }
+
+                queue_page.drag_widget.move_(
                     &image,
                     start_x + offset_x,
-                    start_y + offset_y - scrolled_window.vadjustment().value(),
+                    start_y + offset_y - queue_page.scrolled_window.vadjustment().value(),
                 );
 
                 // Setting here to only show it after moving the cursor
@@ -512,15 +534,12 @@ impl QueuePage {
         drag.connect_end(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
-            #[weak(rename_to=list_box)]
-            self.list_box,
-            #[strong(rename_to=selection_mode)]
-            self.selection_mode,
             #[weak]
             image,
             #[weak]
             drag_container,
-            move |gesture_drag, _| if !selection_mode.get() {
+            move |gesture_drag, _| if !queue_page.selection_mode.get() {
+                let list_box = &queue_page.list_box;
                 list_box.set_cursor(None);
                 drag_container.set_visible(false);
                 image.set_paintable(None::<&gdk::Paintable>);
@@ -550,6 +569,11 @@ impl QueuePage {
                 (PLAYER_TX.get().expect(EXP_INIT))
                     .send(PlayerRequest::Shift(from_index, (to - from) as isize))
                     .expect(EXP_RX);
+
+                queue_page.for_each_row(|row, _| {
+                    let list_row = row.downcast_ref::<ListRow>().unwrap();
+                    list_row.remove_css_class("highlight-top");
+                });
             }
         ));
         self.list_box.add_controller(drag);
@@ -565,8 +589,6 @@ impl QueuePage {
         hold.connect_pressed(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
-            #[strong(rename_to=queue_item_objects)]
-            self.queue_item_objects,
             move |_, x, y| if !selection_mode.get() && !Self::should_drag(x) {
                 // TODO: Enable once functionality is implemented
                 println!("Selection mode is currently disabled");
@@ -575,7 +597,7 @@ impl QueuePage {
                 queue_page.set_selection_mode(true);
 
                 let object_index = queue_page.list_box.row_at_y(y as i32).unwrap().index();
-                queue_item_objects.borrow()[object_index as usize].set_selected(true);
+                queue_page.queue_item_objects.borrow()[object_index as usize].set_selected(true);
             }
         ));
         self.list_box.add_controller(hold);

@@ -89,6 +89,7 @@
                         <property name="visible">False</property>
                         <child>
                           <object class="GtkFixed" id="drag_widget">
+                            <property name="opacity">0.4</property>
                             <style>
                               <class name="card"/>
                             </style>
