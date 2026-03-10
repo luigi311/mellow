@@ -244,7 +244,8 @@ impl SettingsPage {
             }
 
             // Normalize the color and scale it to the target luminance
-            linear_to_srgb(
+            // Accuracy is not as important here, this approximation should suffice
+            approx_linear_to_srgb(
                 r / luminance * target_lum,
                 g / luminance * target_lum,
                 b / luminance * target_lum,
@@ -321,6 +322,18 @@ impl SettingsPage {
                 (r.powf(1.0 / 2.2) * 255.0) as u8,
                 (g.powf(1.0 / 2.2) * 255.0) as u8,
                 (b.powf(1.0 / 2.2) * 255.0) as u8,
+            )
+        }
+        /// Rough approximation of the `linear_to_srgb` function,
+        /// which might be a bit faster to compute (hopefully).
+        /// Note that pure white and pure black are not possible
+        /// with this approximation.
+        #[inline]
+        fn approx_linear_to_srgb(r: f64, g: f64, b: f64) -> (u8, u8, u8) {
+            (
+                (((1.0 - r).mul_add(-(1.0 - r), 0.8) + 0.4) / 1.25 * 255.0) as u8,
+                (((1.0 - g).mul_add(-(1.0 - g), 0.8) + 0.4) / 1.25 * 255.0) as u8,
+                (((1.0 - b).mul_add(-(1.0 - b), 0.8) + 0.4) / 1.25 * 255.0) as u8,
             )
         }
 
