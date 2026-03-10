@@ -389,6 +389,7 @@ impl Player {
     }
 
     /// Removes the item at `index` from the queue
+    #[inline]
     fn remove_item(&mut self, index: usize) {
         if index == self.queue.index() {
             if self.next_song_loaded {

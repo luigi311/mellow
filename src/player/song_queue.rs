@@ -163,6 +163,7 @@ impl SongQueue {
     /// `Some` but empty, a new one is created.
     ///
     /// Note: `ui_update_queue` must be called manually
+    #[inline]
     pub fn load_new(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>) {
         self.songs = queue;
         self.repeat = false;
@@ -422,6 +423,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn ui_update_shuffle(&self) {
         #[cfg(debug_assertions)]
         println!("ui_update_shuffle({})", self.shuffle);
@@ -434,6 +436,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn ui_update_repeat(&self) {
         #[cfg(debug_assertions)]
         println!("ui_update_repeat({})", self.repeat);
@@ -446,6 +449,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     pub fn ui_update_queue(&mut self) {
         #[cfg(debug_assertions)]
         println!("ui_update_queue()");
@@ -459,6 +463,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     pub fn ui_update_queue_index(&mut self) {
         if self.index == self.last_ui_index {
             return;
@@ -475,6 +480,7 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn ui_close_queue_subpage(&self) {
         #[cfg(debug_assertions)]
         println!("ui_close_queue_subpage({})", self.index);
