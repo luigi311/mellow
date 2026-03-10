@@ -90,7 +90,7 @@ impl QueuePage {
         }
     }
 
-    pub fn update_song_queue(&self, queue: &[QueueItem], index: usize) {
+    pub fn update_song_queue(&self, queue: &[QueueItem], playing: usize) {
         let queue_length = queue.len();
         let old_queue_length = self.queue_length.replace(queue_length);
         self.view_stack
@@ -101,13 +101,13 @@ impl QueuePage {
 
         // TODO: Reorder queue items using drag & drop
 
-        self.playing_index.set(index);
+        self.playing_index.set(playing);
         let Some(list_model) = self.list_model.get() else {
             return;
         };
 
-        let start = index.saturating_sub(NUM_ITEMS_BEHIND);
-        let end = (index + NUM_ITEMS_AHEAD).min(queue.len());
+        let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
+        let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
         // Garbage collection
         if old_queue_length > 0 {
@@ -118,8 +118,8 @@ impl QueuePage {
                     // background-loaded artworks otherwise sometimes not getting assigned.
                     // If there are issues with queue artworks in the future, try disabling
                     // garbage collection first, to verify that it is working properly.
-                    let short_start = index.saturating_sub(NUM_ITEMS_BEHIND);
-                    let short_end = (index + NUM_ITEMS_AHEAD).min(queue.len());
+                    let short_start = playing.saturating_sub(NUM_ITEMS_BEHIND);
+                    let short_end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
                     for (index, song) in queue.iter().enumerate() {
                         let QueueItem::Song(song) = song else {
                             return;
@@ -140,25 +140,28 @@ impl QueuePage {
         }
 
         let last_scroll_pos = self.scrolled_window.vadjustment().value();
-        let mut items =
-            Self::items_to_objects(queue.iter().enumerate().take(end).skip(start), index);
+        let mut items = Self::items_to_objects(
+            queue.iter().enumerate().take(end).skip(start),
+            playing,
+            // :)
+        );
 
         if self.repeat_toggle.is_active() && queue_length != 0 {
-            let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue_length - 1);
+            let n_items_before = (NUM_ITEMS_BEHIND - (playing - start)).min(queue_length - 1);
             if n_items_before > 0 {
                 let from = queue.len() - n_items_before;
                 let mut items_before = Self::items_to_objects(
-                    queue.iter().enumerate().skip(from.max(index + 1)),
-                    index,
+                    queue.iter().enumerate().skip(from.max(playing + 1)),
+                    playing,
                 );
                 mem::swap(&mut items, &mut items_before);
                 items.extend(items_before);
             }
-            let n_items_after = NUM_ITEMS_AHEAD - (end - index);
+            let n_items_after = NUM_ITEMS_AHEAD - (end - playing);
             if n_items_after > 0 {
                 let items_after = Self::items_to_objects(
-                    queue.iter().enumerate().take(n_items_after.min(index)),
-                    index,
+                    queue.iter().enumerate().take(n_items_after.min(playing)),
+                    playing,
                 );
                 items.extend(items_after);
             }
@@ -173,7 +176,7 @@ impl QueuePage {
             QueueScrollAction::Offset(offset) => {
                 self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64);
             }
-            QueueScrollAction::ToPlaying => self.scroll_to_item(index),
+            QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
         }
     }
 
@@ -188,9 +191,9 @@ impl QueuePage {
                 let q_index = index_item.0;
                 match index_item.1 {
                     QueueItem::Song(song) => {
-                        Self::new_song(q_index as u32, q_index == playing_index, &song)
+                        Self::new_song(q_index as u32, q_index == playing_index, song)
                     }
-                    QueueItem::Stopper(stopper) => Self::new_stopper(q_index as u32, &stopper),
+                    QueueItem::Stopper(stopper) => Self::new_stopper(q_index as u32, stopper),
                 }
             })
             .collect()
