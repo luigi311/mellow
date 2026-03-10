@@ -225,7 +225,7 @@ impl SettingsPage {
         #[inline]
         fn process_highlight_color(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             /// Colors below this luminance value will be desaturated for accuracy
-            const DESATURATION_THRESHOLD: f64 = 0.1;
+            const DESATURATION_THRESHOLD: f64 = 0.2;
 
             let luminance = lum(r, g, b);
             let target_lum = (luminance * luminance * luminance).mul_add(0.6, 0.4);
