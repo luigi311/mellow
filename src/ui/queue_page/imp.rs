@@ -515,9 +515,9 @@ impl QueuePage {
                         .unwrap_or_default();
                     queue_page.for_each_row(|row, index| {
                         let list_row = row.downcast_ref::<ListRow>().unwrap();
-                        if to_row_index - 1 == index && to_row_index < from_row_index {
-                            list_row.add_css_class("highlight-top");
-                        } else if to_row_index == index && to_row_index > from_row_index {
+                        if to_row_index - 1 == index && to_row_index < from_row_index
+                            || to_row_index == index && to_row_index > from_row_index
+                        {
                             list_row.add_css_class("highlight-top");
                         } else {
                             list_row.remove_css_class("highlight-top");
