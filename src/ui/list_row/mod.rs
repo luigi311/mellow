@@ -42,6 +42,11 @@ impl ListRow {
         row.prefix_image.set_margin_bottom(margin);
     }
 
+    #[inline]
+    pub fn set_selected(&self, selected: bool) {
+        self.imp().set_selected(selected);
+    }
+
     pub fn add_bindings(&self, bindings: &[glib::Binding]) {
         self.imp().bindings.borrow_mut().extend_from_slice(bindings);
     }

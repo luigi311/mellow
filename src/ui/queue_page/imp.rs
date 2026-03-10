@@ -398,7 +398,7 @@ impl QueuePage {
         self.for_each_row(|list_row, index| {
             let list_row = list_row.imp();
             list_row.selection_toggle.set_visible(selection_mode);
-            // list_row.prefix_image.set_visible(!selection_mode);
+            list_row.open_subpage_icon.set_visible(!selection_mode);
             if !selection_mode {
                 list_row.set_selected(false);
                 (model.item(index as u32).unwrap())

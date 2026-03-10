@@ -20,16 +20,9 @@
         </style>
       </object>
     </child>
-    <child type="prefix">
-      <object class="GtkCheckButton" id="selection_toggle">
-        <property name="width_request">36</property>
-        <property name="visible">False</property>
-      </object>
-    </child>
 
     <child type="suffix">
       <object class="GtkLabel" id="suffix_label">
-        <property name="margin_end">8</property>
         <style>
           <class name="dimmed"/>
           <class name="numeric"/>
@@ -38,8 +31,16 @@
     </child>
 
     <child type="suffix">
-      <object class="GtkImage">
+      <object class="GtkImage" id="open_subpage_icon">
+        <property name="margin_start">9</property>
+        <property name="margin_end">1</property>
         <property name="icon_name">go-next-symbolic</property>
+      </object>
+    </child>
+    <child type="suffix">
+      <object class="GtkCheckButton" id="selection_toggle">
+        <property name="width_request">8</property>
+        <property name="visible">False</property>
       </object>
     </child>
 
