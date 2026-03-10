@@ -140,53 +140,26 @@ impl QueuePage {
         }
 
         let last_scroll_pos = self.scrolled_window.vadjustment().value();
-        let mut items: Vec<QueueItemObject> = (queue.iter().enumerate().take(end).skip(start))
-            .map(|index_item| {
-                let q_index = index_item.0;
-                match index_item.1 {
-                    QueueItem::Song(song) => self.new_song(q_index as u32, q_index == index, song),
-                    QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
-                }
-            })
-            .collect();
+        let mut items =
+            Self::items_to_objects(queue.iter().enumerate().take(end).skip(start), index);
 
         if self.repeat_toggle.is_active() && queue_length != 0 {
             let n_items_before = (NUM_ITEMS_BEHIND - (index - start)).min(queue_length - 1);
             if n_items_before > 0 {
                 let from = queue.len() - n_items_before;
-                let mut items_before: Vec<QueueItemObject> = (queue
-                    .iter()
-                    .enumerate()
-                    .skip(from.max(index + 1)))
-                .map(|index_item| {
-                    let q_index = index_item.0;
-                    match index_item.1 {
-                        QueueItem::Song(song) => {
-                            self.new_song(q_index as u32, q_index == index, song)
-                        }
-                        QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
-                    }
-                })
-                .collect();
+                let mut items_before = Self::items_to_objects(
+                    queue.iter().enumerate().skip(from.max(index + 1)),
+                    index,
+                );
                 mem::swap(&mut items, &mut items_before);
                 items.extend(items_before);
             }
             let n_items_after = NUM_ITEMS_AHEAD - (end - index);
             if n_items_after > 0 {
-                let items_after: Vec<QueueItemObject> = (queue
-                    .iter()
-                    .enumerate()
-                    .take(n_items_after.min(index)))
-                .map(|index_item| {
-                    let q_index = index_item.0;
-                    match index_item.1 {
-                        QueueItem::Song(song) => {
-                            self.new_song(q_index as u32, q_index == index, song)
-                        }
-                        QueueItem::Stopper(stopper) => self.new_stopper(q_index as u32, stopper),
-                    }
-                })
-                .collect();
+                let items_after = Self::items_to_objects(
+                    queue.iter().enumerate().take(n_items_after.min(index)),
+                    index,
+                );
                 items.extend(items_after);
             }
         }
@@ -206,7 +179,26 @@ impl QueuePage {
 
     #[inline]
     #[must_use]
-    fn new_song(&self, queue_index: u32, is_playing: bool, song: &SharedSong) -> QueueItemObject {
+    fn items_to_objects<I, 'i>(items_iter: I, playing_index: usize) -> Vec<QueueItemObject>
+    where
+        I: Iterator<Item = (usize, &'i QueueItem)>,
+    {
+        items_iter
+            .map(|index_item| {
+                let q_index = index_item.0;
+                match index_item.1 {
+                    QueueItem::Song(song) => {
+                        Self::new_song(q_index as u32, q_index == playing_index, &song)
+                    }
+                    QueueItem::Stopper(stopper) => Self::new_stopper(q_index as u32, &stopper),
+                }
+            })
+            .collect()
+    }
+
+    #[inline]
+    #[must_use]
+    fn new_song(queue_index: u32, is_playing: bool, song: &SharedSong) -> QueueItemObject {
         let object = QueueItemObject::new(queue_index, is_playing, Some(Arc::clone(song)));
 
         let mut info = song.info();
@@ -230,7 +222,7 @@ impl QueuePage {
 
     #[inline]
     #[must_use]
-    fn new_stopper(&self, queue_index: u32, stopper: &SharedStopper) -> QueueItemObject {
+    fn new_stopper(queue_index: u32, stopper: &SharedStopper) -> QueueItemObject {
         let queue_item_object = QueueItemObject::new(queue_index, false, None);
         queue_item_object.set_title(stopper.display_name());
         queue_item_object
