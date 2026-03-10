@@ -40,6 +40,10 @@ impl ItemRow {
     }
 
     #[inline]
+    pub fn add_binding(&self, binding: glib::Binding) {
+        self.imp().bindings.borrow_mut().push(binding);
+    }
+    #[inline]
     pub fn add_bindings(&self, bindings: &[glib::Binding]) {
         self.imp().bindings.borrow_mut().extend_from_slice(bindings);
     }

@@ -255,10 +255,12 @@ impl ObjectImpl for AlbumsPage {
                 fallback_album_image()
             }));
 
-            album_tile.add_bindings(&[album_object
-                .bind_property("artwork", &album_tile.imp().image.get(), "paintable")
-                .sync_create()
-                .build()]);
+            album_tile.add_binding(
+                album_object
+                    .bind_property("artwork", &album_tile.imp().image.get(), "paintable")
+                    .sync_create()
+                    .build(),
+            );
         });
         factory.connect_unbind(|_, list_item| {
             let list_item = list_item

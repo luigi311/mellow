@@ -262,10 +262,12 @@ impl ObjectImpl for ArtistsPage {
             //     fallback_artist_image()
             // }));
 
-            // artist_tile.add_bindings(&[artist_object
-            //     .bind_property("artwork", &artist_tile.imp().image.get(), "paintable")
-            //     .sync_create()
-            //     .build()]);
+            // artist_tile.add_binding(
+            //     artist_object
+            //         .bind_property("artwork", &artist_tile.imp().image.get(), "paintable")
+            //         .sync_create()
+            //         .build(),
+            // );
         });
         factory.connect_unbind(|_, list_item| {
             let list_item = list_item

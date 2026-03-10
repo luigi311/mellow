@@ -245,10 +245,12 @@ impl ObjectImpl for SongsPage {
                 fallback_song_image()
             }));
 
-            song_row.add_bindings(&[song_object
-                .bind_property("artwork", &song_row.imp().image.get(), "paintable")
-                .sync_create()
-                .build()]);
+            song_row.add_binding(
+                song_object
+                    .bind_property("artwork", &song_row.imp().image.get(), "paintable")
+                    .sync_create()
+                    .build(),
+            );
         });
         factory.connect_unbind(|_, list_item| {
             let list_item = list_item
