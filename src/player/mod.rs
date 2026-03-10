@@ -233,6 +233,34 @@ impl Player {
                 PlayerRequest::LoadQueue(queue, shuffled, index) => {
                     self.load_queue(queue, shuffled, index) == ()
                 }
+
+                PlayerRequest::SeekToTime(time) => self.seek_to_time(time)? != (),
+                PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
+                PlayerRequest::SeekDone => self.seek_done() == (),
+
+                PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
+                PlayerRequest::TogglePlay(Some(play)) => match self.current_state {
+                    State::Playing if !play => self.play_or_pause() == (),
+                    State::Playing => continue,
+                    _ if play => self.play_or_pause() == (),
+                    _ => continue,
+                },
+
+                PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
+                PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle) != (),
+                PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
+                PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
+
+                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
+                PlayerRequest::SkipNext => self.skip_next()? == (),
+                PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
+                PlayerRequest::LoadNext if self.seeking => continue,
+                PlayerRequest::SongEnd if !self.can_use_gapless() => match self.seeking {
+                    true => println!("Ignoring SongEnd while seeking") != (),
+                    false => self.request_state(self.current_state) == (),
+                },
+                PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
+
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
                 PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
@@ -259,31 +287,6 @@ impl Player {
                     self.queue.ui_update_queue();
                     continue;
                 }
-
-                PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
-                PlayerRequest::TogglePlay(Some(play)) => match self.current_state {
-                    State::Playing if !play => self.play_or_pause() == (),
-                    State::Playing => continue,
-                    _ if play => self.play_or_pause() == (),
-                    _ => continue,
-                },
-                PlayerRequest::SkipPrevious => self.skip_prev_or_repeat()? == (),
-                PlayerRequest::SkipNext => self.skip_next()? == (),
-                PlayerRequest::SkipTo(index) => self.skip_to(index) == (),
-                PlayerRequest::Seek(pos) => self.seek_to_position_paused(pos)? != (),
-                PlayerRequest::SeekDone => self.seek_done() == (),
-                PlayerRequest::SeekToTime(time) => self.seek_to_time(time)? != (),
-                PlayerRequest::LoadNext if self.seeking => continue,
-                PlayerRequest::SongEnd if !self.can_use_gapless() => match self.seeking {
-                    true => println!("Ignoring SongEnd while seeking") != (),
-                    false => self.request_state(self.current_state) == (),
-                },
-                PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
-
-                PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
-                PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle) != (),
-                PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
-                PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
 
                 PlayerRequest::Update => true,
 
