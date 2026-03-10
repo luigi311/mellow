@@ -354,6 +354,7 @@ impl Player {
     /// # Panics
     /// The function panics if `index` is out of bounds of `queue`,
     /// except when the `queue` is empty
+    #[inline]
     fn load_queue(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>, index: usize) {
         if queue.is_empty() {
             let _ = self.backend.set_state(State::Null);
@@ -388,7 +389,6 @@ impl Player {
     }
 
     /// Removes the item at `index` from the queue
-    #[inline]
     fn remove_item(&mut self, index: usize) {
         if index == self.queue.index() {
             if self.next_song_loaded {
@@ -486,6 +486,7 @@ impl Player {
     }
 
     /// Seek to a particular time in the song
+    #[inline]
     fn seek_to_time(&self, time: ClockTime) -> Result<(), gst::StateChangeError> {
         match (self.backend).seek_simple(SeekFlags::FLUSH | SeekFlags::ACCURATE, time) {
             Ok(()) => {
@@ -587,6 +588,7 @@ impl Player {
     }
 
     /// Sets the playback volume
+    #[inline]
     fn set_volume(&self, volume: f64) {
         self.backend.set_property("volume", volume);
     }
