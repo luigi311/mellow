@@ -84,12 +84,15 @@ impl QueuePage {
     }
     #[template_callback]
     pub fn handle_remove_selected(&self) {
-        self.for_each_object_rev(|item, _| {
+        let mut selected_items = Vec::new();
+        let list_model = self.list_model.get().expect(EXP_INIT);
+        for i in (0..list_model.n_items()).rev() {
+            let item = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
             if item.selected() {
-                let _ = (PLAYER_TX.get().expect(EXP_INIT))
-                    .send(PlayerRequest::RemoveAt(item.index() as usize));
+                selected_items.push(item.index() as usize);
             }
-        });
+        }
+        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(selected_items));
         self.set_selection_mode(false);
     }
 
@@ -375,19 +378,10 @@ impl QueuePage {
     //     let mut i = 0;
     //     let list_model = self.list_model.get().expect(EXP_INIT);
     //     while let Some(row) = list_model.item(i).and_downcast_ref::<QueueItemObject>() {
-    //         f(row, i);
+    //         f(item, i);
     //         i += 1;
     //     }
     // }
-
-    #[inline]
-    fn for_each_object_rev<F: Fn(QueueItemObject, u32)>(&self, f: F) {
-        let list_model = self.list_model.get().expect(EXP_INIT);
-        for i in (0..list_model.n_items()).rev() {
-            let row = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
-            f(row, i);
-        }
-    }
 
     #[inline]
     fn set_selection_mode(&self, selection_mode: bool) {

@@ -58,6 +58,9 @@ pub enum PlayerRequest {
     InsertRelative(Box<(isize, QueueItem)>),
     /// Remove item at the specified index from the queue
     RemoveAt(usize),
+    /// Remove multiple items at the same time using the list of indices
+    /// For proper behavior, indexes must be ordered from last to first
+    RemoveItems(Vec<usize>),
 
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
@@ -104,6 +107,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveAt(index) => format!("RemoveAt({index})"),
+                Self::RemoveItems(indices) => format!("RemoveItems{indices:?}"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
@@ -265,22 +269,16 @@ impl Player {
                     ) == ()
                 }
                 PlayerRequest::RemoveAt(index) => {
-                    if index == self.queue.index() {
-                        if self.next_song_loaded {
-                            println!("Removing song which was already loaded");
-                            self.unload_gapless();
-                            self.queue.remove(index);
-                            self.ui_set_state();
-                            continue;
-                        }
-                        self.backend.set_property("instant-uri", true);
-                        self.queue.pending_track = true;
-                        self.queue.remove(index);
-                        true
-                    } else {
-                        self.queue.remove(index);
-                        continue;
+                    self.remove_item(index);
+                    self.queue.ui_update_queue();
+                    continue;
+                }
+                PlayerRequest::RemoveItems(indices) => {
+                    for index in indices {
+                        self.remove_item(index);
                     }
+                    self.queue.ui_update_queue();
+                    continue;
                 }
 
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
@@ -315,6 +313,7 @@ impl Player {
                     let _ = self.ui_tx.send(UpdateUI::RunAction("app.quit"));
                 }
                 self.queue.remove_current();
+                self.queue.ui_update_queue();
                 let _ = self.backend.set_state(State::Null);
                 self.request_state(State::Paused);
                 return self.update();
@@ -382,6 +381,27 @@ impl Player {
             State::Playing => State::Paused,
             _ => State::Playing,
         });
+    }
+
+    /// Removes the item at `index` from the queue
+    #[inline]
+    fn remove_item(&mut self, index: usize) {
+        if index == self.queue.index() {
+            if self.next_song_loaded {
+                println!("Removing song which was already loaded");
+                self.unload_gapless();
+                self.queue.remove(index);
+                self.ui_set_state();
+            }
+            self.backend.set_property("instant-uri", true);
+            self.queue.pending_track = true;
+            self.queue.remove(index);
+
+            self.update();
+            self.ui_set_state();
+        } else {
+            self.queue.remove(index);
+        }
     }
 
     /// Moves to the next track in the queue without flushing the stream

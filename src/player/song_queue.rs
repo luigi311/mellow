@@ -317,7 +317,6 @@ impl SongQueue {
         if index <= self.index {
             self.ui_close_queue_subpage();
         }
-        self.ui_update_queue();
         previous
     }
 
