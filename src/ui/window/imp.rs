@@ -229,13 +229,18 @@ impl Window {
         if let Some(queue) = queue {
             #[cfg(debug_assertions)]
             println!("update_song_queue(Some(…), {index}): {} items", queue.len());
+
+            self.queue_page.update_song_queue(&queue, index);
             self.song_queue.replace(queue);
         } else {
             #[cfg(debug_assertions)]
             println!("update_song_queue(None, {index})");
+
+            // TODO: Create a new function for handling the `None` case, which doesn't
+            // recreate the entire model (so that selections can stay between redraws)
+            self.queue_page
+                .update_song_queue(&self.song_queue.borrow(), index);
         }
-        self.queue_page
-            .update_song_queue(&self.song_queue.borrow(), self.song_queue_index.get());
     }
     fn open_queue_subpage(&self, index: usize) {
         self.playing.push_by_tag("info");
