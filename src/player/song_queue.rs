@@ -500,6 +500,8 @@ impl SongQueue {
             + "\n"
             + &self.shuffle.to_string()
             + "\n"
+            + &self.repeat.to_string()
+            + "\n"
             + self
                 .songs
                 .iter()
@@ -507,7 +509,7 @@ impl SongQueue {
                     QueueItem::Song(song) => song.info().file_path() + "\n",
                     QueueItem::Stopper(stopper) => match stopper.should_close_player() {
                         false => String::from("Pause\n"),
-                        true => String::from("Close Player\n")
+                        true => String::from("Close Player\n"),
                     },
                 })
                 .collect::<String>()
@@ -563,6 +565,7 @@ impl SongQueue {
             && let Some(Ok(track)) = lines.next().map(str::parse)
             && let Some(time) = lines.next().map(str::parse)
             && let Some(Ok(shuffle)) = lines.next().map(str::parse)
+            && let Some(Ok(repeat)) = lines.next().map(str::parse)
             && let queue =
                 library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
             && !queue.is_empty()
@@ -584,7 +587,10 @@ impl SongQueue {
             };
             player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track))?;
             if let Ok(time) = time {
-                player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)))?;
+                let _ = player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)));
+            }
+            if repeat {
+                let _ = player_tx.send(PlayerRequest::SetRepeat(true));
             }
             return Ok(());
         }

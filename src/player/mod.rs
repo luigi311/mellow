@@ -42,6 +42,7 @@ pub enum PlayerRequest {
     /// Load a new queue and an optional shuffled queue. Shuffle mode is determined
     /// by whether the second argument (the shuffled queue) is `Some`. If `Some` but
     /// empty, a new shuffled queue is created.
+    /// (queue: `Vec<QueueItem>`, shuffled: `Option<Vec<usize>>`, index: `usize`)
     LoadQueue(Vec<QueueItem>, Option<Vec<usize>>, usize),
     /// Appends multiple items to the current queue
     AppendQueue(Vec<QueueItem>),
