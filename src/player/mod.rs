@@ -57,7 +57,7 @@ pub enum PlayerRequest {
     /// Inserts an item into the queue relative to the currently playing index
     InsertRelative(Box<(isize, QueueItem)>),
     /// Remove item at the specified index from the queue
-    RemoveAt(usize),
+    RemoveItem(usize),
     /// Remove multiple items at the same time using the list of indices
     /// For proper behavior, indexes must be ordered from last to first
     RemoveItems(Vec<usize>),
@@ -106,7 +106,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::Shift(from, by) => format!("Shift({from}, {by})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
-                Self::RemoveAt(index) => format!("RemoveAt({index})"),
+                Self::RemoveItem(index) => format!("RemoveAt({index})"),
                 Self::RemoveItems(indices) => format!("RemoveItems{indices:?}"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
@@ -230,7 +230,36 @@ impl Player {
 
             #[allow(clippy::unit_cmp)]
             if match dbg!(player_request) {
-                PlayerRequest::Update => true,
+                PlayerRequest::LoadQueue(queue, shuffled, index) => {
+                    self.load_queue(queue, shuffled, index) == ()
+                }
+                PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
+                PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
+                PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
+                PlayerRequest::Shift(from, by) => self.shift(from, by) == (),
+                PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
+                PlayerRequest::InsertRelative(item) => {
+                    self.insert_to_queue(
+                        match item.0 >= 0 {
+                            true => self.queue.index() + item.0 as usize,
+                            false => self.queue.index() - -item.0 as usize,
+                        },
+                        item.1,
+                    ) == ()
+                }
+                PlayerRequest::RemoveItem(index) => {
+                    self.remove_item(index);
+                    self.queue.ui_update_queue();
+                    continue;
+                }
+                PlayerRequest::RemoveItems(indices) => {
+                    for index in indices {
+                        self.remove_item(index);
+                    }
+                    self.queue.ui_update_queue();
+                    continue;
+                }
+
                 PlayerRequest::TogglePlay(None) => self.play_or_pause() == (),
                 PlayerRequest::TogglePlay(Some(play)) => match self.current_state {
                     State::Playing if !play => self.play_or_pause() == (),
@@ -251,40 +280,12 @@ impl Player {
                 },
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
-                PlayerRequest::LoadQueue(queue, shuffled, index) => {
-                    self.load_queue(queue, shuffled, index) == ()
-                }
-                PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
-                PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
-                PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
-                PlayerRequest::Shift(from, by) => self.shift(from, by) == (),
-                PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
-                PlayerRequest::InsertRelative(item) => {
-                    self.insert_to_queue(
-                        match item.0 >= 0 {
-                            true => self.queue.index() + item.0 as usize,
-                            false => self.queue.index() - -item.0 as usize,
-                        },
-                        item.1,
-                    ) == ()
-                }
-                PlayerRequest::RemoveAt(index) => {
-                    self.remove_item(index);
-                    self.queue.ui_update_queue();
-                    continue;
-                }
-                PlayerRequest::RemoveItems(indices) => {
-                    for index in indices {
-                        self.remove_item(index);
-                    }
-                    self.queue.ui_update_queue();
-                    continue;
-                }
-
                 PlayerRequest::SetVolume(vol) => self.set_volume(vol) != (),
                 PlayerRequest::SetShuffle(shuffle) => self.queue.set_shuffle(shuffle) != (),
                 PlayerRequest::SetRepeat(repeat) => self.queue.set_repeat(repeat) != (),
                 PlayerRequest::SetGapless(gapless) => (self.gapless = gapless) != (),
+
+                PlayerRequest::Update => true,
 
                 #[allow(clippy::unit_arg)]
                 PlayerRequest::Shutdown(save_queue, save_time) => {

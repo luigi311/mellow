@@ -64,7 +64,7 @@ impl QueueSubpage {
         (PLAYER_TX.get().expect(EXP_INIT))
             .send(match stop_after {
                 true => PlayerRequest::InsertAt(Box::new((index, QueueItem::new_stopper(false)))),
-                false => PlayerRequest::RemoveAt(index),
+                false => PlayerRequest::RemoveItem(index),
             })
             .expect(EXP_RX);
         // self.obj().set_stop_after(stop_after);
@@ -73,7 +73,7 @@ impl QueueSubpage {
     pub fn handle_remove_item(&self) {
         (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
         (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::RemoveAt(self.index.get()))
+            .send(PlayerRequest::RemoveItem(self.index.get()))
             .expect(EXP_RX);
     }
     #[template_callback]
