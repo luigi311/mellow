@@ -22,9 +22,20 @@ const ROW_HEIGHT: usize = 55;
 #[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
 pub struct QueuePage {
     #[template_child]
+    header_normal: TemplateChild<adw::HeaderBar>,
+    #[template_child]
     pub shuffle_toggle: TemplateChild<gtk::ToggleButton>,
     #[template_child]
     pub repeat_toggle: TemplateChild<gtk::ToggleButton>,
+
+    #[template_child]
+    header_selection: TemplateChild<adw::HeaderBar>,
+    #[template_child]
+    pub selection_toggle: TemplateChild<gtk::ToggleButton>,
+    #[template_child]
+    pub remove_selection: TemplateChild<gtk::Button>,
+
+    pub selection_mode: Rc<Cell<bool>>,
 
     #[template_child]
     list_box: TemplateChild<gtk::ListBox>,
@@ -42,7 +53,6 @@ pub struct QueuePage {
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
     pub next_scroll_pos: Cell<QueueScrollAction>,
-    pub selection_mode: Rc<Cell<bool>>,
 }
 
 #[derive(Debug)]
@@ -67,6 +77,20 @@ impl QueuePage {
         (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::FocusLibrary)
             .expect(EXP_RX);
+    }
+    #[template_callback]
+    pub fn handle_exit_selection(&self) {
+        self.set_selection_mode(false);
+    }
+    #[template_callback]
+    pub fn handle_remove_selected(&self) {
+        self.for_each_object_rev(|item, _| {
+            if item.selected() {
+                let _ = (PLAYER_TX.get().expect(EXP_INIT))
+                    .send(PlayerRequest::RemoveAt(item.index() as usize));
+            }
+        });
+        self.set_selection_mode(false);
     }
 
     #[inline]
@@ -99,7 +123,8 @@ impl QueuePage {
                 false => "song_queue",
             });
 
-        // TODO: Reorder queue items using drag & drop
+        // Exit selection because the model gets reset
+        self.set_selection_mode(false);
 
         self.playing_index.set(playing);
         let Some(list_model) = self.list_model.get() else {
@@ -337,21 +362,50 @@ impl QueuePage {
     }
 
     #[inline]
-    fn for_each_row<F: Fn(gtk::ListBoxRow, i32)>(&self, f: F) {
+    fn for_each_row<F: Fn(&ListRow, i32)>(&self, f: F) {
         let mut i = 0;
-        while let Some(row) = self.list_box.row_at_index(i) {
+        while let Some(row) = self.list_box.row_at_index(i).and_downcast_ref::<ListRow>() {
             f(row, i);
             i += 1;
         }
     }
 
+    // #[inline]
+    // fn for_each_object<F: Fn(&QueueItemObject, u32)>(&self, f: F) {
+    //     let mut i = 0;
+    //     let list_model = self.list_model.get().expect(EXP_INIT);
+    //     while let Some(row) = list_model.item(i).and_downcast_ref::<QueueItemObject>() {
+    //         f(row, i);
+    //         i += 1;
+    //     }
+    // }
+
+    #[inline]
+    fn for_each_object_rev<F: Fn(QueueItemObject, u32)>(&self, f: F) {
+        let list_model = self.list_model.get().expect(EXP_INIT);
+        for i in (0..list_model.n_items()).rev() {
+            let row = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
+            f(row, i);
+        }
+    }
+
     #[inline]
     fn set_selection_mode(&self, selection_mode: bool) {
+        self.header_selection.set_visible(selection_mode);
+        self.header_normal.set_visible(!selection_mode);
         self.selection_mode.set(selection_mode);
-        self.for_each_row(|row, _| {
-            let list_row = row.downcast_ref::<ListRow>().unwrap().imp();
-            list_row.selection_toggle.set_visible(true);
-            list_row.prefix_image.set_visible(false);
+        let model = self.list_model.get().expect(EXP_INIT);
+        self.for_each_row(|list_row, index| {
+            let list_row = list_row.imp();
+            list_row.selection_toggle.set_visible(selection_mode);
+            // list_row.prefix_image.set_visible(!selection_mode);
+            if !selection_mode {
+                list_row.set_selected(false);
+                (model.item(index as u32).unwrap())
+                    .downcast::<QueueItemObject>()
+                    .unwrap()
+                    .set_selected(false);
+            }
         });
     }
 
@@ -508,8 +562,7 @@ impl QueuePage {
                         .row_at_y((start_y) as i32)
                         .map(|row| row.index())
                         .unwrap_or_default();
-                    queue_page.for_each_row(|row, index| {
-                        let list_row = row.downcast_ref::<ListRow>().unwrap();
+                    queue_page.for_each_row(|list_row, index| {
                         if to_row_index - 1 == index && to_row_index < from_row_index
                             || to_row_index == index && to_row_index > from_row_index
                         {
@@ -519,8 +572,7 @@ impl QueuePage {
                         }
                     });
                 } else {
-                    queue_page.for_each_row(|row, _| {
-                        let list_row = row.downcast_ref::<ListRow>().unwrap();
+                    queue_page.for_each_row(|list_row, _| {
                         list_row.remove_css_class("highlight-top");
                     });
                 }
@@ -578,8 +630,7 @@ impl QueuePage {
                     .send(PlayerRequest::Shift(from_index, (to - from) as isize))
                     .expect(EXP_RX);
 
-                queue_page.for_each_row(|row, _| {
-                    let list_row = row.downcast_ref::<ListRow>().unwrap();
+                queue_page.for_each_row(|list_row, _| {
                     list_row.remove_css_class("highlight-top");
                 });
             }
@@ -588,7 +639,7 @@ impl QueuePage {
     }
     #[inline]
     fn setup_selection_mode(&self) {
-        // TODO: Selection mode headerbar buttons (remove, cancel, maybe a rating dropdown)
+        // IDEA: Rating dropdown button for rating multiple songs at once
         // TODO: Exit selection mode by pressing escape
         // FIX: Item selections will likely be lost with each queue update
 
@@ -598,13 +649,6 @@ impl QueuePage {
             #[weak(rename_to=queue_page)]
             self,
             move |_, x, y| if !selection_mode.get() && !Self::should_drag(x) {
-                // TODO: Enable for release builds once it is in a usable state
-                #[cfg(not(debug_assertions))]
-                {
-                    println!("Selection mode is currently disabled");
-                    return;
-                }
-
                 queue_page.set_selection_mode(true);
                 let object_index = queue_page.list_box.row_at_y(y as i32).unwrap().index();
                 queue_page.queue_item_objects.borrow()[object_index as usize].set_selected(true);

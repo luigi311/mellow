@@ -4,7 +4,7 @@
     <property name="child">
       <object class="AdwToolbarView">
         <child type="top">
-          <object class="AdwHeaderBar">
+          <object class="AdwHeaderBar" id="header_normal">
             <property name="show_title">False</property>
             <child type="start">
               <object class="GtkToggleButton">
@@ -32,6 +32,27 @@
                 <signal name="toggled" handler="handle_set_repeat" swapped="true"/>
                 <property name="icon_name">media-playlist-repeat-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Repeat</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <child type="top">
+          <object class="AdwHeaderBar" id="header_selection">
+            <property name="visible">False</property>
+            <property name="show_title">False</property>
+            <child type="start">
+              <object class="GtkToggleButton" id="selection_toggle">
+                <signal name="toggled" handler="handle_exit_selection" swapped="true"/>
+                <property name="icon_name">selection-mode-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Selection Mode</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="remove_selection">
+                <signal name="clicked" handler="handle_remove_selected" swapped="true"/>
+                <property name="icon_name">list-remove-all-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Remove Selected</property>
               </object>
             </child>
           </object>

@@ -12,11 +12,10 @@ Song queue:
 - [x] Allow reordering the queue
 - [x] Reorder using drag-&-drop
   - TODO: Improvement: Scroll when reaching top/bottom edges
-- [ ] Multi-selection mode
+- [-] Multi-selection mode
   - [x] Item selection (checkbox in place of the cover image)
-  - [ ] Removing multiple items at once
+  - [x] Removing multiple items at once
   - [ ] Rating multiple items at once
-  - TODO: No way to exit selection mode (enable once implemented)
 - [x] Allow adding songs to the queue
 - [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)

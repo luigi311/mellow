@@ -54,7 +54,7 @@ When the overlay is closed, it is time to enjoy the music.
 |  1  | Playback & controls: play/pause/skip/seek | ✅ Done |
 |  2  | Playback modes: normal/shuffle/repeat     | ✅ Done |
 |  3  | Open files/folders to create a queue      | ✅ Done |
-|  4  | Song queue interface & management         | ⚠️ No multi-selection, possible UI element scaling issues |
+|  4  | Song queue interface & management         | ⚠️ Possible UI element scaling issues |
 |  5  | Music library                             | ⚠️ Mostly done, but see below |
 | 5.1 | Artists page                              | ⚠️ Possible UI element scaling issues in subpages |
 | 5.2 | Albums page                               | ⚠️ Possible UI element scaling issues |

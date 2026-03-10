@@ -21,10 +21,8 @@ Song Queue:
 - [x] Removing items works as expected
 - [x] Reordering the queue works as expected
   - TODO: Improvement: Scroll when dragging close to the view borders
-- [ ] Selection mode works as expected
-  - [ ] Removing multiple items at once works as expected
-  - TODO: Enable selection mode once it works properly
-  - TODO: No way to exit selection mode
+- [x] Selection mode works as expected
+  - [x] Removing multiple items at once works as expected
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
 - [x] Scrolling works without issues
