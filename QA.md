@@ -19,8 +19,8 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [-] Reordering the queue works as expected
-  - TODO: Scroll when dragging close to the view borders
+- [x] Reordering the queue works as expected
+  - TODO: Improvement: Scroll when dragging close to the view borders
 - [ ] Selection mode works as expected
   - [ ] Removing multiple items at once works as expected
   - TODO: Enable selection mode once it works properly

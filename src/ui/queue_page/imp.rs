@@ -603,12 +603,14 @@ impl QueuePage {
             #[weak(rename_to=queue_page)]
             self,
             move |_, x, y| if !selection_mode.get() && !Self::should_drag(x) {
-                // TODO: Enable once functionality is implemented
-                println!("Selection mode is currently disabled");
-                return;
+                // TODO: Enable for release builds once it is in a usable state
+                #[cfg(not(debug_assertions))]
+                {
+                    println!("Selection mode is currently disabled");
+                    return;
+                }
 
                 queue_page.set_selection_mode(true);
-
                 let object_index = queue_page.list_box.row_at_y(y as i32).unwrap().index();
                 queue_page.queue_item_objects.borrow()[object_index as usize].set_selected(true);
             }

@@ -10,13 +10,13 @@ Song queue:
 
 - [x] Display the song queue
 - [x] Allow reordering the queue
-- [ ] Reorder using drag-&-drop
-  - TODO: Scroll when reaching top/bottom edges
+- [x] Reorder using drag-&-drop
+  - TODO: Improvement: Scroll when reaching top/bottom edges
 - [ ] Multi-selection mode
   - [x] Item selection (checkbox in place of the cover image)
   - [ ] Removing multiple items at once
   - [ ] Rating multiple items at once
-  - TODO: No way to exit selection mode
+  - TODO: No way to exit selection mode (enable once implemented)
 - [x] Allow adding songs to the queue
 - [x] Allow removing items from the queue
 - [x] Allow inserting stoppers (scheduled pause)
@@ -41,8 +41,8 @@ Music library:
   - IDEA: Remember filters?
   - IDEA: Remember if sort order was reversed(?)
 - [ ] Allow initiating a full library rebuild
-- [-] Search/filtering for songs/albums/artists pages
-  - FIX: Cannot drag-select text because it drags the header bar
+- [x] Search/filtering for songs/albums/artists pages
+  - TODO: Improvement: Escape key should empty and unfocus the search field
 - [x] Songs/albums/artists sort modes
   - [x] Date added (either newest or oldest)
   - [x] Release date (either newest or oldest)
