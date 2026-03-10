@@ -83,6 +83,14 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_adaptive_colors_switch(&self) {
+        self.update_color_state();
+        if let Some((r, g, b)) = self.current_color.get() {
+            self.set_background_color(r, g, b);
+        }
+    }
+
+    #[inline]
+    fn update_color_state(&self) {
         match self.adaptive_colors.is_active() {
             true => self.enable_background_color(),
             false => self.disable_background_color(),
@@ -215,6 +223,34 @@ impl SettingsPage {
     /// The input values are expected to be linear rather than sRGB
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
         #[inline]
+        fn process_highlight_color(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
+            /// Colors below this luminance value will be desaturated for accuracy
+            const DESATURATION_THRESHOLD: f64 = 0.1;
+
+            let luminance = lum(r, g, b);
+            let target_lum = (luminance * luminance * luminance).mul_add(0.6, 0.4);
+
+            if luminance < DESATURATION_THRESHOLD {
+                if luminance == 0.0 {
+                    return (255, 255, 255);
+                }
+
+                // Desaturate dark colors for more accurate results once normalized
+                let saturation =
+                    (1.0 - (1.0 - luminance / DESATURATION_THRESHOLD).powi(2)).mul_add(0.7, 0.3);
+                r = lerp(luminance, r, saturation);
+                g = lerp(luminance, g, saturation);
+                b = lerp(luminance, b, saturation);
+            }
+
+            // Normalize the color and scale it to the target luminance
+            linear_to_srgb(
+                r / luminance * target_lum,
+                g / luminance * target_lum,
+                b / luminance * target_lum,
+            )
+        }
+        #[inline]
         fn process_color_dark(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
             const SATURATION: f64 = 1.6;
 
@@ -223,7 +259,6 @@ impl SettingsPage {
             b = (1.0 - (1.0 - b).powi(3)) / 7.5;
 
             let luminance = lum(r, g, b);
-
             r = lerp(luminance, r, SATURATION);
             g = lerp(luminance, g, SATURATION);
             b = lerp(luminance, b, SATURATION);
@@ -240,7 +275,7 @@ impl SettingsPage {
 
             if luminance < DESATURATION_THRESHOLD {
                 if luminance == 0.0 {
-                    return linear_to_srgb(target_lum, target_lum, target_lum);
+                    return (255, 255, 255);
                 }
 
                 // Desaturate dark colors for more accurate results once normalized
@@ -291,9 +326,18 @@ impl SettingsPage {
 
         self.current_color.set(Some((r, g, b)));
         let css = self.css.get().expect(EXP_INIT);
+        let (mut r_highlight, mut g_highlight, mut b_highlight) = match self.has_style.get() {
+            true => process_highlight_color(r, g, b),
+            false => (255, 255, 255),
+        };
         let (r, g, b) = match css.prefers_color_scheme() {
             InterfaceColorScheme::Dark => process_color_dark(r, g, b),
-            InterfaceColorScheme::Light => process_color_light(r, g, b),
+            InterfaceColorScheme::Light => {
+                r_highlight = r_highlight.saturating_add(50);
+                g_highlight = g_highlight.saturating_add(50);
+                b_highlight = b_highlight.saturating_add(50);
+                process_color_light(r, g, b)
+            }
             _ => match process_color_auto(r, g, b) {
                 (color, luminance) if luminance < 0.5 => {
                     (self.style_manager.get().unwrap())
@@ -301,30 +345,18 @@ impl SettingsPage {
                     color
                 }
                 (color, _) => {
+                    r_highlight = r_highlight.saturating_add(50);
+                    g_highlight = g_highlight.saturating_add(50);
+                    b_highlight = b_highlight.saturating_add(50);
                     (self.style_manager.get().unwrap())
                         .set_color_scheme(adw::ColorScheme::ForceLight);
                     color
                 }
             },
         };
-
         let r_dark = (r / 2).saturating_sub(4);
         let g_dark = (g / 2).saturating_sub(4);
         let b_dark = (b / 2).saturating_sub(4);
-
-        let has_style = self.has_style.get();
-        let r_highlight = match has_style {
-            true => lerp(r as f64, 255.0, 0.4) as u8,
-            false => 255,
-        };
-        let g_highlight = match has_style {
-            true => lerp(g as f64, 255.0, 0.4) as u8,
-            false => 255,
-        };
-        let b_highlight = match has_style {
-            true => lerp(b as f64, 255.0, 0.4) as u8,
-            false => 255,
-        };
 
         css.load_from_string(&format!(
             ".color-main {{
@@ -339,12 +371,12 @@ impl SettingsPage {
              }}
              .highlight-top {{
                  border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
-                 border-top: 1px;
+                 border-top: 4px;
              }}
             ",
         ));
 
-        self.handle_adaptive_colors_switch();
+        self.update_color_state();
     }
 
     #[inline]
