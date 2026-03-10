@@ -341,10 +341,6 @@ impl SettingsPage {
                  border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
                  border-top: 1px;
              }}
-             .highlight-bottom {{
-                 border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
-                 border-bottom: 1px;
-             }}
             ",
         ));
 
