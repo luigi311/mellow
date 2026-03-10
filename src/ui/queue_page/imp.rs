@@ -505,13 +505,19 @@ impl QueuePage {
                     return;
                 }
 
-                if let Some(row_index) = (queue_page.list_box)
+                if let Some(to_row_index) = (queue_page.list_box)
                     .row_at_y((start_y + offset_y) as i32)
                     .map(|row| row.index())
                 {
+                    let from_row_index = (queue_page.list_box)
+                        .row_at_y((start_y) as i32)
+                        .map(|row| row.index())
+                        .unwrap_or_default();
                     queue_page.for_each_row(|row, index| {
                         let list_row = row.downcast_ref::<ListRow>().unwrap();
-                        if row_index - 1 == index {
+                        if to_row_index - 1 == index && to_row_index < from_row_index {
+                            list_row.add_css_class("highlight-top");
+                        } else if to_row_index == index && to_row_index > from_row_index {
                             list_row.add_css_class("highlight-top");
                         } else {
                             list_row.remove_css_class("highlight-top");
