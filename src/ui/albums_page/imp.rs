@@ -113,7 +113,7 @@ impl AlbumsPage {
         self.view_stack.set_visible_child_name("albums");
 
         let mut album_objects = Vec::with_capacity(albums.len());
-        for index in 0..album_objects.len() {
+        for index in 0..albums.len() {
             // SAFETY: The range is `0..albums.len()`
             let album = unsafe { albums.get_unchecked(index) }.lock().unwrap();
             album_objects.push(AlbumObject::new(
@@ -123,7 +123,7 @@ impl AlbumsPage {
                 album.year as u32,
                 Arc::clone(&album.songs[0]),
             ));
-            async {}.await;
+            // async {}.await;
         }
         let model = gio::ListStore::new::<AlbumObject>();
         model.extend_from_slice(&album_objects);

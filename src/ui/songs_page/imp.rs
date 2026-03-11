@@ -113,13 +113,13 @@ impl SongsPage {
         self.view_stack.set_visible_child_name("songs");
 
         let mut song_objects: Vec<SongObject> = Vec::with_capacity(songs.len());
-        for index in 0..song_objects.len() {
+        for index in 0..songs.len() {
             song_objects.push(SongObject::new(
                 index as u32,
                 // SAFETY: The range is `0..songs.len()`
                 Arc::clone(unsafe { songs.get_unchecked(index) }),
             ));
-            async {}.await;
+            // async {}.await;
         }
         let model = gio::ListStore::new::<SongObject>();
         model.extend_from_slice(&song_objects);

@@ -112,7 +112,7 @@ impl ArtistsPage {
         self.view_stack.set_visible_child_name("artists");
 
         let mut artist_objects = Vec::with_capacity(artists.len());
-        for index in 0..artist_objects.len() {
+        for index in 0..artists.len() {
             // SAFETY: The range is `0..artists.len()`
             let artist = unsafe { artists.get_unchecked(index) };
             let artist_locked = artist.lock().unwrap();
@@ -122,7 +122,7 @@ impl ArtistsPage {
                 artist_locked.albums.len() as u64,
                 Arc::clone(artist),
             ));
-            async {}.await;
+            // async {}.await;
         }
         let model = gio::ListStore::new::<ArtistObject>();
         model.extend_from_slice(&artist_objects);
