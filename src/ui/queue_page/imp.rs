@@ -492,14 +492,11 @@ impl QueuePage {
     #[inline]
     fn setup_drag_and_drop(&self) {
         let drag = gtk::GestureDrag::new();
-        let image = gtk::Picture::builder()
-            .height_request(32)
-            .width_request(32)
-            .css_name("card") // Card style doesn't work here?
-            .build();
+        let drag_row = ListRow::default();
+        drag_row.add_css_class("color-menu");
         let drag_container = self.drag_widget.parent().unwrap();
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
-        self.drag_widget.put(&image, 0.0, 0.0);
+        self.drag_widget.put(&drag_row, 0.0, 0.0);
 
         drag.connect_begin(glib::clone!(
             #[weak(rename_to=list_box)]
@@ -507,7 +504,7 @@ impl QueuePage {
             #[strong(rename_to=selection_mode)]
             self.selection_mode,
             #[weak]
-            image,
+            drag_row,
             move |gesture_drag, _| if !selection_mode.get() {
                 let Some((start_x, start_y)) = gesture_drag.point(None) else {
                     return;
@@ -520,14 +517,12 @@ impl QueuePage {
                 list_box.set_cursor_from_name(Some("grabbing"));
 
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
-                    let new_image = row.downcast_ref::<ListRow>().unwrap().get_paintable();
-                    match new_image.is_some() {
-                        true => image.set_paintable(new_image.as_ref()),
-                        // FIX: Fallback images don't show up
-                        false => image.set_paintable(Some(&fallback_song_image())),
-                    }
+                    let row = row.downcast_ref::<ListRow>().unwrap();
+                    drag_row.copy_from(row);
+                    drag_row.set_width_request(row.width());
+                    drag_row.set_height_request(row.height());
                 } else {
-                    image.set_paintable(Some(&fallback_song_image()));
+                    drag_row.to_default();
                 }
             }
         ));
@@ -535,7 +530,7 @@ impl QueuePage {
             #[weak(rename_to=queue_page)]
             self,
             #[weak]
-            image,
+            drag_row,
             #[weak]
             drag_container,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
@@ -572,7 +567,7 @@ impl QueuePage {
                 }
 
                 queue_page.drag_widget.move_(
-                    &image,
+                    &drag_row,
                     start_x + offset_x,
                     start_y + offset_y - queue_page.scrolled_window.vadjustment().value(),
                 );
@@ -586,14 +581,14 @@ impl QueuePage {
             #[weak(rename_to=queue_page)]
             self,
             #[weak]
-            image,
+            drag_row,
             #[weak]
             drag_container,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
                 let list_box = &queue_page.list_box;
                 list_box.set_cursor(None);
                 drag_container.set_visible(false);
-                image.set_paintable(None::<&gdk::Paintable>);
+                drag_row.to_default();
                 let start_y = match gesture_drag.start_point() {
                     Some((start_x, start_y)) if Self::should_drag(start_x) => start_y,
                     _ => return,
