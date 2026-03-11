@@ -121,6 +121,7 @@ impl SongsPage {
         }
         let model = gio::ListStore::new::<SongObject>();
         model.extend_from_slice(&song_objects);
+        self.update_sort_fields(&model);
         self.songs.replace(song_objects);
 
         let query = Rc::clone(&self.search_query);
@@ -145,7 +146,6 @@ impl SongsPage {
             song_a.order_cmp(song_b, sort_mode)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
-        self.update_sort_fields(&sort_model);
         self.sorter.replace(sorter);
 
         self.songs_grid

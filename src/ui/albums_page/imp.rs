@@ -125,6 +125,7 @@ impl AlbumsPage {
         }
         let model = gio::ListStore::new::<AlbumObject>();
         model.extend_from_slice(&album_objects);
+        self.update_sort_fields(&model);
         self.albums.replace(album_objects);
 
         let query = Rc::clone(&self.search_query);
@@ -149,7 +150,6 @@ impl AlbumsPage {
             album_a.order_cmp(album_b, sort_mode)
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
-        self.update_sort_fields(&sort_model);
         self.sorter.replace(sorter);
 
         self.albums_grid
