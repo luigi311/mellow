@@ -10,8 +10,7 @@ gnome = import('gnome')
 
 base_id = 'com.github.userwithaname.Mellow'
 
-is_devel = get_option('profile') == 'devel'
-if is_devel
+if get_option('profile') == 'devel'
   profile = 'Devel'
   application_id = '@0@.@1@'.format(base_id, profile)
 else

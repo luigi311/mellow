@@ -2,11 +2,12 @@ option(
   'profile',
   type: 'combo',
   choices: [
+    'bench',
     'devel',
     'release',
   ],
   value: 'release',
-  description: 'Profile to use when building (`release` or `devel`)'
+  description: 'Profile to use when building (`release`/`bench`/`devel`)'
 )
 option(
   'flatpak',

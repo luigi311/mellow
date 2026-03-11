@@ -2,11 +2,14 @@ cargo = find_program('cargo')
 cargo_options = ['--manifest-path', meson.project_source_root() / 'Cargo.toml']
 cargo_options += ['--target-dir', meson.project_build_root() / 'target']
 
-if not is_devel
-  cargo_options += ['--release']
+if get_option('profile') == 'devel'
+  rust_target = 'debug'
+elif get_option('profile') == 'bench'
+  cargo_options += ['--profile=bench']
   rust_target = 'release'
 else
-  rust_target = 'debug'
+  cargo_options += ['--release']
+  rust_target = 'release'
 endif
 
 custom_target(

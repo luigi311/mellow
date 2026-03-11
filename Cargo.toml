@@ -42,3 +42,11 @@ codegen-units = 1
 overflow-checks = false
 debug = false
 strip = true
+
+[profile.bench]
+debug = true
+strip = false
+
+[profile.bench.package."*"]
+debug = true
+strip = false
