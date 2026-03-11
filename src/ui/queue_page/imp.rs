@@ -385,6 +385,7 @@ impl QueuePage {
 
     #[inline]
     fn set_selection_mode(&self, selection_mode: bool) {
+        self.selection_toggle.set_active(selection_mode);
         self.header_selection.set_visible(selection_mode);
         self.header_normal.set_visible(!selection_mode);
         self.selection_mode.set(selection_mode);
