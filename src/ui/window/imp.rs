@@ -313,13 +313,15 @@ impl Window {
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
-            // received by the UI, so it is currently being unloaded.
-            println!("⚠️ {index}: library song thumbnail would block; retrying later...");
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-                thread::sleep(Duration::from_millis(30));
-                let _ =
-                    (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index, song));
-            });
+            // received by the UI, so it is currently being unloaded. If there are issues
+            // with thumbnails not showing up, uncomment the code below.
+
+            // println!("⚠️ {index}: library song thumbnail would block; retrying later...");
+            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            //     thread::sleep(Duration::from_millis(30));
+            //     let _ =
+            //         (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index, song));
+            // });
             return;
         };
         if thumbnail.is_none() {
@@ -332,13 +334,15 @@ impl Window {
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
-            // received by the UI, so it is currently being unloaded.
-            println!("⚠️ {index}: library album thumbnail would block; retrying later...");
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
-                thread::sleep(Duration::from_millis(30));
-                let _ = (UI_TX.get().expect(EXP_INIT))
-                    .send(UpdateUI::LibraryAlbumLoaded(index, first_song));
-            });
+            // received by the UI, so it is currently being unloaded. If there are issues
+            // with thumbnails not showing up, uncomment the code below.
+
+            // println!("⚠️ {index}: library album thumbnail would block; retrying later...");
+            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            //     thread::sleep(Duration::from_millis(30));
+            //     let _ = (UI_TX.get().expect(EXP_INIT))
+            //         .send(UpdateUI::LibraryAlbumLoaded(index, first_song));
+            // });
             return;
         };
         if thumbnail.is_none() {
