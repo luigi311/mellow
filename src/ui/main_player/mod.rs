@@ -130,6 +130,7 @@ impl MainPlayer {
         self.set_spacing((headroom / WITH_OUTER).max(6));
     }
 
+    #[inline]
     #[must_use]
     pub fn is_playing(&self) -> bool {
         self.imp().pause_button.icon_name() == Some("media-playback-pause-symbolic".into())

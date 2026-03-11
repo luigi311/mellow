@@ -153,6 +153,7 @@ impl SettingsPage {
         );
     }
 
+    #[inline]
     pub fn set_theme(&self, preference: adw::ColorScheme) {
         (self.css.get().expect(EXP_INIT)).set_prefers_color_scheme(match preference {
             adw::ColorScheme::ForceDark | adw::ColorScheme::PreferDark => {
@@ -171,6 +172,7 @@ impl SettingsPage {
         }
     }
 
+    #[inline]
     pub fn enable_background_color(&self) {
         if self.current_color.get().is_none() || self.has_style.get() {
             return;
@@ -221,6 +223,7 @@ impl SettingsPage {
     /// selected color scheme.
     ///
     /// The input values are expected to be linear rather than sRGB
+    #[inline]
     pub fn set_background_color(&self, r: f64, g: f64, b: f64) {
         #[inline]
         fn process_highlight_color(mut r: f64, mut g: f64, mut b: f64) -> (u8, u8, u8) {
@@ -418,6 +421,7 @@ impl SettingsPage {
         );
     }
 
+    #[inline]
     pub fn set_directories(&self, directories: &[String]) {
         self.directory_list.remove_all();
         for (i, directory) in directories.iter().enumerate() {
