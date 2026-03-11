@@ -45,15 +45,12 @@ impl SongsPage {
     pub fn init_search(&self) {
         let filter = Rc::clone(&self.filter);
         let sorter = Rc::clone(&self.sorter);
-        self.search_entry.connect_search_changed(glib::clone!(
-            #[strong(rename_to=search_query)]
-            self.search_query,
-            move |entry| {
-                search_query.replace(entry.text().to_string());
-                filter.borrow().changed(gtk::FilterChange::Different);
-                sorter.borrow().changed(gtk::SorterChange::Different);
-            }
-        ));
+        let search_query = Rc::clone(&self.search_query);
+        self.search_entry.connect_search_changed(move |entry| {
+            search_query.replace(entry.text().to_string());
+            filter.borrow().changed(gtk::FilterChange::Different);
+            sorter.borrow().changed(gtk::SorterChange::Different);
+        });
         // TODO: Empty the query when pressing escape
         // TODO: Focus the search bar with CTRL+F
     }
@@ -201,10 +198,10 @@ impl SongsPage {
     pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
+        self.sorter.borrow().changed(gtk::SorterChange::Different);
         if let Some(model) = &self.songs_grid.model() {
             self.update_sort_fields(model);
         }
-        self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[inline]
     #[must_use]
