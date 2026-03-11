@@ -26,8 +26,6 @@ pub struct Window {
     pub main_player: TemplateChild<MainPlayer>,
 
     #[template_child]
-    progress_bar: TemplateChild<gtk::ProgressBar>,
-    #[template_child]
     bottom_bar: TemplateChild<gtk::Box>,
     #[template_child]
     sheet: TemplateChild<adw::BottomSheet>,
@@ -76,6 +74,10 @@ pub struct Window {
     pub songs: RefCell<Songs>,
     pub albums: RefCell<Albums>,
     pub artists: RefCell<Artists>,
+
+    #[template_child]
+    progress_bar: TemplateChild<gtk::ProgressBar>,
+    progress_bar_visible: Cell<bool>,
 }
 
 impl Window {
@@ -259,12 +261,20 @@ impl Window {
         }
     }
     fn update_progress(&self, progress: Option<f64>) {
-        self.library_page.update_progress(progress);
         if let Some(progress) = progress {
-            self.progress_bar.set_visible(true);
             self.progress_bar.set_fraction(progress);
+            self.library_page.update_progress(progress);
+            if !self.progress_bar_visible.get() {
+                self.progress_bar_visible.set(true);
+                self.progress_bar.set_visible(true);
+                self.library_page.switch_view("loading");
+                self.settings_page.allow_library_refresh(false);
+            }
         } else {
+            self.progress_bar_visible.set(false);
             self.progress_bar.set_visible(false);
+            self.library_page.switch_view("ready");
+            self.settings_page.allow_library_refresh(true);
         }
     }
 
@@ -285,6 +295,7 @@ impl Window {
         self.sheet.set_open(open);
     }
 
+    // FIX: Slight stutter when the library is done building
     fn load_library_songs(&self, songs: &Songs) {
         self.library_page.set_empty(songs.is_empty());
         self.songs.replace(songs.clone());

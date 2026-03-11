@@ -12,27 +12,21 @@ glib::wrapper! {
 
 impl LibraryPage {
     #[inline]
-    pub fn update_progress(&self, progress: Option<f64>) {
-        let ui = self.imp();
-        if let Some(progress) = progress {
-            ui.progress_bar.set_fraction(progress);
-            if ui.needs_refresh.get() {
-                ui.view_stack.set_visible_child_name("loading");
-                ui.needs_refresh.set(false);
-            }
-        } else {
-            ui.view_stack.set_visible_child_name("ready");
-            ui.needs_refresh.set(true);
-        }
+    pub fn update_progress(&self, progress: f64) {
+        self.imp().progress_bar.set_fraction(progress);
+    }
+
+    #[inline]
+    pub fn switch_view(&self, name: &str) {
+        self.imp().view_stack.set_visible_child_name(name);
     }
 
     #[inline]
     pub fn set_empty(&self, empty: bool) {
         match empty {
-            false => self.imp().ready_stack.set_visible_child_name("library"),
-            true => self.imp().ready_stack.set_visible_child_name("empty"),
+            false => self.switch_view("library"),
+            true => self.switch_view("empty"),
         }
-        self.imp().needs_refresh.set(true);
     }
 }
 

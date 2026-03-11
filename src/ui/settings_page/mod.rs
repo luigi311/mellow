@@ -211,6 +211,12 @@ impl SettingsPage {
         self.imp().set_directories(directories);
     }
 
+    /// Whether to allow the library refresh button to be pressed
+    #[inline]
+    pub fn allow_library_refresh(&self, allow: bool) {
+        self.imp().refresh_library_button.set_sensitive(allow);
+    }
+
     /// Resets the adaptive background color and show the default
     /// background instead; useful when an album cover is missing
     #[inline]

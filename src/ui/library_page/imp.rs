@@ -12,8 +12,6 @@ pub struct LibraryPage {
     pub view_stack: TemplateChild<adw::ViewStack>,
     #[template_child]
     pub ready_stack: TemplateChild<adw::ViewStack>,
-
-    pub needs_refresh: Cell<bool>,
 }
 
 #[glib::object_subclass]

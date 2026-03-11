@@ -30,6 +30,8 @@ pub struct SettingsPage {
     // Directory Settings
     #[template_child]
     pub directory_list: TemplateChild<gtk::ListBox>,
+    #[template_child]
+    pub refresh_library_button: TemplateChild<gtk::Button>,
 
     // Startup Settings
     pub startup_choice: RefCell<StartupQueueChoice>,
@@ -91,7 +93,7 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_refresh_library(&self) {
-        // FIX: Repeatedly pressing the refresh button crashes the program
+        self.refresh_library_button.set_sensitive(false);
         (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::Rebuild)
             .expect(EXP_RX);

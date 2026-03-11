@@ -71,7 +71,7 @@
         <child type="header-suffix">
           <object class="GtkBox">
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="refresh_library_button">
                 <signal name="clicked" handler="handle_refresh_library" swapped="true"/>
                 <property name="icon-name">view-refresh-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Refresh Library</property>
