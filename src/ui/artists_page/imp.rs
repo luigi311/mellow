@@ -108,6 +108,7 @@ impl ArtistsPage {
         }
         self.view_stack.set_visible_child_name("artists");
 
+        // FIX: Constructing the objects causes a UI stutter
         let mut artist_objects = Vec::with_capacity(artists.len());
         for index in 0..artists.len() {
             // SAFETY: The range is `0..artists.len()`

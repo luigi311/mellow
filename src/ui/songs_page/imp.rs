@@ -109,7 +109,8 @@ impl SongsPage {
         }
         self.view_stack.set_visible_child_name("songs");
 
-        let mut song_objects: Vec<SongObject> = Vec::with_capacity(songs.len());
+        // FIX: Constructing the objects causes a UI stutter
+        let mut song_objects = Vec::with_capacity(songs.len());
         for index in 0..songs.len() {
             song_objects.push(SongObject::new(
                 index as u32,

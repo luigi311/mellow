@@ -109,6 +109,7 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
+        // FIX: Constructing the objects causes a UI stutter
         let mut album_objects = Vec::with_capacity(albums.len());
         for index in 0..albums.len() {
             // SAFETY: The range is `0..albums.len()`
