@@ -104,7 +104,7 @@ impl AlbumsPage {
     }
 
     #[inline]
-    pub fn load_albums(&self, albums: &Albums) {
+    pub async fn load_albums(&self, albums: &Albums) {
         if albums.is_empty() {
             self.albums_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
@@ -112,27 +112,22 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
-        // FIX: Object creation causes the UI to stutter
-        let albums: Vec<AlbumObject> = (0..albums.len())
-            .map(|index| {
-                // SAFETY: The range is `0..albums.len()`
-                #[cfg(debug_assertions)]
-                if albums[index].try_lock().is_err() {
-                    eprintln!("Albums page blocked on album lock");
-                }
-                let album = unsafe { albums.get_unchecked(index) }.lock().unwrap();
-                AlbumObject::new(
-                    index as u32,
-                    &album.title,
-                    &album.artist.lock().unwrap().name,
-                    album.year as u32,
-                    Arc::clone(&album.songs[0]),
-                )
-            })
-            .collect();
+        let mut album_objects = Vec::with_capacity(albums.len());
+        for index in 0..album_objects.len() {
+            // SAFETY: The range is `0..albums.len()`
+            let album = unsafe { albums.get_unchecked(index) }.lock().unwrap();
+            album_objects.push(AlbumObject::new(
+                index as u32,
+                &album.title,
+                &album.artist.lock().unwrap().name,
+                album.year as u32,
+                Arc::clone(&album.songs[0]),
+            ));
+            async {}.await;
+        }
         let model = gio::ListStore::new::<AlbumObject>();
-        model.extend_from_slice(&albums);
-        self.albums.replace(albums);
+        model.extend_from_slice(&album_objects);
+        self.albums.replace(album_objects);
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
@@ -163,10 +158,6 @@ impl AlbumsPage {
                 while let Some(item) = model.item(i) {
                     let album = item.downcast_ref::<AlbumObject>().unwrap();
                     let shared_album = album.shared_album();
-                    #[cfg(debug_assertions)]
-                    if shared_album.try_lock().is_err() {
-                        println!("Blocking on album lock");
-                    }
                     let album_locked = shared_album.lock().unwrap();
 
                     album.set_rating(album_locked.sort_rating(3.0));

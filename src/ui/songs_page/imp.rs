@@ -104,7 +104,7 @@ impl SongsPage {
     }
 
     #[inline]
-    pub fn load_songs(&self, songs: &Songs) {
+    pub async fn load_songs(&self, songs: &Songs) {
         if songs.is_empty() {
             self.songs_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
@@ -112,19 +112,18 @@ impl SongsPage {
         }
         self.view_stack.set_visible_child_name("songs");
 
-        // FIX: Object creation causes the UI to stutter
-        let songs: Vec<SongObject> = (0..songs.len())
-            .map(|index| {
-                SongObject::new(
-                    index as u32,
-                    // SAFETY: The range is `0..songs.len()`
-                    Arc::clone(unsafe { songs.get_unchecked(index) }),
-                )
-            })
-            .collect();
+        let mut song_objects: Vec<SongObject> = Vec::with_capacity(songs.len());
+        for index in 0..song_objects.len() {
+            song_objects.push(SongObject::new(
+                index as u32,
+                // SAFETY: The range is `0..songs.len()`
+                Arc::clone(unsafe { songs.get_unchecked(index) }),
+            ));
+            async {}.await;
+        }
         let model = gio::ListStore::new::<SongObject>();
-        model.extend_from_slice(&songs);
-        self.songs.replace(songs);
+        model.extend_from_slice(&song_objects);
+        self.songs.replace(song_objects);
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {

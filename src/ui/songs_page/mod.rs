@@ -15,8 +15,8 @@ glib::wrapper! {
 
 impl SongsPage {
     #[inline]
-    pub fn load_songs(&self, songs: &Songs) {
-        self.imp().load_songs(songs);
+    pub async fn load_songs(&self, songs: &Songs) {
+        self.imp().load_songs(songs).await;
     }
 
     #[inline]

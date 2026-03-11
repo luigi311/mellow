@@ -103,35 +103,30 @@ impl ArtistsPage {
     }
 
     #[inline]
-    pub fn load_artists(&self, artsits: &Artists) {
-        if artsits.is_empty() {
+    pub async fn load_artists(&self, artists: &Artists) {
+        if artists.is_empty() {
             self.artists_grid.set_model(None::<&gtk::NoSelection>);
             self.view_stack.set_visible_child_name("empty");
             return;
         }
         self.view_stack.set_visible_child_name("artists");
 
-        // FIX: Object creation causes the UI to stutter
-        let artists: Vec<ArtistObject> = (0..artsits.len())
-            .map(|index| {
-                // SAFETY: The range is `0..artists.len()`
-                let artist = unsafe { artsits.get_unchecked(index) };
-                #[cfg(debug_assertions)]
-                if artist.try_lock().is_err() {
-                    eprintln!("Artists page blocked on artist lock");
-                }
-                let artist_locked = artist.lock().unwrap();
-                ArtistObject::new(
-                    index as u32,
-                    &artist_locked.name,
-                    artist_locked.albums.len() as u64,
-                    Arc::clone(artist),
-                )
-            })
-            .collect();
+        let mut artist_objects = Vec::with_capacity(artists.len());
+        for index in 0..artist_objects.len() {
+            // SAFETY: The range is `0..artists.len()`
+            let artist = unsafe { artists.get_unchecked(index) };
+            let artist_locked = artist.lock().unwrap();
+            artist_objects.push(ArtistObject::new(
+                index as u32,
+                &artist_locked.name,
+                artist_locked.albums.len() as u64,
+                Arc::clone(artist),
+            ));
+            async {}.await;
+        }
         let model = gio::ListStore::new::<ArtistObject>();
-        model.extend_from_slice(&artists);
-        self.artists.replace(artists);
+        model.extend_from_slice(&artist_objects);
+        self.artists.replace(artist_objects);
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
@@ -160,10 +155,6 @@ impl ArtistsPage {
                 while let Some(item) = model.item(i) {
                     let artist = item.downcast_ref::<ArtistObject>().unwrap();
                     let shared_artist = artist.shared_artist();
-                    #[cfg(debug_assertions)]
-                    if shared_artist.try_lock().is_err() {
-                        println!("Blocking on artist lock");
-                    }
                     let artist_locked = shared_artist.lock().unwrap();
                     // SAFETY: An artist with no albums is never constructed
                     let album = unsafe { artist_locked.albums.last().unwrap_unchecked() }

@@ -131,9 +131,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
-        let rating_a = self.shared_album().lock().unwrap().sort_rating(3.0);
-        let rating_b = other.shared_album().lock().unwrap().sort_rating(3.0);
-        match rating_b.total_cmp(&rating_a) {
+        match other.rating().total_cmp(&self.rating()) {
             cmp::Ordering::Equal => self.cmp_most_played(other),
             ordering => ordering,
         }
