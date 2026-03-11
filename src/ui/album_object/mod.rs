@@ -123,9 +123,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
-        let play_count_a = self.shared_album().lock().unwrap().average_play_count();
-        let play_count_b = other.shared_album().lock().unwrap().average_play_count();
-        match play_count_b.total_cmp(&play_count_a) {
+        match other.played().total_cmp(&self.played()) {
             cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
@@ -152,15 +150,7 @@ impl AlbumObject {
     #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing modification time using the first song is not necessarily correct
-        let modified_a = self.shared_album().lock().unwrap().songs[0]
-            .info()
-            .user()
-            .modified;
-        let modified_b = other.shared_album().lock().unwrap().songs[0]
-            .info()
-            .user()
-            .modified;
-        match modified_b.cmp(&modified_a) {
+        match other.modified().cmp(&self.modified()) {
             cmp::Ordering::Equal => self.cmp_artist_year_album(other),
             ordering => ordering,
         }
@@ -168,15 +158,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
-        let added_a = self.shared_album().lock().unwrap().songs[0]
-            .info()
-            .user()
-            .added;
-        let added_b = other.shared_album().lock().unwrap().songs[0]
-            .info()
-            .user()
-            .added;
-        match added_b.cmp(&added_a) {
+        match other.added().cmp(&self.added()) {
             cmp::Ordering::Equal => self.cmp_artist_year_album(other),
             ordering => ordering,
         }
@@ -191,6 +173,10 @@ pub struct AlbumData {
     artwork: Option<gdk::Texture>,
     year: u32,
     rank: f64,
+    rating: f64,
+    played: f64,
+    modified: i64,
+    added: u64,
 }
 
 #[derive(Clone, Copy)]

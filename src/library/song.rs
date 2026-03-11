@@ -360,6 +360,10 @@ impl SongInfoLoader<'_> {
     /// # Panics
     /// The function panics if the user info `Mutex` is poisoned
     pub fn user(&self) -> MutexGuard<'_, UserSongInfo> {
+        #[cfg(debug_assertions)]
+        if self.user_info.try_lock().is_err() {
+            eprintln!("Note: Blocking on read lock for `user`");
+        }
         self.user_info.lock().unwrap()
     }
 
@@ -408,6 +412,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn inspect_basic(&self) -> RwLockReadGuard<'_, Option<SongInfo>> {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_read().is_err() {
+            eprintln!(
+                "Note: Blocking on read lock for `inspect_basic` (would `try_inspect_basic` make sense here?)"
+            );
+        }
         self.info.read().unwrap()
     }
     /// Returns the basic song info if loaded, but does not load it
@@ -418,6 +428,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn inspect_basic_mut(&mut self) -> RwLockWriteGuard<'_, Option<SongInfo>> {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_write().is_err() {
+            eprintln!(
+                "Note: Blocking on write lock for `inspect_basic` (would `try_inspect_basic` make sense here?)"
+            );
+        }
         self.info.write().unwrap()
     }
     /// Returns the basic song info if accessible without blocking
@@ -436,6 +452,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the basic info `RwLock` is poisoned
     #[inline]
     pub fn load_basic(&mut self) -> RwLockReadGuard<'_, Option<SongInfo>> {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_write().is_err() {
+            eprintln!(
+                "Note: Blocking on read lock for `load_basic` (would `try_load_basic` make sense here?)"
+            );
+        }
         let info = self.info.read().unwrap();
         if info.is_some() {
             return info;
@@ -472,6 +494,10 @@ impl SongInfoLoader<'_> {
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
     fn assign_basic(&mut self) {
+        #[cfg(debug_assertions)]
+        if self.detailed_info.try_write().is_err() {
+            eprintln!("Note: Blocking on write lock for `assign_basic`");
+        }
         let mut info_writer = self.info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock

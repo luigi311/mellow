@@ -87,21 +87,7 @@ impl ArtistObject {
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
         // NOTE: Comparing added time using the oldest
         // album's first song is not necessarily correct
-        let added_a = self.shared_artist().lock().unwrap().albums[0]
-            .lock()
-            .unwrap()
-            .songs[0]
-            .info()
-            .user()
-            .added;
-        let added_b = other.shared_artist().lock().unwrap().albums[0]
-            .lock()
-            .unwrap()
-            .songs[0]
-            .info()
-            .user()
-            .added;
-        match added_b.cmp(&added_a) {
+        match other.added().cmp(&self.added()) {
             cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
@@ -109,25 +95,7 @@ impl ArtistObject {
     #[inline]
     #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
-        // NOTE: Comparing added time using the newest
-        // album's first song is not necessarily correct
-        let modified_a = (self.shared_artist().lock().unwrap().albums.last())
-            .unwrap()
-            .lock()
-            .unwrap()
-            .songs[0]
-            .info()
-            .user()
-            .modified;
-        let modified_b = (other.shared_artist().lock().unwrap().albums.last())
-            .unwrap()
-            .lock()
-            .unwrap()
-            .songs[0]
-            .info()
-            .user()
-            .modified;
-        match modified_b.cmp(&modified_a) {
+        match other.modified().cmp(&self.modified()) {
             cmp::Ordering::Equal => self.index().cmp(&other.index()),
             ordering => ordering,
         }
@@ -141,6 +109,8 @@ pub struct ArtistData {
     albums: u64,
     artwork: Option<gdk::Paintable>,
     rank: f64,
+    modified: i64,
+    added: u64,
 }
 
 #[derive(Clone, Copy)]

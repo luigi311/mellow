@@ -127,16 +127,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     fn cmp_best_rating(&self, other: &Self) -> cmp::Ordering {
-        // TODO: Add `rating` to `SongObject` (and update so it stays in sync)
-        let rating_a = match self.shared_song().info().user().rating {
-            0 => 3,
-            n => n,
-        };
-        let rating_b = match other.shared_song().info().user().rating {
-            0 => 3,
-            n => n,
-        };
-        match rating_b.cmp(&rating_a) {
+        match other.rating().cmp(&self.rating()) {
             cmp::Ordering::Equal => self.cmp_most_played(other),
             ordering => ordering,
         }
@@ -144,10 +135,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     fn cmp_most_played(&self, other: &Self) -> cmp::Ordering {
-        // TODO: Add `play_count` to `SongObject` (and update so it stays in sync)
-        let play_count_a = self.shared_song().info().user().play_count;
-        let play_count_b = other.shared_song().info().user().play_count;
-        match play_count_b.cmp(&play_count_a) {
+        match other.played().cmp(&self.played()) {
             cmp::Ordering::Equal => self.cmp_default(other),
             ordering => ordering,
         }
@@ -163,10 +151,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     fn cmp_added_newer(&self, other: &Self) -> cmp::Ordering {
-        // TODO: Add `added` to `SongObject`
-        let added_a = self.shared_song().info().user().added;
-        let added_b = other.shared_song().info().user().added;
-        match added_b.cmp(&added_a) {
+        match other.modified().cmp(&self.modified()) {
             cmp::Ordering::Equal => self.cmp_default(other),
             ordering => ordering,
         }
@@ -174,10 +159,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     fn cmp_modified_newer(&self, other: &Self) -> cmp::Ordering {
-        // TODO: Add `modified` to `SongObject`
-        let modified_a = self.shared_song().info().user().modified;
-        let modified_b = other.shared_song().info().user().modified;
-        match modified_b.cmp(&modified_a) {
+        match other.modified().cmp(&self.modified()) {
             cmp::Ordering::Equal => self.cmp_default(other),
             ordering => ordering,
         }
@@ -193,6 +175,10 @@ pub struct SongData {
     artwork: Option<gdk::Texture>,
     year: u32,
     rank: f64,
+    rating: u8,
+    played: u64,
+    modified: i64,
+    added: u64,
 }
 
 #[derive(Clone, Copy)]

@@ -111,9 +111,15 @@ impl ArtistsPage {
         }
         self.view_stack.set_visible_child_name("artists");
 
+        // FIX: Object creation causes the UI to stutter
         let artists: Vec<ArtistObject> = (0..artsits.len())
             .map(|index| {
-                let artist = &artsits[index];
+                // SAFETY: The range is `0..artists.len()`
+                let artist = unsafe { artsits.get_unchecked(index) };
+                #[cfg(debug_assertions)]
+                if artist.try_lock().is_err() {
+                    eprintln!("Artists page blocked on artist lock");
+                }
                 let artist_locked = artist.lock().unwrap();
                 ArtistObject::new(
                     index as u32,
@@ -127,8 +133,6 @@ impl ArtistsPage {
         model.extend_from_slice(&artists);
         self.artists.replace(artists);
 
-        // FIX: The below code causes a bit of a stutter
-
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let artist_object = object.downcast_ref::<ArtistObject>().unwrap();
@@ -139,7 +143,7 @@ impl ArtistsPage {
             artist_object.set_rank(score);
             score > 0.01
         });
-        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
+        let filter_model = gtk::FilterListModel::new(Some(model.clone()), Some(filter.clone()));
         self.filter.replace(filter);
 
         let sort_mode = *self.sort_mode.get().unwrap();
@@ -148,6 +152,34 @@ impl ArtistsPage {
             let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
             artist_a.order_cmp(artist_b, sort_mode)
         });
+        sorter.connect_changed(glib::clone!(
+            #[weak]
+            model,
+            move |_, change| if change == gtk::SorterChange::Different {
+                let mut i = 0;
+                while let Some(item) = model.item(i) {
+                    let artist = item.downcast_ref::<ArtistObject>().unwrap();
+                    let shared_artist = artist.shared_artist();
+                    #[cfg(debug_assertions)]
+                    if shared_artist.try_lock().is_err() {
+                        println!("Blocking on artist lock");
+                    }
+                    let artist_locked = shared_artist.lock().unwrap();
+                    // SAFETY: An artist with no albums is never constructed
+                    let album = unsafe { artist_locked.albums.last().unwrap_unchecked() }
+                        .lock()
+                        .unwrap();
+                    // SAFETY: An album with no songs is never constructed
+                    let first_song = unsafe { album.songs.get_unchecked(0) };
+                    let song_info = first_song.info();
+
+                    artist.set_modified(song_info.user().modified);
+                    artist.set_added(song_info.user().added);
+
+                    i += 1;
+                }
+            }
+        ));
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
 

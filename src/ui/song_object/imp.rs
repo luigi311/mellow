@@ -18,6 +18,10 @@ pub struct SongObject {
     #[property(name = "artwork", get, set, type = Option<gdk::Paintable>, member = artwork)]
     #[property(name = "year", get, set, type = u32, member = year)]
     #[property(name = "rank", get, set, type = f64, member = rank)]
+    #[property(name = "rating", get, set, type = u8, member = rating)]
+    #[property(name = "played", get, set, type = u64, member = played)]
+    #[property(name = "modified", get, set, type = i64, member = modified)]
+    #[property(name = "added", get, set, type = u64, member = added)]
     pub data: RefCell<SongData>,
 
     pub shared_song: OnceCell<SharedSong>,

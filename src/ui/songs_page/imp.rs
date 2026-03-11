@@ -112,14 +112,19 @@ impl SongsPage {
         }
         self.view_stack.set_visible_child_name("songs");
 
+        // FIX: Object creation causes the UI to stutter
         let songs: Vec<SongObject> = (0..songs.len())
-            .map(|index| SongObject::new(index as u32, Arc::clone(&songs[index])))
+            .map(|index| {
+                SongObject::new(
+                    index as u32,
+                    // SAFETY: The range is `0..songs.len()`
+                    Arc::clone(unsafe { songs.get_unchecked(index) }),
+                )
+            })
             .collect();
         let model = gio::ListStore::new::<SongObject>();
         model.extend_from_slice(&songs);
         self.songs.replace(songs);
-
-        // FIX: The below code causes a bit of a stutter
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
@@ -133,7 +138,7 @@ impl SongsPage {
             song_object.set_rank(score);
             score > 0.01
         });
-        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
+        let filter_model = gtk::FilterListModel::new(Some(model.clone()), Some(filter.clone()));
         self.filter.replace(filter);
 
         let sort_mode = *self.sort_mode.get().unwrap();
@@ -142,6 +147,29 @@ impl SongsPage {
             let song_b = object_b.downcast_ref::<SongObject>().unwrap();
             song_a.order_cmp(song_b, sort_mode)
         });
+        sorter.connect_changed(glib::clone!(
+            #[weak]
+            model,
+            move |_, change| if change == gtk::SorterChange::Different {
+                let mut i = 0;
+                while let Some(item) = model.item(i) {
+                    let song = item.downcast_ref::<SongObject>().unwrap();
+                    let shared_song = song.shared_song();
+                    let info = shared_song.info();
+                    let info = info.user();
+
+                    song.set_played(info.play_count as u64);
+                    song.set_rating(match info.rating {
+                        0 => 3,
+                        n => n,
+                    });
+                    song.set_modified(info.modified);
+                    song.set_added(info.added);
+
+                    i += 1;
+                }
+            }
+        ));
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
 
