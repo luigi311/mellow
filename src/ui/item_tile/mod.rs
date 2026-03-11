@@ -19,6 +19,7 @@ impl Default for ItemTile {
 }
 
 impl ItemTile {
+    #[inline]
     #[must_use]
     pub fn builder() -> ItemTileBuilder {
         ItemTileBuilder {
