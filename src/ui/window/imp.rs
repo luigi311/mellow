@@ -94,8 +94,6 @@ impl Window {
         );
     }
 
-    // TODO: Core functionality should be moved into `Application`
-
     #[allow(clippy::future_not_send)]
     pub async fn event_handler(&self, mut ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) -> ! {
         let mut song_duration_ms = 0;

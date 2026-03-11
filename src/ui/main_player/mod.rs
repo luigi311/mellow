@@ -20,9 +20,8 @@ impl MainPlayer {
     /// Initializes the seek bar for the player UI
     ///
     /// # Panics
-    /// The function panics if `PLAYER_RX` is uninitialized.
-    /// It may also cause a panic at runtime upon interaction
-    /// if the player channel is closed.
+    /// Panics at runtime upon interaction with the seek bar if
+    /// `PLAYER_RX` is uninitialized or if the channel is closed
     #[inline]
     pub fn init_seek(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
@@ -32,9 +31,10 @@ impl MainPlayer {
         let release_seek_bar = gtk::GestureClick::builder()
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
-        release_seek_bar.connect_released({
-            let player_tx = PLAYER_TX.get().expect(EXP_INIT).clone();
-            move |_, _, _, _| player_tx.send(PlayerRequest::SeekDone).expect(EXP_RX)
+        release_seek_bar.connect_released(|_, _, _, _| {
+            (PLAYER_TX.get().expect(EXP_INIT))
+                .send(PlayerRequest::SeekDone)
+                .expect(EXP_RX);
         });
         (self.imp().seek_bar.parent().unwrap()).add_controller(release_seek_bar);
     }
