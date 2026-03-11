@@ -87,13 +87,14 @@ pub enum UpdateUI {
     SetLibraryArtists(Artists),
 
     /// Prompts the library UI to assign the now-loaded song artwork for the item at index
-    LibrarySongLoaded(usize),
+    LibrarySongLoaded(usize, SharedSong),
     /// Prompts the library UI to assign the now-loaded album artwork for the item at index
-    LibraryAlbumLoaded(usize),
+    /// The `SharedSong` field is the song the info will be read from (usually first song)
+    LibraryAlbumLoaded(usize, SharedSong),
     /// Prompts the library UI to assign the now-loaded artist artwork for the item at index
     LibraryArtistLoaded(usize),
     /// Prompts the queue UI to assign the now-loaded song artwork for the item at index
-    QueueSongLoaded(usize),
+    QueueSongLoaded(usize, SharedSong),
     /// Prompts the album page UI to assign the now-loaded album artwork for the page at index
     AlbumPageLoaded(usize, SharedSong),
 

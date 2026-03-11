@@ -560,7 +560,7 @@ impl SongInfoLoader<'_> {
     #[inline]
     pub fn inspect_detailed(&self) -> RwLockReadGuard<'_, Option<DetailedSongInfo>> {
         #[cfg(debug_assertions)]
-        if self.detailed_info.try_write().is_err() {
+        if self.detailed_info.try_read().is_err() {
             eprintln!(
                 "Note: Blocking on read lock for `inspect_detailed` (would `try_inspect_detailed` make sense here?)"
             );
@@ -757,6 +757,12 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn inspect_thumbnail(&self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
+        #[cfg(debug_assertions)]
+        if self.thumbnail.try_read().is_err() {
+            println!(
+                "Note: Blocking on read lock for `inspect_thumbnail` (would `try_inspect_thumbnail` make sense here?)"
+            );
+        }
         self.thumbnail.read().unwrap()
     }
     /// Returns the thumbnail if accessible without blocking

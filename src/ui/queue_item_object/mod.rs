@@ -47,7 +47,7 @@ impl QueueItemObject {
             };
             drop(song.info().load_thumbnail());
             let ui_tx = UI_TX.get().expect(EXP_INIT);
-            let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index));
+            let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index, song));
         });
     }
 

@@ -68,16 +68,16 @@ pub struct Window {
 
     pub settings: OnceCell<gio::Settings>,
 
+    #[template_child]
+    progress_bar: TemplateChild<gtk::ProgressBar>,
+    progress_bar_visible: Cell<bool>,
+
     pub song_queue: RefCell<Box<[QueueItem]>>,
     pub song_queue_index: Cell<usize>,
 
     pub songs: RefCell<Songs>,
-    pub albums: RefCell<Albums>,
-    pub artists: RefCell<Artists>,
-
-    #[template_child]
-    progress_bar: TemplateChild<gtk::ProgressBar>,
-    progress_bar_visible: Cell<bool>,
+    // pub albums: RefCell<Albums>,
+    // pub artists: RefCell<Artists>,
 }
 
 impl Window {
@@ -123,10 +123,10 @@ impl Window {
                 UpdateUI::SetLibraryAlbums(albums) => self.load_library_albums(&albums),
                 UpdateUI::SetLibraryArtists(artists) => self.load_library_artists(&artists),
 
-                UpdateUI::LibrarySongLoaded(index) => self.song_loaded(index),
-                UpdateUI::LibraryAlbumLoaded(index) => self.album_loaded(index),
+                UpdateUI::LibrarySongLoaded(index, song) => self.song_loaded(index, song),
+                UpdateUI::LibraryAlbumLoaded(index, song) => self.album_loaded(index, song),
                 UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
-                UpdateUI::QueueSongLoaded(index) => self.queue_song_loaded(index),
+                UpdateUI::QueueSongLoaded(index, song) => self.queue_song_loaded(index, song),
                 UpdateUI::AlbumPageLoaded(index, song) => self.album_page_loaded(index, song),
 
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
@@ -295,30 +295,32 @@ impl Window {
         self.sheet.set_open(open);
     }
 
-    // FIX: Slight stutter when the library is done building
+    // FIX: Slight stutter when the library songs/albums/artists are assigned
     fn load_library_songs(&self, songs: &Songs) {
         self.library_page.set_empty(songs.is_empty());
         self.songs.replace(songs.clone());
         self.songs_page.load_songs(songs);
     }
     fn load_library_albums(&self, albums: &Albums) {
-        self.albums.replace(albums.clone());
         self.albums_page.load_albums(albums);
     }
     fn load_library_artists(&self, artists: &Artists) {
-        self.artists.replace(artists.clone());
         self.artists_page.load_artists(artists);
     }
 
-    fn song_loaded(&self, index: usize) {
-        let song = &self.songs.borrow()[index];
+    fn song_loaded(&self, index: usize, song: SharedSong) {
         let info = song.info();
+        #[cfg(debug_assertions)]
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
-            // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
+            // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
-            // received by the UI, so it is currently being unloaded. If there are issues
-            // with artworks not showing up, a background task could try resending the
-            // message (possibly after a short delay).
+            // received by the UI, so it is currently being unloaded.
+            println!("⚠️ {index}: library song thumbnail would block; retrying later...");
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                thread::sleep(Duration::from_millis(30));
+                let _ =
+                    (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index, song));
+            });
             return;
         };
         if thumbnail.is_none() {
@@ -326,16 +328,19 @@ impl Window {
         }
         self.songs_page.assign_artwork(index, thumbnail.as_ref());
     }
-    fn album_loaded(&self, index: usize) {
-        let album = &self.albums.borrow()[index];
-        let album = album.lock().unwrap();
-        let info = album.songs[0].info();
+    fn album_loaded(&self, index: usize, first_song: SharedSong) {
+        let info = first_song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
-            // NOTE: The `Err` variant means the `RwLock` is busy; which most likely means
+            // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
-            // received by the UI, so it is currently being unloaded. If there are issues
-            // with artworks not showing up, a background task could try resending the
-            // message (possibly after a short delay).
+            // received by the UI, so it is currently being unloaded.
+            #[cfg(debug_assertions)]
+            println!("⚠️ {index}: library album thumbnail would block; retrying later...");
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                thread::sleep(Duration::from_millis(30));
+                let _ = (UI_TX.get().expect(EXP_INIT))
+                    .send(UpdateUI::LibraryAlbumLoaded(index, first_song));
+            });
             return;
         };
         if thumbnail.is_none() {
@@ -348,21 +353,17 @@ impl Window {
             index, None, // TODO: Decide what to show
         );
     }
-    fn queue_song_loaded(&self, index: usize) {
-        let song_queue = self.song_queue.borrow();
-        if index >= song_queue.len() {
+    fn queue_song_loaded(&self, index: usize, song: SharedSong) {
+        if index >= self.song_queue.borrow().len() {
             return;
         }
-        let QueueItem::Song(song) = &song_queue[index] else {
-            return;
-        };
         let info = song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             #[cfg(debug_assertions)]
-            println!("{index}: queue song artwork would block; retrying later...");
+            println!("⚠️ {index}: queue song thumbnail would block; retrying later...");
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
                 thread::sleep(Duration::from_millis(30));
-                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index));
+                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index, song));
             });
             return;
         };

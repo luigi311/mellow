@@ -112,7 +112,6 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
-        let model = gio::ListStore::new::<AlbumObject>();
         let albums: Vec<AlbumObject> = (0..albums.len())
             .map(|index| {
                 let album = albums[index].lock().unwrap();
@@ -125,8 +124,11 @@ impl AlbumsPage {
                 )
             })
             .collect();
+        let model = gio::ListStore::new::<AlbumObject>();
         model.extend_from_slice(&albums);
         self.albums.replace(albums);
+
+        // FIX: The below code causes a bit of a stutter
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
