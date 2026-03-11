@@ -137,7 +137,7 @@ impl SongsPage {
             song_object.set_rank(score);
             score > 0.01
         });
-        let filter_model = gtk::FilterListModel::new(Some(model.clone()), Some(filter.clone()));
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
         let sort_mode = *self.sort_mode.get().unwrap();
@@ -146,30 +146,8 @@ impl SongsPage {
             let song_b = object_b.downcast_ref::<SongObject>().unwrap();
             song_a.order_cmp(song_b, sort_mode)
         });
-        sorter.connect_changed(glib::clone!(
-            #[weak]
-            model,
-            move |_, change| if change == gtk::SorterChange::Different {
-                let mut i = 0;
-                while let Some(item) = model.item(i) {
-                    let song = item.downcast_ref::<SongObject>().unwrap();
-                    let shared_song = song.shared_song();
-                    let info = shared_song.info();
-                    let info = info.user();
-
-                    song.set_played(info.play_count as u64);
-                    song.set_rating(match info.rating {
-                        0 => 3,
-                        n => n,
-                    });
-                    song.set_modified(info.modified);
-                    song.set_added(info.added);
-
-                    i += 1;
-                }
-            }
-        ));
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
+        self.update_sort_fields(&sort_model);
         self.sorter.replace(sorter);
 
         self.songs_grid
@@ -181,6 +159,30 @@ impl SongsPage {
         let songs = self.songs.borrow();
         if index < songs.len() {
             songs[index].set_property("artwork", artwork);
+        }
+    }
+
+    #[inline]
+    pub fn update_sort_fields<M>(&self, model: &M)
+    where
+        M: IsA<gio::ListModel> + ListModelExt,
+    {
+        let mut i = 0;
+        while let Some(item) = model.item(i) {
+            let song = item.downcast_ref::<SongObject>().unwrap();
+            let shared_song = song.shared_song();
+            let info = shared_song.info();
+            let info = info.user();
+
+            song.set_played(info.play_count as u64);
+            song.set_rating(match info.rating {
+                0 => 3,
+                n => n,
+            });
+            song.set_modified(info.modified);
+            song.set_added(info.added);
+
+            i += 1;
         }
     }
 
@@ -199,6 +201,9 @@ impl SongsPage {
     pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
+        if let Some(model) = &self.songs_grid.model() {
+            self.update_sort_fields(model);
+        }
         self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[inline]

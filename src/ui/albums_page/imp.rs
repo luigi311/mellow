@@ -141,7 +141,7 @@ impl AlbumsPage {
             album_object.set_rank(score);
             score > 0.01
         });
-        let filter_model = gtk::FilterListModel::new(Some(model.clone()), Some(filter.clone()));
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
         let sort_mode = *self.sort_mode.get().unwrap();
@@ -150,35 +150,37 @@ impl AlbumsPage {
             let album_b = object_b.downcast_ref::<AlbumObject>().unwrap();
             album_a.order_cmp(album_b, sort_mode)
         });
-        sorter.connect_changed(glib::clone!(
-            #[weak]
-            model,
-            move |_, change| if change == gtk::SorterChange::Different {
-                let mut i = 0;
-                while let Some(item) = model.item(i) {
-                    let album = item.downcast_ref::<AlbumObject>().unwrap();
-                    let shared_album = album.shared_album();
-                    let album_locked = shared_album.lock().unwrap();
-
-                    album.set_rating(album_locked.sort_rating(3.0));
-                    album.set_played(album_locked.average_play_count());
-
-                    // SAFETY: An album with no songs is never constructed
-                    let song = unsafe { album_locked.songs.get_unchecked(0) };
-                    let song_info = song.info();
-
-                    album.set_modified(song_info.user().modified);
-                    album.set_added(song_info.user().added);
-
-                    i += 1;
-                }
-            }
-        ));
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
+        self.update_sort_fields(&sort_model);
         self.sorter.replace(sorter);
 
         self.albums_grid
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
+    }
+
+    #[inline]
+    pub fn update_sort_fields<M>(&self, model: &M)
+    where
+        M: IsA<gio::ListModel> + ListModelExt,
+    {
+        let mut i = 0;
+        while let Some(item) = model.item(i) {
+            let album = item.downcast_ref::<AlbumObject>().unwrap();
+            let shared_album = album.shared_album();
+            let album_locked = shared_album.lock().unwrap();
+
+            album.set_rating(album_locked.sort_rating(3.0));
+            album.set_played(album_locked.average_play_count());
+
+            // SAFETY: An album with no songs is never constructed
+            let song = unsafe { album_locked.songs.get_unchecked(0) };
+            let song_info = song.info();
+
+            album.set_modified(song_info.user().modified);
+            album.set_added(song_info.user().added);
+
+            i += 1;
+        }
     }
 
     #[inline]
@@ -204,6 +206,9 @@ impl AlbumsPage {
     pub fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
+        if let Some(model) = &self.albums_grid.model() {
+            self.update_sort_fields(model);
+        }
         self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[inline]

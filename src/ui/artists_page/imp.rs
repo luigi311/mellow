@@ -138,7 +138,7 @@ impl ArtistsPage {
             artist_object.set_rank(score);
             score > 0.01
         });
-        let filter_model = gtk::FilterListModel::new(Some(model.clone()), Some(filter.clone()));
+        let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
 
         let sort_mode = *self.sort_mode.get().unwrap();
@@ -147,35 +147,37 @@ impl ArtistsPage {
             let artist_b = object_b.downcast_ref::<ArtistObject>().unwrap();
             artist_a.order_cmp(artist_b, sort_mode)
         });
-        sorter.connect_changed(glib::clone!(
-            #[weak]
-            model,
-            move |_, change| if change == gtk::SorterChange::Different {
-                let mut i = 0;
-                while let Some(item) = model.item(i) {
-                    let artist = item.downcast_ref::<ArtistObject>().unwrap();
-                    let shared_artist = artist.shared_artist();
-                    let artist_locked = shared_artist.lock().unwrap();
-                    // SAFETY: An artist with no albums is never constructed
-                    let album = unsafe { artist_locked.albums.last().unwrap_unchecked() }
-                        .lock()
-                        .unwrap();
-                    // SAFETY: An album with no songs is never constructed
-                    let first_song = unsafe { album.songs.get_unchecked(0) };
-                    let song_info = first_song.info();
-
-                    artist.set_modified(song_info.user().modified);
-                    artist.set_added(song_info.user().added);
-
-                    i += 1;
-                }
-            }
-        ));
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
+        self.update_sort_fields(&sort_model);
         self.sorter.replace(sorter);
 
         self.artists_grid
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
+    }
+
+    #[inline]
+    pub fn update_sort_fields<M>(&self, model: &M)
+    where
+        M: IsA<gio::ListModel> + ListModelExt,
+    {
+        let mut i = 0;
+        while let Some(item) = model.item(i) {
+            let artist = item.downcast_ref::<ArtistObject>().unwrap();
+            let shared_artist = artist.shared_artist();
+            let artist_locked = shared_artist.lock().unwrap();
+            // SAFETY: An artist with no albums is never constructed
+            let album = unsafe { artist_locked.albums.last().unwrap_unchecked() }
+                .lock()
+                .unwrap();
+            // SAFETY: An album with no songs is never constructed
+            let first_song = unsafe { album.songs.get_unchecked(0) };
+            let song_info = first_song.info();
+
+            artist.set_modified(song_info.user().modified);
+            artist.set_added(song_info.user().added);
+
+            i += 1;
+        }
     }
 
     #[inline]
@@ -201,6 +203,9 @@ impl ArtistsPage {
     pub fn set_sort_mode(&self, sort_mode: ArtistOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
+        if let Some(model) = &self.artists_grid.model() {
+            self.update_sort_fields(model);
+        }
         self.sorter.borrow().changed(gtk::SorterChange::Different);
     }
     #[inline]
