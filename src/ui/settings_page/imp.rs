@@ -91,6 +91,7 @@ impl SettingsPage {
 
     #[template_callback]
     pub fn handle_refresh_library(&self) {
+        // FIX: Repeatedly pressing the refresh button crashes the program
         (LIBRARY_TX.get().expect(EXP_INIT))
             .send(LibraryRequest::Rebuild)
             .expect(EXP_RX);
