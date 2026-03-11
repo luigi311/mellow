@@ -12,6 +12,8 @@ pub struct LibraryPage {
     pub view_stack: TemplateChild<adw::ViewStack>,
     #[template_child]
     pub ready_stack: TemplateChild<adw::ViewStack>,
+
+    pub is_empty: Cell<bool>,
 }
 
 #[glib::object_subclass]

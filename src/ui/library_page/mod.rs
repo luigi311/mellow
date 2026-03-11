@@ -23,9 +23,12 @@ impl LibraryPage {
 
     #[inline]
     pub fn set_empty(&self, empty: bool) {
+        if self.imp().is_empty.replace(empty) == empty {
+            return;
+        }
         match empty {
-            false => self.switch_view("library"),
-            true => self.switch_view("empty"),
+            false => self.imp().ready_stack.set_visible_child_name("library"),
+            true => self.imp().ready_stack.set_visible_child_name("empty"),
         }
     }
 }
