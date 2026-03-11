@@ -310,7 +310,6 @@ impl Window {
 
     fn song_loaded(&self, index: usize, song: SharedSong) {
         let info = song.info();
-        #[cfg(debug_assertions)]
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
@@ -334,7 +333,6 @@ impl Window {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
             // the item went out of view between when the message was sent and when it was
             // received by the UI, so it is currently being unloaded.
-            #[cfg(debug_assertions)]
             println!("⚠️ {index}: library album thumbnail would block; retrying later...");
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
                 thread::sleep(Duration::from_millis(30));
@@ -359,7 +357,6 @@ impl Window {
         }
         let info = song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
-            #[cfg(debug_assertions)]
             println!("⚠️ {index}: queue song thumbnail would block; retrying later...");
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
                 thread::sleep(Duration::from_millis(30));
