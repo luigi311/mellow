@@ -69,13 +69,27 @@
         <property name="hexpand">True</property>
         <property name="title" translatable="yes">Directories</property>
         <child type="header-suffix">
-          <object class="GtkButton">
-            <property name="icon-name">folder-new-symbolic</property>
-            <property name="action-name">win.add_library</property>
-            <property name="tooltip-text" translatable="yes">Add Directory</property>
-            <style>
-              <class name="flat"/>
-            </style>
+          <object class="GtkBox">
+            <child>
+              <object class="GtkButton">
+                <signal name="clicked" handler="handle_refresh_library" swapped="true"/>
+                <property name="icon-name">view-refresh-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Refresh Library</property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="icon-name">folder-new-symbolic</property>
+                <property name="action-name">win.add_library</property>
+                <property name="tooltip-text" translatable="yes">Add Directory</property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
           </object>
         </child>
         <child>

@@ -83,119 +83,135 @@
               <class name="osd"/>
             </style>
             <property name="content">
-              <object class="AdwViewStack" id="view_stack">
-                <property name="enable-transitions">true</property>
-
-                Library
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="AdwViewStackPage">
-                    <property name="name">library</property>
-                    <property name="title" translatable="yes">Library</property>
-                    <property name="icon-name">applications-multimedia-symbolic</property>
-                    <property name="use-underline">True</property>
+                  <object class="AdwViewStack" id="view_stack">
+                    <property name="enable-transitions">true</property>
 
-                    <property name="child">
-                      <object class="AdwNavigationView" id="library">
+                    Library
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">library</property>
+                        <property name="title" translatable="yes">Library</property>
+                        <property name="icon-name">applications-multimedia-symbolic</property>
+                        <property name="use-underline">True</property>
 
-                        Library home page
-                        <child>
-                          <object class="MellowLibraryPage" id="library_page">
-                            <property name="title" translatable="yes">Library</property>
-                            <property name="tag">library</property>
+                        <property name="child">
+                          <object class="AdwNavigationView" id="library">
+
+                            Library home page
+                            <child>
+                              <object class="MellowLibraryPage" id="library_page">
+                                <property name="title" translatable="yes">Library</property>
+                                <property name="tag">library</property>
+                              </object>
+                            </child>
+
+                            Songs
+                            <child>
+                              <object class="MellowSongsPage" id="songs_page">
+                                <property name="title" translatable="yes">Songs</property>
+                                <property name="tag">library_songs</property>
+                              </object>
+                            </child>
+
+                            Albums
+                            <child>
+                              <object class="MellowAlbumsPage" id="albums_page">
+                                <property name="title" translatable="yes">Albums</property>
+                                <property name="tag">library_albums</property>
+                              </object>
+                            </child>
+
+                            Artists
+                            <child>
+                              <object class="MellowArtistsPage" id="artists_page">
+                                <property name="title" translatable="yes">Artists</property>
+                                <property name="tag">library_artists</property>
+                              </object>
+                            </child>
+
                           </object>
-                        </child>
-
-                        Songs
-                        <child>
-                          <object class="MellowSongsPage" id="songs_page">
-                            <property name="title" translatable="yes">Songs</property>
-                            <property name="tag">library_songs</property>
-                          </object>
-                        </child>
-
-                        Albums
-                        <child>
-                          <object class="MellowAlbumsPage" id="albums_page">
-                            <property name="title" translatable="yes">Albums</property>
-                            <property name="tag">library_albums</property>
-                          </object>
-                        </child>
-
-                        Artists
-                        <child>
-                          <object class="MellowArtistsPage" id="artists_page">
-                            <property name="title" translatable="yes">Artists</property>
-                            <property name="tag">library_artists</property>
-                          </object>
-                        </child>
-
-                      </object>
-                    </property>
-                  </object>
-                </child>
-
-                Playing
-                <child>
-                  <object class="AdwViewStackPage">
-                    <property name="name">playing</property>
-                    <property name="title" translatable="yes">Playing</property>
-                    <property name="icon-name">media-playback-start-symbolic</property>
-                    <property name="use-underline">True</property>
-                    <property name="child">
-                      <object class="AdwNavigationView" id="playing">
-
-                        Queue page
-                        <child>
-                          <object class="MellowQueuePage" id="queue_page">
-                            <property name="title" translatable="yes">Song Queue</property>
-                            <property name="tag">song_queue</property>
-                          </object>
-                        </child>
-
-                        Song info page
-                        <child>
-                          <object class="MellowQueueSubpage" id="queue_subpage">
-                            <property name="title" translatable="yes">Song Info</property>
-                            <property name="tag">info</property>
-                          </object>
-                        </child>
-
-                        Lyrics page
-                        <child>
-                          <object class="MellowLyricsPage" id="lyrics_page">
-                            <property name="title" translatable="yes">Lyrics</property>
-                            <property name="tag">lyrics</property>
-                          </object>
-                        </child>
-
-                      </object>
-                    </property>
-                  </object>
-                </child>
-
-                Settings
-                <child>
-                  <object class="AdwViewStackPage">
-                    <property name="name">settings</property>
-                    <property name="title" translatable="yes">Settings</property>
-                    <property name="icon-name">preferences-system-symbolic</property>
-                    <property name="use-underline">True</property>
-                    <property name="child">
-                      <object class="AdwToolbarView">
-                        <child type="top">
-                          <object class="AdwHeaderBar">
-                            <property name="show_title">False</property>
-                          </object>
-                        </child>
-                        <property name="content">
-                          <object class="MellowSettingsPage" id="settings_page"/>
                         </property>
                       </object>
-                    </property>
+                    </child>
+
+                    Playing
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">playing</property>
+                        <property name="title" translatable="yes">Playing</property>
+                        <property name="icon-name">media-playback-start-symbolic</property>
+                        <property name="use-underline">True</property>
+                        <property name="child">
+                          <object class="AdwNavigationView" id="playing">
+
+                            Queue page
+                            <child>
+                              <object class="MellowQueuePage" id="queue_page">
+                                <property name="title" translatable="yes">Song Queue</property>
+                                <property name="tag">song_queue</property>
+                              </object>
+                            </child>
+
+                            Song info page
+                            <child>
+                              <object class="MellowQueueSubpage" id="queue_subpage">
+                                <property name="title" translatable="yes">Song Info</property>
+                                <property name="tag">info</property>
+                              </object>
+                            </child>
+
+                            Lyrics page
+                            <child>
+                              <object class="MellowLyricsPage" id="lyrics_page">
+                                <property name="title" translatable="yes">Lyrics</property>
+                                <property name="tag">lyrics</property>
+                              </object>
+                            </child>
+
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+
+                    Settings
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">settings</property>
+                        <property name="title" translatable="yes">Settings</property>
+                        <property name="icon-name">preferences-system-symbolic</property>
+                        <property name="use-underline">True</property>
+                        <property name="child">
+                          <object class="AdwToolbarView">
+                            <child type="top">
+                              <object class="AdwHeaderBar">
+                                <property name="show_title">False</property>
+                              </object>
+                            </child>
+                            <property name="content">
+                              <object class="MellowSettingsPage" id="settings_page"/>
+                            </property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+
+                    <property name="visible_child_name">playing</property>
                   </object>
                 </child>
-
-                <property name="visible_child_name">playing</property>
+                <child>
+                  <object class="GtkProgressBar">
+                    <property name="visible">False</property>
+                    <property name="margin_top">6</property>
+                    <property name="fraction" bind-source="progress_bar" bind-property="fraction" bind-flags="sync-create"/>
+                    <property name="visible" bind-source="progress_bar" bind-property="visible" bind-flags="sync-create"/>
+                    <style>
+                      <class name="osd"/>
+                    </style>
+                  </object>
+                </child>
               </object>
             </property>
 

@@ -89,6 +89,13 @@ impl SettingsPage {
         }
     }
 
+    #[template_callback]
+    pub fn handle_refresh_library(&self) {
+        (LIBRARY_TX.get().expect(EXP_INIT))
+            .send(LibraryRequest::Rebuild)
+            .expect(EXP_RX);
+    }
+
     #[inline]
     fn update_color_state(&self) {
         match self.adaptive_colors.is_active() {
