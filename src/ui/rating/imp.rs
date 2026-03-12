@@ -55,7 +55,7 @@ impl Rating {
         let click = gtk::GestureClick::builder()
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
-        click.connect_pressed(glib::clone!(
+        click.connect_released(glib::clone!(
             #[weak(rename_to=rating)]
             self,
             move |_, _, pos_x, _| {
