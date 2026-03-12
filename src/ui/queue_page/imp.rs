@@ -49,6 +49,7 @@ pub struct QueuePage {
 
     queue_length: Cell<usize>,
     playing_index: Cell<usize>,
+    last_repeat_mode: Cell<bool>,
     queue_item_objects: Rc<RefCell<Vec<QueueItemObject>>>,
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
@@ -174,9 +175,14 @@ impl QueuePage {
             // :)
         );
 
-        if self.repeat_toggle.is_active() && queue_length != 0 {
+        let repeat_mode = self.repeat_toggle.is_active();
+        let last_repeat_mode = self.last_repeat_mode.replace(repeat_mode);
+        if repeat_mode && queue_length != 0 {
             let n_items_before = (NUM_ITEMS_BEHIND - (playing - start)).min(queue_length - 1);
             if n_items_before > 0 {
+                self.next_scroll_pos.set(QueueScrollAction::Offset(
+                    n_items_before as i32, //
+                ));
                 let from = queue.len() - n_items_before;
                 let mut items_before = Self::items_to_objects(
                     queue.iter().enumerate().skip(from.max(playing + 1)),
@@ -193,6 +199,10 @@ impl QueuePage {
                 );
                 items.extend(items_after);
             }
+        } else if repeat_mode != last_repeat_mode {
+            self.next_scroll_pos.set(QueueScrollAction::Offset(
+                -(NUM_ITEMS_BEHIND.saturating_sub(playing) as i32),
+            ));
         }
 
         list_model.splice(0, list_model.n_items(), &items);

@@ -43,7 +43,6 @@ impl QueuePage {
     pub fn update_repeat(&self, repeat: bool) {
         let ui = self.imp();
         ui.repeat_toggle.set_active(repeat);
-        ui.next_scroll_pos.set(QueueScrollAction::ToPlaying);
     }
 
     #[inline]
