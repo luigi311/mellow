@@ -119,9 +119,9 @@ impl Window {
                 UpdateUI::Progress(progress) => self.update_progress(progress),
 
                 UpdateUI::SetLibraryDirs(dirs) => self.set_library_dirs(&dirs),
-                UpdateUI::SetLibrarySongs(songs) => self.load_library_songs(&songs).await,
-                UpdateUI::SetLibraryAlbums(albums) => self.load_library_albums(&albums).await,
-                UpdateUI::SetLibraryArtists(artists) => self.load_library_artists(&artists).await,
+                UpdateUI::SetLibrarySongs(songs) => self.load_library_songs(songs),
+                UpdateUI::SetLibraryAlbums(albums) => self.load_library_albums(albums),
+                UpdateUI::SetLibraryArtists(artists) => self.load_library_artists(artists),
 
                 UpdateUI::LibrarySongLoaded(index, song) => self.song_loaded(index, song),
                 UpdateUI::LibraryAlbumLoaded(index, song) => self.album_loaded(index, song),
@@ -296,16 +296,16 @@ impl Window {
     }
 
     // FIX: Slight stutter when the library songs/albums/artists are assigned
-    async fn load_library_songs(&self, songs: &Songs) {
+    fn load_library_songs(&self, songs: Songs) {
         self.library_page.set_empty(songs.is_empty());
         self.songs.replace(songs.clone());
-        self.songs_page.load_songs(songs).await;
+        self.songs_page.load_songs(songs);
     }
-    async fn load_library_albums(&self, albums: &Albums) {
-        self.albums_page.load_albums(albums).await;
+    fn load_library_albums(&self, albums: Albums) {
+        self.albums_page.load_albums(albums);
     }
-    async fn load_library_artists(&self, artists: &Artists) {
-        self.artists_page.load_artists(artists).await;
+    fn load_library_artists(&self, artists: Artists) {
+        self.artists_page.load_artists(artists);
     }
 
     fn song_loaded(&self, index: usize, song: SharedSong) {

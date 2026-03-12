@@ -15,8 +15,12 @@ glib::wrapper! {
 
 impl AlbumsPage {
     #[inline]
-    pub async fn load_albums(&self, albums: &Albums) {
-        self.imp().load_albums(albums).await;
+    pub fn load_albums(&self, albums: Albums) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to=albums_page)]
+            self.imp(),
+            async move { albums_page.load_albums(&albums).await }
+        ));
     }
 
     #[inline]

@@ -4,6 +4,7 @@ use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue};
@@ -108,7 +109,9 @@ impl ArtistsPage {
         }
         self.view_stack.set_visible_child_name("artists");
 
-        // FIX: Constructing the objects causes a UI stutter
+        // FIX: Slight stutter caused by object constuction
+        let async_timeout = Duration::from_millis(1000 / 60);
+        let mut async_timer = Instant::now();
         let mut artist_objects = Vec::with_capacity(artists.len());
         for index in 0..artists.len() {
             // SAFETY: The range is `0..artists.len()`
@@ -120,7 +123,10 @@ impl ArtistsPage {
                 artist_locked.albums.len() as u64,
                 Arc::clone(artist),
             ));
-            // async {}.await;
+            if async_timer.elapsed() > async_timeout {
+                glib::timeout_future(Duration::from_millis(50)).await;
+                async_timer = Instant::now();
+            }
         }
         let model = gio::ListStore::new::<ArtistObject>();
         model.extend_from_slice(&artist_objects);

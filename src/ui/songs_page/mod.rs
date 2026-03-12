@@ -15,8 +15,12 @@ glib::wrapper! {
 
 impl SongsPage {
     #[inline]
-    pub async fn load_songs(&self, songs: &Songs) {
-        self.imp().load_songs(songs).await;
+    pub fn load_songs(&self, songs: Songs) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to=songs_page)]
+            self.imp(),
+            async move { songs_page.load_songs(&songs).await }
+        ));
     }
 
     #[inline]
