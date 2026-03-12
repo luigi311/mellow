@@ -509,17 +509,16 @@ impl QueuePage {
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
         self.drag_widget.put(&drag_row, 0.0, 0.0);
 
-        drag.connect_begin(glib::clone!(
+        drag.connect_drag_begin(glib::clone!(
             #[weak(rename_to=list_box)]
             self.list_box,
             #[strong(rename_to=selection_mode)]
             self.selection_mode,
             #[weak]
             drag_row,
-            move |gesture_drag, _| if !selection_mode.get() {
-                let Some((start_x, start_y)) = gesture_drag.point(None) else {
-                    return;
-                };
+            #[weak]
+            drag_container,
+            move |_, start_x, start_y| if !selection_mode.get() {
                 if !Self::should_drag(start_x) {
                     return;
                 }
@@ -535,6 +534,8 @@ impl QueuePage {
                 } else {
                     drag_row.to_default();
                 }
+
+                drag_container.set_visible(true);
             }
         ));
         drag.connect_update(glib::clone!(
@@ -542,8 +543,6 @@ impl QueuePage {
             self,
             #[weak]
             drag_row,
-            #[weak]
-            drag_container,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
                 let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
@@ -582,10 +581,6 @@ impl QueuePage {
                     start_x + offset_x,
                     start_y + offset_y - queue_page.scrolled_window.vadjustment().value(),
                 );
-
-                // Setting here to only show it after moving the cursor
-                // TODO: Is it okay to repeatedly call this?
-                drag_container.set_visible(true);
             }
         ));
         drag.connect_end(glib::clone!(
