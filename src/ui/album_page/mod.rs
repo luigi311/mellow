@@ -46,10 +46,10 @@ impl AlbumPage {
         ui.album_title.set_label(&album_locked.title);
         ui.artist_name
             .set_label(&album_locked.artist.lock().unwrap().name);
-        ui.year.set_label(&match album_locked.year {
-            year if year > 0 => year.to_string(),
-            _ => String::new(),
-        });
+        match album_locked.year {
+            year if year > 0 => ui.year.set_label(&year.to_string()),
+            _ => ui.year.set_visible(false),
+        };
 
         ui.rating
             .set_rating_silent(album_locked.average_rating(0.0).round() as u8);
