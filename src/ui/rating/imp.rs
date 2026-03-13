@@ -131,7 +131,12 @@ impl Rating {
         }
     }
 
-    /// Returns the rating at the given `pos_x` pixel position
+    /// Takes the given `pos_x` pixel position and retruns
+    /// the rating at that position in the `Ok` variant
+    ///
+    /// # Errors
+    /// Returns an `Err` with the closest valid rating if
+    /// `pos_x` is outside the widget boundaries
     pub fn pixels_to_rating(&self, pos_x: f64) -> Result<u8, u8> {
         if pos_x < 0.0 {
             return Err(0);
