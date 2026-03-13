@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::UI_TIMEOUT_MS;
+use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -126,7 +126,7 @@ impl ArtistsPage {
                 artist_locked.albums.len() as u64,
                 Arc::clone(artist),
             ));
-            if async_timer.elapsed() > UI_TIMEOUT_MS {
+            if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }
@@ -191,7 +191,7 @@ impl ArtistsPage {
             artist.set_modified(song_info.user().modified);
             artist.set_added(song_info.user().added);
 
-            if async_timer.elapsed() > UI_TIMEOUT_MS {
+            if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }

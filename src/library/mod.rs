@@ -20,7 +20,7 @@ pub use artist::{Artist, SharedArtist, SortedArtistAlbums};
 pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
-use crate::UI_TIMEOUT_MS;
+use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
@@ -479,7 +479,7 @@ impl Library {
             }
 
             progress += progress_step;
-            if timer.elapsed() > UI_TIMEOUT_MS {
+            if timer.elapsed() > UI_TIMEOUT {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
@@ -688,7 +688,7 @@ impl Library {
             }
 
             progress += progress_step;
-            if timer.elapsed() > UI_TIMEOUT_MS {
+            if timer.elapsed() > UI_TIMEOUT {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));

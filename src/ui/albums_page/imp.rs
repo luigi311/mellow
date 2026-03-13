@@ -7,6 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Albums, ToQueue, ToShuffledQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -113,7 +114,6 @@ impl AlbumsPage {
         // The timers are used to reduce major UI stutters
         // by turning them into multiple smaller ones
         let wait = Duration::from_millis(10);
-        let async_timeout = Duration::from_millis(1000 / 60);
         let mut async_timer = Instant::now();
 
         let mut album_objects = Vec::with_capacity(albums.len());
@@ -127,7 +127,7 @@ impl AlbumsPage {
                 album.year as u32,
                 Arc::clone(&album.songs[0]),
             ));
-            if async_timer.elapsed() > async_timeout {
+            if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }
@@ -176,7 +176,6 @@ impl AlbumsPage {
         // The timers are used to reduce major UI stutters
         // by turning them into multiple smaller ones
         let wait = Duration::from_millis(10);
-        let async_timeout = Duration::from_millis(1000 / 60);
         let mut async_timer = Instant::now();
 
         let mut i = 0;
@@ -195,7 +194,7 @@ impl AlbumsPage {
             album.set_modified(song_info.user().modified);
             album.set_added(song_info.user().added);
 
-            if async_timer.elapsed() > async_timeout {
+            if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }

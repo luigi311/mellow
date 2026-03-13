@@ -38,7 +38,7 @@ pub static CACHE_DIR: OnceLock<String> = OnceLock::new();
 pub static CONFIG_DIR: OnceLock<String> = OnceLock::new();
 pub static MUSIC_DIR: OnceLock<String> = OnceLock::new();
 
-pub const UI_TIMEOUT_MS: Duration = Duration::from_millis(1000 / 60);
+pub const UI_TIMEOUT: Duration = Duration::from_millis(1000 / 60);
 
 /// Initializes the `CONFIG_DIR` and `MUSIC_DIR` global variables
 /// (does nothing if already initialized)
