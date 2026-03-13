@@ -41,8 +41,8 @@ impl Rating {
         motion.connect_motion(glib::clone!(
             #[weak(rename_to=rating)]
             self,
-            move |_, pos_x, _| {
-                rating.preview_rating(rating.rating.get(), rating.pixels_to_rating(pos_x));
+            move |_, pos_x, _| if let Ok(new_rating) = rating.pixels_to_rating(pos_x) {
+                rating.preview_rating(rating.rating.get(), new_rating);
             }
         ));
         motion.connect_leave(glib::clone!(
@@ -58,9 +58,10 @@ impl Rating {
         click.connect_released(glib::clone!(
             #[weak(rename_to=rating)]
             self,
-            move |_, _, pos_x, _| {
-                // TODO: Cancel if cursor is moved outside the widget
-                let new_rating = rating.pixels_to_rating(pos_x);
+            move |_, _, pos_x, pos_y| if let Ok(new_rating) = rating.pixels_to_rating(pos_x) {
+                if pos_y < 0.0 || pos_y > rating.obj().height() as f64 {
+                    return;
+                }
                 rating.set_rating(match new_rating == rating.rating.get() {
                     false => new_rating,
                     true => 0,
@@ -131,10 +132,16 @@ impl Rating {
     }
 
     /// Returns the rating at the given `pos_x` pixel position
-    pub fn pixels_to_rating(&self, pos_x: f64) -> u8 {
+    pub fn pixels_to_rating(&self, pos_x: f64) -> Result<u8, u8> {
+        if pos_x < 0.0 {
+            return Err(0);
+        }
         let spacing = self.obj().spacing() as f64;
         let star_width = DEFAULT_STAR_SIZE as f64 + spacing;
-        (((pos_x + spacing / 2.0) / star_width) as u8 + 1).min(5)
+        match ((pos_x + spacing / 2.0) / star_width) as u8 + 1 {
+            stars if stars > 5 => Err(5),
+            stars => Ok(stars),
+        }
     }
 }
 
