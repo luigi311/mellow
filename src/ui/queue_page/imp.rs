@@ -180,9 +180,11 @@ impl QueuePage {
         if repeat_mode && queue_length != 0 {
             let n_items_before = (NUM_ITEMS_BEHIND - (playing - start)).min(queue_length - 1);
             if n_items_before > 0 {
-                self.next_scroll_pos.set(QueueScrollAction::Offset(
-                    n_items_before as i32, //
-                ));
+                if repeat_mode != last_repeat_mode {
+                    self.next_scroll_pos.set(QueueScrollAction::Offset(
+                        n_items_before as i32, //
+                    ));
+                }
                 let from = queue.len() - n_items_before;
                 let mut items_before = Self::items_to_objects(
                     queue.iter().enumerate().skip(from.max(playing + 1)),
