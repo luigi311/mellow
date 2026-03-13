@@ -110,9 +110,12 @@ impl AlbumsPage {
         }
         self.view_stack.set_visible_child_name("albums");
 
-        // FIX: Slight stutter caused by object constuction
+        // The timers are used to reduce major UI stutters
+        // by turning them into multiple smaller ones
+        let wait = Duration::from_millis(10);
         let async_timeout = Duration::from_millis(1000 / 60);
         let mut async_timer = Instant::now();
+
         let mut album_objects = Vec::with_capacity(albums.len());
         for index in 0..albums.len() {
             // SAFETY: The range is `0..albums.len()`
@@ -125,14 +128,15 @@ impl AlbumsPage {
                 Arc::clone(&album.songs[0]),
             ));
             if async_timer.elapsed() > async_timeout {
-                glib::timeout_future(Duration::from_millis(50)).await;
+                glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }
         }
         let model = gio::ListStore::new::<AlbumObject>();
         model.extend_from_slice(&album_objects);
-        self.update_sort_fields(&model);
+        self.update_sort_fields(&model).await;
         self.albums.replace(album_objects);
+        glib::timeout_future(wait).await;
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
@@ -148,6 +152,7 @@ impl AlbumsPage {
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
+        glib::timeout_future(wait).await;
 
         let sort_mode = *self.sort_mode.get().unwrap();
         let sorter = gtk::CustomSorter::new(move |object_a, object_b| {
@@ -157,16 +162,23 @@ impl AlbumsPage {
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
+        glib::timeout_future(wait).await;
 
         self.albums_grid
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
     }
 
     #[inline]
-    pub fn update_sort_fields<M>(&self, model: &M)
+    pub async fn update_sort_fields<M>(&self, model: &M)
     where
         M: IsA<gio::ListModel> + ListModelExt,
     {
+        // The timers are used to reduce major UI stutters
+        // by turning them into multiple smaller ones
+        let wait = Duration::from_millis(10);
+        let async_timeout = Duration::from_millis(1000 / 60);
+        let mut async_timer = Instant::now();
+
         let mut i = 0;
         while let Some(item) = model.item(i) {
             let album = item.downcast_ref::<AlbumObject>().unwrap();
@@ -182,6 +194,11 @@ impl AlbumsPage {
 
             album.set_modified(song_info.user().modified);
             album.set_added(song_info.user().added);
+
+            if async_timer.elapsed() > async_timeout {
+                glib::timeout_future(wait).await;
+                async_timer = Instant::now();
+            }
 
             i += 1;
         }
@@ -207,12 +224,12 @@ impl AlbumsPage {
         });
     }
     #[inline]
-    pub fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
+    pub async fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
         self.sorter.borrow().changed(gtk::SorterChange::Different);
         if let Some(model) = &self.albums_grid.model() {
-            self.update_sort_fields(model);
+            self.update_sort_fields(model).await;
         }
     }
     #[inline]

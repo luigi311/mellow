@@ -7,6 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::UI_TIMEOUT_MS;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Songs, ToQueue};
 use crate::player::{PLAYER_TX, PlayerRequest};
@@ -110,9 +111,12 @@ impl SongsPage {
         }
         self.view_stack.set_visible_child_name("songs");
 
-        // FIX: Slight stutter caused by object constuction
+        // The timers are used to reduce major UI stutters
+        // by turning them into multiple smaller ones
+        let wait = Duration::from_millis(10);
         let async_timeout = Duration::from_millis(1000 / 60);
         let mut async_timer = Instant::now();
+
         let mut song_objects = Vec::with_capacity(songs.len());
         for index in 0..songs.len() {
             song_objects.push(SongObject::new(
@@ -121,14 +125,15 @@ impl SongsPage {
                 Arc::clone(unsafe { songs.get_unchecked(index) }),
             ));
             if async_timer.elapsed() > async_timeout {
-                glib::timeout_future(Duration::from_millis(50)).await;
+                glib::timeout_future(wait).await;
                 async_timer = Instant::now();
             }
         }
         let model = gio::ListStore::new::<SongObject>();
         model.extend_from_slice(&song_objects);
-        self.update_sort_fields(&model);
+        self.update_sort_fields(&model).await;
         self.songs.replace(song_objects);
+        glib::timeout_future(wait).await;
 
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
@@ -144,6 +149,7 @@ impl SongsPage {
         });
         let filter_model = gtk::FilterListModel::new(Some(model), Some(filter.clone()));
         self.filter.replace(filter);
+        glib::timeout_future(wait).await;
 
         let sort_mode = *self.sort_mode.get().unwrap();
         let sorter = gtk::CustomSorter::new(move |object_a, object_b| {
@@ -153,6 +159,7 @@ impl SongsPage {
         });
         let sort_model = gtk::SortListModel::new(Some(filter_model), Some(sorter.clone()));
         self.sorter.replace(sorter);
+        glib::timeout_future(wait).await;
 
         self.songs_grid
             .set_model(Some(&gtk::NoSelection::new(Some(sort_model))));
@@ -167,10 +174,15 @@ impl SongsPage {
     }
 
     #[inline]
-    pub fn update_sort_fields<M>(&self, model: &M)
+    pub async fn update_sort_fields<M>(&self, model: &M)
     where
         M: IsA<gio::ListModel> + ListModelExt,
     {
+        // The timers are used to reduce major UI stutters
+        // by turning them into multiple smaller ones
+        let wait = Duration::from_millis(10);
+        let mut async_timer = Instant::now();
+
         let mut i = 0;
         while let Some(item) = model.item(i) {
             let song = item.downcast_ref::<SongObject>().unwrap();
@@ -185,6 +197,11 @@ impl SongsPage {
             });
             song.set_modified(info.modified);
             song.set_added(info.added);
+
+            if async_timer.elapsed() > UI_TIMEOUT_MS {
+                glib::timeout_future(wait).await;
+                async_timer = Instant::now();
+            }
 
             i += 1;
         }
@@ -202,12 +219,12 @@ impl SongsPage {
         });
     }
     #[inline]
-    pub fn set_sort_mode(&self, sort_mode: SongOrdering) {
+    pub async fn set_sort_mode(&self, sort_mode: SongOrdering) {
         let ordering = self.sort_mode.get().expect(EXP_INIT).ordering;
         ordering.replace(sort_mode);
         self.sorter.borrow().changed(gtk::SorterChange::Different);
         if let Some(model) = &self.songs_grid.model() {
-            self.update_sort_fields(model);
+            self.update_sort_fields(model).await;
         }
     }
     #[inline]

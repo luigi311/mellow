@@ -20,6 +20,7 @@ pub use artist::{Artist, SharedArtist, SortedArtistAlbums};
 pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
+use crate::UI_TIMEOUT_MS;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
@@ -397,7 +398,6 @@ impl Library {
         let progress_step = 1.0 / songs.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
-        let report_rate = Duration::from_secs_f64(1.0 / 60.0);
 
         for song in &songs {
             let mut info = song.info();
@@ -479,7 +479,7 @@ impl Library {
             }
 
             progress += progress_step;
-            if timer.elapsed() > report_rate {
+            if timer.elapsed() > UI_TIMEOUT_MS {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));
@@ -668,7 +668,6 @@ impl Library {
         let progress_step = 1.0 / possibly_moved.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
-        let report_rate = Duration::from_secs_f64(1.0 / 60.0);
 
         for missing in possibly_moved {
             let old_info = missing.info();
@@ -689,7 +688,7 @@ impl Library {
             }
 
             progress += progress_step;
-            if timer.elapsed() > report_rate {
+            if timer.elapsed() > UI_TIMEOUT_MS {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
                     let _ = ui_tx.send(UpdateUI::Progress(None));

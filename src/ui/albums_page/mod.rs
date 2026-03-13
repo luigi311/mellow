@@ -30,7 +30,11 @@ impl AlbumsPage {
 
     #[inline]
     pub fn set_sort_mode(&self, sort_mode: AlbumOrdering) {
-        self.imp().set_sort_mode(sort_mode);
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to=albums_page)]
+            self.imp(),
+            async move { albums_page.set_sort_mode(sort_mode).await }
+        ));
     }
     #[inline]
     #[must_use]
