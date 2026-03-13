@@ -516,6 +516,10 @@ impl QueuePage {
             self.list_box,
             #[strong(rename_to=selection_mode)]
             self.selection_mode,
+            #[weak(rename_to=scrolled_window)]
+            self.scrolled_window,
+            #[weak(rename_to=drag_widget)]
+            self.drag_widget,
             #[weak]
             drag_row,
             #[weak]
@@ -538,6 +542,11 @@ impl QueuePage {
                 }
 
                 drag_container.set_visible(true);
+                drag_widget.move_(
+                    &drag_row,
+                    start_x,
+                    start_y - scrolled_window.vadjustment().value(),
+                );
             }
         ));
         drag.connect_update(glib::clone!(
