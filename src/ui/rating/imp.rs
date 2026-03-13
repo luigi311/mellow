@@ -131,7 +131,7 @@ impl Rating {
         }
     }
 
-    /// Takes the given `pos_x` pixel position and retruns
+    /// Takes the given `pos_x` pixel position and returns
     /// the rating at that position in the `Ok` variant
     ///
     /// # Errors
