@@ -59,6 +59,7 @@ impl Rating {
             #[weak(rename_to=rating)]
             self,
             move |_, _, pos_x, _| {
+                // TODO: Cancel if cursor is moved outside the widget
                 let new_rating = rating.pixels_to_rating(pos_x);
                 rating.set_rating(match new_rating == rating.rating.get() {
                     false => new_rating,

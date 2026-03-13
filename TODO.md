@@ -8,18 +8,12 @@
 
 Song queue:
 
-- [x] Display the song queue
-- [x] Allow reordering the queue
 - [x] Reorder using drag-&-drop
   - TODO: Improvement: Scroll when reaching top/bottom edges
 - [-] Multi-selection mode
   - [x] Item selection (checkbox in place of the cover image)
   - [x] Removing multiple items at once
   - [ ] Rating multiple items at once
-- [x] Allow adding songs to the queue
-- [x] Allow removing items from the queue
-- [x] Allow inserting stoppers (scheduled pause)
-- [x] Access song lyrics using a header-bar icon
 - [x] Display a landing page
 > The "Open from Disk" picker could be improved to accept directories as well
 - [x] Drag file/folder onto player to start a queue with them
@@ -27,8 +21,6 @@ Song queue:
   > The bottom sheet could open automatically and focus the song
   queue, then show a "Drop here to start playing" message, or the
   window could show an overlay (like Amberol does)
-- [x] Go to album button on the queue subpage
-- [x] Go to artist button on the queue subpage
 
 - FIX: Moved songs are not playable in the restored queue,
   even when the library is able to locate them
@@ -42,11 +34,6 @@ Music library:
 - [x] Search/filtering for songs/albums/artists pages
   - TODO: Improvement: Escape key should empty and unfocus the search field
 - [x] Songs/albums/artists sort modes
-  - [x] Date added (either newest or oldest)
-  - [x] Release date (either newest or oldest)
-  - [x] Best/worst rating
-  - [x] Most/least played
-  - [x] Default
 - [ ] **Songs/albums/artists filtering**
   - TODO: Create a submenu in the sort dropdown for selecting filters
   - [ ] Filter by tags, ratings, year, etc
