@@ -535,8 +535,8 @@ impl QueuePage {
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
                     let row = row.downcast_ref::<ListRow>().unwrap();
                     drag_row.copy_from(row);
-                    drag_row.set_width_request(row.width());
-                    drag_row.set_height_request(row.height());
+                    drag_row.set_width_request(row.width() + 2);
+                    drag_row.set_height_request(row.height() + 2);
                 } else {
                     drag_row.to_default();
                 }
