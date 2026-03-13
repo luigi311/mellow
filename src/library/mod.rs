@@ -549,7 +549,9 @@ impl Library {
                     }
                     // IDEA: To disable libraries, move `songs` into `disabled_songs`
                     drop(info);
-                    drop(song);
+
+                    // The file may have been copied to an active library
+                    possibly_moved.push(song);
                 }
                 // Missing file
                 Err(_) => {

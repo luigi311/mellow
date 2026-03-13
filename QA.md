@@ -29,6 +29,7 @@ Song Queue:
 
 Music Library:
 
+- FIX: Library song data of moved files can be lost if cancelled before located
 - [x] The 'Songs' page and its subpages work as expected
 - [x] The 'Albums' page and its subpages work as expected
 - [x] The 'Artists' page and its subpages work as expected
