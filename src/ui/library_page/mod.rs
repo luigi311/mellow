@@ -1,4 +1,4 @@
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib;
 
 mod imp;
@@ -18,7 +18,12 @@ impl LibraryPage {
 
     #[inline]
     pub fn switch_view(&self, name: &str) {
-        self.imp().view_stack.set_visible_child_name(name);
+        let view_stack = &self.imp().view_stack;
+        view_stack.set_visible_child_name(name);
+        view_stack.set_cursor_from_name(match name == "loading" {
+            true => Some("wait"),
+            false => None,
+        });
     }
 
     #[inline]
