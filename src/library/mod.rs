@@ -337,10 +337,14 @@ impl Library {
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let num_tasks = num_workers - 2;
 
         Library::validate_songs(&mut songs, &mut missing, &check_moved, config, cancel);
 
-        let background_task_spawner = thread::spawn({
+        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
+        Library::merge_moved_entries(&songs, &check_moved, config, cancel, num_tasks);
+
+        Library::run_task(&library_tx, {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
@@ -351,7 +355,6 @@ impl Library {
                 }
 
                 let mut target_worker = 0;
-                let num_tasks = num_workers - 2;
                 let vec_cap = songs.len() / num_tasks;
                 let mut worker_songs = Vec::with_capacity(num_tasks);
                 (0..num_tasks).for_each(|_| worker_songs.push(Vec::with_capacity(vec_cap)));
@@ -392,9 +395,6 @@ impl Library {
                 }
             }
         });
-
-        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-        Library::merge_moved_entries(&songs, &check_moved, config, cancel);
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
@@ -503,9 +503,6 @@ impl Library {
         if !cancel.load(atomic::Ordering::Relaxed) {
             let _ = library_tx.send(LibraryRequest::CancelRebuild);
         }
-        // Waiting may not be required, but it's okay since the function
-        // is on a different thread, and has already updated the library
-        let _ = background_task_spawner.join();
 
         Ok(())
     }
@@ -648,6 +645,7 @@ impl Library {
         check_moved: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
+        num_tasks: usize,
     ) {
         #[inline]
         #[must_use]
@@ -675,36 +673,52 @@ impl Library {
 
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
+        let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<Arc<Song>>>(0);
+        let missing_rx = Arc::new(Mutex::new(missing_rx));
+        let songs = Arc::new(songs.clone());
+        let uri_opt = Arc::new(config.uri_opt());
+
+        for _ in 0..num_tasks {
+            let missing_rx = Arc::clone(&missing_rx);
+            let uri_opt = Arc::clone(&uri_opt);
+            let songs = Arc::clone(&songs);
+            Library::run_task(LIBRARY_TX.get().unwrap(), move || {
+                while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
+                    let old_info = missing.info();
+
+                    // Optimization: start with an initial guess and expand outwards
+                    let guess = match songs.find_song(&old_info.file_uri(), *uri_opt) {
+                        Err(index) | Ok(index) => index,
+                    };
+                    let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
+                    loop {
+                        let (left, right) = (left.next_back(), right.next());
+                        if right.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
+                            || left
+                                .is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
+                            || (left.is_none() && right.is_none())
+                        {
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+        drop(missing_rx);
+
         let progress_step = 1.0 / check_moved.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
 
-        // IDEA: The below loop could be done in worker threads using a channel
-        // (the other workers would need to start after this function)
-        // let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<Song>>(0);
-
-        while let Some(missing) = check_moved.pop() {
-            let old_info = missing.info();
-
-            // Optimization: start with an initial guess and expand outwards
-            let guess = match songs.find_song(&old_info.file_uri(), config.uri_opt()) {
-                Err(index) | Ok(index) => index,
-            };
-            let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
-            loop {
-                let (left, right) = (left.next_back(), right.next());
-                if right.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
-                    || left.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
-                    || (left.is_none() && right.is_none())
-                {
-                    break;
-                }
-            }
-
+        while missing_tx.send(check_moved.pop()).is_ok() {
             progress += progress_step;
             if timer.elapsed() > UI_TIMEOUT {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
+                    drop(check_moved);
+                    while missing_tx.send(None).is_ok() {
+                        // Sending `None` until all workers stop
+                    }
                     let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
