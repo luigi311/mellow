@@ -34,6 +34,7 @@ pub struct Library {
     pub albums: Albums,
     pub artists: Artists,
     pub missing_songs: Songs,
+    pub check_moved: Arc<Mutex<Songs>>,
 
     queue_initialized: bool,
     cancel_pending: Arc<AtomicBool>,
@@ -217,6 +218,7 @@ impl Library {
             albums: Vec::new(),
             artists: Vec::new(),
             missing_songs: Vec::new(),
+            check_moved: Arc::new(Mutex::new(Vec::new())),
 
             queue_initialized: false,
             cancel_pending: Arc::new(AtomicBool::new(false)),
@@ -307,10 +309,11 @@ impl Library {
         self.tasks.run({
             let config = self.config.clone();
             let cancel = Arc::clone(&self.cancel_pending);
-            let missing_songs = mem::take(&mut self.missing_songs);
-            let num_workers = self.tasks.num_workers();
+            let missing = mem::take(&mut self.missing_songs);
+            let unchecked = Arc::clone(&self.check_moved);
+            let n_workers = self.tasks.num_workers();
             move || {
-                Library::create_connections(songs, missing_songs, &config, &cancel, num_workers)
+                Library::create_connections(songs, missing, unchecked, &config, &cancel, n_workers)
                     .expect(EXP_RX);
             }
         });
@@ -327,6 +330,7 @@ impl Library {
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
+        check_moved: Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
         num_workers: usize,
@@ -334,7 +338,7 @@ impl Library {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let possibly_moved = Library::validate_songs(&mut songs, &mut missing, config, cancel);
+        Library::validate_songs(&mut songs, &mut missing, &check_moved, config, cancel);
 
         let background_task_spawner = thread::spawn({
             let cancel = Arc::clone(cancel);
@@ -390,7 +394,7 @@ impl Library {
         });
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-        Library::merge_moved_entries(&songs, possibly_moved, config, cancel);
+        Library::merge_moved_entries(&songs, &check_moved, config, cancel);
 
         let mut albums = Vec::with_capacity(songs.len() / 16);
         let mut artists = Vec::with_capacity(songs.len() / 64);
@@ -518,11 +522,16 @@ impl Library {
     pub fn validate_songs(
         songs: &mut Songs,
         missing: &mut Songs,
+        unchecked: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
-    ) -> Songs {
+    ) {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
         old_songs.append(missing);
+        old_songs.append(mem::replace(
+            &mut &mut *unchecked.lock().unwrap(),
+            &mut Vec::new(),
+        ));
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs {
             let info = song.info();
@@ -626,7 +635,7 @@ impl Library {
             }
         });
 
-        possibly_moved
+        mem::swap(&mut *unchecked.lock().unwrap(), &mut possibly_moved);
     }
 
     /// Attempts to locate missing files if they were moved and merges
@@ -636,14 +645,14 @@ impl Library {
     /// The function may panic if the UI channel receiver is unititialized or closed
     pub fn merge_moved_entries(
         songs: &Songs,
-        possibly_moved: Songs,
+        check_moved: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
     ) {
         #[inline]
         #[must_use]
         fn merge_if_matching(info: &mut SongInfoLoader, cmp_info: &SongInfoLoader) -> bool {
-            drop(info.load_basic());
+            drop(info.load_basic()); // Load info for more accurate matching
             if cmp_info.matches(info) {
                 // Copy the user-assigned song info to the new entry
                 println!(
@@ -659,17 +668,22 @@ impl Library {
             false
         }
 
-        if possibly_moved.is_empty() {
+        let mut check_moved = check_moved.lock().unwrap();
+        if check_moved.is_empty() {
             return;
         }
 
         let ui_tx = UI_TX.get().expect(EXP_INIT);
 
-        let progress_step = 1.0 / possibly_moved.len() as f64;
+        let progress_step = 1.0 / check_moved.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
 
-        for missing in possibly_moved {
+        // IDEA: The below loop could be done in worker threads using a channel
+        // (the other workers would need to start after this function)
+        // let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<Song>>(0);
+
+        while let Some(missing) = check_moved.pop() {
             let old_info = missing.info();
 
             // Optimization: start with an initial guess and expand outwards
@@ -975,6 +989,10 @@ impl Library {
     pub fn shutdown(mut self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         let mut songs = mem::take(&mut self.songs);
+        self.missing_songs.append(mem::replace(
+            &mut &mut *self.check_moved.lock().unwrap(),
+            &mut Vec::new(),
+        ));
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
             let Err(index) = songs.find_song(&missing.info().file_uri(), self.config.uri_opt())
