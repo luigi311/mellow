@@ -682,16 +682,12 @@ impl Library {
                         Err(index) | Ok(index) => index,
                     };
                     let (mut left, mut right) = (songs[0..guess].iter(), songs[guess..].iter());
-                    loop {
-                        let (left, right) = (left.next_back(), right.next());
-                        if right.is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
-                            || left
-                                .is_some_and(|song| merge_if_matching(&mut song.info(), &old_info))
-                            || (left.is_none() && right.is_none())
-                        {
-                            break;
-                        }
-                    }
+                    // Loop until the song is either found or there are no more songs to check
+                    while match (left.next_back(), right.next()) {
+                        (Some(song), _) => !merge_if_matching(&mut song.info(), &old_info),
+                        (_, Some(song)) => !merge_if_matching(&mut song.info(), &old_info),
+                        (None, None) => false,
+                    } {}
                 }
             });
         }
