@@ -176,21 +176,29 @@ impl ArtistsPage {
         let mut async_timer = Instant::now();
 
         let mut i = 0;
+
         while let Some(item) = model.item(i) {
             let artist = item.downcast_ref::<ArtistObject>().unwrap();
             let shared_artist = artist.shared_artist();
             let artist_locked = shared_artist.lock().unwrap();
             // SAFETY: An artist with no albums is never constructed
-            let album = unsafe { artist_locked.albums.last().unwrap_unchecked() }
+            let album_locked = unsafe { artist_locked.albums.last().unwrap_unchecked() }
                 .lock()
                 .unwrap();
             // SAFETY: An album with no songs is never constructed
-            let first_song = unsafe { album.songs.get_unchecked(0) };
-            let song_info = first_song.info();
+            let song = unsafe { album_locked.songs.get_unchecked(0) };
+            let info = song.info();
+            let info = info.user();
 
-            artist.set_modified(song_info.user().modified);
-            artist.set_added(song_info.user().added);
+            artist.set_modified(info.modified);
+            artist.set_added(info.added);
 
+            drop(info);
+            drop(album_locked);
+            drop(artist_locked);
+            // NOTE: Clippy warning false-positive:
+            // All `MutexGuard`s are explicitly dropped before the `await` point
+            // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();

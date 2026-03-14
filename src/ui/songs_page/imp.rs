@@ -184,6 +184,7 @@ impl SongsPage {
         let mut async_timer = Instant::now();
 
         let mut i = 0;
+
         while let Some(item) = model.item(i) {
             let song = item.downcast_ref::<SongObject>().unwrap();
             let shared_song = song.shared_song();
@@ -198,6 +199,10 @@ impl SongsPage {
             song.set_modified(info.modified);
             song.set_added(info.added);
 
+            drop(info);
+            // NOTE: Clippy warning false-positive:
+            // The `MutexGuard` is explicitly dropped before the `await` point
+            // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
