@@ -326,7 +326,8 @@ impl Library {
     /// The function errors if either the library or UI channel receiver is closed
     ///
     /// # Panics
-    /// The function panics if a `song`'s info field is in a poisoned state
+    /// The function panics if a `songs`, `missing`, or `check_moved` contains a
+    /// poisoned mutex
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
@@ -367,17 +368,9 @@ impl Library {
                     }
                 }
 
-                #[cfg(debug_assertions)]
-                {
-                    target_worker = 0;
-                }
-
                 for songs in worker_songs {
                     let cancel = Arc::clone(&cancel);
                     Library::run_task(library_tx, move || {
-                        #[cfg(debug_assertions)]
-                        println!("Song info task {target_worker} has started");
-
                         for song in songs {
                             if cancel.load(atomic::Ordering::Relaxed) {
                                 #[cfg(debug_assertions)]
@@ -387,11 +380,6 @@ impl Library {
                             drop(song.info().try_load_basic());
                         }
                     });
-
-                    #[cfg(debug_assertions)]
-                    {
-                        target_worker += 1;
-                    }
                 }
             }
         });
@@ -639,7 +627,8 @@ impl Library {
     /// them with the existing song entries so their info is preserved
     ///
     /// # Panics
-    /// The function may panic if the UI channel receiver is unititialized or closed
+    /// The function panics if the UI channel receiver is unititialized
+    /// or closed, or if the `check_moved` mutex is in a poisoned state
     pub fn merge_moved_entries(
         songs: &Songs,
         check_moved: &Arc<Mutex<Songs>>,
