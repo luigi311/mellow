@@ -57,16 +57,17 @@ impl Runner {
         }
     }
 
-    /// Causes the thread pool to wait until all current
-    /// tasks have finished before running any new ones
+    /// Causes any tasks started after this function call to run only
+    /// after all tasls before it have finished
     ///
-    /// The caller may use the returned channel to be
-    /// notified when there are no more running tasks
+    /// The caller may use the returned channel to be notified when
+    /// there are no more running tasks
     ///
-    /// Note: The caller must not use the receiver to handle more than
-    /// one message, otherwise workers could become permanently stuck
+    /// WARNING: At most one response should be consumed by the caller,
+    /// otherwise some of the workers will be permanently stuck waiting
     #[inline]
-    #[must_use]
+    #[must_use = "The caller may use this channel to receive a response when tasks are ready to resume, or it can be safely ignored.
+WARNING: At most one response should be consumed by the caller, otherwise some of the workers will be permanently stuck waiting"]
     pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
         let (unblock_tx, unblock_rx) = mpsc::channel();
         let unblock_rx = Arc::new(Mutex::new(unblock_rx));
@@ -95,23 +96,17 @@ impl Runner {
     /// Blocks until all tasks are done then shuts down its worker
     /// threads, leaving the `Runner` in an unusable state
     #[inline]
-    pub fn shutdown(&mut self) {
-        self.request = mpsc::channel().0;
-        for thread in self.threads.drain(..) {
+    pub fn shutdown(self) {
+        drop(self.request);
+        for thread in self.threads {
             let _ = thread.join();
         }
     }
 
+    /// Returns the number of worker threads assigned to this thread pool
     #[inline]
     #[must_use]
     pub const fn num_workers(&self) -> usize {
         self.threads.len()
-    }
-}
-
-impl Drop for Runner {
-    #[inline]
-    fn drop(&mut self) {
-        self.shutdown();
     }
 }
