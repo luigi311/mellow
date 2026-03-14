@@ -326,7 +326,7 @@ impl Library {
     /// The function errors if either the library or UI channel receiver is closed
     ///
     /// # Panics
-    /// The function panics if a `songs`, `missing`, or `check_moved` contains a
+    /// The function panics if `songs`, `missing`, or `check_moved` contains a
     /// poisoned mutex
     pub fn create_connections(
         mut songs: Songs,
