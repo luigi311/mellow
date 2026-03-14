@@ -342,7 +342,7 @@ impl Library {
         Library::validate_songs(&mut songs, &mut missing, &check_moved, config, cancel);
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-        Library::merge_moved_entries(&songs, &check_moved, config, cancel, num_tasks);
+        Library::merge_moved_entries(&songs, &check_moved, config, cancel);
 
         Library::run_task(&library_tx, {
             let cancel = Arc::clone(cancel);
@@ -645,7 +645,6 @@ impl Library {
         check_moved: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
-        num_tasks: usize,
     ) {
         #[inline]
         #[must_use]
@@ -677,6 +676,9 @@ impl Library {
         let missing_rx = Arc::new(Mutex::new(missing_rx));
         let songs = Arc::new(songs.clone());
         let uri_opt = Arc::new(config.uri_opt());
+
+        // Spawning too many tasks can lengthen the cancellation time
+        let num_tasks = 3;
 
         for _ in 0..num_tasks {
             let missing_rx = Arc::clone(&missing_rx);
