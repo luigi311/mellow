@@ -5,16 +5,19 @@ use crate::excuses::INIT_ERR;
 
 pub type BoxedTask = Box<dyn FnOnce() + Send + 'static>;
 
-/// A very simple thread pool implementation inspired by the Rust book:
+/// A simple thread pool implementation inspired by the Rust book:
 /// <https://doc.rust-lang.org/book/ch21-02-multithreaded.html#building-threadpool-using-compiler-driven-development>
+///
+/// Note: The `Runner` can be shut down cleanly using the `shutdown`
+/// method, otherwise the threads will be stopped immediately on drop
 pub struct Runner {
     request: mpsc::Sender<BoxedTask>,
     threads: Vec<JoinHandle<()>>,
 }
 
 impl Runner {
-    /// Creates a new instance of with a specified number
-    /// of worker threads (must be at least 1)
+    /// Creates a new instance of `Runner` with the specified
+    /// number of worker threads (must be at least 1)
     ///
     /// # Panics
     /// The function panics if any threads fail to spawn
@@ -45,8 +48,9 @@ impl Runner {
             threads: threads.collect(),
         }
     }
-    /// Runs a new task in the thread pool. If all available
-    /// threads are busy, the task will wait in a queue.
+
+    /// Runs a new task in the thread pool. If all workers
+    /// are busy, the task will wait in a queue.
     #[inline]
     pub fn run<T>(&self, task: T)
     where
@@ -93,8 +97,8 @@ WARNING: At most one response should be consumed by the caller, otherwise some o
         unblock_rx
     }
 
-    /// Blocks until all tasks are done then shuts down its worker
-    /// threads, leaving the `Runner` in an unusable state
+    /// Consumes `self` and cleanly shuts down the worker threads
+    /// by blocking until all tasks have finished running
     #[inline]
     pub fn shutdown(self) {
         drop(self.request);
