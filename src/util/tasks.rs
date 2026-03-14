@@ -49,7 +49,7 @@ impl Runner {
         }
     }
 
-    /// Runs a new task in the thread pool. If all workers
+    /// Runs a new task on the thread pool. If all workers
     /// are busy, the task will wait in a queue.
     #[inline]
     pub fn run<T>(&self, task: T)
