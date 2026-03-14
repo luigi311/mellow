@@ -659,20 +659,16 @@ impl Library {
             return;
         }
 
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
-
         let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<Arc<Song>>>(0);
         let missing_rx = Arc::new(Mutex::new(missing_rx));
-        let songs = Arc::new(songs.clone());
         let uri_opt = Arc::new(config.uri_opt());
+        let songs = Arc::new(songs.clone());
 
-        // Spawning too many tasks can lengthen the cancellation time
-        let num_tasks = 3;
-
+        let num_tasks = 3; // Increasing this number also increases the cancellation time
         for _ in 0..num_tasks {
-            let missing_rx = Arc::clone(&missing_rx);
-            let uri_opt = Arc::clone(&uri_opt);
             let songs = Arc::clone(&songs);
+            let uri_opt = Arc::clone(&uri_opt);
+            let missing_rx = Arc::clone(&missing_rx);
             Library::run_task(LIBRARY_TX.get().unwrap(), move || {
                 while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
                     let old_info = missing.info();
@@ -694,6 +690,7 @@ impl Library {
         }
         drop(missing_rx);
 
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
         let progress_step = 1.0 / check_moved.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
