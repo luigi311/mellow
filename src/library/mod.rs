@@ -15,7 +15,7 @@ pub mod artist;
 pub mod config;
 pub mod song;
 
-pub use album::{Album, SharedAlbum, SortedAlbumSongs, UserAlbumInfo};
+pub use album::{Album, SharedAlbum, SortedAlbumSongs};
 pub use artist::{Artist, SharedArtist, SortedArtistAlbums};
 pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};

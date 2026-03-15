@@ -41,11 +41,6 @@ impl Album {
     pub fn artist_cloned(&self) -> SharedArtist {
         Arc::clone(&self.artist)
     }
-    #[inline]
-    #[must_use]
-    pub const fn user_info(&self) -> &UserAlbumInfo {
-        &self.user_info
-    }
 
     /// Loops through all album songs and returns the average rating,
     /// or returns `fallback` if no songs have a rating assigned. Songs
