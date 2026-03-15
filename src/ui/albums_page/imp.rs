@@ -119,14 +119,18 @@ impl AlbumsPage {
         let mut album_objects = Vec::with_capacity(albums.len());
         for index in 0..albums.len() {
             // SAFETY: The range is `0..albums.len()`
-            let album = unsafe { albums.get_unchecked(index) }.lock().unwrap();
+            let album_locked = unsafe { albums.get_unchecked(index) }.lock().unwrap();
             album_objects.push(AlbumObject::new(
                 index as u32,
-                &album.title,
-                &album.artist.lock().unwrap().name,
-                album.year as u32,
-                Arc::clone(&album.songs[0]),
+                &album_locked.title,
+                &album_locked.artist.lock().unwrap().name,
+                album_locked.year as u32,
+                Arc::clone(&album_locked.songs[0]),
             ));
+            drop(album_locked);
+            // NOTE: Clippy warning false-positive:
+            // All `MutexGuard`s are explicitly dropped before the `await` point
+            // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();

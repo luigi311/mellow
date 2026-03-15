@@ -126,6 +126,10 @@ impl ArtistsPage {
                 artist_locked.albums.len() as u64,
                 Arc::clone(artist),
             ));
+            drop(artist_locked);
+            // NOTE: Clippy warning false-positive:
+            // All `MutexGuard`s are explicitly dropped before the `await` point
+            // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
