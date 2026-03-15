@@ -117,9 +117,8 @@ impl AlbumsPage {
         let mut async_timer = Instant::now();
 
         let mut album_objects = Vec::with_capacity(albums.len());
-        for index in 0..albums.len() {
-            // SAFETY: The range is `0..albums.len()`
-            let album_locked = unsafe { albums.get_unchecked(index) }.lock().unwrap();
+        for (index, album) in albums.iter().enumerate() {
+            let album_locked = album.lock().unwrap();
             album_objects.push(AlbumObject::new(
                 index as u32,
                 &album_locked.title,

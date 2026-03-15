@@ -116,9 +116,7 @@ impl ArtistsPage {
         let mut async_timer = Instant::now();
 
         let mut artist_objects = Vec::with_capacity(artists.len());
-        for index in 0..artists.len() {
-            // SAFETY: The range is `0..artists.len()`
-            let artist = unsafe { artists.get_unchecked(index) };
+        for (index, artist) in artists.iter().enumerate() {
             let artist_locked = artist.lock().unwrap();
             artist_objects.push(ArtistObject::new(
                 index as u32,

@@ -118,12 +118,8 @@ impl SongsPage {
         let mut async_timer = Instant::now();
 
         let mut song_objects = Vec::with_capacity(songs.len());
-        for index in 0..songs.len() {
-            song_objects.push(SongObject::new(
-                index as u32,
-                // SAFETY: The range is `0..songs.len()`
-                Arc::clone(unsafe { songs.get_unchecked(index) }),
-            ));
+        for (index, song) in songs.iter().enumerate() {
+            song_objects.push(SongObject::new(index as u32, Arc::clone(song)));
             if async_timer.elapsed() > async_timeout {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
