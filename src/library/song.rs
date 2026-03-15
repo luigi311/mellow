@@ -4,7 +4,7 @@ use gtk::{gdk, gio, glib};
 use std::fs::{self, File};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Read;
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use lofty::file::TaggedFile;
@@ -17,7 +17,7 @@ use crate::util::{deserialize, serialize, serialize_list};
 use crate::{CACHE_DIR, util::unescaped_split};
 
 pub struct Song {
-    album: OnceLock<SharedAlbum>,
+    album: Mutex<Option<SharedAlbum>>,
     file: gio::File,
     info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
@@ -30,9 +30,9 @@ pub trait SharedSongExt {
     fn from_file(file: gio::File) -> SharedSong;
     fn from_path(path: &str) -> SharedSong;
     fn deserialize(data: &str) -> Option<SharedSong>;
-    fn album(&self) -> Option<&SharedAlbum>;
+    fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>>;
     fn get_album(&self) -> SharedAlbum;
-    fn set_album(&self, album: SharedAlbum) -> Result<(), SharedAlbum>;
+    fn set_album(&self, album: SharedAlbum);
 }
 impl SharedSongExt for SharedSong {
     /// Constructs a new `SharedSong` from a `gio::File`
@@ -51,27 +51,27 @@ impl SharedSongExt for SharedSong {
     fn deserialize(data: &str) -> Option<SharedSong> {
         Song::deserialize(data).map_or_else(|_| None, |song| Some(Arc::new(song)))
     }
-    /// Returns a reference the currently assigned album if assigned
+    /// Returns the assigned album's `MutexGuard`
+    ///
+    /// # Panics
+    /// The function panics if the `Mutex` is poisoned
     #[inline]
-    fn album(&self) -> Option<&SharedAlbum> {
-        self.album.get()
+    fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>> {
+        self.album.lock().unwrap()
     }
     /// Returns a cloned reference to the currently assigned `SharedAlbum`
     ///
     /// # Panics
-    /// Panics if the `album` has not been initialized
+    /// Panics if the `album` has not been initialized or if the `Mutex`
+    /// is poisoned
     #[inline]
     fn get_album(&self) -> SharedAlbum {
-        Arc::clone(self.album.get().expect(EXP_INIT))
+        Arc::clone(self.album.lock().unwrap().as_ref().expect(EXP_INIT))
     }
     /// Sets `self.album` to the given `album`
-    ///
-    /// # Errors
-    /// Returns an error containing the assigned value
-    /// if the `album` has already been already set
     #[inline]
-    fn set_album(&self, album: SharedAlbum) -> Result<(), SharedAlbum> {
-        self.album.set(album)
+    fn set_album(&self, album: SharedAlbum) {
+        *self.album.lock().unwrap() = Some(album);
     }
 }
 
@@ -81,7 +81,7 @@ impl<'s> Song {
     #[must_use]
     fn from_file(file: gio::File) -> Song {
         Song {
-            album: OnceLock::new(),
+            album: Mutex::new(None),
             file,
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
@@ -94,7 +94,7 @@ impl<'s> Song {
     #[must_use]
     fn from_path(file: &str) -> Song {
         Song {
-            album: OnceLock::new(),
+            album: Mutex::new(None),
             file: gio::File::for_path(file),
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
@@ -211,7 +211,7 @@ impl<'s> Song {
         }
 
         Ok(Song {
-            album: OnceLock::new(),
+            album: Mutex::new(None),
             file: gio::File::for_uri(uri),
             info: RwLock::new(match user_info.modified {
                 0 => None,

@@ -81,6 +81,7 @@ impl SongPage {
             .send(UpdateUI::ArtistPage(
                 (self.shared_song.borrow().as_ref().unwrap())
                     .album()
+                    .as_ref()
                     .unwrap()
                     .lock()
                     .unwrap()
