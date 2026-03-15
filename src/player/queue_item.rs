@@ -56,6 +56,7 @@ impl QueueItem {
     ///
     /// Note: Since each `Stopper` is removed when encountered,
     /// this method is safe when chained with `Song::current()`
+    #[inline]
     #[must_use]
     pub fn as_song(&self) -> &SharedSong {
         match self {
@@ -64,6 +65,7 @@ impl QueueItem {
         }
     }
     /// Returns `true` if the `QueueItem` is a `Song`
+    #[inline]
     #[must_use]
     pub const fn is_song(&self) -> bool {
         matches!(self, Self::Song(_))
@@ -73,6 +75,7 @@ impl QueueItem {
     ///
     /// # Panics
     /// The function panics if the `QueueItem` is not a `Stopper`
+    #[inline]
     #[must_use]
     pub fn as_stopper(&self) -> &SharedStopper {
         match self {
@@ -81,6 +84,7 @@ impl QueueItem {
         }
     }
     /// Returns `true` if the `QueueItem` is a `Stopper`
+    #[inline]
     #[must_use]
     pub const fn is_stopper(&self) -> bool {
         matches!(self, Self::Stopper(_))
@@ -89,6 +93,7 @@ impl QueueItem {
     /// Runs a closure on the `QueueItem` if it is a `Song`,
     /// and returns the output of the closure inside an `Option`.
     /// If the `QueueItem` is not a `Song`, `None` is returned.
+    #[inline]
     pub fn map<F, T>(&self, f: F) -> Option<T>
     where
         F: FnOnce(&Song) -> T,
