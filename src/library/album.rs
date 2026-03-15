@@ -13,10 +13,40 @@ pub struct Album {
     /// `songs` must never be empty, or undefined behaviour could ensue
     pub(super) songs: AlbumSongs,
     pub(super) artist: SharedArtist,
-    pub(super) user_info: UserAlbumInfo,
 }
 
 impl Album {
+    #[inline]
+    #[must_use]
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+    #[inline]
+    #[must_use]
+    pub const fn year(&self) -> u16 {
+        self.year
+    }
+    #[inline]
+    #[must_use]
+    pub const fn songs(&self) -> &AlbumSongs {
+        &self.songs
+    }
+    #[inline]
+    #[must_use]
+    pub const fn artist(&self) -> &SharedArtist {
+        &self.artist
+    }
+    #[inline]
+    #[must_use]
+    pub fn artist_cloned(&self) -> SharedArtist {
+        Arc::clone(&self.artist)
+    }
+    #[inline]
+    #[must_use]
+    pub const fn user_info(&self) -> &UserAlbumInfo {
+        &self.user_info
+    }
+
     /// Loops through all album songs and returns the average rating,
     /// or returns `fallback` if no songs have a rating assigned. Songs
     /// with no rating assigned do not contribute to the average.
@@ -90,7 +120,6 @@ impl NewSharedAlbum for SharedAlbum {
             year: info.year,
             songs: vec![song],
             artist: artist,
-            user_info: UserAlbumInfo::default(),
         }))
     }
 }
