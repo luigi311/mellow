@@ -71,7 +71,7 @@ impl SongPage {
     pub fn handle_go_to_album(&self) {
         (UI_TX.get().expect(EXP_INIT))
             .send(UpdateUI::AlbumPage(
-                self.shared_song.borrow().as_ref().unwrap().album_cloned(),
+                self.shared_song.borrow().as_ref().unwrap().get_album(),
             ))
             .expect(EXP_RX);
     }
@@ -81,7 +81,6 @@ impl SongPage {
             .send(UpdateUI::ArtistPage(
                 (self.shared_song.borrow().as_ref().unwrap())
                     .album()
-                    .as_ref()
                     .unwrap()
                     .lock()
                     .unwrap()
