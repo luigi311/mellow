@@ -106,7 +106,7 @@ impl QueueSubpage {
     pub fn handle_go_to_artist(&self) {
         let Some(artist) = (self.album.borrow())
             .as_ref()
-            .map(|album| Arc::clone(&album.lock().unwrap().artist))
+            .map(|album| Arc::clone(album.lock().unwrap().artist()))
         else {
             // The button is greyed-out if the song is not from the library,
             // but handling the `None` variant anyway, just in case

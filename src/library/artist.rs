@@ -1,12 +1,28 @@
 use core::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::library::{Album, SongInfo, ToQueue, ToShuffledQueue};
+use crate::library::album::NewSharedAlbum;
+use crate::library::{Album, SharedAlbum, SharedSong, SongInfo, ToQueue, ToShuffledQueue};
 use crate::player::QueueItem;
 
 pub struct Artist {
-    pub name: String,
-    pub albums: ArtistAlbums,
+    pub(super) name: String,
+    /// # Safety
+    /// `albums` must never be empty, otherwise undefined behaviour could ensue
+    pub(super) albums: ArtistAlbums,
+}
+
+impl Artist {
+    #[inline]
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    #[inline]
+    #[must_use]
+    pub fn albums(&self) -> &ArtistAlbums {
+        &self.albums
+    }
 }
 
 impl ToQueue for Artist {
@@ -21,6 +37,24 @@ impl ToShuffledQueue for Artist {
 }
 
 pub type SharedArtist = Arc<Mutex<Artist>>;
+pub trait NewSharedArtist {
+    fn new_artist_album_pair(info: &SongInfo, song: SharedSong) -> (SharedArtist, SharedAlbum);
+}
+impl NewSharedArtist for SharedArtist {
+    /// Creates and returns a connected pair of `SharedArtist` and `SharedAlbum`,
+    #[inline]
+    fn new_artist_album_pair(info: &SongInfo, song: SharedSong) -> (SharedArtist, SharedAlbum) {
+        let artist = Arc::new(Mutex::new(Artist {
+            name: info.album_artist.clone(),
+            albums: vec![], // SAFETY: The album is constructed and assigned before returning
+        }));
+        let album = SharedAlbum::new_album(info, song, Arc::clone(&artist));
+        artist.lock().unwrap().albums.push(Arc::clone(&album));
+
+        (artist, album)
+    }
+}
+
 impl ToQueue for SharedArtist {
     fn to_queue(&self) -> Vec<QueueItem> {
         self.lock().unwrap().to_queue()
@@ -45,8 +79,8 @@ impl SortedArtistAlbums for ArtistAlbums {
     fn find_artist_album(&self, info: &SongInfo) -> Result<usize, usize> {
         self.binary_search_by(|album| {
             let album = album.lock().unwrap();
-            match album.year.cmp(&info.year) {
-                Ordering::Equal => album.title.cmp(&info.album),
+            match album.year().cmp(&info.year) {
+                Ordering::Equal => album.title().cmp(&info.album),
                 ordering => ordering,
             }
         })

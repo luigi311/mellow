@@ -100,9 +100,9 @@ impl AlbumPage {
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
         (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::ArtistPage(Arc::clone(
-                &self.album.borrow().as_ref().unwrap().lock().unwrap().artist,
-            )))
+            .send(UpdateUI::ArtistPage(
+                (self.album.borrow().as_ref().unwrap().lock().unwrap()).artist_cloned(),
+            ))
             .expect(EXP_RX);
     }
 }
@@ -136,7 +136,7 @@ impl Drop for AlbumPage {
             return;
         };
         if let Ok(album) = album.try_lock() {
-            album.songs[0].info().try_unload_detailed();
+            album.songs()[0].info().try_unload_detailed();
         }
     }
 }

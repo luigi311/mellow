@@ -1,16 +1,19 @@
 use core::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::library::{SharedArtist, Song, SongInfo, ToQueue};
+use crate::library::{SharedArtist, SharedSong, Song, SongInfo, ToQueue};
 use crate::player::QueueItem;
 
 // TODO: Save/load album info (such as ratings)
 
 pub struct Album {
-    pub title: String,
-    pub year: u16,
-    pub songs: AlbumSongs,
-    pub artist: SharedArtist,
+    pub(super) title: String,
+    pub(super) year: u16,
+    /// # Safety
+    /// `songs` must never be empty, or undefined behaviour could ensue
+    pub(super) songs: AlbumSongs,
+    pub(super) artist: SharedArtist,
+    pub(super) user_info: UserAlbumInfo,
 }
 
 impl Album {
@@ -75,6 +78,23 @@ impl ToQueue for Album {
 }
 
 pub type SharedAlbum = Arc<Mutex<Album>>;
+pub trait NewSharedAlbum {
+    fn new_album(info: &SongInfo, song: SharedSong, artist: SharedArtist) -> SharedAlbum;
+}
+impl NewSharedAlbum for SharedAlbum {
+    /// Creates and returns a new `SharedAlbum` using the provided arguments
+    #[inline]
+    fn new_album(info: &SongInfo, song: SharedSong, artist: SharedArtist) -> SharedAlbum {
+        Arc::new(Mutex::new(Album {
+            title: info.album.clone(),
+            year: info.year,
+            songs: vec![song],
+            artist: artist,
+            user_info: UserAlbumInfo::default(),
+        }))
+    }
+}
+
 impl ToQueue for SharedAlbum {
     fn to_queue(&self) -> Vec<QueueItem> {
         self.lock().unwrap().to_queue()

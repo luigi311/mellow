@@ -31,6 +31,7 @@ pub trait SharedSongExt {
     fn from_path(path: &str) -> SharedSong;
     fn deserialize(data: &str) -> Option<SharedSong>;
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>>;
+    fn album_cloned(&self) -> SharedAlbum;
     fn set_album(&self, album: SharedAlbum);
 }
 impl SharedSongExt for SharedSong {
@@ -51,11 +52,26 @@ impl SharedSongExt for SharedSong {
         Song::deserialize(data).map_or_else(|_| None, |song| Some(Arc::new(song)))
     }
     /// Returns the currently assigned album's `MutexGuard`
+    ///
+    /// # Panics
+    /// Panics if the `album` mutex is poisoned
     #[inline]
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>> {
         self.album.lock().unwrap()
     }
-    // Sets `self.album` to the given `album`
+    /// Returns the currently assigned `SharedAlbum` by cloning
+    /// its shared pointer
+    ///
+    /// # Panics
+    /// Panics if the `album` mutex is poisoned
+    #[inline]
+    fn album_cloned(&self) -> SharedAlbum {
+        Arc::clone(self.album.lock().unwrap().as_ref().unwrap())
+    }
+    /// Sets `self.album` to the given `album`
+    ///
+    /// # Panics
+    /// Panics if the `album` mutex is poisoned
     #[inline]
     fn set_album(&self, album: SharedAlbum) {
         *self.album.lock().unwrap() = Some(album);

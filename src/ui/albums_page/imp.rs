@@ -121,10 +121,10 @@ impl AlbumsPage {
             let album_locked = album.lock().unwrap();
             album_objects.push(AlbumObject::new(
                 index as u32,
-                &album_locked.title,
-                &album_locked.artist.lock().unwrap().name,
-                album_locked.year as u32,
-                Arc::clone(&album_locked.songs[0]),
+                album_locked.title(),
+                album_locked.artist().lock().unwrap().name(),
+                album_locked.year() as u32,
+                Arc::clone(&album_locked.songs()[0]),
             ));
             drop(album_locked);
             // NOTE: Clippy warning false-positive:
@@ -191,8 +191,8 @@ impl AlbumsPage {
             album.set_rating(album_locked.sort_rating(3.0));
             album.set_played(album_locked.average_play_count());
 
-            // SAFETY: An album with no songs is never constructed
-            let song = unsafe { album_locked.songs.get_unchecked(0) };
+            // SAFETY: An album with no songs cannot be constructed
+            let song = unsafe { album_locked.songs().get_unchecked(0) };
             let info = song.info();
             let info = info.user();
 

@@ -15,13 +15,15 @@ pub mod artist;
 pub mod config;
 pub mod song;
 
-pub use album::{Album, SharedAlbum, SortedAlbumSongs};
+pub use album::{Album, SharedAlbum, SortedAlbumSongs, UserAlbumInfo};
 pub use artist::{Artist, SharedArtist, SortedArtistAlbums};
 pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
 use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::library::album::NewSharedAlbum;
+use crate::library::artist::NewSharedArtist;
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
 use crate::ui::{UI_TX, UpdateUI};
 use crate::util::tasks::{BoxedTask, Runner};
@@ -345,7 +347,7 @@ impl Library {
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
         Library::merge_moved_entries(&songs, &check_moved, config, cancel);
 
-        Library::run_task(&library_tx, {
+        Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
@@ -422,12 +424,11 @@ impl Library {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
                         let artist = unsafe { artists.get_unchecked(artist_index) };
                         let artist_albums = &mut artist.lock().unwrap().albums;
-                        let album = Arc::new(Mutex::new(Album {
-                            title: song_info.album.clone(),
-                            year: song_info.year,
-                            songs: vec![Arc::clone(song)],
-                            artist: Arc::clone(artist),
-                        }));
+                        let album = SharedAlbum::new_album(
+                            song_info, //
+                            Arc::clone(song),
+                            Arc::clone(artist),
+                        );
 
                         // Add the album to `albums` and the artist's albums
                         albums.insert(album_index, Arc::clone(&album));
@@ -443,19 +444,13 @@ impl Library {
                     }
                 },
                 Err(artist_index) => {
-                    let artist = Arc::new(Mutex::new(Artist {
-                        name: song_info.album_artist.clone(),
-                        albums: vec![],
-                    }));
-                    let album = Arc::new(Mutex::new(Album {
-                        title: song_info.album.clone(),
-                        year: song_info.year,
-                        songs: vec![Arc::clone(song)],
-                        artist: Arc::clone(&artist),
-                    }));
+                    // Create the artist and album connected pair
+                    let (artist, album) = SharedArtist::new_artist_album_pair(
+                        song_info, //
+                        Arc::clone(song),
+                    );
 
-                    // Add the album to `albums` and the artist's albums
-                    artist.lock().unwrap().albums.push(Arc::clone(&album));
+                    // Add to the library albums as well
                     match album_index {
                         Err(album_index) | Ok(album_index) => {
                             albums.insert(album_index, Arc::clone(&album));

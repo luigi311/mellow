@@ -120,8 +120,8 @@ impl ArtistsPage {
             let artist_locked = artist.lock().unwrap();
             artist_objects.push(ArtistObject::new(
                 index as u32,
-                &artist_locked.name,
-                artist_locked.albums.len() as u64,
+                artist_locked.name(),
+                artist_locked.albums().len() as u64,
                 Arc::clone(artist),
             ));
             drop(artist_locked);
@@ -183,12 +183,12 @@ impl ArtistsPage {
             let artist = item.downcast_ref::<ArtistObject>().unwrap();
             let shared_artist = artist.shared_artist();
             let artist_locked = shared_artist.lock().unwrap();
-            // SAFETY: An artist with no albums is never constructed
-            let album_locked = unsafe { artist_locked.albums.last().unwrap_unchecked() }
+            // SAFETY: An artist with no albums cannot be constructed
+            let album_locked = unsafe { artist_locked.albums().last().unwrap_unchecked() }
                 .lock()
                 .unwrap();
-            // SAFETY: An album with no songs is never constructed
-            let song = unsafe { album_locked.songs.get_unchecked(0) };
+            // SAFETY: An album with no songs cannot be constructed
+            let song = unsafe { album_locked.songs().get_unchecked(0) };
             let info = song.info();
             let info = info.user();
 

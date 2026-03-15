@@ -39,21 +39,21 @@ impl ArtistPage {
 
         ui.artist.replace(Some(Arc::clone(artist)));
         let artist = artist.lock().unwrap();
-        artist_page.set_title(&["Artist: ", &artist.name].concat());
-        ui.artist_name.set_label(&artist.name);
+        artist_page.set_title(&["Artist: ", artist.name()].concat());
+        ui.artist_name.set_label(artist.name());
 
         ui.albums_list.remove_all();
-        for album in &artist.albums {
+        for album in artist.albums() {
             let album_row = ListRow::new();
 
             let album_locked = album.lock().unwrap();
-            album_row.set_title(&album_locked.title);
-            album_row.set_subtitle(&match album_locked.year {
+            album_row.set_title(album_locked.title());
+            album_row.set_subtitle(&match album_locked.year() {
                 year if year > 0 => year.to_string(),
                 _ => String::new(),
             });
 
-            let mut info = album_locked.songs[0].info();
+            let mut info = album_locked.songs()[0].info();
             let thumbnail = info.load_thumbnail();
             if thumbnail.is_some() {
                 album_row.set_prefix_image(thumbnail.as_ref());

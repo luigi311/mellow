@@ -82,10 +82,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
-        (self.imp().first_song.get().expect(EXP_INIT))
-            .album()
-            .clone()
-            .expect(EXP_INIT)
+        self.imp().first_song.get().expect(EXP_INIT).album_cloned()
     }
 
     /// Returns the ordering of `self` compared to `other`,

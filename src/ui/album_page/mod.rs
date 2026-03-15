@@ -39,14 +39,14 @@ impl AlbumPage {
 
         let ui = album_page.imp();
         let album_locked = album.lock().unwrap();
-        let songs = &album_locked.songs;
+        let songs = album_locked.songs();
 
-        album_page.set_title(&["Album: ", &album_locked.title].concat());
+        album_page.set_title(&["Album: ", album_locked.title()].concat());
         ui.album.replace(Some(Arc::clone(album)));
-        ui.album_title.set_label(&album_locked.title);
+        ui.album_title.set_label(album_locked.title());
         ui.artist_name
-            .set_label(&album_locked.artist.lock().unwrap().name);
-        match album_locked.year {
+            .set_label(album_locked.artist().lock().unwrap().name());
+        match album_locked.year() {
             year if year > 0 => ui.year.set_label(&year.to_string()),
             _ => ui.year.set_visible(false),
         }
@@ -63,7 +63,7 @@ impl AlbumPage {
         let mut album_group_index = 1;
         let mut album_group = adw::PreferencesGroup::new();
 
-        for (i, song) in album_locked.songs.iter().enumerate() {
+        for (i, song) in album_locked.songs().iter().enumerate() {
             let song_row = ListRow::new();
 
             let mut info = song.info();

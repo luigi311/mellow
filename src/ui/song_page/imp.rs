@@ -70,26 +70,23 @@ impl SongPage {
     #[template_callback]
     pub fn handle_go_to_album(&self) {
         (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::AlbumPage(Arc::clone(
-                (self.shared_song.borrow().as_ref().unwrap())
-                    .album()
-                    .as_ref()
-                    .unwrap(),
-            )))
+            .send(UpdateUI::AlbumPage(
+                self.shared_song.borrow().as_ref().unwrap().album_cloned(),
+            ))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
         (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::ArtistPage(Arc::clone(
-                &(self.shared_song.borrow().as_ref().unwrap())
+            .send(UpdateUI::ArtistPage(
+                (self.shared_song.borrow().as_ref().unwrap())
                     .album()
                     .as_ref()
                     .unwrap()
                     .lock()
                     .unwrap()
-                    .artist,
-            )))
+                    .artist_cloned(),
+            ))
             .expect(EXP_RX);
     }
 }
