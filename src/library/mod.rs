@@ -672,13 +672,13 @@ impl Library {
                     let guess = match songs.find_song(&old_info.file_uri(), *uri_opt) {
                         Err(index) | Ok(index) => index,
                     };
-                    let (mut left, mut right) = (songs[..guess].iter(), songs[guess..].iter());
 
+                    let (mut left, mut right) = (songs[..guess].iter(), songs[guess..].iter());
                     while match (left.next_back(), right.next()) {
                         (_, Some(song)) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (Some(song), _) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (None, None) => false,
-                        _ => true, // Loop until the song is either found or all songs were checked
+                        _ => true, // Loop until either the song is found or all songs were checked
                     } {}
                 }
             });
