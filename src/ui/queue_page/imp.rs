@@ -508,10 +508,13 @@ impl QueuePage {
         let drag_row = ListRow::default();
         drag_row.add_css_class("color-menu");
         let drag_container = self.drag_widget.parent().unwrap();
+        let dragged_item_index = Rc::new(Cell::new(0));
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
         self.drag_widget.put(&drag_row, 0.0, 0.0);
 
         drag.connect_drag_begin(glib::clone!(
+            #[weak(rename_to=queue_page)]
+            self,
             #[weak(rename_to=list_box)]
             self.list_box,
             #[strong(rename_to=selection_mode)]
@@ -524,6 +527,8 @@ impl QueuePage {
             drag_row,
             #[weak]
             drag_container,
+            #[weak]
+            dragged_item_index,
             move |_, start_x, start_y| if !selection_mode.get() {
                 if !Self::should_drag(start_x) {
                     return;
@@ -534,6 +539,7 @@ impl QueuePage {
 
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
                     let row = row.downcast_ref::<ListRow>().unwrap();
+                    dragged_item_index.set(queue_page.model_index_to_queue(row.index() as usize));
                     drag_row.copy_from(row);
                     drag_row.set_width_request(row.width() + 2);
                     drag_row.set_height_request(row.height() + 2);
@@ -599,7 +605,11 @@ impl QueuePage {
             drag_row,
             #[weak]
             drag_container,
+            #[strong]
+            dragged_item_index,
             // FIX: Dropping the item after the song has changed moves the wrong item
+            // if dragging items ahead of the playing song, and a stopper is encountered
+            // (the stopper gets removed, so the index ends up being wrong)
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
                 queue_page.for_each_row(|row, _| row.remove_css_class("highlight-top"));
                 drag_container.set_visible(false);
@@ -616,13 +626,16 @@ impl QueuePage {
                     Some((_, offset_y)) => start_y + offset_y,
                     None => return,
                 };
-                let Some(from) = list_box.row_at_y(start_y as i32).map(|row| row.index()) else {
+                let from_index = dragged_item_index.get();
+                let Ok(from) = queue_page
+                    .queue_index_to_model(from_index)
+                    .map(|index| index as i32)
+                else {
                     return;
                 };
                 let Some(to) = list_box.row_at_y(end_y as i32).map(|row| row.index()) else {
                     return;
                 };
-                let from_index = queue_page.model_index_to_queue(from as usize);
                 let playing_index = queue_page.playing_index.get();
                 let playing = (queue_page.queue_index_to_model(playing_index)).unwrap() as i32;
                 (queue_page.next_scroll_pos).set(QueueScrollAction::Offset(
