@@ -5,6 +5,7 @@ cargo_options += ['--target-dir', meson.project_build_root() / 'target']
 if get_option('profile') == 'devel'
   rust_target = 'debug'
 elif get_option('profile') == 'bench'
+  environment().append('RUSTFLAGS', '-C force-frame-pointers=yes')
   cargo_options += ['--profile=bench']
   rust_target = 'release'
 else
