@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <enum id="com.github.userwithaname.Mellow.color-scheme">
+  <enum id="io.github.userwithaname.Mellow.color-scheme">
     <value nick="Dark" value="0"/>
     <value nick="Light" value="1"/>
     <value nick="Auto" value="2"/>
   </enum>
-  <enum id="com.github.userwithaname.Mellow.startup-queue">
+  <enum id="io.github.userwithaname.Mellow.startup-queue">
     <value nick="RestoreQueue" value="0"/>
     <value nick="QueueFromSongs" value="1"/>
     <value nick="QueueFromAlbums" value="2"/>
@@ -16,7 +16,7 @@
     <value nick="EmptyQueue" value="7"/>
   </enum>
 
-  <schema id="com.github.userwithaname.Mellow" path="/com/github/userwithaname/Mellow/">
+  <schema id="io.github.userwithaname.Mellow" path="/io.github/userwithaname/Mellow/">
     <key name="window-width" type="i">
       <default>540</default>
       <summary>Width of the window (in pixels)</summary>
@@ -37,7 +37,7 @@
       <default>false</default>
       <summary>When enabled, playback will continue in the background when the window is closed</summary>
     </key>
-    <key name="startup-queue" enum="com.github.userwithaname.Mellow.startup-queue">
+    <key name="startup-queue" enum="io.github.userwithaname.Mellow.startup-queue">
       <default>'RestoreQueue'</default>
     </key>
     <key name="remember-time" type="b">
@@ -48,7 +48,7 @@
       <default>true</default>
       <summary>When enabled, the window colors adapt to the song artwork</summary>
     </key>
-    <key name="color-scheme" enum="com.github.userwithaname.Mellow.color-scheme">
+    <key name="color-scheme" enum="io.github.userwithaname.Mellow.color-scheme">
       <default>'Auto'</default>
     </key>
     <key name="directories" type="s">

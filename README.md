@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-  <img height=128 src="data/icons/com.github.userwithaname.Mellow.png">
+  <img height=128 src="data/icons/io.github.userwithaname.Mellow.png">
   <br>Mellow
 </h1>
   <p align="center">
@@ -134,20 +134,20 @@ The following files and directories will be created:
     │   └── mellow ⟵─ Main program executable
     └── share
         ├── applications
-        │   └── com.github.userwithaname.Mellow.desktop
+        │   └── io.github.userwithaname.Mellow.desktop
         ├── dbus-1
         │   └── services
-        │       └── com.github.userwithaname.Mellow.service
+        │       └── io.github.userwithaname.Mellow.service
         ├── glib-2.0
         │   └── schemas
-        │       ├── com.github.userwithaname.Mellow.gschema.xml
+        │       ├── io.github.userwithaname.Mellow.gschema.xml
         │       └── gschemas.compiled ⟵╮
         │           Note: May also contain schemas for other apps
         └── icons
             └── hicolor
                 └── scalable
                     └── apps
-                        └── com.github.userwithaname.Mellow.png
+                        └── io.github.userwithaname.Mellow.png
 ```
 
 > [!TIP]

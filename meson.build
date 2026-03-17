@@ -8,7 +8,7 @@ dependency('gstreamer-plugins-bad-1.0', version: '>= 1.26', required: get_option
 
 gnome = import('gnome')
 
-base_id = 'com.github.userwithaname.Mellow'
+base_id = 'io.github.userwithaname.Mellow'
 
 if get_option('profile') == 'devel'
   profile = 'Devel'

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/com/github/userwithaname/Mellow/">
+  <gresource prefix="/io/github/userwithaname/Mellow/">
     <file compressed="true" preprocess="xml-stripblanks">album_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">albums_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">artist_page.ui</file>

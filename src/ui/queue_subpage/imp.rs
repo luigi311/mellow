@@ -11,7 +11,7 @@ use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/queue_subpage.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/queue_subpage.ui")]
 pub struct QueueSubpage {
     pub index: Cell<usize>,
     pub stop_after: Cell<bool>,

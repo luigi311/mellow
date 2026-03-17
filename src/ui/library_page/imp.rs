@@ -4,7 +4,7 @@ use gtk::CompositeTemplate;
 use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/library_page.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/library_page.ui")]
 pub struct LibraryPage {
     #[template_child]
     pub progress_bar: TemplateChild<gtk::ProgressBar>,

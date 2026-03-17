@@ -16,7 +16,7 @@ use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 use crate::util::search;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/songs_page.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/songs_page.ui")]
 pub struct SongsPage {
     #[template_child]
     play_button: TemplateChild<adw::SplitButton>,

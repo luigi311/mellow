@@ -11,7 +11,7 @@ use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/song_page.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/song_page.ui")]
 pub struct SongPage {
     #[template_child]
     pub song_title: TemplateChild<gtk::Label>,

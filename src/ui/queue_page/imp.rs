@@ -19,7 +19,7 @@ const NUM_ITEMS_BEHIND: usize = 45;
 const ROW_HEIGHT: usize = 55;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/queue_page.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/queue_page.ui")]
 pub struct QueuePage {
     #[template_child]
     header_normal: TemplateChild<adw::HeaderBar>,

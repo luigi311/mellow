@@ -4,7 +4,7 @@ use gtk::CompositeTemplate;
 use gtk::glib;
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/item_tile.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/item_tile.ui")]
 pub struct ItemTile {
     #[template_child]
     pub image: TemplateChild<gtk::Picture>,

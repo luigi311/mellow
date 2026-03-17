@@ -1,5 +1,5 @@
 {
-    "id" : "com.github.userwithaname.Mellow",
+    "id" : "io.github.userwithaname.Mellow",
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "49",
     "sdk" : "org.gnome.Sdk",

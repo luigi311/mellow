@@ -1,6 +1,6 @@
 #[cfg(feature = "no-meson")]
 fn main() {
-    const APP_ID: &str = "com.github.userwithaname.Mellow";
+    const APP_ID: &str = "io.github.userwithaname.Mellow";
     println!("cargo:rustc-env=APP_ID={APP_ID}");
 
     let app_name = APP_ID.rsplit_once('.').expect("Invalid APP_ID").1;

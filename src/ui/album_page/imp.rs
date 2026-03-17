@@ -11,7 +11,7 @@ use crate::ui::Rating;
 use crate::ui::{UI_TX, UpdateUI};
 
 #[derive(Default, CompositeTemplate)]
-#[template(resource = "/com/github/userwithaname/Mellow/album_page.ui")]
+#[template(resource = "/io/github/userwithaname/Mellow/album_page.ui")]
 pub struct AlbumPage {
     pub album: RefCell<Option<SharedAlbum>>,
     pub cancel_artowrk_loading: Arc<AtomicBool>,
