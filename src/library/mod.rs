@@ -675,8 +675,8 @@ impl Library {
                     let (mut left, mut right) = (songs[..guess].iter(), songs[guess..].iter());
 
                     while match (left.next_back(), right.next()) {
-                        (Some(song), _) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (_, Some(song)) if merge_if_matching(&mut song.info(), &old_info) => false,
+                        (Some(song), _) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (None, None) => false,
                         _ => true, // Loop until the song is either found or all songs were checked
                     } {}
