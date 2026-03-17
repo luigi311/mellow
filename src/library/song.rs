@@ -763,30 +763,22 @@ impl SongInfoLoader<'_> {
     pub fn load_thumbnail(&mut self) -> RwLockReadGuard<'_, Option<gdk::Texture>> {
         #[cfg(debug_assertions)]
         if self.thumbnail.try_read().is_err() {
-            println!(
-                "Note: Blocking on read lock for `load_thumbnail` (would `try_load_thumbnail` make sense here?)"
-            );
+            println!("Note: Blocking on read lock for `load_thumbnail`");
         }
         let thumbnail = self.thumbnail.read().unwrap();
         if thumbnail.is_some() {
-            // println!("Thumbnail already loaded, nothing to do");
             return thumbnail;
         }
         drop(thumbnail);
 
         #[cfg(debug_assertions)]
         if self.thumbnail.try_write().is_err() {
-            println!(
-                "Note: Blocking on write lock for `load_thumbnail` (would `try_load_thumbnail` make sense here?)"
-            );
+            println!("Note: Blocking on write lock for `load_thumbnail`");
         }
-        if let Ok(thumbnail) = self.read_thumbnail_from_disk() {
-            // println!("Thumbnail was read successfully from disk");
-            *self.thumbnail.write().unwrap() = thumbnail;
-        } else {
-            // println!("Creating a new thumbnail");
-            self.create_thumbnail();
-        }
+        *self.thumbnail.write().unwrap() = match self.read_thumbnail_from_disk() {
+            Ok(thumbnail) => thumbnail,
+            _ => self.create_thumbnail(),
+        };
 
         self.thumbnail.read().unwrap()
     }
@@ -839,7 +831,7 @@ impl SongInfoLoader<'_> {
             *writer = None;
         }
     }
-    /// Unloads the song's thumbnail form memory and disk
+    /// Unloads the song's thumbnail form memory and removes it from disk
     ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
@@ -848,6 +840,13 @@ impl SongInfoLoader<'_> {
         let _ = fs::remove_file(self.thumbnail_file_path());
         self.unload_thumbnail();
     }
+    /// Reads the song's thumbnail from disk and returns it in the
+    /// `Ok(Some)` variant if available. If the thumbnail file could
+    /// not be loaded (such as when it is empty), an `Ok(None)` value
+    /// is returned.
+    ///
+    /// # Errors
+    /// The function returns an error if the thumbnail file does not exist
     #[inline]
     fn read_thumbnail_from_disk(&self) -> Result<Option<gdk::Texture>, Box<dyn Error>> {
         let mut thumbnail_file = File::open(self.thumbnail_file_path())?;
@@ -855,7 +854,12 @@ impl SongInfoLoader<'_> {
         thumbnail_file.read_to_end(&mut buffer).unwrap();
         Ok(gdk::Texture::from_bytes(&glib::Bytes::from(&*buffer)).ok())
     }
-    fn create_thumbnail(&mut self) {
+    /// Creates a new thumbnail file by loading the detailed info
+    /// and downscaling it, and returns it as a `gdk::Texture`.
+    /// If no artwork is available, a 0-byte thumbnail file is
+    /// created, and the function returns `None`.
+    #[must_use]
+    fn create_thumbnail(&mut self) -> Option<gdk::Texture> {
         let thumbnail_file_path = self.thumbnail_file_path();
         fs::create_dir_all(thumbnail_file_path.rsplit_once('/').unwrap().0).unwrap();
 
@@ -901,7 +905,7 @@ impl SongInfoLoader<'_> {
             None => fs::write(thumbnail_file_path, "").unwrap(),
         }
 
-        *self.thumbnail.write().unwrap() = thumbnail;
+        thumbnail
     }
 }
 
