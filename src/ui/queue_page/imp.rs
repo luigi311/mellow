@@ -389,7 +389,7 @@ impl QueuePage {
     // fn for_each_object<F: Fn(&QueueItemObject, u32)>(&self, f: F) {
     //     let mut i = 0;
     //     let list_model = self.list_model.get().expect(EXP_INIT);
-    //     while let Some(row) = list_model.item(i).and_downcast_ref::<QueueItemObject>() {
+    //     while let Some(item) = list_model.item(i).and_downcast_ref::<QueueItemObject>() {
     //         f(item, i);
     //         i += 1;
     //     }
@@ -582,9 +582,7 @@ impl QueuePage {
                         }
                     });
                 } else {
-                    queue_page.for_each_row(|list_row, _| {
-                        list_row.remove_css_class("highlight-top");
-                    });
+                    queue_page.for_each_row(|row, _| row.remove_css_class("highlight-top"));
                 }
 
                 queue_page.drag_widget.move_(
@@ -601,11 +599,15 @@ impl QueuePage {
             drag_row,
             #[weak]
             drag_container,
+            // FIX: Dropping the item after the song has changed moves the wrong item
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
-                let list_box = &queue_page.list_box;
-                list_box.set_cursor(None);
+                queue_page.for_each_row(|row, _| row.remove_css_class("highlight-top"));
                 drag_container.set_visible(false);
                 drag_row.to_default();
+
+                let list_box = &queue_page.list_box;
+                list_box.set_cursor(None);
+
                 let start_y = match gesture_drag.start_point() {
                     Some((start_x, start_y)) if Self::should_drag(start_x) => start_y,
                     _ => return,
@@ -635,10 +637,6 @@ impl QueuePage {
                 (PLAYER_TX.get().expect(EXP_INIT))
                     .send(PlayerRequest::Shift(from_index, (to - from) as isize))
                     .expect(EXP_RX);
-
-                queue_page.for_each_row(|list_row, _| {
-                    list_row.remove_css_class("highlight-top");
-                });
             }
         ));
         self.list_box.add_controller(drag);

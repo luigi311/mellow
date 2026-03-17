@@ -19,7 +19,8 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
-- [x] Reordering the queue works as expected
+- [ ] Reordering the queue works as expected
+  - FIX: Dragging an item and dropping it after the song changes moves the wrong item
   - TODO: Improvement: Scroll when dragging close to the view borders
 - [x] Selection mode works as expected
   - [x] Removing multiple items at once works as expected
