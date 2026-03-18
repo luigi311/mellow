@@ -813,9 +813,7 @@ impl SongInfoLoader<'_> {
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn unload_thumbnail(&mut self) {
-        let Ok(mut writer) = self.thumbnail.write() else {
-            return;
-        };
+        let mut writer = self.thumbnail.write().unwrap();
         if writer.as_ref().is_some_and(|t| t.ref_count() < 2) {
             *writer = None;
         }
@@ -831,14 +829,14 @@ impl SongInfoLoader<'_> {
             *writer = None;
         }
     }
-    /// Unloads the song's thumbnail form memory and removes it from disk
+    /// Unloads the song's thumbnail from memory and removes it from disk
     ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
     #[inline]
     pub fn invalidate_thumbnail(&mut self) {
         let _ = fs::remove_file(self.thumbnail_file_path());
-        self.unload_thumbnail();
+        *self.thumbnail.write().unwrap() = None;
     }
     /// Reads the song's thumbnail from disk and returns it in the
     /// `Ok(Some)` variant if available. If the thumbnail file could
