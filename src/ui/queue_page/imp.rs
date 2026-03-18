@@ -726,8 +726,13 @@ impl ObjectSubclass for QueuePage {
 }
 impl ObjectImpl for QueuePage {
     fn constructed(&self) {
-        self.obj().update_shuffle(false);
+        // Shuffle and repeat could be set manually here to ensure
+        // the correct icons are used if they differ in the UI file
+        // self.obj().update_shuffle(false);
         // self.obj().update_repeat(false);
+
+        // FIX: Doesn't work when the queue is first loaded
+        self.next_scroll_pos.set(QueueScrollAction::ToPlaying);
 
         self.setup_model();
         self.setup_drag_and_drop();
