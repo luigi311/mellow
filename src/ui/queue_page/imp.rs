@@ -138,36 +138,6 @@ impl QueuePage {
         let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
         let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
-        // Garbage collection
-        if old_queue_length > 0 {
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
-                let queue = queue.to_vec();
-                move || {
-                    // NOTE: Garbage collection happens before assigning the items, due to
-                    // background-loaded artworks otherwise sometimes not getting assigned.
-                    // If there are issues with queue artworks in the future, try disabling
-                    // garbage collection first, to verify that it is working properly.
-                    let short_start = playing.saturating_sub(NUM_ITEMS_BEHIND);
-                    let short_end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
-                    for (index, song) in queue.iter().enumerate() {
-                        let QueueItem::Song(song) = song else {
-                            return;
-                        };
-
-                        if !(start..end).contains(&index) {
-                            song.info().try_unload_thumbnail();
-                        }
-
-                        // Keep detailed artworks loaded for a few items ahead and behind
-                        match (short_start..short_end).contains(&index) {
-                            true => drop(song.info().load_detailed()),
-                            false => song.info().try_unload_detailed(),
-                        }
-                    }
-                }
-            });
-        }
-
         let last_scroll_pos = self.scrolled_window.vadjustment().value();
         let mut items = Self::items_to_objects(
             queue.iter().enumerate().take(end).skip(start),
@@ -217,6 +187,34 @@ impl QueuePage {
                 self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64);
             }
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
+        }
+
+        // Garbage collection
+        if old_queue_length > 0 {
+            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
+                let queue = queue.to_vec();
+                move || {
+                    // NOTE: If there are issues with queue artworks not appearing, try
+                    // disabling garbage collection to verify that it is working properly.
+                    let short_start = playing.saturating_sub(NUM_ITEMS_BEHIND);
+                    let short_end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
+                    for (index, song) in queue.iter().enumerate() {
+                        let QueueItem::Song(song) = song else {
+                            return;
+                        };
+
+                        if !(start..end).contains(&index) {
+                            song.info().try_unload_thumbnail();
+                        }
+
+                        // Keep detailed artworks loaded for a few items ahead and behind
+                        match (short_start..short_end).contains(&index) {
+                            true => drop(song.info().load_detailed()),
+                            false => song.info().try_unload_detailed(),
+                        }
+                    }
+                }
+            });
         }
     }
 
