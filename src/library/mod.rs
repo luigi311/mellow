@@ -940,7 +940,10 @@ impl Library {
 
             let song = QueueItem::Song(self.song_from_library_or_new(file));
             match songs.binary_search_by(|existing: &QueueItem| {
-                (existing.as_song().info().file_path()).cmp(&song.as_song().info().file_path())
+                // SAFETY: Only the `Song` variant is ever inserted into `songs`
+                unsafe { existing.as_song_unchecked().info().file_path() }
+                    // SAFETY: `song` is constructed using the `Song` variant
+                    .cmp(&unsafe { song.as_song_unchecked().info().file_path() })
             }) {
                 Err(index) | Ok(index) => songs.insert(index, song),
             }

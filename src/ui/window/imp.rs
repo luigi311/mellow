@@ -246,11 +246,11 @@ impl Window {
         self.playing.push_by_tag("info");
         self.queue_subpage_visible.set(true);
         let queue = self.song_queue.borrow();
+        let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
         match &queue[index] {
-            QueueItem::Song(song) => self.queue_subpage.show_song_info(index, song.clone()),
+            QueueItem::Song(song) => self.queue_subpage.show_song_info(index, Arc::clone(song)),
             QueueItem::Stopper(stopper) => self.queue_subpage.show_stopper_info(index, stopper),
         }
-        let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
         self.queue_subpage.set_stop_after(stop_after);
     }
     fn close_queue_subpage(&self) {

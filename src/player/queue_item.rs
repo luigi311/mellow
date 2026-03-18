@@ -11,11 +11,6 @@ pub enum QueueItem {
 
 #[derive(Clone)]
 pub struct SharedStopper(Arc<AtomicBool>);
-impl Default for SharedStopper {
-    fn default() -> Self {
-        SharedStopper(Arc::new(AtomicBool::new(false)))
-    }
-}
 impl SharedStopper {
     #[inline]
     #[must_use]
@@ -62,6 +57,22 @@ impl QueueItem {
         match self {
             Self::Song(song) => song,
             Self::Stopper(_) => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
+        }
+    }
+    /// Assumes the `QueueItem` is a `Song`, and returns a
+    /// reference to its inner `SharedSong` value, without
+    /// checking if it is the correct variant
+    ///
+    /// # Safety
+    /// The caller must be certain that the `QueueItem` is always
+    /// a `Song`, otherwise this will result in undefined behavior
+    #[inline]
+    #[must_use]
+    pub unsafe fn as_song_unchecked(&self) -> &SharedSong {
+        match self {
+            Self::Song(song) => song,
+            // SAFETY: Safety must be ensured by the caller
+            Self::Stopper(_) => unsafe { unreachable_unchecked() },
         }
     }
     /// Returns `true` if the `QueueItem` is a `Song`
