@@ -1,4 +1,5 @@
 use core::sync::atomic::{AtomicBool, Ordering};
+use std::hint::unreachable_unchecked;
 use std::sync::Arc;
 
 use crate::library::{SharedSong, Song};
@@ -71,7 +72,7 @@ impl QueueItem {
     pub unsafe fn as_song_unchecked(&self) -> &SharedSong {
         match self {
             Self::Song(song) => song,
-            // SAFETY: Safety must be ensured by the caller
+            // SAFETY: Caller must ensure the value is a `Song`
             Self::Stopper(_) => unsafe { unreachable_unchecked() },
         }
     }

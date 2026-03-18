@@ -940,7 +940,8 @@ impl Library {
 
             let song = QueueItem::Song(self.song_from_library_or_new(file));
             match songs.binary_search_by(|existing: &QueueItem| {
-                // SAFETY: Only the `Song` variant is ever inserted into `songs`
+                // SAFETY: Only the `Song` variant is ever inserted into `songs`,
+                // which is defined in the scope of this function
                 unsafe { existing.as_song_unchecked().info().file_path() }
                     // SAFETY: `song` is constructed using the `Song` variant
                     .cmp(&unsafe { song.as_song_unchecked().info().file_path() })
