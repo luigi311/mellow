@@ -143,11 +143,13 @@ The following files and directories will be created:
         │       ├── io.github.userwithaname.Mellow.gschema.xml
         │       └── gschemas.compiled ⟵╮
         │           Note: May also contain schemas for other apps
-        └── icons
-            └── hicolor
-                └── scalable
-                    └── apps
-                        └── io.github.userwithaname.Mellow.png
+        ├── icons
+        │   └── hicolor
+        │       └── scalable
+        │           └── apps
+        │               └── io.github.userwithaname.Mellow.png
+        └── mellow
+            └── resources.gresource
 ```
 
 > [!TIP]

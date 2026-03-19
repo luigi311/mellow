@@ -74,6 +74,19 @@ Music library:
 - [x] Play counting
 > Works, but the counting logic could be improved
 
+Meta:
+
+- [ ] Offline build support
+      https://docs.flathub.org/docs/for-app-authors/requirements#no-network-access-during-build
+- [ ] Provide MetaInfo
+      https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines
+- [ ] SVG icon which meets the Flathub quality guidelines
+      (The current one might be okay if the shadow was removed, but it is poorly anti-aliased,
+       and looks stylistically inconsistent when compared to other Gnome apps)
+      https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/quality-guidelines#app-icon
+- [ ] Decide on the brand colors
+      https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/quality-guidelines#brand-colors
+
 Ideas for improvements:
 
 - Marquee long titles
