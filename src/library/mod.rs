@@ -595,7 +595,8 @@ impl Library {
                     return;
                 }
                 let mut info = song.info();
-                if info.file_modification_time() == info.known_modification_time() {
+                let modification_time = info.file_modification_time();
+                if modification_time == -1 || modification_time == info.known_modification_time() {
                     continue;
                 }
                 let mut basic = info.inspect_basic_mut();

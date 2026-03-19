@@ -961,7 +961,7 @@ impl Default for UserSongInfo {
             added: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_or_else(|_| 0, |time| time.as_secs()),
-            modified: 0,
+            modified: -1,
             play_count: 0,
             rating: 0,
             tags: Vec::new(),
