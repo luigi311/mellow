@@ -4,7 +4,6 @@ use glib::Object;
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::excuses::EXP_INIT;
 use crate::library::SharedArtist;
 use crate::ui::SortConfig;
 
@@ -50,13 +49,12 @@ impl ArtistObject {
     }
 
     /// Returns the `SharedArtist` associated with this object
-    ///
-    /// # Panics
-    /// The function panics if `shared_artist` is uninitialized
     #[inline]
     #[must_use]
     pub fn shared_artist(&self) -> SharedArtist {
-        Arc::clone(self.imp().shared_artist.get().expect(EXP_INIT))
+        // SAFETY: The only way to construct an `ArtistObject` is through `new()`,
+        // which always initializes the `shared_artist` field
+        Arc::clone(unsafe { self.imp().shared_artist.get().unwrap_unchecked() })
     }
 
     /// Returns the ordering of `self` compared to `other`,

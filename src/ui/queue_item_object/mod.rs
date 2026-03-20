@@ -55,8 +55,7 @@ impl QueueItemObject {
     /// Loads the artwork thumbnail in a background thread
     ///
     /// # Panics
-    /// The function panics if `queue_item`, `LIBRARY_TX`,
-    /// or `UI_TX` is uninitialized
+    /// The function panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
@@ -79,12 +78,11 @@ impl QueueItemObject {
     }
 
     /// Returns a reference to the `QueueItem` associated with this object
-    ///
-    /// # Panics
-    /// The function panics if `queue_item` is uninitialized
     #[must_use]
     pub fn queue_item(&self) -> &QueueItem {
-        &self.imp().queue_item.get().expect(EXP_INIT)
+        // SAFETY: The only way to construct a `QueueItemObject` is through `new()`,
+        // which always initializes the `queue_item` field
+        unsafe { &self.imp().queue_item.get().unwrap_unchecked() }
     }
 
     /// Returns `true` if the item is currently shown in the UI,

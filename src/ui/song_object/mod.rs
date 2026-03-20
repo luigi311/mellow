@@ -86,13 +86,12 @@ impl SongObject {
     }
 
     /// Returns the `SharedSong` associated with this object
-    ///
-    /// # Panics
-    /// The function panics if `shared_song` is uninitialized
     #[inline]
     #[must_use]
     pub fn shared_song(&self) -> SharedSong {
-        Arc::clone(self.imp().shared_song.get().expect(EXP_INIT))
+        // SAFETY: The only way to construct a `SongObject` is through `new()`,
+        // which always initializes the `shared_song` field
+        Arc::clone(unsafe { self.imp().shared_song.get().unwrap_unchecked() })
     }
 
     /// Returns the ordering of `self` compared to `other`,

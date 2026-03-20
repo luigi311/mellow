@@ -75,14 +75,12 @@ impl AlbumObject {
     }
 
     /// Returns the `SharedAlbum` associated with this object
-    ///
-    /// # Panics
-    /// The function panics if `first_song` is uninitialized,
-    /// or if `first_song` does not have an associated album
     #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
-        self.imp().first_song.get().expect(EXP_INIT).get_album()
+        // SAFETY: The only way to construct an `AlbumObject` is through `new()`,
+        // which always initializes the `first_song` field
+        unsafe { self.imp().first_song.get().unwrap_unchecked() }.get_album()
     }
 
     /// Returns the ordering of `self` compared to `other`,
