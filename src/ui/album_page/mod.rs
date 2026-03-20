@@ -190,4 +190,14 @@ impl AlbumPage {
     pub fn set_shuffle(&self, shuffle: bool) {
         self.imp().set_shuffle(shuffle);
     }
+
+    #[inline]
+    pub fn play_now(&self, shuffle: bool) {
+        imp::AlbumPage::play_now(self.imp().all_songs(), shuffle);
+    }
+    #[inline]
+    pub fn add_to_queue(&self) {
+        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
+        imp::AlbumPage::add_to_queue(self.imp().all_songs());
+    }
 }

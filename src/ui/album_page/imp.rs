@@ -51,10 +51,10 @@ impl AlbumPage {
     }
     #[template_callback]
     pub fn handle_play_now(&self) {
-        self.play_now(self.all_songs(), self.shuffle.get());
+        Self::play_now(self.all_songs(), self.shuffle.get());
     }
     #[inline]
-    pub fn play_now(&self, queue: Vec<QueueItem>, shuffle: bool) {
+    pub fn play_now(queue: Vec<QueueItem>, shuffle: bool) {
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
         let _ = player_tx.send(PlayerRequest::LoadQueue(
             queue,
@@ -71,19 +71,19 @@ impl AlbumPage {
     }
     #[inline]
     pub fn play_disc(&self, disc_number: u32) {
-        self.play_now(self.songs_from_disc(disc_number), false);
+        Self::play_now(self.songs_from_disc(disc_number), false);
     }
     #[inline]
-    pub fn add_to_queue(&self, queue: Vec<QueueItem>) {
-        // TODO: Closing the navigation page makes sense when adding the entire album,
-        // but when adding only a single disc, it might not be as useful (however it
-        // at least provides visual feedback). Maybe show a toast notification instead?
-        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
+    pub fn add_to_queue(queue: Vec<QueueItem>) {
         let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(queue));
     }
     #[inline]
     pub fn add_disc_to_queue(&self, disc_number: u32) {
-        self.add_to_queue(self.songs_from_disc(disc_number));
+        Self::add_to_queue(self.songs_from_disc(disc_number));
+        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::Notification(format!(
+            "Disc {disc_number} \"{}\" has been added to queue",
+            self.album_title.label()
+        )));
     }
     #[inline]
     pub fn all_songs(&self) -> Vec<QueueItem> {

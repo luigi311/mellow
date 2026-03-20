@@ -69,6 +69,9 @@ pub struct Window {
     pub settings: OnceCell<gio::Settings>,
 
     #[template_child]
+    toast_overlay: TemplateChild<adw::ToastOverlay>,
+
+    #[template_child]
     progress_bar: TemplateChild<gtk::ProgressBar>,
     progress_bar_visible: Cell<bool>,
 
@@ -123,11 +126,11 @@ impl Window {
                 UpdateUI::SetLibraryAlbums(albums) => self.load_library_albums(albums),
                 UpdateUI::SetLibraryArtists(artists) => self.load_library_artists(artists),
 
-                UpdateUI::LibrarySongLoaded(index, song) => self.song_loaded(index, song),
-                UpdateUI::LibraryAlbumLoaded(index, song) => self.album_loaded(index, song),
+                UpdateUI::LibrarySongLoaded(index, song) => self.song_loaded(index, &song),
+                UpdateUI::LibraryAlbumLoaded(index, song) => self.album_loaded(index, &song),
                 UpdateUI::LibraryArtistLoaded(index) => self.artist_loaded(index),
                 UpdateUI::QueueSongLoaded(index, song) => self.queue_song_loaded(index, song),
-                UpdateUI::AlbumPageLoaded(index, song) => self.album_page_loaded(index, song),
+                UpdateUI::AlbumPageLoaded(index, song) => self.album_page_loaded(index, &song),
 
                 UpdateUI::SongPageByIndex(index) => self.open_song_page_by_index(index),
                 UpdateUI::SongPage(ctx) => self.open_song_page(ctx.0, ctx.1, ctx.2),
@@ -143,6 +146,8 @@ impl Window {
                     WidgetExt::activate_action(&self.main_player.get(), action, None)
                         .expect(ACTION_ERR);
                 }
+
+                UpdateUI::Notification(message) => self.show_toast_notification(&message),
 
                 UpdateUI::Shutdown => loop {
                     // Ignore any further requests without closing the channel
@@ -308,7 +313,7 @@ impl Window {
         self.artists_page.load_artists(artists);
     }
 
-    fn song_loaded(&self, index: usize, song: SharedSong) {
+    fn song_loaded(&self, index: usize, song: &SharedSong) {
         let info = song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
@@ -329,7 +334,7 @@ impl Window {
         }
         self.songs_page.assign_artwork(index, thumbnail.as_ref());
     }
-    fn album_loaded(&self, index: usize, first_song: SharedSong) {
+    fn album_loaded(&self, index: usize, first_song: &SharedSong) {
         let info = first_song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             // NOTE: The `Err` variant means the `RwLock` is busy, which most likely means
@@ -373,7 +378,7 @@ impl Window {
         }
         self.queue_page.assign_artwork(index, thumbnail.as_ref());
     }
-    fn album_page_loaded(&self, index: usize, first_song: SharedSong) {
+    fn album_page_loaded(&self, index: usize, first_song: &SharedSong) {
         let album_pages = self.album_pages.borrow();
         if index >= album_pages.len() {
             return;
@@ -414,6 +419,15 @@ impl Window {
         self.library.push(&artist_page);
         self.artist_pages.borrow_mut().push(artist_page);
         self.library_subpages.borrow_mut().push(SubpageType::Artist);
+    }
+    // TODO: Support notifications with undo
+    fn show_toast_notification(&self, message: &str) {
+        self.toast_overlay.add_toast(
+            adw::Toast::builder()
+                .use_markup(false)
+                .title(message)
+                .build(),
+        );
     }
 }
 

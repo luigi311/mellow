@@ -70,9 +70,8 @@ pub fn queue_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActio
     let album_pages = Rc::clone(&window.imp().album_pages);
     gio::ActionEntry::builder("queue_visible_album")
         .activate(move |_, _, _| {
-            if let Some(page) = album_pages.borrow().last() {
-                let page = page.imp();
-                page.add_to_queue(page.all_songs());
+            if let Some(album_page) = album_pages.borrow().last() {
+                album_page.add_to_queue()
             }
         })
         .build()
@@ -82,8 +81,8 @@ pub fn queue_visible_artist(window: &Window) -> gio::ActionEntry<gio::SimpleActi
     let artist_pages = Rc::clone(&window.imp().artist_pages);
     gio::ActionEntry::builder("queue_visible_artist")
         .activate(move |_, _, _| {
-            if let Some(page) = artist_pages.borrow().last() {
-                page.imp().add_to_queue();
+            if let Some(artist_page) = artist_pages.borrow().last() {
+                artist_page.imp().add_to_queue();
             }
         })
         .build()

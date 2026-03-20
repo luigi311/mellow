@@ -1,10 +1,7 @@
 - TODO: **Toast notifications**
-  - TODO: Show a notification for adding an album disc to queue
-    (instead of closing the page)
   - TODO: Queue undo prompt notifications when removing items
   - TODO: Notification for an upcoming "Pause & Close Player"
     (something like: "The player is scheduled to close shortly")
-  - TODO: Show notifications for playback errors
 
 Song queue:
 
