@@ -60,9 +60,10 @@ impl QueueItemObject {
         if self.artwork().is_some() {
             return;
         }
+        let imp = self.imp();
         let index = self.index() as usize;
-        let item = self.queue_item().clone();
-        let is_visible = Arc::clone(&self.imp().is_visible);
+        let item = imp.queue_item().clone();
+        let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             if !is_visible.load(Ordering::Relaxed) {
@@ -80,9 +81,7 @@ impl QueueItemObject {
     /// Returns a reference to the `QueueItem` associated with this object
     #[must_use]
     pub fn queue_item(&self) -> &QueueItem {
-        // SAFETY: The only way to construct a `QueueItemObject` is through `new()`,
-        // which always initializes the `queue_item` field
-        unsafe { &self.imp().queue_item.get().unwrap_unchecked() }
+        self.imp().queue_item()
     }
 
     /// Returns `true` if the item is currently shown in the UI,

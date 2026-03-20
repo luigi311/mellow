@@ -44,16 +44,16 @@ impl SongObject {
     /// Loads the artwork thumbnail in a background thread
     ///
     /// # Panics
-    /// The function panics if `shared_song`, `LIBRARY_TX`,
-    /// or `UI_TX` is uninitialized
+    /// The function panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
         }
+        let imp = self.imp();
         let index = self.index() as usize;
-        let song = Arc::clone(self.imp().shared_song.get().expect(EXP_INIT));
-        let is_visible = Arc::clone(&self.imp().is_visible);
+        let song = Arc::clone(imp.shared_song());
+        let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, atomic::Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             if !is_visible.load(atomic::Ordering::Relaxed) {
@@ -67,14 +67,12 @@ impl SongObject {
     }
 
     /// Unloads the artwork thumbnail in a background thread
-    ///
-    /// # Panics
-    /// The function panics if `shared_song` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
-        let song = Arc::clone(self.imp().shared_song.get().expect(EXP_INIT));
-        let is_visible = Arc::clone(&self.imp().is_visible);
+        let imp = self.imp();
+        let song = Arc::clone(imp.shared_song());
+        let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(false, atomic::Ordering::Relaxed);
         // NOTE: Unloading in the background in case the `RwLock` is busy
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
@@ -89,9 +87,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     pub fn shared_song(&self) -> SharedSong {
-        // SAFETY: The only way to construct a `SongObject` is through `new()`,
-        // which always initializes the `shared_song` field
-        Arc::clone(unsafe { self.imp().shared_song.get().unwrap_unchecked() })
+        Arc::clone(self.imp().shared_song())
     }
 
     /// Returns the ordering of `self` compared to `other`,

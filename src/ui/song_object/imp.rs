@@ -27,6 +27,15 @@ pub struct SongObject {
     pub shared_song: OnceCell<SharedSong>,
     pub is_visible: Arc<AtomicBool>,
 }
+impl SongObject {
+    #[inline]
+    #[must_use]
+    pub fn shared_song(&self) -> &SharedSong {
+        // SAFETY: The only way to construct a `SongObject` is through `new()`,
+        // which always initializes the `shared_song` field
+        unsafe { self.shared_song.get().unwrap_unchecked() }
+    }
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for SongObject {

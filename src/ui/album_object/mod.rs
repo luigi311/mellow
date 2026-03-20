@@ -31,8 +31,7 @@ impl AlbumObject {
     /// Loads the artwork thumbnail in a background thread
     ///
     /// # Panics
-    /// The function panics if `first_song`, `LIBRARY_TX`,
-    /// or `UI_TX` is uninitialized
+    /// The function panics either `LIBRARY_TX` or `UI_TX` is uninitialized
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
@@ -40,7 +39,7 @@ impl AlbumObject {
         }
         let index = self.index() as usize;
         let imp = self.imp();
-        let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
+        let song = Arc::clone(imp.first_song());
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, atomic::Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
@@ -55,14 +54,11 @@ impl AlbumObject {
     }
 
     /// Unloads the artwork thumbnail in a background thread
-    ///
-    /// # Panics
-    /// The function panics if `first_song` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
         let imp = self.imp();
-        let song = Arc::clone(imp.first_song.get().expect(EXP_INIT));
+        let song = Arc::clone(imp.first_song());
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(false, atomic::Ordering::Relaxed);
         // NOTE: Unloading in the background in case the `RwLock` is busy
@@ -78,9 +74,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
-        // SAFETY: The only way to construct an `AlbumObject` is through `new()`,
-        // which always initializes the `first_song` field
-        unsafe { self.imp().first_song.get().unwrap_unchecked() }.get_album()
+        self.imp().first_song().get_album()
     }
 
     /// Returns the ordering of `self` compared to `other`,

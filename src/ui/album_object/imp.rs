@@ -27,6 +27,16 @@ pub struct AlbumObject {
     pub is_visible: Arc<AtomicBool>,
 }
 
+impl AlbumObject {
+    #[inline]
+    #[must_use]
+    pub(super) fn first_song(&self) -> &SharedSong {
+        // SAFETY: The only way to construct an `AlbumObject` is through `new()`,
+        // which always initializes the `first_song` field
+        unsafe { &self.first_song.get().unwrap_unchecked() }
+    }
+}
+
 #[glib::object_subclass]
 impl ObjectSubclass for AlbumObject {
     const NAME: &str = "MellowAlbumObject";
