@@ -55,14 +55,14 @@ impl QueueItemObject {
     /// Loads the artwork thumbnail in a background thread
     ///
     /// # Panics
-    /// The function panics if `shared_song`, `LIBRARY_TX`,
+    /// The function panics if `queue_item`, `LIBRARY_TX`,
     /// or `UI_TX` is uninitialized
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
             return;
         }
         let index = self.index() as usize;
-        let item = self.imp().queue_item.get().expect(EXP_INIT).clone();
+        let item = self.queue_item().clone();
         let is_visible = Arc::clone(&self.imp().is_visible);
         is_visible.store(true, Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
@@ -78,10 +78,10 @@ impl QueueItemObject {
         });
     }
 
-    /// Returns the `SharedSong` associated with this object
+    /// Returns a reference to the `QueueItem` associated with this object
     ///
     /// # Panics
-    /// The function panics if `shared_song` is uninitialized
+    /// The function panics if `queue_item` is uninitialized
     #[must_use]
     pub fn queue_item(&self) -> &QueueItem {
         &self.imp().queue_item.get().expect(EXP_INIT)
