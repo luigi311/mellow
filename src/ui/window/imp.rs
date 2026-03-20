@@ -147,7 +147,9 @@ impl Window {
                         .expect(ACTION_ERR);
                 }
 
-                UpdateUI::Notification(message) => self.show_toast_notification(&message),
+                UpdateUI::Notification(message, undo) => {
+                    self.show_toast_notification(&message, undo)
+                }
 
                 UpdateUI::Shutdown => loop {
                     // Ignore any further requests without closing the channel
@@ -420,14 +422,23 @@ impl Window {
         self.artist_pages.borrow_mut().push(artist_page);
         self.library_subpages.borrow_mut().push(SubpageType::Artist);
     }
-    // TODO: Support notifications with undo
-    fn show_toast_notification(&self, message: &str) {
-        self.toast_overlay.add_toast(
-            adw::Toast::builder()
-                .use_markup(false)
-                .title(message)
-                .build(),
-        );
+
+    fn show_toast_notification(
+        &self,
+        message: &str,
+        undo_action: Option<Box<dyn Fn() + Send + 'static>>,
+    ) {
+        let toast = adw::Toast::builder()
+            .use_markup(false)
+            .title(message)
+            .build();
+        if let Some(undo_action) = undo_action {
+            toast.set_button_label(Some("Undo"));
+            toast.connect_button_clicked(move |_| {
+                undo_action();
+            });
+        }
+        self.toast_overlay.add_toast(toast);
     }
 }
 

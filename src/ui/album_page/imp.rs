@@ -80,10 +80,13 @@ impl AlbumPage {
     #[inline]
     pub fn add_disc_to_queue(&self, disc_number: u32) {
         Self::add_to_queue(self.songs_from_disc(disc_number));
-        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::Notification(format!(
-            "Disc {disc_number} \"{}\" has been added to queue",
-            self.album_title.label()
-        )));
+        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::Notification(
+            format!(
+                "Disc {disc_number} \"{}\" has been added to queue",
+                self.album_title.label()
+            ),
+            None,
+        ));
     }
     #[inline]
     pub fn all_songs(&self) -> Vec<QueueItem> {

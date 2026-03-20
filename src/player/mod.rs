@@ -752,6 +752,7 @@ impl Player {
         self.ui_tx
             .send(UpdateUI::Notification(
                 "Skipping song because a playback issue was encountered".to_owned(),
+                None,
             ))
             .expect(EXP_RX);
         eprintln!("Skipping song because a playback issue was encountered");

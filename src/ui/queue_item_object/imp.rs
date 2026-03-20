@@ -5,7 +5,7 @@ use glib::Properties;
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::library::SharedSong;
+use crate::player::QueueItem;
 use crate::ui::QueueItemData;
 
 #[derive(Properties, Default)]
@@ -20,7 +20,7 @@ pub struct QueueItemObject {
     #[property(name = "selected", get, set, type = bool, member = selected)]
     pub data: RefCell<QueueItemData>,
 
-    pub shared_song: OnceCell<Option<SharedSong>>,
+    pub queue_item: OnceCell<QueueItem>,
     pub is_visible: Arc<AtomicBool>,
 }
 

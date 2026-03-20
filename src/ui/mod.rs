@@ -125,7 +125,7 @@ pub enum UpdateUI {
     /// Shows a progress bar with the specified progress value, or hides it
     Progress(Option<f64>),
     /// Displays the notification message
-    Notification(String),
+    Notification(String, Option<Box<dyn Fn() + Send + 'static>>),
 
     /// Causes the channel to ignore any further requests (but does not close it)
     Shutdown,

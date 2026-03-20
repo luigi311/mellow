@@ -4,15 +4,13 @@ use core::mem;
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::rc::Rc;
-use std::sync::Arc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, SharedSong};
-use crate::player::{PLAYER_TX, PlayerRequest, QueueItem, SharedStopper};
+use crate::library::{LIBRARY_TX, Library};
+use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
 use crate::ui::queue_page::QueueScrollAction;
 use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
 use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
-use crate::util::format_duration_ms;
 
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;
@@ -90,11 +88,26 @@ impl QueuePage {
         for i in (0..list_model.n_items()).rev() {
             let item = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
             if item.selected() {
-                selected_items.push(item.index() as usize);
+                selected_items.push((item.index() as usize, item.queue_item().clone()));
             }
         }
-        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(selected_items));
+        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(
+            selected_items.iter().map(|item| item.0).collect(),
+        ));
         self.set_selection_mode(false);
+
+        (UI_TX.get().expect(EXP_INIT))
+            .send(UpdateUI::Notification(
+                format!("Removed {} items from the queue", selected_items.len()),
+                Some(Box::new(move || {
+                    let player_tx = PLAYER_TX.get().unwrap();
+                    for item in selected_items.iter().rev() {
+                        let _ = player_tx
+                            .send(PlayerRequest::InsertAt(Box::new((item.0, item.1.clone()))));
+                    }
+                })),
+            ))
+            .expect(EXP_RX);
     }
 
     #[inline]
@@ -227,46 +240,13 @@ impl QueuePage {
         items_iter
             .map(|index_item| {
                 let q_index = index_item.0;
-                match index_item.1 {
-                    QueueItem::Song(song) => {
-                        Self::new_song(q_index as u32, q_index == playing_index, song)
-                    }
-                    QueueItem::Stopper(stopper) => Self::new_stopper(q_index as u32, stopper),
-                }
+                QueueItemObject::new(
+                    q_index as u32,
+                    q_index == playing_index,
+                    index_item.1.clone(),
+                )
             })
             .collect()
-    }
-
-    #[inline]
-    #[must_use]
-    fn new_song(queue_index: u32, is_playing: bool, song: &SharedSong) -> QueueItemObject {
-        let object = QueueItemObject::new(queue_index, is_playing, Some(Arc::clone(song)));
-
-        let mut info = song.info();
-
-        let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` ensures the value is `Some`
-        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
-        object.set_title(song_info.title.clone());
-        object.set_subtitle(song_info.artist.clone());
-        object.set_suffix(format_duration_ms(song_info.duration_ms));
-        drop(song_info_temp);
-
-        if let Ok(thumbnail) = info.try_inspect_thumbnail()
-            && let Some(thumbnail) = thumbnail.as_ref()
-        {
-            object.set_artwork(thumbnail);
-        }
-
-        object
-    }
-
-    #[inline]
-    #[must_use]
-    fn new_stopper(queue_index: u32, stopper: &SharedStopper) -> QueueItemObject {
-        let queue_item_object = QueueItemObject::new(queue_index, false, None);
-        queue_item_object.set_title(stopper.display_name());
-        queue_item_object
     }
 
     /// Takes a queue item index and returns the index to access its object
@@ -435,45 +415,48 @@ impl QueuePage {
             queue_row.set_title(&queue_item_object.title());
             queue_row.set_subtitle(&queue_item_object.subtitle());
 
-            if queue_item_object.shared_song().is_some() {
-                // The queue item is a `Song`
+            match queue_item_object.queue_item() {
+                QueueItem::Song(_) => {
+                    if queue_item_object.playing() {
+                        queue_row.add_css_class("heading");
+                        queue_row.add_css_class("card");
+                        queue_row.set_image_margins(5);
+                    }
 
-                if queue_item_object.playing() {
+                    queue_row.add_bindings(&[
+                        queue_item_object
+                            .bind_property(
+                                "artwork",
+                                &queue_row.imp().prefix_image.get(),
+                                "paintable",
+                            )
+                            .sync_create()
+                            .build(),
+                        queue_item_object
+                            .bind_property(
+                                "selected",
+                                &queue_row.imp().selection_toggle.get(),
+                                "active",
+                            )
+                            .sync_create()
+                            .build(),
+                    ]);
+
+                    queue_row.set_suffix_label(&queue_item_object.suffix());
+
+                    let artwork = queue_item_object.artwork();
+                    if artwork.is_some() {
+                        queue_row.set_prefix_image(artwork.as_ref());
+                    } else {
+                        queue_item_object.load_artwork();
+                        queue_row.set_prefix_image(Some(&fallback_song_image()));
+                    }
+                }
+                QueueItem::Stopper(_) => {
                     queue_row.add_css_class("heading");
-                    queue_row.add_css_class("card");
-                    queue_row.set_image_margins(5);
+                    queue_row.add_css_class("dimmed");
+                    // IDEA: Draw a pause icon in place of the album cover
                 }
-
-                queue_row.add_bindings(&[
-                    queue_item_object
-                        .bind_property("artwork", &queue_row.imp().prefix_image.get(), "paintable")
-                        .sync_create()
-                        .build(),
-                    queue_item_object
-                        .bind_property(
-                            "selected",
-                            &queue_row.imp().selection_toggle.get(),
-                            "active",
-                        )
-                        .sync_create()
-                        .build(),
-                ]);
-
-                queue_row.set_suffix_label(&queue_item_object.suffix());
-
-                let artwork = queue_item_object.artwork();
-                if artwork.is_some() {
-                    queue_row.set_prefix_image(artwork.as_ref());
-                } else {
-                    queue_item_object.load_artwork();
-                    queue_row.set_prefix_image(Some(&fallback_song_image()));
-                }
-            } else {
-                // The queue item is a `Stopper`
-
-                queue_row.add_css_class("heading");
-                queue_row.add_css_class("dimmed");
-                // IDEA: Draw a pause icon in place of the album cover
             }
 
             let object_index = queue_item_object.index() as usize;

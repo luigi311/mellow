@@ -5,8 +5,10 @@ use gtk::{gdk, glib};
 use std::sync::Arc;
 
 use crate::excuses::EXP_INIT;
-use crate::library::{LIBRARY_TX, Library, SharedSong};
+use crate::library::{LIBRARY_TX, Library};
+use crate::player::QueueItem;
 use crate::ui::{UI_TX, UpdateUI};
+use crate::util::format_duration_ms;
 
 mod imp;
 
@@ -15,14 +17,39 @@ glib::wrapper! {
 }
 
 impl QueueItemObject {
+    #[inline]
     #[must_use]
-    pub fn new(index: u32, playing: bool, song: Option<SharedSong>) -> Self {
-        let song_object: QueueItemObject = Object::builder()
+    pub fn new(index: u32, playing: bool, item: QueueItem) -> Self {
+        let queue_object: QueueItemObject = Object::builder()
             .property("index", index)
             .property("playing", playing)
             .build();
-        let _ = song_object.imp().shared_song.set(song);
-        song_object
+
+        match &item {
+            QueueItem::Song(song) => {
+                let mut info = song.info();
+
+                let song_info_temp = info.load_basic();
+                // SAFETY: `load_basic` ensures the value is `Some`
+                let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+                queue_object.set_title(song_info.title.clone());
+                queue_object.set_subtitle(song_info.artist.clone());
+                queue_object.set_suffix(format_duration_ms(song_info.duration_ms));
+                drop(song_info_temp);
+
+                if let Ok(thumbnail) = info.try_inspect_thumbnail()
+                    && let Some(thumbnail) = thumbnail.as_ref()
+                {
+                    queue_object.set_artwork(thumbnail);
+                }
+            }
+            QueueItem::Stopper(stopper) => {
+                queue_object.set_title(stopper.display_name());
+            }
+        }
+
+        let _ = queue_object.imp().queue_item.set(item);
+        queue_object
     }
 
     /// Loads the artwork thumbnail in a background thread
@@ -35,14 +62,14 @@ impl QueueItemObject {
             return;
         }
         let index = self.index() as usize;
-        let song = self.imp().shared_song.get().expect(EXP_INIT).clone();
+        let item = self.imp().queue_item.get().expect(EXP_INIT).clone();
         let is_visible = Arc::clone(&self.imp().is_visible);
         is_visible.store(true, Ordering::Relaxed);
         Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
             if !is_visible.load(Ordering::Relaxed) {
                 return;
             }
-            let Some(song) = song else {
+            let QueueItem::Song(song) = item else {
                 return;
             };
             drop(song.info().load_thumbnail());
@@ -56,8 +83,8 @@ impl QueueItemObject {
     /// # Panics
     /// The function panics if `shared_song` is uninitialized
     #[must_use]
-    pub fn shared_song(&self) -> Option<&SharedSong> {
-        self.imp().shared_song.get().expect(EXP_INIT).as_ref()
+    pub fn queue_item(&self) -> &QueueItem {
+        &self.imp().queue_item.get().expect(EXP_INIT)
     }
 
     /// Returns `true` if the item is currently shown in the UI,

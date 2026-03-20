@@ -1,5 +1,4 @@
-- TODO: **Toast notifications**
-  - TODO: Queue undo prompt notifications when removing items
+- TODO: Toast notifications
   - TODO: Notification for an upcoming "Pause & Close Player"
     (something like: "The player is scheduled to close shortly")
 
