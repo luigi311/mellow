@@ -1,7 +1,3 @@
-- TODO: Toast notifications
-  - TODO: Notification for an upcoming "Pause & Close Player"
-    (something like: "The player is scheduled to close shortly")
-
 Song queue:
 
 - [x] Reorder using drag-&-drop
@@ -70,6 +66,12 @@ Music library:
 - [x] Play counting
 > Works, but the counting logic could be improved
 
+Other:
+- [x] Toast notifications
+  - TODO: Notification for an upcoming "Pause & Close Player"
+    (something like: "The player is scheduled to close shortly")
+  > This could maybe show a 'Cancel' button to turn it into a regular stopper without closing
+
 Meta:
 
 - [ ] Offline build support
@@ -99,7 +101,6 @@ Ideas for improvements:
       else can be moved into that overlay tab (maybe current file details/lyrics?)
 - Queue page:
   - Show a track number as well?
-  - Undo (toast) for removed queue items
 - Song page:
   - The library song page and queue subpage could display more information
     about the song, such as track number, disc, year, duration, play count,
@@ -108,5 +109,5 @@ Ideas for improvements:
 - Library:
   - The library could get rid of the home page, and instead switch the pages
     using a dropdown menu in the headerbar instead (in place of the back button)
-- The 'Go To Album/Artist' buttons could pop instead of pushing when the previous
-  page is the same as the one that is about to open
+  - The 'Go To Album/Artist' buttons could pop instead of pushing when the previous
+    page is the same as the one that is about to open
