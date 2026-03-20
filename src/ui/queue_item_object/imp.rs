@@ -30,7 +30,7 @@ impl QueueItemObject {
     pub(super) fn queue_item(&self) -> &QueueItem {
         // SAFETY: The only way to construct an `QueueItemObject` is through `new()`,
         // which always initializes the `queue_item` field
-        unsafe { &self.queue_item.get().unwrap_unchecked() }
+        unsafe { self.queue_item.get().unwrap_unchecked() }
     }
 }
 

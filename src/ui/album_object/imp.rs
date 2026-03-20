@@ -33,7 +33,7 @@ impl AlbumObject {
     pub(super) fn first_song(&self) -> &SharedSong {
         // SAFETY: The only way to construct an `AlbumObject` is through `new()`,
         // which always initializes the `first_song` field
-        unsafe { &self.first_song.get().unwrap_unchecked() }
+        unsafe { self.first_song.get().unwrap_unchecked() }
     }
 }
 
