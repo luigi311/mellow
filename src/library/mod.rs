@@ -37,6 +37,7 @@ pub struct Library {
     pub artists: Artists,
     pub missing_songs: Songs,
     pub check_moved: Arc<Mutex<Songs>>,
+    pub undo_songs: Songs,
 
     queue_initialized: bool,
     cancel_pending: Arc<AtomicBool>,
@@ -187,6 +188,9 @@ pub enum LibraryRequest {
     EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
 
+    RegisterUndoDirectory(String),
+    UndoRemovedDirectory(String),
+
     SetSongs(Songs),
     SetAlbums(Albums),
     SetArtists(Artists),
@@ -221,6 +225,7 @@ impl Library {
             artists: Vec::new(),
             missing_songs: Vec::new(),
             check_moved: Arc::new(Mutex::new(Vec::new())),
+            undo_songs: Vec::new(),
 
             queue_initialized: false,
             cancel_pending: Arc::new(AtomicBool::new(false)),
@@ -270,6 +275,9 @@ impl Library {
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
+
+                LibraryRequest::RegisterUndoDirectory(dir) => self.register_undo_directory(dir),
+                LibraryRequest::UndoRemovedDirectory(dir) => self.undo_removed_directory(dir),
 
                 #[allow(clippy::unit_arg)]
                 LibraryRequest::Shutdown => return Ok(self.shutdown()),
@@ -576,8 +584,10 @@ impl Library {
                 }
                 // Duplicate entry
                 Ok(index) => {
+                    #[cfg(debug_assertions)]
                     println!("Resolving duplicate entry: {}", info.file_uri());
-                    info.user().merge_with(&songs[index].info().user());
+                    // SAFETY: `index` is `Ok`, therefore within bounds
+                    (unsafe { songs.get_unchecked(index) }.info().user()).merge_with(&info.user());
                     drop(info);
                     drop(song);
                 }
@@ -637,6 +647,7 @@ impl Library {
             drop(info.load_basic()); // Load info for more accurate matching
             if cmp_info.matches(info) {
                 // Copy the user-assigned song info to the new entry
+                #[cfg(debug_assertions)]
                 println!(
                     "Found moved file:\n{} -> {}",
                     cmp_info.file_path(),
@@ -680,7 +691,7 @@ impl Library {
                         (Some(song), _) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (None, None) => false,
                         _ => true, // Loop until either the song is found or all songs were checked
-                    } {}
+                    } { /* All logic is done in the match expression */ }
                 }
             });
         }
@@ -691,6 +702,7 @@ impl Library {
         let mut progress = 0.0;
         let mut timer = Instant::now();
 
+        // Show the progress bar and block until done
         while missing_tx.send(check_moved.pop()).is_ok() {
             progress += progress_step;
             if timer.elapsed() > UI_TIMEOUT {
@@ -718,6 +730,24 @@ impl Library {
         });
     }
 
+    /// Cancels any currently running library build operation
+    /// and blocks the current thread until fully cancelled
+    pub fn cancel_library_build_blocking(&self) {
+        self.cancel_pending.store(true, atomic::Ordering::Relaxed);
+        let _ = self.tasks.await_all_tasks();
+        let cancel_pending = Arc::clone(&self.cancel_pending);
+        let library_thread = thread::current();
+        self.tasks.run(move || {
+            cancel_pending.store(false, atomic::Ordering::Relaxed);
+            library_thread.unpark();
+        });
+        // Parking the thread in a loop until cancellation, because
+        // threads can supposedly unpark themselves in some cases
+        while self.cancel_pending.load(atomic::Ordering::Relaxed) {
+            thread::park();
+        }
+    }
+
     /// Uses `library_tx` to send the `task` to run on the thread pool.
     /// If idle threads are available, the `task` will run when the
     /// library processes the request, otherwise, it will wait in a queue.
@@ -735,7 +765,6 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
-    #[inline]
     fn set_songs(&mut self, songs: Songs) {
         self.ui_tx
             .send(UpdateUI::SetLibrarySongs(songs.clone()))
@@ -746,7 +775,6 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
-    #[inline]
     fn set_albums(&mut self, albums: Albums) {
         self.ui_tx
             .send(UpdateUI::SetLibraryAlbums(albums.clone()))
@@ -760,7 +788,6 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
-    #[inline]
     fn set_artists(&mut self, artists: Artists) {
         self.ui_tx
             .send(UpdateUI::SetLibraryArtists(artists.clone()))
@@ -771,9 +798,32 @@ impl Library {
         }
     }
     /// Replaces `self.missing_songs` with `missing_songs`
-    #[inline]
     fn set_missing_songs(&mut self, missing_songs: Songs) {
         self.missing_songs = missing_songs;
+    }
+
+    /// Adds all songs from directory `dir` to `self.undo_songs`, so their
+    /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
+    pub fn register_undo_directory(&mut self, dir: String) {
+        let dir_uri = &*gio::File::for_path(dir).uri();
+        let start_index = match self.songs.find_song(dir_uri, self.config.uri_opt()) {
+            Err(index) => index,
+            Ok(_) => unreachable!(/* `dir_uri` is a directory, not a song file */),
+        };
+        for song in self.songs.iter().skip(start_index) {
+            if !song.info().file_uri().starts_with(dir_uri) {
+                dbg!(self.undo_songs.len());
+                return;
+            }
+            self.undo_songs.push(Arc::clone(song));
+        }
+    }
+    /// Adds all songs from directory `dir` to `self.undo_songs`, so their
+    /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
+    pub fn undo_removed_directory(&mut self, dir: String) {
+        self.cancel_library_build_blocking();
+        self.missing_songs.extend(mem::take(&mut self.undo_songs));
+        self.config.add_library(dir);
     }
 
     /// Starts the initial player queue (see `SongQueue::init_queue` for more details)

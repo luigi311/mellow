@@ -4,7 +4,7 @@ use gtk::gio;
 use std::fs;
 
 use crate::CONFIG_DIR;
-use crate::excuses::EXP_INIT;
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{LIBRARY_TX, LibraryRequest};
 use crate::ui::{UI_TX, UpdateUI};
 
@@ -76,9 +76,27 @@ impl LibraryConfig {
 
     /// Removes the configured directory at `index`
     pub fn remove_library(&mut self, index: usize) {
-        self.directories.remove(index);
+        let removed_dir = self.directories.remove(index);
         println!("Removed a library\nLibraries: {:?}", self.directories);
-        self.update_library();
+
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let _ = library_tx.send(LibraryRequest::CancelRebuild);
+        let _ = library_tx.send(LibraryRequest::RegisterUndoDirectory(removed_dir.clone()));
+
+        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let _ = ui_tx.send(UpdateUI::Notification(
+            format!("Removed a library directory: {removed_dir}"),
+            Some(Box::new(move || {
+                (LIBRARY_TX.get().expect(EXP_INIT))
+                    .send(LibraryRequest::UndoRemovedDirectory(removed_dir.to_owned()))
+                    .expect(EXP_RX);
+            })),
+        ));
+        let _ = ui_tx.send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
+
+        let _ = library_tx.send(LibraryRequest::Rebuild);
+
+        // self.update_library();
         self.update_trim_uri();
     }
 

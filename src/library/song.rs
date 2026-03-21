@@ -970,15 +970,17 @@ impl Default for UserSongInfo {
 }
 impl UserSongInfo {
     /// Copies info from `other` and merges into `self`:
-    /// - Play counts are summed up
     /// - Ratings are averaged, or whichever one is non-zero is used
-    /// - Modification time remains unchanged
-    pub const fn merge_with(&mut self, other: &UserSongInfo) {
-        self.play_count += other.play_count;
+    /// - Play counts are set to the highest number of the two
+    /// - Added/modified time is set to the earliest of the two
+    pub fn merge_with(&mut self, other: &UserSongInfo) {
         if self.rating == 0 {
             self.rating = other.rating;
         } else if other.rating > 0 {
             self.rating = (self.rating + other.rating) / 2;
         }
+        self.added = self.added.min(other.added);
+        self.modified = self.modified.min(other.modified);
+        self.play_count = self.play_count.max(other.play_count);
     }
 }
