@@ -148,14 +148,16 @@ impl QueuePage {
             return;
         };
 
+        // TODO: Optimize
+
         let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
         let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
         let last_scroll_pos = self.scrolled_window.vadjustment().value();
         let mut items = Self::items_to_objects(
-            queue.iter().enumerate().take(end).skip(start),
+            queue.iter().take(end).skip(start).enumerate(),
             playing,
-            // :)
+            start,
         );
 
         let repeat_mode = self.repeat_toggle.is_active();
@@ -168,10 +170,11 @@ impl QueuePage {
                         n_items_before as i32, //
                     ));
                 }
-                let from = queue.len() - n_items_before;
+                let start = (queue.len() - n_items_before).max(playing + 1);
                 let mut items_before = Self::items_to_objects(
-                    queue.iter().enumerate().skip(from.max(playing + 1)),
-                    playing,
+                    queue.iter().skip(start).enumerate(),
+                    playing, //
+                    start,
                 );
                 mem::swap(&mut items, &mut items_before);
                 items.extend(items_before);
@@ -179,8 +182,9 @@ impl QueuePage {
             let n_items_after = NUM_ITEMS_AHEAD - (end - playing);
             if n_items_after > 0 {
                 let items_after = Self::items_to_objects(
-                    queue.iter().enumerate().take(n_items_after.min(playing)),
+                    queue.iter().take(n_items_after.min(playing)).enumerate(),
                     playing,
+                    0,
                 );
                 items.extend(items_after);
             }
@@ -245,13 +249,17 @@ impl QueuePage {
 
     #[inline]
     #[must_use]
-    fn items_to_objects<I, 'i>(items_iter: I, playing_index: usize) -> Vec<QueueItemObject>
+    fn items_to_objects<I, 'i>(
+        items_iter: I,
+        playing_index: usize,
+        start_index: usize,
+    ) -> Vec<QueueItemObject>
     where
         I: Iterator<Item = (usize, &'i QueueItem)>,
     {
         items_iter
             .map(|index_item| {
-                let q_index = index_item.0;
+                let q_index = index_item.0 + start_index;
                 QueueItemObject::new(
                     q_index as u32,
                     q_index == playing_index,
