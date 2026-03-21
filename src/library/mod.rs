@@ -812,7 +812,6 @@ impl Library {
         };
         for song in self.songs.iter().skip(start_index) {
             if !song.info().file_uri().starts_with(dir_uri) {
-                dbg!(self.undo_songs.len());
                 return;
             }
             self.undo_songs.push(Arc::clone(song));
