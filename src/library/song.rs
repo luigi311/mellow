@@ -973,6 +973,7 @@ impl UserSongInfo {
     /// - Ratings are averaged, or whichever one is non-zero is used
     /// - Play counts are set to the highest number of the two
     /// - Added/modified time is set to the earliest of the two
+    #[inline]
     pub fn merge_with(&mut self, other: &UserSongInfo) {
         if self.rating == 0 {
             self.rating = other.rating;
