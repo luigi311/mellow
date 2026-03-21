@@ -206,24 +206,36 @@ impl QueuePage {
         if old_queue_length > 0 {
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
                 let queue = queue.to_vec();
+                // NOTE: If there are issues with queue artworks not appearing, try
+                // disabling garbage collection to verify that it is working properly.
                 move || {
-                    // NOTE: If there are issues with queue artworks not appearing, try
-                    // disabling garbage collection to verify that it is working properly.
-                    let short_start = playing.saturating_sub(NUM_ITEMS_BEHIND);
-                    let short_end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
+                    let len = queue.len() - 1;
+                    let short_start = playing.saturating_sub(2);
+                    let short_end = (playing + 2).min(queue.len());
                     for (index, song) in queue.iter().enumerate() {
                         let QueueItem::Song(song) = song else {
                             return;
                         };
 
-                        if !(start..end).contains(&index) {
-                            song.info().try_unload_thumbnail();
+                        // Keep detailed artworks loaded for a few items ahead and behind
+                        if !(short_start..=short_end).contains(&index)
+                            && (!repeat_mode
+                                || !(index > len - 2usize.saturating_sub(playing)
+                                    || index < 2usize.saturating_sub(len - playing)))
+                        {
+                            song.info().try_unload_detailed();
+                        } else {
+                            drop(song.info().load_detailed());
+                            continue;
                         }
 
-                        // Keep detailed artworks loaded for a few items ahead and behind
-                        match (short_start..short_end).contains(&index) {
-                            true => drop(song.info().load_detailed()),
-                            false => song.info().try_unload_detailed(),
+                        // Unload thumbnails that are no longer needed
+                        if !(start..=end).contains(&index)
+                            && (!repeat_mode
+                                || !(index > len - NUM_ITEMS_BEHIND.saturating_sub(playing)
+                                    || index < NUM_ITEMS_AHEAD.saturating_sub(len - playing)))
+                        {
+                            song.info().try_unload_thumbnail();
                         }
                     }
                 }
