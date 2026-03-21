@@ -207,7 +207,7 @@ impl QueuePage {
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
                 let queue = queue.to_vec();
                 // NOTE: If there are issues with queue artworks not appearing, try
-                // disabling garbage collection to verify that it is working properly.
+                // disabling garbage collection to verify that it is working properly
                 move || {
                     let len = queue.len() - 1;
                     let short_start = playing.saturating_sub(2);
@@ -217,7 +217,7 @@ impl QueuePage {
                             return;
                         };
 
-                        // Keep detailed artworks loaded for a few items ahead and behind
+                        // Unload detailed artworks, but keep a few items ahead and behind loaded
                         if !(short_start..=short_end).contains(&index)
                             && (!repeat_mode
                                 || !(index > len - 2usize.saturating_sub(playing)
