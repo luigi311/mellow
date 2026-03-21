@@ -25,9 +25,6 @@ Song Queue:
   - TODO: Improvement: Scroll when dragging close to the view borders
 - [x] Selection mode works as expected
   - [x] Removing multiple items at once works as expected
-    - FIX: When preforming multiple removals in sequence, the old toast notification is still
-      shown on top of the new one. This is a problem, because performing the undos in the wrong
-      order may insert the removed items at the wrong positions as well.
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
 - [x] Scrolling works without issues

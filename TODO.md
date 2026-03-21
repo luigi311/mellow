@@ -68,6 +68,8 @@ Music library:
 
 Other:
 - [x] Toast notifications
+  - TODO: Notification and undo for removing libraries
+    (keep the removed library songs available somewhere, so the data can be recovered with undo)
   - TODO: Notification for an upcoming "Pause & Close Player"
     (something like: "The player is scheduled to close shortly")
   > This could maybe show a 'Cancel' button to turn it into a regular stopper without closing

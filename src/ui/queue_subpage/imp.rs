@@ -72,8 +72,26 @@ impl QueueSubpage {
     #[template_callback]
     pub fn handle_remove_item(&self) {
         (self.obj().activate_action("ui.playing_nav_pop", None)).expect(ACTION_ERR);
+
+        let index = self.index.get();
         (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::RemoveItem(self.index.get()))
+            .send(PlayerRequest::RemoveItem(index))
+            .expect(EXP_RX);
+
+        // It is okay to uninitialize `queue_item` because the subpage is already closed
+        let queue_item = self.queue_item.take();
+        (UI_TX.get().expect(EXP_INIT))
+            .send(UpdateUI::Notification(
+                format!("Removed from the queue: \"{}\"", self.song_title.label()),
+                Some(Box::new(move || {
+                    (PLAYER_TX.get().expect(EXP_INIT))
+                        .send(PlayerRequest::InsertAt(Box::new((
+                            index,
+                            queue_item.clone(),
+                        ))))
+                        .expect(EXP_RX);
+                })),
+            ))
             .expect(EXP_RX);
     }
     #[template_callback]
