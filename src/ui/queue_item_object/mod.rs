@@ -57,7 +57,11 @@ impl QueueItemObject {
     /// # Panics
     /// The function panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     pub fn load_artwork(&self) {
+        #[cfg(debug_assertions)]
         if self.artwork().is_some() {
+            println!(
+                "⚠️ Queue artwork already assigned - should this be checked in release builds as well?"
+            );
             return;
         }
         let imp = self.imp();

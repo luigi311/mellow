@@ -140,20 +140,14 @@ impl QueuePage {
                 false => "song_queue",
             });
 
-        // Exit selection because the model gets reset
+        // Exit selection mode before resetting the model
         self.set_selection_mode(false);
-
-        self.playing_index.set(playing);
-        let Some(list_model) = self.list_model.get() else {
-            return;
-        };
 
         // TODO: Optimize
 
         let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
         let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
-        let last_scroll_pos = self.scrolled_window.vadjustment().value();
         let mut items = Self::items_to_objects(
             queue.iter().take(end).skip(start).enumerate(),
             playing,
@@ -171,13 +165,12 @@ impl QueuePage {
                     ));
                 }
                 let start = (queue.len() - n_items_before).max(playing + 1);
-                let mut items_before = Self::items_to_objects(
+                let items_before = Self::items_to_objects(
                     queue.iter().skip(start).enumerate(),
                     playing, //
                     start,
                 );
-                mem::swap(&mut items, &mut items_before);
-                items.extend(items_before);
+                items = [items_before, items].concat();
             }
             let n_items_after = NUM_ITEMS_AHEAD - (end - playing);
             if n_items_after > 0 {
@@ -194,29 +187,41 @@ impl QueuePage {
             ));
         }
 
-        list_model.splice(0, list_model.n_items(), &items);
-        self.queue_item_objects.replace(items);
-
         match self.next_scroll_pos.take() {
-            // Re-applying the scroll position, because it resets when the `list_box` rows change
-            QueueScrollAction::Retain => self.scroll_to_pos(last_scroll_pos),
-            QueueScrollAction::Offset(offset) => {
-                self.scroll_to_pos(last_scroll_pos + (offset * ROW_HEIGHT as i32) as f64);
-            }
+            // Re-apply the scroll position, because it resets on every change
+            QueueScrollAction::Retain => self.scroll_to_pos(
+                self.scrolled_window.vadjustment().value(), // :)
+            ),
+            // Keep the same relative scroll position when repeat mode changes
+            QueueScrollAction::Offset(offset) => self.scroll_to_pos(
+                self.scrolled_window.vadjustment().value() + (offset * ROW_HEIGHT as i32) as f64,
+            ),
+            // Scroll to the currently playing item
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
         }
 
+        let list_model = self.list_model.get().unwrap();
+        list_model.splice(0, list_model.n_items(), &items);
+        let old_items = self.queue_item_objects.replace(items);
+        self.playing_index.set(playing);
+
         // Garbage collection
         if old_queue_length > 0 {
+            // NOTE: If there are issues with queue artworks not appearing, try
+            // disabling garbage collection to verify that it is working properly
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
-                let queue = queue.to_vec();
-                // NOTE: If there are issues with queue artworks not appearing, try
-                // disabling garbage collection to verify that it is working properly
+                // NOTE: Detailed artwork loading logic may be incorrect with this approach
+                // (could also be moved to `SongQueue`)
+                let queue: Vec<(usize, QueueItem)> = old_items
+                    .iter()
+                    .map(|item| (item.index() as usize, item.queue_item().clone()))
+                    .collect();
+                // let queue = queue.to_vec();
                 move || {
                     let len = queue.len() - 1;
                     let short_start = playing.saturating_sub(2);
                     let short_end = (playing + 2).min(queue.len());
-                    for (index, song) in queue.iter().enumerate() {
+                    for (index, song) in queue {
                         let QueueItem::Song(song) = song else {
                             return;
                         };
@@ -339,7 +344,7 @@ impl QueuePage {
             false => model_index + playing_index - NUM_ITEMS_BEHIND.min(playing_index),
             true => {
                 let queue_length = self.queue_length.get();
-                assert!(
+                debug_assert!(
                     queue_length != 0,
                     "`model_index_to_queue` used on an empty queue"
                 );
