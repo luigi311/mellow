@@ -13,7 +13,7 @@
 # as a local sandbox (or mirror) to test new commits before pushing them to GitHub.
 
 mellow=$(git rev-parse --show-toplevel)
-mellow_bridge="$mellow/../mellow_bridge"
+mellow_bridge=$(realpath "$mellow/../mellow_bridge")
 
 if [ "$mellow" = "$mellow_bridge" ]; then
 	cargo test && echo && exit 0 || exit 1
