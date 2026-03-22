@@ -205,6 +205,7 @@ impl AlbumsPage {
                 album.set_modified(info.modified);
                 album.set_added(info.added);
             }
+            drop(item);
 
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;

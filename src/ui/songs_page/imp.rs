@@ -199,6 +199,7 @@ impl SongsPage {
                 song.set_modified(info.modified);
                 song.set_added(info.added);
             }
+            drop(item);
 
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
