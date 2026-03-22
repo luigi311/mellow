@@ -16,7 +16,7 @@
     <value nick="EmptyQueue" value="7"/>
   </enum>
 
-  <schema id="io.github.userwithaname.Mellow" path="/io.github/userwithaname/Mellow/">
+  <schema id="io.github.userwithaname.Mellow" path="/io/github/userwithaname/Mellow/">
     <key name="window-width" type="i">
       <default>540</default>
       <summary>Width of the window (in pixels)</summary>

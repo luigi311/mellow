@@ -125,17 +125,17 @@ mod tests {
             fs::read_to_string([project_dir, "/data/resources/resources.gresource.xml"].concat())?;
         assert!(
             gresources.contains(&app_id_path),
-            "Incorrect prefix in `resources.gresource.xml`"
+            "Incorrect prefix in `resources.gresource.xml`\nExpected: {app_id_path}"
         );
         let gschema =
             fs::read_to_string(format!("{project_dir}/data/{app_id_meson}.gschema.xml.in"))?;
         assert!(
             gschema.contains(app_id_meson),
-            "Incorrect ID in `{app_id_meson}.gschema.xml.in`"
+            "Incorrect ID in `{app_id_meson}.gschema.xml.in`\nExpected: {app_id_meson}"
         );
         assert!(
             gschema.contains(&app_id_path),
-            "Incorrect path in `{app_id_meson}.gschema.xml.in`"
+            "Incorrect path in `{app_id_meson}.gschema.xml.in`\nExpected: {app_id_path}"
         );
 
         // Test if licenses match
@@ -147,9 +147,7 @@ mod tests {
                     "LICENSE_TYPE: GPL-3.0\nCargo: {license}"
                 );
                 assert!(
-                    license_file
-                        .lines()
-                        .next()
+                    (license_file.lines().next())
                         .expect("LICENSE file is empty")
                         .contains("GNU GENERAL PUBLIC LICENSE"),
                     "LICENSE file does not contain the correct license"
