@@ -1,0 +1,23 @@
+#!/usr/bin/sh
+
+# This hook uses a local clone of this repository to test the new commit before pushing.
+# If it fails any tests or contains compiler errors, the commit will not be pushed.
+#
+# In order to use it:
+# 1. Create a clone of this repository named 'mellow_bridge' next to the main project
+# 2. Copy or create a symbolic link from `tests/git-hooks` to `.git/hooks`
+
+mellow=$(git rev-parse --show-toplevel)
+mellow_bridge="$mellow/../mellow_bridge"
+
+if [ "$mellow" = "$mellow_bridge" ]; then
+	cargo check && exit 0 || exit 1
+fi
+
+cd "$mellow_bridge" && git reset --hard origin/main && git pull "$mellow" && cargo test || {
+	cd - \
+  && echo "Please fix any errors introduced by the commit, then try again." \
+	&& exit 1
+}
+
+cd - && exit 0

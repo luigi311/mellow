@@ -59,7 +59,8 @@ mod tests {
         let (mut app_id_meson, mut app_id_build_rs) = ("(none)", "(none)");
         let mut license = "(none)";
 
-        let meson_build = fs::read_to_string([project_dir, "/meson.build"].concat())?;
+        let meson_build = fs::read_to_string([project_dir, "/meson.build"].concat())
+            .inspect_err(|_| eprintln!("Could not read {project_dir}/meson.build"))?;
         for line in meson_build.lines() {
             if name_meson == "(none)"
                 && let Some((_, name)) = line.split_once("project('")
@@ -78,7 +79,8 @@ mod tests {
             }
         }
 
-        let cargo_toml = fs::read_to_string([project_dir, "/Cargo.toml"].concat())?;
+        let cargo_toml = fs::read_to_string([project_dir, "/Cargo.toml"].concat())
+            .inspect_err(|_| eprintln!("Could not read {project_dir}/Cargo.toml"))?;
         for line in cargo_toml.lines() {
             if line.starts_with("name") {
                 name_cargo = line.split_once("=").unwrap().1.trim();
@@ -92,7 +94,8 @@ mod tests {
             }
         }
 
-        let build_rs = fs::read_to_string([project_dir, "/build.rs"].concat())?;
+        let build_rs = fs::read_to_string([project_dir, "/build.rs"].concat())
+            .inspect_err(|_| eprintln!("Could not read {project_dir}/build.rs"))?;
         for line in build_rs.lines() {
             if line.contains("const APP_ID") {
                 app_id_build_rs = line.split_once("=").unwrap().1.trim();
