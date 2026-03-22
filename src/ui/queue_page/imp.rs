@@ -479,7 +479,19 @@ impl QueuePage {
                 QueueItem::Stopper(_) => {
                     queue_row.add_css_class("heading");
                     queue_row.add_css_class("dimmed");
+
                     // IDEA: Draw a pause icon in place of the album cover
+
+                    queue_row.add_binding(
+                        queue_item_object
+                            .bind_property(
+                                "selected",
+                                &queue_row.imp().selection_toggle.get(),
+                                "active",
+                            )
+                            .sync_create()
+                            .build(),
+                    );
                 }
             }
 
