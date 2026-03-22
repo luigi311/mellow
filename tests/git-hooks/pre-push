@@ -11,15 +11,12 @@
 # WARNING: With this setup, the `mellow_bridge` clone should be treated as read-only, as
 # any changes made to it will be lost each time this hook runs. It merely serves as a
 # as a local sandbox (or mirror) to test new commits before pushing them to GitHub.
+# WARNING: This hook should not be enabled in the `mellow_bridge` clone
 
 mellow=$(git rev-parse --show-toplevel)
-mellow_bridge=$(realpath "$mellow/../mellow_bridge")
+mellow_bridge="$mellow/../mellow_bridge"
 
-if [ "$mellow" = "$mellow_bridge" ]; then
-	cargo test && echo && exit 0 || exit 1
-fi
-
-echo "Updating $mellow_bridge:"
+echo "Updating $(realpath "$mellow_bridge"):"
 cd "$mellow_bridge" && git reset --hard origin/main && git pull "$mellow" && echo \
   && cargo test || {
 	  echo && cd - \
