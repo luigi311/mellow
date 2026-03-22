@@ -19,6 +19,7 @@ if [ "$mellow" = "$mellow_bridge" ]; then
 	cargo test && echo && exit 0 || exit 1
 fi
 
+echo "Updating $mellow_bridge:"
 cd "$mellow_bridge" && git reset --hard origin/main && git pull "$mellow" && echo \
   && cargo test || {
 	  echo && cd - \
