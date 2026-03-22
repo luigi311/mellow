@@ -806,7 +806,10 @@ impl Library {
     /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
     pub fn register_undo_directory(&mut self, dir: String) {
         let dir_uri = &*gio::File::for_path(dir).uri();
-        let Err(start_index) = self.songs.find_song(dir_uri, self.config.uri_opt()) else {
+        let Err(start_index) = self
+            .songs
+            .find_song(dir_uri, self.config.uri_opt().min(dir_uri.len()))
+        else {
             unreachable!( /* `dir_uri` is a directory, not a song file */ )
         };
         for song in self.songs.iter().skip(start_index) {
