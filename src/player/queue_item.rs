@@ -34,7 +34,7 @@ impl SharedStopper {
     }
     #[inline]
     #[must_use]
-    pub fn display_name_from_bool(should_close: bool) -> &'static str {
+    pub const fn display_name_from_bool(should_close: bool) -> &'static str {
         match should_close {
             // TODO: Support translations
             false => "Pause",
@@ -54,7 +54,7 @@ impl QueueItem {
     /// this method is safe when chained with `Song::current()`
     #[inline]
     #[must_use]
-    pub fn as_song(&self) -> &SharedSong {
+    pub const fn as_song(&self) -> &SharedSong {
         match self {
             Self::Song(song) => song,
             Self::Stopper(_) => panic!("called `QueueItem::as_song()` on a `Stopper` value"),
@@ -69,7 +69,7 @@ impl QueueItem {
     /// a `Song`, otherwise this will result in undefined behavior
     #[inline]
     #[must_use]
-    pub unsafe fn as_song_unchecked(&self) -> &SharedSong {
+    pub const unsafe fn as_song_unchecked(&self) -> &SharedSong {
         match self {
             Self::Song(song) => song,
             // SAFETY: Caller must ensure the value is a `Song`
@@ -89,7 +89,7 @@ impl QueueItem {
     /// The function panics if the `QueueItem` is not a `Stopper`
     #[inline]
     #[must_use]
-    pub fn as_stopper(&self) -> &SharedStopper {
+    pub const fn as_stopper(&self) -> &SharedStopper {
         match self {
             Self::Stopper(stopper) => stopper,
             Self::Song(_) => panic!("called `QueueItem::as_stopper()` on a `Song` value"),

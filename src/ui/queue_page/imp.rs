@@ -1,6 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
 use core::cell::{Cell, OnceCell, RefCell};
-use core::mem;
 use gtk::CompositeTemplate;
 use gtk::{gdk, gio, glib};
 use std::rc::Rc;

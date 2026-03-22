@@ -4,6 +4,7 @@
     clippy::deref_by_slicing,
     clippy::doc_markdown,
     clippy::fallible_impl_from,
+    // clippy::missing_const_for_fn,
     clippy::missing_errors_doc,
     // clippy::missing_panics_doc,
     clippy::mixed_read_write_in_expression,

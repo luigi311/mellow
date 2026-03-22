@@ -20,7 +20,7 @@ impl Artist {
     }
     #[inline]
     #[must_use]
-    pub fn albums(&self) -> &ArtistAlbums {
+    pub const fn albums(&self) -> &ArtistAlbums {
         &self.albums
     }
 }

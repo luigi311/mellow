@@ -182,23 +182,24 @@ impl SongsPage {
         let mut i = 0;
 
         while let Some(item) = model.item(i) {
-            let song = item.downcast_ref::<SongObject>().unwrap();
-            let shared_song = song.shared_song();
-            let info = shared_song.info();
-            let info = info.user();
-
-            song.set_played(info.play_count as u64);
-            song.set_rating(match info.rating {
-                0 => 3,
-                n => n,
-            });
-            song.set_modified(info.modified);
-            song.set_added(info.added);
-
-            drop(info);
-            // NOTE: Clippy warning false-positive:
-            // The `MutexGuard` is explicitly dropped before the `await` point
+            // NOTE: Scope is required due to a Clippy warning false-positive
+            // when `MutexGuard`s are explicitly dropped before the `await` point
             // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
+            {
+                let song = item.downcast_ref::<SongObject>().unwrap();
+                let shared_song = song.shared_song();
+                let info = shared_song.info();
+                let info = info.user();
+
+                song.set_played(info.play_count as u64);
+                song.set_rating(match info.rating {
+                    0 => 3,
+                    n => n,
+                });
+                song.set_modified(info.modified);
+                song.set_added(info.added);
+            }
+
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();

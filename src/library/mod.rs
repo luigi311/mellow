@@ -320,10 +320,10 @@ impl Library {
             let config = self.config.clone();
             let cancel = Arc::clone(&self.cancel_pending);
             let missing = mem::take(&mut self.missing_songs);
-            let unchecked = Arc::clone(&self.check_moved);
+            let check = Arc::clone(&self.check_moved);
             let n_workers = self.tasks.num_workers();
             move || {
-                Library::create_connections(songs, missing, unchecked, &config, &cancel, n_workers)
+                Library::create_connections(songs, missing, &check, &config, &cancel, n_workers)
                     .expect(EXP_RX);
             }
         });
@@ -341,7 +341,7 @@ impl Library {
     pub fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
-        check_moved: Arc<Mutex<Songs>>,
+        check_moved: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
         num_workers: usize,
@@ -350,10 +350,10 @@ impl Library {
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         let num_tasks = num_workers - 2;
 
-        Library::validate_songs(&mut songs, &mut missing, &check_moved, config, cancel);
+        Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
 
         library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
-        Library::merge_moved_entries(&songs, &check_moved, config, cancel);
+        Library::merge_moved_entries(&songs, check_moved, config, cancel);
 
         Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
@@ -806,9 +806,8 @@ impl Library {
     /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
     pub fn register_undo_directory(&mut self, dir: String) {
         let dir_uri = &*gio::File::for_path(dir).uri();
-        let start_index = match self.songs.find_song(dir_uri, self.config.uri_opt()) {
-            Err(index) => index,
-            Ok(_) => unreachable!(/* `dir_uri` is a directory, not a song file */),
+        let Err(start_index) = self.songs.find_song(dir_uri, self.config.uri_opt()) else {
+            unreachable!( /* `dir_uri` is a directory, not a song file */ )
         };
         for song in self.songs.iter().skip(start_index) {
             if !song.info().file_uri().starts_with(dir_uri) {
@@ -1034,6 +1033,9 @@ impl Library {
     }
 
     /// Consumes `self`, writes the configuration to disk and shuts down gracefully
+    ///
+    /// # Panics
+    /// The function panics if it encounters a poisoned `Mutex`
     pub fn shutdown(mut self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         let mut songs = mem::take(&mut self.songs);

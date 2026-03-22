@@ -114,7 +114,7 @@ impl NewSharedAlbum for SharedAlbum {
             title: info.album.clone(),
             year: info.year,
             songs: vec![song],
-            artist: artist,
+            artist,
         }))
     }
 }

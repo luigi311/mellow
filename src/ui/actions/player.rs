@@ -71,7 +71,7 @@ pub fn queue_visible_album(window: &Window) -> gio::ActionEntry<gio::SimpleActio
     gio::ActionEntry::builder("queue_visible_album")
         .activate(move |_, _, _| {
             if let Some(album_page) = album_pages.borrow().last() {
-                album_page.add_to_queue()
+                album_page.add_to_queue();
             }
         })
         .build()

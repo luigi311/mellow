@@ -54,13 +54,12 @@ impl ArtistPage {
             });
 
             let mut info = album_locked.songs()[0].info();
-            let thumbnail = info.load_thumbnail();
-            if thumbnail.is_some() {
-                album_row.set_prefix_image(thumbnail.as_ref());
-            } else {
-                album_row.set_prefix_image(Some(&fallback_song_image()));
+            match info.load_thumbnail().as_ref() {
+                None => album_row.set_prefix_image(Some(&fallback_song_image())),
+                thumbnail => album_row.set_prefix_image(thumbnail),
             }
 
+            drop(album_locked);
             let album = Arc::clone(album);
             album_row.connect_activated(move |_| {
                 (UI_TX.get().expect(EXP_INIT))

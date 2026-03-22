@@ -117,17 +117,19 @@ impl ArtistsPage {
 
         let mut artist_objects = Vec::with_capacity(artists.len());
         for (index, artist) in artists.iter().enumerate() {
-            let artist_locked = artist.lock().unwrap();
-            artist_objects.push(ArtistObject::new(
-                index as u32,
-                artist_locked.name(),
-                artist_locked.albums().len() as u64,
-                Arc::clone(artist),
-            ));
-            drop(artist_locked);
-            // NOTE: Clippy warning false-positive:
-            // All `MutexGuard`s are explicitly dropped before the `await` point
+            // NOTE: Scope is required due to a Clippy warning false-positive
+            // when `MutexGuard`s are explicitly dropped before the `await` point
             // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
+            {
+                let artist_locked = artist.lock().unwrap();
+                artist_objects.push(ArtistObject::new(
+                    index as u32,
+                    artist_locked.name(),
+                    artist_locked.albums().len() as u64,
+                    Arc::clone(artist),
+                ));
+            }
+
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();
@@ -180,27 +182,26 @@ impl ArtistsPage {
         let mut i = 0;
 
         while let Some(item) = model.item(i) {
-            let artist = item.downcast_ref::<ArtistObject>().unwrap();
-            let shared_artist = artist.shared_artist();
-            let artist_locked = shared_artist.lock().unwrap();
-            // SAFETY: An artist with no albums cannot be constructed
-            let album_locked = unsafe { artist_locked.albums().last().unwrap_unchecked() }
-                .lock()
-                .unwrap();
-            // SAFETY: An album with no songs cannot be constructed
-            let song = unsafe { album_locked.songs().get_unchecked(0) };
-            let info = song.info();
-            let info = info.user();
-
-            artist.set_modified(info.modified);
-            artist.set_added(info.added);
-
-            drop(info);
-            drop(album_locked);
-            drop(artist_locked);
-            // NOTE: Clippy warning false-positive:
-            // All `MutexGuard`s are explicitly dropped before the `await` point
+            // NOTE: Scope is required due to a Clippy warning false-positive
+            // when `MutexGuard`s are explicitly dropped before the `await` point
             // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
+            {
+                let artist = item.downcast_ref::<ArtistObject>().unwrap();
+                let shared_artist = artist.shared_artist();
+                let artist_locked = shared_artist.lock().unwrap();
+                // SAFETY: An artist with no albums cannot be constructed
+                let album_locked = unsafe { artist_locked.albums().last().unwrap_unchecked() }
+                    .lock()
+                    .unwrap();
+                // SAFETY: An album with no songs cannot be constructed
+                let song = unsafe { album_locked.songs().get_unchecked(0) };
+                let info = song.info();
+                let info = info.user();
+
+                artist.set_modified(info.modified);
+                artist.set_added(info.added);
+            }
+
             if async_timer.elapsed() > UI_TIMEOUT {
                 glib::timeout_future(wait).await;
                 async_timer = Instant::now();

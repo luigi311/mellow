@@ -148,7 +148,7 @@ impl Window {
                 }
 
                 UpdateUI::Notification(message, undo) => {
-                    self.show_toast_notification(&message, undo)
+                    self.show_toast_notification(&message, undo);
                 }
 
                 UpdateUI::Shutdown => loop {

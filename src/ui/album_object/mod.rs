@@ -177,8 +177,9 @@ pub enum AlbumOrdering {
 }
 
 impl AlbumOrdering {
+    #[inline]
     #[must_use]
-    pub fn to_str(self) -> &'static str {
+    pub const fn to_str(self) -> &'static str {
         match self {
             AlbumOrdering::Default => "Default",
             AlbumOrdering::Rating => "Rating",
@@ -190,6 +191,7 @@ impl AlbumOrdering {
     }
 }
 impl From<&str> for AlbumOrdering {
+    #[inline]
     fn from(value: &str) -> Self {
         match value {
             "Default" => AlbumOrdering::Default,

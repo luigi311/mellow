@@ -932,6 +932,7 @@ pub struct DetailedSongInfo {
 }
 
 impl PartialEq for SongInfo {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.title == other.title
             && self.album == other.album
@@ -956,6 +957,7 @@ impl Default for SongInfo {
 }
 
 impl Default for UserSongInfo {
+    #[inline]
     fn default() -> Self {
         Self {
             added: SystemTime::now()

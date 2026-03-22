@@ -76,19 +76,19 @@ impl LibraryConfig {
 
     /// Removes the configured directory at `index`
     pub fn remove_library(&mut self, index: usize) {
+        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let _ = library_tx.send(LibraryRequest::CancelRebuild);
+
         let removed_dir = self.directories.remove(index);
         println!("Removed a library\nLibraries: {:?}", self.directories);
 
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let _ = library_tx.send(LibraryRequest::CancelRebuild);
         let _ = library_tx.send(LibraryRequest::RegisterUndoDirectory(removed_dir.clone()));
-
         let ui_tx = UI_TX.get().expect(EXP_INIT);
         let _ = ui_tx.send(UpdateUI::Notification(
             format!("Removed a library directory: {removed_dir}"),
             Some(Box::new(move || {
                 (LIBRARY_TX.get().expect(EXP_INIT))
-                    .send(LibraryRequest::UndoRemovedDirectory(removed_dir.to_owned()))
+                    .send(LibraryRequest::UndoRemovedDirectory(removed_dir.clone()))
                     .expect(EXP_RX);
             })),
         ));
@@ -96,7 +96,6 @@ impl LibraryConfig {
 
         let _ = library_tx.send(LibraryRequest::Rebuild);
 
-        // self.update_library();
         self.update_trim_uri();
     }
 
