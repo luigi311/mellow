@@ -15,16 +15,15 @@
 mellow=$(git rev-parse --show-toplevel)
 mellow_bridge="$mellow/../mellow_bridge"
 
-echo
-
 if [ "$mellow" = "$mellow_bridge" ]; then
-	cargo test && exit 0 || exit 1
+	cargo test && echo && exit 0 || exit 1
 fi
 
-cd "$mellow_bridge" && git reset --hard origin/main && git pull "$mellow" && cargo test || {
-  echo && cd - \
-  && echo "Please fix any errors introduced by the commit, then try again." \
-	&& exit 1
+cd "$mellow_bridge" && git reset --hard origin/main && git pull "$mellow" && echo \
+  && cargo test || {
+	  echo && cd - \
+	  && echo "Please fix any errors introduced by the commit, then try again." \
+		&& exit 1
 }
 
 echo
