@@ -34,19 +34,20 @@ debug = true
 [profile.release]
 codegen-units = 1
 lto = true
+overflow-checks = false
 panic = "abort"
 strip = true
 
 [profile.release.package."*"]
 codegen-units = 1
-overflow-checks = false
 debug = false
+overflow-checks = false
 strip = true
 
 [profile.bench]
-debug = true
+debug = "line-tables-only"
 strip = false
 
 [profile.bench.package."*"]
-debug = true
+debug = "line-tables-only"
 strip = false
