@@ -209,18 +209,12 @@ impl QueuePage {
             // NOTE: If there are issues with queue artworks not appearing, try
             // disabling garbage collection to verify that it is working properly
             Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
-                let len = queue.len() - 1;
-                // NOTE: Detailed artwork loading logic may be incorrect with this approach
-                // (could also be moved to `SongQueue`)
-                let queue: Vec<(usize, QueueItem)> = old_items
-                    .iter()
-                    .map(|item| (item.index() as usize, item.queue_item().clone()))
-                    .collect();
-                // let queue = queue.to_vec();
+                let queue = queue.to_vec();
                 move || {
+                    let len = queue.len() - 1;
                     let short_start = playing.saturating_sub(2);
                     let short_end = (playing + 2).min(queue.len());
-                    for (index, song) in queue {
+                    for (index, song) in queue.into_iter().enumerate() {
                         let QueueItem::Song(song) = song else {
                             return;
                         };
