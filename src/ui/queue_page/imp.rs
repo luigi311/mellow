@@ -201,7 +201,7 @@ impl QueuePage {
 
         let list_model = self.list_model.get().unwrap();
         list_model.splice(0, list_model.n_items(), &items);
-        let old_items = self.queue_item_objects.replace(items);
+        self.queue_item_objects.replace(items);
         self.playing_index.set(playing);
 
         // Garbage collection
