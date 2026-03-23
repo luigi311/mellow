@@ -50,8 +50,9 @@ impl QueueItem {
     /// # Panics
     /// The function panics if the `QueueItem` is not a `Song`
     ///
-    /// Note: Since each `Stopper` is removed when encountered,
-    /// this method is safe when chained with `Song::current()`
+    /// Assuming proper behavior, `SongQueue::current().as_song()`
+    /// should always succeed, since each `Stopper` is removed as
+    /// soon as it is encountered
     #[inline]
     #[must_use]
     pub const fn as_song(&self) -> &SharedSong {
