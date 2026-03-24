@@ -426,13 +426,14 @@ impl QueuePage {
         let selection_mode = Rc::clone(&self.selection_mode);
         self.list_box.bind_model(Some(&model), move |object| {
             // TODO: Optimize: There is a slight delay whenever the queue is updated
-            // It seems to be related to the rows trying to determine their hecghts,
+            // It seems to be related to the rows trying to determine their heights,
             // and I am assuming that giving the rows a fixed height would solve the
             // performance issues as well.
 
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
-
             let queue_row = ListRow::default();
+            let row_imp = queue_row.imp();
+
             queue_row.set_title(&queue_item_object.title());
             queue_row.set_subtitle(&queue_item_object.subtitle());
 
@@ -446,19 +447,11 @@ impl QueuePage {
 
                     queue_row.add_bindings(&[
                         queue_item_object
-                            .bind_property(
-                                "artwork",
-                                &queue_row.imp().prefix_image.get(),
-                                "paintable",
-                            )
+                            .bind_property("artwork", &row_imp.prefix_image.get(), "paintable")
                             .sync_create()
                             .build(),
                         queue_item_object
-                            .bind_property(
-                                "selected",
-                                &queue_row.imp().selection_toggle.get(),
-                                "active",
-                            )
+                            .bind_property("selected", &row_imp.selection_toggle.get(), "active")
                             .sync_create()
                             .build(),
                     ]);
@@ -481,11 +474,7 @@ impl QueuePage {
 
                     queue_row.add_binding(
                         queue_item_object
-                            .bind_property(
-                                "selected",
-                                &queue_row.imp().selection_toggle.get(),
-                                "active",
-                            )
+                            .bind_property("selected", &row_imp.selection_toggle.get(), "active")
                             .sync_create()
                             .build(),
                     );
