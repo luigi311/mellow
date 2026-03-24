@@ -142,8 +142,6 @@ impl QueuePage {
         // Exit selection mode before resetting the model
         self.set_selection_mode(false);
 
-        // TODO: Optimize
-
         let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
         let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
@@ -373,9 +371,9 @@ impl QueuePage {
     }
 
     #[inline]
-    fn for_each_row<F: Fn(&ListRow, i32)>(&self, f: F) {
+    fn for_each_row<F: Fn(&gtk::ListBoxRow, i32)>(&self, f: F) {
         let mut i = 0;
-        while let Some(row) = self.list_box.row_at_index(i).and_downcast_ref::<ListRow>() {
+        while let Some(row) = &self.list_box.row_at_index(i) {
             f(row, i);
             i += 1;
         }
@@ -399,7 +397,7 @@ impl QueuePage {
         self.selection_mode.set(selection_mode);
         let model = self.list_model.get().expect(EXP_INIT);
         self.for_each_row(|list_row, index| {
-            let list_row = list_row.imp();
+            let list_row = list_row.downcast_ref::<ListRow>().unwrap().imp();
             list_row.selection_toggle.set_visible(selection_mode);
             list_row.open_subpage_icon.set_visible(!selection_mode);
             if !selection_mode {
@@ -427,6 +425,11 @@ impl QueuePage {
         let model = gio::ListStore::new::<QueueItemObject>();
         let selection_mode = Rc::clone(&self.selection_mode);
         self.list_box.bind_model(Some(&model), move |object| {
+            // TODO: Optimize: There is a slight delay whenever the queue is updated
+            // It seems to be related to the rows trying to determine their hecghts,
+            // and I am assuming that giving the rows a fixed height would solve the
+            // performance issues as well.
+
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
 
             let queue_row = ListRow::default();
