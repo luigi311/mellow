@@ -82,13 +82,23 @@ impl QueuePage {
     }
     #[template_callback]
     pub fn handle_remove_selected(&self) {
-        let mut selected_items = Vec::new();
+        let mut selected_items = Vec::<(usize, QueueItem)>::new();
         let list_model = self.list_model.get().expect(EXP_INIT);
         for i in (0..list_model.n_items()).rev() {
             let item = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
             if item.selected() {
-                selected_items.push((item.index() as usize, item.queue_item().clone()));
+                let index = item.index() as usize;
+                selected_items.insert(
+                    // Items have to be removed from highest index to lowest
+                    selected_items
+                        .binary_search_by(|item| index.cmp(&item.0))
+                        .unwrap_err( /* each index is unique */ ),
+                    (index, item.queue_item().clone()),
+                );
             }
+        }
+        if selected_items.is_empty() {
+            return;
         }
         let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(
             selected_items.iter().map(|item| item.0).collect(),
@@ -101,8 +111,10 @@ impl QueuePage {
                 Some(Box::new(move || {
                     let player_tx = PLAYER_TX.get().unwrap();
                     for item in selected_items.iter().rev() {
-                        let _ = player_tx
-                            .send(PlayerRequest::InsertAt(Box::new((item.0, item.1.clone()))));
+                        // TODO: Add `PlayerRequest::InsertItems` and use that instead
+                        let _ = player_tx.send(PlayerRequest::InsertAt(Box::new(
+                            (item.0, item.1.clone()), //
+                        )));
                     }
                 })),
             ))
