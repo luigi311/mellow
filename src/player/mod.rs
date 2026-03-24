@@ -54,6 +54,9 @@ pub enum PlayerRequest {
     Shift(usize, isize),
     /// Inserts an item into the queue
     InsertAt(Box<(usize, QueueItem)>),
+    /// Inserts multiple items into the queue at once
+    /// For proper behavior, items must be inserted from first to last
+    InsertItems(Vec<(usize, QueueItem)>),
     /// Inserts an item into the queue relative to the currently playing index
     InsertRelative(Box<(isize, QueueItem)>),
     /// Remove item at the specified index from the queue
@@ -105,6 +108,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::Reorder(from, to) => format!("Reorder({from}, {to})"),
                 Self::Shift(from, by) => format!("Shift({from}, {by})"),
                 Self::InsertAt(item) => format!("InsertAt({}, …)", item.0),
+                Self::InsertItems(items) => format!("InsertItems(…): {} items", items.len()),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveItem(index) => format!("RemoveAt({index})"),
                 Self::RemoveItems(indices) => format!("RemoveItems{indices:?}"),
@@ -262,10 +266,25 @@ impl Player {
                 PlayerRequest::LoadNext | PlayerRequest::SongEnd => self.move_next(true) == (),
 
                 PlayerRequest::AppendQueue(queue) => self.queue.append(&queue) != (),
-                PlayerRequest::Append(item) => self.insert_to_queue(self.queue.len(), item) == (),
+                PlayerRequest::Append(item) => {
+                    self.insert_to_queue(self.queue.len(), item);
+                    self.queue.ui_update_queue();
+                    true
+                }
                 PlayerRequest::Reorder(from, to) => self.reorder(from, to) == (),
                 PlayerRequest::Shift(from, by) => self.shift(from, by) == (),
-                PlayerRequest::InsertAt(item) => self.insert_to_queue(item.0, item.1) == (),
+                PlayerRequest::InsertAt(item) => {
+                    self.insert_to_queue(item.0, item.1);
+                    self.queue.ui_update_queue();
+                    true
+                }
+                PlayerRequest::InsertItems(items) => {
+                    for item in items {
+                        self.insert_to_queue(item.0, item.1);
+                    }
+                    self.queue.ui_update_queue();
+                    true
+                }
                 PlayerRequest::InsertRelative(item) => {
                     self.insert_to_queue(
                         match item.0 >= 0 {
@@ -273,7 +292,9 @@ impl Player {
                             false => self.queue.index() - -item.0 as usize,
                         },
                         item.1,
-                    ) == ()
+                    );
+                    self.queue.ui_update_queue();
+                    true
                 }
                 PlayerRequest::RemoveItem(index) => {
                     self.remove_item(index);

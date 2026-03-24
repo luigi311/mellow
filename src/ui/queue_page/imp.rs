@@ -109,13 +109,9 @@ impl QueuePage {
             .send(UpdateUI::Notification(
                 format!("Removed {} items from the queue", selected_items.len()),
                 Some(Box::new(move || {
-                    let player_tx = PLAYER_TX.get().unwrap();
-                    for item in selected_items.iter().rev() {
-                        // TODO: Add `PlayerRequest::InsertItems` and use that instead
-                        let _ = player_tx.send(PlayerRequest::InsertAt(Box::new(
-                            (item.0, item.1.clone()), //
-                        )));
-                    }
+                    let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::InsertItems(
+                        selected_items.iter().rev().cloned().collect(),
+                    ));
                 })),
             ))
             .expect(EXP_RX);

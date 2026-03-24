@@ -268,8 +268,6 @@ impl SongQueue {
             self.index += 1;
             self.ui_close_queue_subpage();
         }
-
-        self.ui_update_queue();
     }
 
     /// Adds an item to the end of the queue
