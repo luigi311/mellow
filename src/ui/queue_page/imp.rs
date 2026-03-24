@@ -192,6 +192,11 @@ impl QueuePage {
             ));
         }
 
+        let list_model = self.list_model.get().unwrap();
+        list_model.splice(0, list_model.n_items(), &items);
+        self.queue_item_objects.replace(items);
+        self.playing_index.set(playing);
+
         match self.next_scroll_pos.take() {
             // Re-apply the scroll position, because it resets on every change
             QueueScrollAction::Retain => self.scroll_to_pos(
@@ -204,11 +209,6 @@ impl QueuePage {
             // Scroll to the currently playing item
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
         }
-
-        let list_model = self.list_model.get().unwrap();
-        list_model.splice(0, list_model.n_items(), &items);
-        self.queue_item_objects.replace(items);
-        self.playing_index.set(playing);
 
         // Garbage collection
         if old_queue_length > 0 {
