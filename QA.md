@@ -47,9 +47,10 @@ User Experience:
 - [x] The interface is responsive as soon as launched, without delays
   - [x] With existing library
   - [x] On fresh launch
+- [ ] All actions respond to user input without delay
+  - FIX: Slight stutter when the queue is updated
 - [ ] All actions provide visual feedback
   - TODO: Visual feedback for dragging files onto the player
-- [x] All actions respond to user input without delay
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)
 - [ ] Does not leak memory

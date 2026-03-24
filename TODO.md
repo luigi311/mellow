@@ -1,3 +1,16 @@
+UI Issues:
+- `ListRow` (song queue):
+  - FIX: Rows should have a fixed height, and not resize to fit the available space
+  - FIX: The prefix image width should be the same regardless of the image aspect ratio
+- `ItemTile` (albums page (artists page unaffected because it does not have images)):
+  - FIX: In some cases, tile sizes can be inconsistent due to image sizing issues
+  - FIX: Images with non-square aspect ratios look wrong and take up too much space
+- `ItemRow` (songs page):
+  - FIX: The prefix image width should be the same regardless of the image aspect ratio
+- Song page:
+  - FIX: Images can in some cases take up too much or too little space
+  - FIX: Images with non-square aspect ratios look wrong
+
 Song queue:
 
 - TODO: Add an indicator at the top and bottom of the list to show when there
@@ -97,6 +110,11 @@ Ideas for improvements:
 > but be excluded from the actual `songs`/`albums`/`artists` used by the
 > `Library` (design needed for enabling/disabling libraries)
 - Main player:
+  - Volume and lyrics could be accessed from the main player controls instead
+    - The volume button could open a popup with the volume slider
+      (like in Showtime (and many other video players))
+    - Lyrics could be shown above the player controls when pressing the button
+      (like in the original [mockup](mockup.md))
   - Display a hamburger menu on the opposite side of the close button:
     - Move the volume widget into the menu
     - Add a rating widget
