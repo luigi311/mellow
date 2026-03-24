@@ -21,6 +21,15 @@ pub struct ArtistObject {
     pub shared_artist: OnceCell<SharedArtist>,
 }
 
+impl ArtistObject {
+    #[inline]
+    #[must_use]
+    pub(super) fn shared_artist(&self) -> &SharedArtist {
+        // SAFETY: Must be costructed using `ArtistObject::new()`
+        unsafe { self.shared_artist.get().unwrap_unchecked() }
+    }
+}
+
 #[glib::object_subclass]
 impl ObjectSubclass for ArtistObject {
     const NAME: &str = "MellowArtistObject";

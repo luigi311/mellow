@@ -63,11 +63,11 @@ impl ArtistsPage {
         let mut artists = Vec::with_capacity(n_items as usize);
 
         for i in 0..n_items {
-            artists.push(
+            artists.push(Arc::clone(
                 (model.item(i).unwrap().downcast_ref::<ArtistObject>())
                     .unwrap()
                     .shared_artist(),
-            );
+            ));
         }
 
         let player_tx = PLAYER_TX.get().expect(EXP_INIT);
@@ -277,10 +277,12 @@ impl ObjectImpl for ArtistsPage {
         self.init_search();
 
         self.artists_grid.connect_activate(|grid, index| {
-            let artist = (grid.model().unwrap().item(index).unwrap())
-                .downcast_ref::<ArtistObject>()
-                .unwrap()
-                .shared_artist();
+            let artist = Arc::clone(
+                (grid.model().unwrap().item(index).unwrap())
+                    .downcast_ref::<ArtistObject>()
+                    .unwrap()
+                    .shared_artist(),
+            );
             (UI_TX.get().expect(EXP_INIT))
                 .send(UpdateUI::ArtistPage(artist))
                 .expect(EXP_RX);

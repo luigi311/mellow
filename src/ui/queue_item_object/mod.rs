@@ -13,6 +13,10 @@ use crate::util::format_duration_ms;
 mod imp;
 
 glib::wrapper! {
+    /// # Safety
+    /// Either construct using `QueueItemObject::new()`, or ensure
+    /// that `….imp().queue_item` is initialized if constructing
+    /// manually. Failing to do so will lead to undefined behavior.
     pub struct QueueItemObject(ObjectSubclass<imp::QueueItemObject>);
 }
 

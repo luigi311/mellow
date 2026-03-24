@@ -31,8 +31,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     pub fn shared_song(&self) -> &SharedSong {
-        // SAFETY: The only way to construct a `SongObject` is through `new()`,
-        // which always initializes the `shared_song` field
+        // SAFETY: Must be costructed using `SongObject::new()`
         unsafe { self.shared_song.get().unwrap_unchecked() }
     }
 }

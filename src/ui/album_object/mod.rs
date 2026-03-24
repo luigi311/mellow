@@ -11,6 +11,10 @@ use crate::ui::{SortConfig, UI_TX, UpdateUI};
 mod imp;
 
 glib::wrapper! {
+    /// # Safety
+    /// Either construct using `AlbumObject::new()`, or ensure
+    /// that `….imp().first_song` is initialized if constructing
+    /// manually. Failing to do so will lead to undefined behavior.
     pub struct AlbumObject(ObjectSubclass<imp::AlbumObject>);
 }
 

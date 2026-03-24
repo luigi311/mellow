@@ -2,7 +2,6 @@ use adw::{prelude::*, subclass::prelude::*};
 use core::cmp;
 use glib::Object;
 use gtk::{gdk, glib};
-use std::sync::Arc;
 
 use crate::library::SharedArtist;
 use crate::ui::SortConfig;
@@ -10,6 +9,10 @@ use crate::ui::SortConfig;
 mod imp;
 
 glib::wrapper! {
+    /// # Safety
+    /// Either construct using `ArtistObject::new()`, or ensure
+    /// that `….imp().shared_artist` is initialized if constructing
+    /// manually. Failing to do so will lead to undefined behavior.
     pub struct ArtistObject(ObjectSubclass<imp::ArtistObject>);
 }
 
@@ -51,10 +54,8 @@ impl ArtistObject {
     /// Returns the `SharedArtist` associated with this object
     #[inline]
     #[must_use]
-    pub fn shared_artist(&self) -> SharedArtist {
-        // SAFETY: The only way to construct an `ArtistObject` is through `new()`,
-        // which always initializes the `shared_artist` field
-        Arc::clone(unsafe { self.imp().shared_artist.get().unwrap_unchecked() })
+    pub fn shared_artist(&self) -> &SharedArtist {
+        self.imp().shared_artist()
     }
 
     /// Returns the ordering of `self` compared to `other`,

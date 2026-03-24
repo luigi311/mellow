@@ -11,6 +11,10 @@ use crate::ui::{SortConfig, UI_TX, UpdateUI};
 mod imp;
 
 glib::wrapper! {
+    /// # Safety
+    /// Either construct using `SongObject::new()`, or ensure
+    /// that `….imp().shared_song` is initialized if constructing
+    /// manually. Failing to do so will lead to undefined behavior.
     pub struct SongObject(ObjectSubclass<imp::SongObject>);
 }
 
