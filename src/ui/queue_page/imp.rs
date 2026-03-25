@@ -89,7 +89,6 @@ impl QueuePage {
             if item.selected() {
                 let index = item.index() as usize;
                 selected_items.insert(
-                    // Items have to be removed from highest index to lowest
                     selected_items
                         .binary_search_by(|item| item.0.cmp(&index))
                         .unwrap_err( /* each index is unique */ ),
