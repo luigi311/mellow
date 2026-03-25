@@ -31,7 +31,7 @@ impl SongObject {
     #[inline]
     #[must_use]
     pub fn shared_song(&self) -> &SharedSong {
-        // SAFETY: Must be costructed using `SongObject::new()`
+        // SAFETY: Must be constructed using `SongObject::new()`
         unsafe { self.shared_song.get().unwrap_unchecked() }
     }
 }

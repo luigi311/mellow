@@ -28,7 +28,7 @@ impl QueueItemObject {
     #[inline]
     #[must_use]
     pub(super) fn queue_item(&self) -> &QueueItem {
-        // SAFETY: Must be costructed using `QueueItemObject::new()`
+        // SAFETY: Must be constructed using `QueueItemObject::new()`
         unsafe { self.queue_item.get().unwrap_unchecked() }
     }
 }

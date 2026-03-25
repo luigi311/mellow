@@ -25,7 +25,7 @@ impl ArtistObject {
     #[inline]
     #[must_use]
     pub(super) fn shared_artist(&self) -> &SharedArtist {
-        // SAFETY: Must be costructed using `ArtistObject::new()`
+        // SAFETY: Must be constructed using `ArtistObject::new()`
         unsafe { self.shared_artist.get().unwrap_unchecked() }
     }
 }

@@ -31,7 +31,7 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     pub(super) fn first_song(&self) -> &SharedSong {
-        // SAFETY: Must be costructed using `AlbumObject::new()`
+        // SAFETY: Must be constructed using `AlbumObject::new()`
         unsafe { self.first_song.get().unwrap_unchecked() }
     }
 }
