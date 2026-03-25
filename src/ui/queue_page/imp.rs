@@ -84,14 +84,14 @@ impl QueuePage {
     pub fn handle_remove_selected(&self) {
         let mut selected_items = Vec::<(usize, QueueItem)>::new();
         let list_model = self.list_model.get().expect(EXP_INIT);
-        for i in (0..list_model.n_items()).rev() {
+        for i in 0..list_model.n_items() {
             let item = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
             if item.selected() {
                 let index = item.index() as usize;
                 selected_items.insert(
                     // Items have to be removed from highest index to lowest
                     selected_items
-                        .binary_search_by(|item| index.cmp(&item.0))
+                        .binary_search_by(|item| item.0.cmp(&index))
                         .unwrap_err( /* each index is unique */ ),
                     (index, item.queue_item().clone()),
                 );
@@ -101,7 +101,7 @@ impl QueuePage {
             return;
         }
         let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(
-            selected_items.iter().map(|item| item.0).collect(),
+            selected_items.iter().rev().map(|item| item.0).collect(),
         ));
         self.set_selection_mode(false);
 
@@ -110,7 +110,7 @@ impl QueuePage {
                 format!("Removed {} items from the queue", selected_items.len()),
                 Some(Box::new(move || {
                     let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::InsertItems(
-                        selected_items.iter().rev().cloned().collect(),
+                        selected_items.clone(), //
                     ));
                 })),
             ))
