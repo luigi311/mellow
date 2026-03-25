@@ -20,7 +20,9 @@ mellow_bridge="$mellow/../mellow_bridge"
 
 echo "Updating $(realpath "$mellow_bridge"):"
 cd "$mellow_bridge" && git pull --rebase --force || {
-	git clone "$mellow" "$mellow_bridge" && cd "$mellow_bridge"
+	git clone "$mellow" "$mellow_bridge" \
+	&& ln -s "$mellow/target" "$mellow_bridge/target" \
+	; cd "$mellow_bridge"
 }
 
 echo
