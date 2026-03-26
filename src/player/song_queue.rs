@@ -2,11 +2,11 @@ use core::error::Error;
 use gst::ClockTime;
 use rand::random_range;
 use std::fs;
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, LibraryRequest};
+use crate::library::{LIBRARY_TX, Library, LibraryRequest, SharedSongExt};
 use crate::player::{PlayerRequest, QueueItem};
 use crate::ui::{StartupQueueChoice, UpdateUI};
 use crate::{CONFIG_DIR, util::ReorderVecExt};
@@ -231,7 +231,35 @@ impl SongQueue {
     }
 
     /// Moves a song in the queue from `from` to `to`
-    pub fn reorder(&mut self, from: usize, to: usize) {
+    pub fn reorder(&mut self, from: usize, mut to: usize) {
+        // Determine ambiguous repeat mode reorder positions
+        if self.repeat && (to == 0 || to == self.len() - 1) {
+            'disambiguate: {
+                let QueueItem::Song(from_item) = self.nth(from) else {
+                    break 'disambiguate;
+                };
+                let (QueueItem::Song(first_item), QueueItem::Song(last_item)) =
+                    (self.nth(0), self.nth(self.len() - 1))
+                else {
+                    #[cfg(debug_assertions)]
+                    println!("One of the candidates is not a song (logic could be improved here)");
+                    break 'disambiguate;
+                };
+                if Arc::ptr_eq(first_item, last_item) {
+                    break 'disambiguate;
+                }
+                let from_item_album_ptr = Arc::as_ptr(&from_item.get_album());
+                match (
+                    Arc::as_ptr(&first_item.get_album()) == from_item_album_ptr,
+                    Arc::as_ptr(&last_item.get_album()) == from_item_album_ptr,
+                ) {
+                    (true, false) => to = 0,
+                    (false, true) => to = self.len() - 1,
+                    _ => (),
+                }
+            }
+        }
+
         match self.shuffle {
             true => self.shuffled.reorder(from, to),
             false => self.songs.reorder(from, to),
