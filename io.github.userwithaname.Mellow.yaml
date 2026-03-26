@@ -1,0 +1,42 @@
+id: io.github.userwithaname.Mellow
+
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  build-args:
+    - --share=network # FIX: Flathub requires building to work offline
+
+command: mellow
+modules:
+  - name: mellow
+    builddir: true
+    buildsystem: meson
+    sources:
+      - type: dir
+        path: .
+    config_opts:
+      - -Dflatpak=enabled
+
+finish-args:
+  - --device=dri
+  - --filesystem=xdg-music:ro
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --socket=wayland
+
+cleanup:
+  - '*.a'
+  - '*.la'
+  - '/include'
+  - '/lib/pkgconfig'
+  - '/man'
+  - '/share/doc'
+  - '/share/gtk-doc'
+  - '/share/man'
+  - '/share/pkgconfig'
