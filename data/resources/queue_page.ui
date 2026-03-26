@@ -125,15 +125,48 @@
                         <child>
                           <object class="AdwClamp">
                             <child>
-                              <object class="GtkListBox" id="list_box">
-                                <property name="selection_mode">none</property>
+                              <object class="GtkBox">
+                                <property name="orientation">Vertical</property>
                                 <property name="margin_top">18</property>
                                 <property name="margin_bottom">18</property>
                                 <property name="margin_start">12</property>
                                 <property name="margin_end">12</property>
-                                <style>
-                                  <class name="boxed-list"/>
-                                </style>
+                                <child>
+                                  <object class="GtkButton" id="view_further_up">
+                                    <signal name="clicked" handler="handle_pan_up" swapped="true"/>
+                                    <!-- TODO: Pan the queue list up using this button -->
+                                    <property name="sensitive">False</property>
+                                    <property name="visible">False</property>
+                                    <property name="margin_bottom">6</property>
+                                    <property name="icon_name">go-up</property>
+                                    <style>
+                                      <class name="flat"/>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkListBox" id="list_box">
+                                    <property name="selection_mode">none</property>
+                                    <style>
+                                      <class name="boxed-list"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="view_further_down">
+                                    <signal name="clicked" handler="handle_pan_down" swapped="true"/>
+                                    <!-- TODO: Pan the queue list down using this button -->
+                                    <property name="sensitive">False</property>
+                                    <property name="visible">False</property>
+                                    <property name="margin_top">6</property>
+                                    <property name="icon_name">go-down</property>
+                                    <style>
+                                      <class name="flat"/>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>

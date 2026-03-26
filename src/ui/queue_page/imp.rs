@@ -43,9 +43,14 @@ pub struct QueuePage {
 
     #[template_child]
     view_stack: TemplateChild<adw::ViewStack>,
+    #[template_child]
+    view_further_up: TemplateChild<gtk::Button>,
+    #[template_child]
+    view_further_down: TemplateChild<gtk::Button>,
 
     queue_length: Cell<usize>,
     playing_index: Cell<usize>,
+    view_pan_offset: Cell<isize>,
     last_repeat_mode: Cell<bool>,
     queue_item_objects: Rc<RefCell<Vec<QueueItemObject>>>,
     pub song_page: OnceCell<QueueSubpage>,
@@ -115,6 +120,16 @@ impl QueuePage {
             ))
             .expect(EXP_RX);
     }
+    #[template_callback]
+    pub fn handle_pan_up(&self) {
+        // TODO: Handle infinite panning in repeat mode
+        self.view_pan_offset.set(self.view_pan_offset.get() - 1);
+    }
+    #[template_callback]
+    pub fn handle_pan_down(&self) {
+        // TODO: Handle infinite panning in repeat mode
+        self.view_pan_offset.set(self.view_pan_offset.get() + 1);
+    }
 
     #[inline]
     pub fn scroll_to_pos(&self, scroll_target: f64) {
@@ -149,6 +164,10 @@ impl QueuePage {
         // Exit selection mode before resetting the model
         self.set_selection_mode(false);
 
+        // TODO: Use `self.view_pan_offset` to offset the visible item range
+        // TODO: Add a button to jump back to the playing item
+        // TODO: Decide when/whether to reset the pan offset
+
         let start = playing.saturating_sub(NUM_ITEMS_BEHIND);
         let end = (playing + NUM_ITEMS_AHEAD).min(queue.len());
 
@@ -159,6 +178,14 @@ impl QueuePage {
         );
 
         let repeat_mode = self.repeat_toggle.is_active();
+
+        self.view_further_up.set_visible(
+            repeat_mode || playing > NUM_ITEMS_BEHIND, //
+        );
+        self.view_further_down.set_visible(
+            repeat_mode || queue_length - playing > NUM_ITEMS_AHEAD, //
+        );
+
         let last_repeat_mode = self.last_repeat_mode.replace(repeat_mode);
         if repeat_mode && queue_length != 0 {
             let n_items_before = (NUM_ITEMS_BEHIND - (playing - start)).min(queue_length - 1);
@@ -521,6 +548,7 @@ impl QueuePage {
         let dragged_item_index = Rc::new(Cell::new(0));
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
         self.drag_widget.put(&drag_row, 0.0, 0.0);
+        let drag_offset_y = Rc::new(Cell::new(0.0));
 
         drag.connect_drag_begin(glib::clone!(
             #[weak(rename_to=queue_page)]
@@ -535,6 +563,8 @@ impl QueuePage {
             self.drag_widget,
             #[weak]
             drag_row,
+            #[weak]
+            drag_offset_y,
             #[weak]
             drag_container,
             #[weak]
@@ -557,11 +587,21 @@ impl QueuePage {
                     drag_row.to_default();
                 }
 
+                // IDEA: Could also offset by the cursor position relative to the row widget,
+                // so the dragged widget appears in the exact same position as the row itself
+                drag_offset_y.set(match &queue_page.view_further_up {
+                    button if button.is_visible() => {
+                        // If the queue "pan up" button is shown, widget position should be offset
+                        (button.height() + button.margin_bottom()) as f64
+                    }
+                    _ => 0.0,
+                });
+
                 drag_container.set_visible(true);
                 drag_widget.move_(
                     &drag_row,
                     start_x,
-                    start_y - scrolled_window.vadjustment().value(),
+                    start_y + drag_offset_y.get() - scrolled_window.vadjustment().value(),
                 );
             }
         ));
@@ -570,6 +610,8 @@ impl QueuePage {
             self,
             #[weak]
             drag_row,
+            #[strong]
+            drag_offset_y,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
                 let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
@@ -604,7 +646,8 @@ impl QueuePage {
                 queue_page.drag_widget.move_(
                     &drag_row,
                     start_x + offset_x,
-                    start_y + offset_y - queue_page.scrolled_window.vadjustment().value(),
+                    start_y + offset_y + drag_offset_y.get()
+                        - queue_page.scrolled_window.vadjustment().value(),
                 );
             }
         ));
