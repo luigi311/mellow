@@ -745,9 +745,9 @@ impl Player {
                     let QueueItem::Song(song) = self.queue.current() else {
                         return;
                     };
-                    let mut info = song.info();
+                    let info = song.info();
                     if error.contains(&info.file_uri()) {
-                        info.unload_basic(); // Causes song info to be re-read from the file
+                        // info.unload_basic(); // Causes song info to be re-read from the file
 
                         // NOTE: Seeking to (or close to) 0 sometimes causes a gstreamer error:
                         // gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed
