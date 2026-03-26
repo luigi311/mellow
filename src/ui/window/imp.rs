@@ -363,9 +363,22 @@ impl Window {
         );
     }
     fn queue_song_loaded(&self, index: usize, song: SharedSong) {
-        if index >= self.song_queue.borrow().len() {
+        let song_queue = self.song_queue.borrow();
+        if index >= song_queue.len() {
             return;
         }
+
+        // Ensure the queue item hasn't changed before the message was handled
+        // SAFETY: Just checked if it is within bounds
+        let QueueItem::Song(cmp_song) = (unsafe { song_queue.get_unchecked(index) }) else {
+            return;
+        };
+        if !Arc::ptr_eq(&song, cmp_song) {
+            #[cfg(debug_assertions)]
+            println!("Queue thumbnail not set, because the queue item at {index} has changed");
+            return;
+        }
+
         let info = song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             println!("⚠️ {index}: queue song thumbnail would block; retrying later...");
