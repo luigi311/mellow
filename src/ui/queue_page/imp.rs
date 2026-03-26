@@ -587,15 +587,20 @@ impl QueuePage {
                     drag_row.to_default();
                 }
 
-                // IDEA: Could also offset by the cursor position relative to the row widget,
-                // so the dragged widget appears in the exact same position as the row itself
-                drag_offset_y.set(match &queue_page.view_further_up {
-                    button if button.is_visible() => {
+                // IDEA: Find and use the X position or offset to align the drag widget with the row
+                // drag_offset_x.set(start_x);
+
+                drag_offset_y.set(
+                    match &queue_page.view_further_up {
                         // If the queue "pan up" button is shown, widget position should be offset
-                        (button.height() + button.margin_bottom()) as f64
-                    }
-                    _ => 0.0,
-                });
+                        button if button.is_visible() => {
+                            (button.height() + button.margin_bottom()) as f64
+                        }
+                        _ => 0.0,
+                    } + list_box.parent().unwrap().margin_top() as f64
+                        // Align the drag widget Y position with the dragged row
+                        - start_y % ROW_HEIGHT as f64,
+                );
 
                 drag_container.set_visible(true);
                 drag_widget.move_(
