@@ -593,38 +593,70 @@ impl QueuePage {
                 // FIX: The cursor does not update until the mouse button is released
                 list_box.set_cursor_from_name(Some("grabbing"));
 
-                // NOTE: For some reason, `margin_top` has to be
-                // acconted for differently when building with Meson
-                let list_box_margin_top = list_box.margin_top() as f64;
-                let start_y = start_y - list_box_margin_top;
+                fn set_fallback_offsets(
+                    drag_row: &ListRow,
+                    drag_offset_x: &Rc<Cell<f64>>,
+                    drag_offset_y: &Rc<Cell<f64>>,
+                    pan_up_button_visible: bool,
+                    list_box: &gtk::ListBox,
+                    start_y: f64,
+                ) {
+                    drag_row.to_default();
+                    drag_offset_x.set(0.0);
+                    drag_offset_y.set(
+                        (pan_up_button_visible as i32 * PAN_UP_BUTTON_HEIGHT
+                            + list_box.parent().unwrap().margin_top()
+                            + list_box.margin_top()) as f64
+                            // NOTE: The below line has issues when built with Meson, where
+                            // rows further down the list become more and more inaccurate
+                            // (but `cargo build --features no-meson` works correctly)
+                            // This code will likely never run, so fixing this may not be
+                            // worth the effort
+                            - start_y % ROW_HEIGHT as f64
+                            - 4.0,
+                    );
+                }
+
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
                     let row = row.downcast_ref::<ListRow>().unwrap();
                     dragged_item_index.set(queue_page.model_index_to_queue(row.index() as usize));
                     drag_row.copy_from(row);
                     drag_row.set_width_request(row.width() + 2);
                     drag_row.set_height_request(row.height() + 2);
-                    if let Some(point) = drag_container
-                        .compute_point(row, &graphene::Point::new(start_x as f32, 0.0))
-                    {
+                    if let Some(point) = drag_container.compute_point(
+                        row,
+                        &graphene::Point::new(
+                            start_x as f32,
+                            (start_y - scrolled_window.vadjustment().value()) as f32,
+                        ),
+                    ) {
                         drag_offset_x.set(-point.x() as f64 - 1.0);
+                        drag_offset_y.set(-point.y() as f64 - 1.0);
+                    } else {
+                        set_fallback_offsets(
+                            &drag_row,
+                            &drag_offset_x,
+                            &drag_offset_y,
+                            queue_page.view_further_up.is_visible(),
+                            &list_box,
+                            start_y,
+                        );
                     }
                 } else {
-                    drag_row.to_default();
+                    set_fallback_offsets(
+                        &drag_row,
+                        &drag_offset_x,
+                        &drag_offset_y,
+                        queue_page.view_further_up.is_visible(),
+                        &list_box,
+                        start_y,
+                    );
                 }
-
-                drag_offset_y.set(
-                    (queue_page.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT
-                        + (list_box.parent().unwrap().margin_top())) as f64
-                        + list_box_margin_top
-                        - start_y % ROW_HEIGHT as f64
-                        - 1.0,
-                );
 
                 drag_widget.move_(
                     &drag_row,
                     start_x + drag_offset_x.get(),
-                    start_y + drag_offset_y.get() + list_box_margin_top + 4.0
-                        - scrolled_window.vadjustment().value(),
+                    start_y + drag_offset_y.get() - scrolled_window.vadjustment().value(),
                 );
 
                 drag_container.set_visible(true);
@@ -640,7 +672,7 @@ impl QueuePage {
             #[strong]
             drag_offset_y,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
-                let (Some((start_x, mut start_y)), Some((_, offset_y))) =
+                let (Some((start_x, start_y)), Some((_, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
                 else {
                     return;
@@ -649,7 +681,6 @@ impl QueuePage {
                     return;
                 }
 
-                start_y += queue_page.list_box.margin_top() as f64;
                 if let Some(to_row_index) = (queue_page.list_box)
                     .row_at_y((start_y + offset_y) as i32)
                     .map(|row| row.index())
