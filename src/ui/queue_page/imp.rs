@@ -14,7 +14,7 @@ use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;
 const ROW_HEIGHT: usize = 55;
-const PAN_UP_BUTTON_HEIGHT: i32 = 50;
+const PAN_UP_BUTTON_HEIGHT: i32 = 44;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/queue_page.ui")]
@@ -148,6 +148,7 @@ impl QueuePage {
         if let Ok(model_index) = self.queue_index_to_model(index) {
             // FIX: Slight scroll jump when toggling shuffle at the very top of the queue
             // with no items behind, which only seems to happen in release builds
+            // (might be due to the row height consistency issues)
             self.scroll_to_pos(
                 (model_index * ROW_HEIGHT) as f64
                     + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT) as f64,
@@ -223,9 +224,8 @@ impl QueuePage {
         self.playing_index.set(playing);
 
         let last_up_button_visible = self.view_further_up.is_visible();
-        self.view_further_up.set_visible(
-            repeat_mode || playing > NUM_ITEMS_BEHIND, //
-        );
+        let up_button_visible = repeat_mode || playing > NUM_ITEMS_BEHIND;
+        self.view_further_up.set_visible(up_button_visible);
         self.view_further_down.set_visible(
             repeat_mode || queue_length - playing > NUM_ITEMS_AHEAD, //
         );
@@ -233,17 +233,18 @@ impl QueuePage {
         match self.next_scroll_pos.take() {
             // Re-apply the scroll position, because it resets on every change
             QueueScrollAction::Retain => self.scroll_to_pos({
-                let up_button_visible = self.view_further_up.is_visible();
                 self.scrolled_window.vadjustment().value()
-                    - (last_up_button_visible ^ up_button_visible) as u32 as f64
-                        * (-1_f64).powi(up_button_visible as i32)
+                    - ((last_up_button_visible ^ up_button_visible) as i32
+                        * ((-1_i32).pow(up_button_visible as u32) * PAN_UP_BUTTON_HEIGHT))
+                        as f64
             }),
             // Keep the same relative scroll position when repeat mode changes
             QueueScrollAction::Offset(offset) => self.scroll_to_pos(
+                // FIX: Incorrect offset when reordering the playing item if 'pan up' is visible
                 self.scrolled_window.vadjustment().value()
-                    + (-(-1_i32).pow(self.view_further_up.is_visible() as u32)
-                        * PAN_UP_BUTTON_HEIGHT
-                        + offset * ROW_HEIGHT as i32) as f64,
+                    + (last_up_button_visible ^ up_button_visible) as u32 as f64
+                        * (-(-1_i32).pow(up_button_visible as u32) * PAN_UP_BUTTON_HEIGHT
+                            + offset * ROW_HEIGHT as i32) as f64,
             ),
             // Scroll to the currently playing item
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
@@ -608,7 +609,7 @@ impl QueuePage {
                         // If the queue "pan up" button is shown, widget position should be offset
                         true => PAN_UP_BUTTON_HEIGHT as f64,
                         false => 0.0,
-                    } + list_box.parent().unwrap().margin_top() as f64
+                    } + (list_box.margin_top() + list_box.parent().unwrap().margin_top()) as f64
                         // Align the drag widget Y position with the dragged row
                         - start_y % ROW_HEIGHT as f64,
                 );
