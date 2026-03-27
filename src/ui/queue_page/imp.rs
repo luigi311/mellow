@@ -180,13 +180,6 @@ impl QueuePage {
 
         let repeat_mode = self.repeat_toggle.is_active();
 
-        self.view_further_up.set_visible(
-            repeat_mode || playing > NUM_ITEMS_BEHIND, //
-        );
-        self.view_further_down.set_visible(
-            repeat_mode || queue_length - playing > NUM_ITEMS_AHEAD, //
-        );
-
         let last_repeat_mode = self.last_repeat_mode.replace(repeat_mode);
         if repeat_mode && queue_length != 0 {
             let n_items_before = (NUM_ITEMS_BEHIND - (playing - start)).min(queue_length - 1);
@@ -224,11 +217,22 @@ impl QueuePage {
         self.queue_item_objects.replace(items);
         self.playing_index.set(playing);
 
+        let last_up_button_visible = self.view_further_up.is_visible();
+        self.view_further_up.set_visible(
+            repeat_mode || playing > NUM_ITEMS_BEHIND, //
+        );
+        self.view_further_down.set_visible(
+            repeat_mode || queue_length - playing > NUM_ITEMS_AHEAD, //
+        );
+
         match self.next_scroll_pos.take() {
             // Re-apply the scroll position, because it resets on every change
-            QueueScrollAction::Retain => self.scroll_to_pos(
-                self.scrolled_window.vadjustment().value(), // :)
-            ),
+            QueueScrollAction::Retain => self.scroll_to_pos({
+                let up_button_visible = self.view_further_up.is_visible();
+                self.scrolled_window.vadjustment().value()
+                    - (last_up_button_visible ^ up_button_visible) as u32 as f64
+                        * (-1_f64).powi(up_button_visible as i32)
+            }),
             // Keep the same relative scroll position when repeat mode changes
             QueueScrollAction::Offset(offset) => self.scroll_to_pos(
                 self.scrolled_window.vadjustment().value()
