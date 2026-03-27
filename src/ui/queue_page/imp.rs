@@ -148,8 +148,7 @@ impl QueuePage {
         if let Ok(model_index) = self.queue_index_to_model(index) {
             self.scroll_to_pos(
                 (model_index * ROW_HEIGHT) as f64
-                    - ((-1_i32).pow(self.view_further_up.is_visible() as u32)
-                        * PAN_UP_BUTTON_HEIGHT) as f64,
+                    + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT) as f64,
             );
 
             #[cfg(debug_assertions)]
