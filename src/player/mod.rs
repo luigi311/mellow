@@ -776,6 +776,7 @@ impl Player {
                 None,
             ))
             .expect(EXP_RX);
+        // TODO: Group repeated playback error notifications
         eprintln!("Skipping song because a playback issue was encountered");
         self.backend.set_state(State::Null).unwrap();
         // self.queue.remove_current();

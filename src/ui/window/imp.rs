@@ -441,6 +441,7 @@ impl Window {
         message: &str,
         undo_action: Option<Box<dyn Fn() + Send + 'static>>,
     ) {
+        // TODO: Group same notifications
         let toast = adw::Toast::builder()
             .use_markup(false)
             .title(message)

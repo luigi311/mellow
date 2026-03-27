@@ -146,6 +146,8 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
+            // FIX: Slight scroll jump when toggling shuffle at the very top of the queue
+            // with no items behind, which only seems to happen in release builds
             self.scroll_to_pos(
                 (model_index * ROW_HEIGHT) as f64
                     + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT) as f64,
