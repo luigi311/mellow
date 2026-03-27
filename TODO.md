@@ -1,6 +1,5 @@
-- FIX: Meson builds have issues with incorrect queue page widget positions
+UI issues:
 
-UI Issues:
 - `ListRow` (song queue):
   - FIX: Rows should have a fixed height, and not resize to fit the available space
   - FIX: The prefix image width should be the same regardless of the image aspect ratio
@@ -86,6 +85,7 @@ Music library:
 > Works, but the counting logic could be improved
 
 Other:
+
 - [x] Toast notifications
   - TODO: Notification for an upcoming "Pause & Close Player"
     (something like: "The player is scheduled to close shortly")
