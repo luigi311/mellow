@@ -106,15 +106,10 @@
                 <property name="child">
                   <object class="GtkOverlay">
                     <child type="overlay">
-                      <object class="AdwClamp">
+                      <object class="GtkBox">
                         <property name="visible">False</property>
                         <child>
-                          <object class="GtkFixed" id="drag_widget">
-                            <!-- <property name="opacity">0.8</property> -->
-                            <!-- <style> -->
-                              <!-- <class name="card"/> -->
-                            <!-- </style> -->
-                          </object>
+                          <object class="GtkFixed" id="drag_widget"/>
                         </child>
                       </object>
                     </child>

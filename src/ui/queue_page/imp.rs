@@ -606,7 +606,7 @@ impl QueuePage {
                     if let Some(point) = drag_container
                         .compute_point(row, &graphene::Point::new(start_x as f32, 0.0))
                     {
-                        drag_offset_x.set(-point.x() as f64 - 2.0);
+                        drag_offset_x.set(-point.x() as f64 - 1.0);
                     }
                 } else {
                     drag_row.to_default();
@@ -616,7 +616,8 @@ impl QueuePage {
                     (queue_page.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT
                         + (list_box.parent().unwrap().margin_top())) as f64
                         + list_box_margin_top
-                        - start_y % ROW_HEIGHT as f64,
+                        - start_y % ROW_HEIGHT as f64
+                        - 1.0,
                 );
 
                 drag_widget.move_(
@@ -639,7 +640,7 @@ impl QueuePage {
             #[strong]
             drag_offset_y,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
-                let (Some((start_x, mut start_y)), Some((offset_x, offset_y))) =
+                let (Some((start_x, mut start_y)), Some((_, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
                 else {
                     return;
@@ -672,7 +673,7 @@ impl QueuePage {
 
                 queue_page.drag_widget.move_(
                     &drag_row,
-                    start_x + drag_offset_x.get() + offset_x, // `+ offset_x` could be removed(?)
+                    start_x + drag_offset_x.get(),
                     start_y + drag_offset_y.get() + offset_y
                         - queue_page.scrolled_window.vadjustment().value(),
                 );
