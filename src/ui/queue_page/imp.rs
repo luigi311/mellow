@@ -14,6 +14,7 @@ use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;
 const ROW_HEIGHT: usize = 55;
+const PAN_UP_BUTTON_HEIGHT: i32 = 50;
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/queue_page.ui")]
@@ -230,7 +231,10 @@ impl QueuePage {
             ),
             // Keep the same relative scroll position when repeat mode changes
             QueueScrollAction::Offset(offset) => self.scroll_to_pos(
-                self.scrolled_window.vadjustment().value() + (offset * ROW_HEIGHT as i32) as f64,
+                self.scrolled_window.vadjustment().value()
+                    + (-(-1_i32).pow(self.view_further_up.is_visible() as u32)
+                        * PAN_UP_BUTTON_HEIGHT
+                        + offset * ROW_HEIGHT as i32) as f64,
             ),
             // Scroll to the currently playing item
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
@@ -591,12 +595,10 @@ impl QueuePage {
                 // drag_offset_x.set(start_x);
 
                 drag_offset_y.set(
-                    match &queue_page.view_further_up {
+                    match queue_page.view_further_up.is_visible() {
                         // If the queue "pan up" button is shown, widget position should be offset
-                        button if button.is_visible() => {
-                            (button.height() + button.margin_bottom()) as f64
-                        }
-                        _ => 0.0,
+                        true => PAN_UP_BUTTON_HEIGHT as f64,
+                        false => 0.0,
                     } + list_box.parent().unwrap().margin_top() as f64
                         // Align the drag widget Y position with the dragged row
                         - start_y % ROW_HEIGHT as f64,
