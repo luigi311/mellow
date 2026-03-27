@@ -240,11 +240,10 @@ impl QueuePage {
             }),
             // Keep the same relative scroll position when repeat mode changes
             QueueScrollAction::Offset(offset) => self.scroll_to_pos(
-                // FIX: Incorrect offset when reordering the playing item if 'pan up' is visible
                 self.scrolled_window.vadjustment().value()
-                    + (last_up_button_visible ^ up_button_visible) as u32 as f64
-                        * (-(-1_i32).pow(up_button_visible as u32) * PAN_UP_BUTTON_HEIGHT
-                            + offset * ROW_HEIGHT as i32) as f64,
+                    + ((last_up_button_visible ^ up_button_visible) as i32
+                        * (-(-1_i32).pow(up_button_visible as u32) * PAN_UP_BUTTON_HEIGHT)
+                        + offset * ROW_HEIGHT as i32) as f64,
             ),
             // Scroll to the currently playing item
             QueueScrollAction::ToPlaying => self.scroll_to_item(playing),
