@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use core::cell::{Cell, OnceCell, RefCell};
 use gtk::CompositeTemplate;
-use gtk::{gdk, gio, glib};
+use gtk::{gdk, gio, glib, graphene};
 use std::rc::Rc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
@@ -561,6 +561,7 @@ impl QueuePage {
         let dragged_item_index = Rc::new(Cell::new(0));
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
         self.drag_widget.put(&drag_row, 0.0, 0.0);
+        let drag_offset_x = Rc::new(Cell::new(0.0));
         let drag_offset_y = Rc::new(Cell::new(0.0));
 
         drag.connect_drag_begin(glib::clone!(
@@ -576,6 +577,8 @@ impl QueuePage {
             self.drag_widget,
             #[weak]
             drag_row,
+            #[weak]
+            drag_offset_x,
             #[weak]
             drag_offset_y,
             #[weak]
@@ -596,12 +599,14 @@ impl QueuePage {
                     drag_row.copy_from(row);
                     drag_row.set_width_request(row.width() + 2);
                     drag_row.set_height_request(row.height() + 2);
+                    if let Some(point) = drag_container
+                        .compute_point(row, &graphene::Point::new(start_x as f32, 0.0))
+                    {
+                        drag_offset_x.set(-point.x() as f64 - 2.0);
+                    }
                 } else {
                     drag_row.to_default();
                 }
-
-                // IDEA: Find and use the X position or offset to align the drag widget with the row
-                // drag_offset_x.set(start_x);
 
                 drag_offset_y.set(
                     match queue_page.view_further_up.is_visible() {
@@ -616,7 +621,7 @@ impl QueuePage {
                 drag_container.set_visible(true);
                 drag_widget.move_(
                     &drag_row,
-                    start_x,
+                    start_x + drag_offset_x.get(),
                     start_y + drag_offset_y.get() - scrolled_window.vadjustment().value(),
                 );
             }
@@ -626,6 +631,8 @@ impl QueuePage {
             self,
             #[weak]
             drag_row,
+            #[strong]
+            drag_offset_x,
             #[strong]
             drag_offset_y,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
@@ -661,8 +668,8 @@ impl QueuePage {
 
                 queue_page.drag_widget.move_(
                     &drag_row,
-                    start_x + offset_x,
-                    start_y + offset_y + drag_offset_y.get()
+                    start_x + drag_offset_x.get() + offset_x, // `+ offset_x` could be removed(?)
+                    start_y + drag_offset_y.get() + offset_y
                         - queue_page.scrolled_window.vadjustment().value(),
                 );
             }
