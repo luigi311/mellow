@@ -146,12 +146,12 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
-            // FIX: Slight scroll jump when toggling shuffle at the very top of the queue
-            // with no items behind, which only seems to happen in Meson builds
-            // (might be due to the row height consistency issues)
             self.scroll_to_pos(
                 (model_index * ROW_HEIGHT) as f64
-                    + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT) as f64,
+                    + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT
+                        // NOTE: For some reason, `margin_top` only has
+                        // to be acconted for when building with Meson
+                        - self.list_box.margin_top()) as f64,
             );
 
             #[cfg(debug_assertions)]
@@ -593,6 +593,10 @@ impl QueuePage {
                 // FIX: The cursor does not update until the mouse button is released
                 list_box.set_cursor_from_name(Some("grabbing"));
 
+                // NOTE: For some reason, `margin_top` has to be
+                // acconted for differently when building with Meson
+                let list_box_margin_top = list_box.margin_top() as f64;
+                let start_y = start_y - list_box_margin_top;
                 if let Some(row) = list_box.row_at_y(start_y as i32) {
                     let row = row.downcast_ref::<ListRow>().unwrap();
                     dragged_item_index.set(queue_page.model_index_to_queue(row.index() as usize));
@@ -609,22 +613,20 @@ impl QueuePage {
                 }
 
                 drag_offset_y.set(
-                    // FIX: Incorrect offset in Meson builds
-                    match queue_page.view_further_up.is_visible() {
-                        // If the queue "pan up" button is shown, widget position should be offset
-                        true => PAN_UP_BUTTON_HEIGHT as f64,
-                        false => 0.0,
-                    } + (list_box.margin_top() + list_box.parent().unwrap().margin_top()) as f64
-                        // Align the drag widget Y position with the dragged row
+                    (queue_page.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT
+                        + (list_box.parent().unwrap().margin_top())) as f64
+                        + list_box_margin_top
                         - start_y % ROW_HEIGHT as f64,
                 );
 
-                drag_container.set_visible(true);
                 drag_widget.move_(
                     &drag_row,
                     start_x + drag_offset_x.get(),
-                    start_y + drag_offset_y.get() - scrolled_window.vadjustment().value(),
+                    start_y + drag_offset_y.get() + list_box_margin_top + 4.0
+                        - scrolled_window.vadjustment().value(),
                 );
+
+                drag_container.set_visible(true);
             }
         ));
         drag.connect_update(glib::clone!(
@@ -637,7 +639,7 @@ impl QueuePage {
             #[strong]
             drag_offset_y,
             move |gesture_drag, _| if !queue_page.selection_mode.get() {
-                let (Some((start_x, start_y)), Some((offset_x, offset_y))) =
+                let (Some((start_x, mut start_y)), Some((offset_x, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
                 else {
                     return;
@@ -646,12 +648,13 @@ impl QueuePage {
                     return;
                 }
 
+                start_y += queue_page.list_box.margin_top() as f64;
                 if let Some(to_row_index) = (queue_page.list_box)
                     .row_at_y((start_y + offset_y) as i32)
                     .map(|row| row.index())
                 {
                     let from_row_index = (queue_page.list_box)
-                        .row_at_y((start_y) as i32)
+                        .row_at_y(start_y as i32)
                         .map(|row| row.index())
                         .unwrap_or_default();
                     queue_page.for_each_row(|list_row, index| {
@@ -696,7 +699,9 @@ impl QueuePage {
                 list_box.set_cursor(None);
 
                 let start_y = match gesture_drag.start_point() {
-                    Some((start_x, start_y)) if Self::should_drag(start_x) => start_y,
+                    Some((start_x, start_y)) if Self::should_drag(start_x) => {
+                        start_y + queue_page.list_box.margin_top() as f64
+                    }
                     _ => return,
                 };
                 let end_y = match gesture_drag.offset() {
