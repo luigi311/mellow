@@ -1,3 +1,5 @@
+- FIX: Meson builds have issues with incorrect queue page widget positions
+
 UI Issues:
 - `ListRow` (song queue):
   - FIX: Rows should have a fixed height, and not resize to fit the available space

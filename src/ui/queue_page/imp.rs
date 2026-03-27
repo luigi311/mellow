@@ -147,7 +147,7 @@ impl QueuePage {
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
             // FIX: Slight scroll jump when toggling shuffle at the very top of the queue
-            // with no items behind, which only seems to happen in release builds
+            // with no items behind, which only seems to happen in Meson builds
             // (might be due to the row height consistency issues)
             self.scroll_to_pos(
                 (model_index * ROW_HEIGHT) as f64
@@ -609,6 +609,7 @@ impl QueuePage {
                 }
 
                 drag_offset_y.set(
+                    // FIX: Incorrect offset in Meson builds
                     match queue_page.view_further_up.is_visible() {
                         // If the queue "pan up" button is shown, widget position should be offset
                         true => PAN_UP_BUTTON_HEIGHT as f64,
