@@ -60,6 +60,7 @@ impl SettingsPage {
         style_manager: adw::StyleManager,
         style_main: Vec<gtk::Widget>,
         style_menu: Vec<gtk::Widget>,
+        style_soft: Vec<gtk::Widget>,
     ) {
         let imp = self.imp();
         // TODO: Detect system color scheme
@@ -73,6 +74,7 @@ impl SettingsPage {
         }
         imp.style_main.replace(style_main);
         imp.style_menu.replace(style_menu);
+        imp.style_soft.replace(style_soft);
     }
 
     /// Returns the current value of the volume slider

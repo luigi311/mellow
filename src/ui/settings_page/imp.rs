@@ -61,6 +61,7 @@ pub struct SettingsPage {
 
     pub style_main: RefCell<Vec<gtk::Widget>>,
     pub style_menu: RefCell<Vec<gtk::Widget>>,
+    pub style_soft: RefCell<Vec<gtk::Widget>>,
     pub has_style: Cell<bool>,
 }
 
@@ -194,6 +195,9 @@ impl SettingsPage {
         for widget in self.style_menu.borrow().iter() {
             widget.add_css_class("color-menu");
         }
+        for widget in self.style_soft.borrow().iter() {
+            widget.add_css_class("soft-menu");
+        }
 
         self.has_style.set(true);
     }
@@ -207,6 +211,9 @@ impl SettingsPage {
         }
         for widget in self.style_menu.borrow().iter() {
             widget.remove_css_class("color-menu");
+        }
+        for widget in self.style_soft.borrow().iter() {
+            widget.remove_css_class("soft-menu");
         }
 
         self.has_style.set(false);
@@ -383,6 +390,12 @@ impl SettingsPage {
         let r_dark = (r / 2).saturating_sub(4);
         let g_dark = (g / 2).saturating_sub(4);
         let b_dark = (b / 2).saturating_sub(4);
+        let r_soft = r_dark.saturating_sub(4);
+        let g_soft = g_dark.saturating_sub(4);
+        let b_soft = b_dark.saturating_sub(4);
+
+        // FIX: The `soft-menu` transparency does not look good for player controls
+        // when using a light theme
 
         css.load_from_string(&format!(
             ".color-main {{
@@ -395,9 +408,11 @@ impl SettingsPage {
              .color-menu {{
                  background-color: rgba({r_dark}, {g_dark}, {b_dark}, 1);
              }}
+             .soft-menu {{
+                 background-color: rgba({r_soft}, {g_soft}, {b_soft}, 0.75);
+             }}
              .highlight-top {{
                  border-color: rgba({r_highlight}, {g_highlight}, {b_highlight}, 1);
-                 border-top: 4px;
              }}
             ",
         ));

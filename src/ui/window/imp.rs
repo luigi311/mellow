@@ -96,6 +96,7 @@ impl Window {
                 self.sheet_content.get().upcast::<gtk::Widget>(),
                 (self.main_player.imp().media_controls.get()).upcast::<gtk::Widget>(),
             ],
+            vec![(self.queue_page.imp().drag_row.get().unwrap().clone()).upcast::<gtk::Widget>()],
         );
     }
 

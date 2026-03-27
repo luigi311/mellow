@@ -57,6 +57,8 @@ pub struct QueuePage {
     pub song_page: OnceCell<QueueSubpage>,
     list_model: OnceCell<gio::ListStore>,
     pub next_scroll_pos: Cell<QueueScrollAction>,
+
+    pub drag_row: OnceCell<ListRow>,
 }
 
 #[derive(Debug)]
@@ -556,7 +558,7 @@ impl QueuePage {
     fn setup_drag_and_drop(&self) {
         let drag = gtk::GestureDrag::new();
         let drag_row = ListRow::default();
-        drag_row.add_css_class("color-menu");
+        drag_row.add_css_class("osd");
         let drag_container = self.drag_widget.parent().unwrap();
         let dragged_item_index = Rc::new(Cell::new(0));
         self.drag_widget.set_cursor_from_name(Some("grabbing"));
@@ -767,6 +769,7 @@ impl QueuePage {
             }
         ));
         self.list_box.add_controller(drag);
+        let _ = self.drag_row.set(drag_row);
     }
     #[inline]
     fn setup_selection_mode(&self) {
