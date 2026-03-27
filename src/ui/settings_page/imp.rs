@@ -394,8 +394,9 @@ impl SettingsPage {
         let g_soft = g_dark.saturating_sub(4);
         let b_soft = b_dark.saturating_sub(4);
 
-        // FIX: The `soft-menu` transparency does not look good for player controls
-        // when using a light theme
+        // NOTE: The `soft-menu` style could be used for player controls if transparency
+        // amount would change with the luminance value, but it currently has contrast
+        // issues when using a light theme
 
         css.load_from_string(&format!(
             ".color-main {{
