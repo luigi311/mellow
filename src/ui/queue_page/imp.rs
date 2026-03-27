@@ -146,7 +146,11 @@ impl QueuePage {
     #[inline]
     pub fn scroll_to_item(&self, index: usize) {
         if let Ok(model_index) = self.queue_index_to_model(index) {
-            self.scroll_to_pos((model_index * ROW_HEIGHT) as f64);
+            self.scroll_to_pos(
+                (model_index * ROW_HEIGHT) as f64
+                    - ((-1_i32).pow(self.view_further_up.is_visible() as u32)
+                        * PAN_UP_BUTTON_HEIGHT) as f64,
+            );
 
             #[cfg(debug_assertions)]
             self.model_index_to_queue_discrepancy_check(model_index, index);
