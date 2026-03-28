@@ -9,15 +9,15 @@ use std::sync::Arc;
 use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::MUSIC_DIR;
-use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
+use crate::excuses::{ACTION_ERR, EXP_RX};
 use crate::library::{Albums, Artists, SharedAlbum, SharedArtist, SharedSong, Songs, ToQueue};
-use crate::library::{LIBRARY_TX, Library, LibraryRequest};
+use crate::library::{Library, LibraryRequest, library_tx};
+use crate::music_dir;
 use crate::player::QueueItem;
 use crate::ui::{AlbumPage, AlbumsPage, ArtistPage, ArtistsPage, SongPage, SongsPage};
 use crate::ui::{LibraryPage, LyricsPage, MainPlayer, SettingsPage, SubpageType};
 use crate::ui::{QueuePage, QueueSubpage};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/window.ui")]
@@ -209,9 +209,9 @@ impl Window {
             }
             _ => {
                 let song = Arc::clone(song);
-                Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+                Library::run_task(library_tx(), move || {
                     drop(song.info().load_detailed());
-                    let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::SongInfo);
+                    let _ = ui_tx().send(UpdateUI::SongInfo);
                 });
                 (None, false)
             }
@@ -325,10 +325,9 @@ impl Window {
             // with thumbnails not showing up, uncomment the code below.
 
             // println!("⚠️ {index}: library song thumbnail would block; retrying later...");
-            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            // Library::run_task(library_tx(), move || {
             //     thread::sleep(Duration::from_millis(30));
-            //     let _ =
-            //         (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::LibrarySongLoaded(index, song));
+            //     let _ = ui_tx().send(UpdateUI::LibrarySongLoaded(index, song));
             // });
             return;
         };
@@ -346,10 +345,9 @@ impl Window {
             // with thumbnails not showing up, uncomment the code below.
 
             // println!("⚠️ {index}: library album thumbnail would block; retrying later...");
-            // Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            // Library::run_task(library_tx(), move || {
             //     thread::sleep(Duration::from_millis(30));
-            //     let _ = (UI_TX.get().expect(EXP_INIT))
-            //         .send(UpdateUI::LibraryAlbumLoaded(index, first_song));
+            //     let _ = ui_tx().send(UpdateUI::LibraryAlbumLoaded(index, first_song));
             // });
             return;
         };
@@ -383,9 +381,9 @@ impl Window {
         let info = song.info();
         let Ok(thumbnail) = info.try_inspect_thumbnail() else {
             println!("⚠️ {index}: queue song thumbnail would block; retrying later...");
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+            Library::run_task(library_tx(), move || {
                 thread::sleep(Duration::from_millis(30));
-                let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::QueueSongLoaded(index, song));
+                let _ = ui_tx().send(UpdateUI::QueueSongLoaded(index, song));
             });
             return;
         };
@@ -477,15 +475,14 @@ impl ObjectSubclass for Window {
                 .modal(true)
                 .default_filter(&filter)
                 .accept_label("Add Library")
-                .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
+                .initial_folder(&gio::File::for_path(music_dir()))
                 .build();
 
             if let Ok(dir) = library_picker.select_folder_future(Some(&window)).await {
-                (LIBRARY_TX.get().expect(EXP_INIT))
-                    .send(LibraryRequest::AddLibrary(
-                        dir.path().unwrap().to_str().unwrap().into(),
-                    ))
-                    .expect(EXP_RX);
+                (library_tx().send(LibraryRequest::AddLibrary(
+                    dir.path().unwrap().to_str().unwrap().into(),
+                )))
+                .expect(EXP_RX);
             }
         });
 
@@ -497,7 +494,7 @@ impl ObjectSubclass for Window {
                 .modal(true)
                 .default_filter(&filter)
                 .accept_label("Play Now")
-                .initial_folder(&gio::File::for_path(MUSIC_DIR.get().expect(EXP_INIT)))
+                .initial_folder(&gio::File::for_path(music_dir()))
                 .build();
 
             // TODO: If possible, allow files _or_ folders
@@ -514,9 +511,7 @@ impl ObjectSubclass for Window {
                     index += 1;
                 }
                 dbg!(&paths);
-                (LIBRARY_TX.get().expect(EXP_INIT))
-                    .send(LibraryRequest::QueueFromPaths(paths.into()))
-                    .expect(EXP_RX);
+                (library_tx().send(LibraryRequest::QueueFromPaths(paths.into()))).expect(EXP_RX);
             }
         });
     }

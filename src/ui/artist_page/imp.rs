@@ -2,10 +2,9 @@ use adw::subclass::prelude::*;
 use core::cell::{Cell, RefCell};
 use gtk::{CompositeTemplate, glib};
 
-use crate::excuses::EXP_INIT;
 use crate::library::{SharedArtist, ToQueue, ToShuffledQueue};
-use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::player::{PlayerRequest, player_tx};
+use crate::ui::{UpdateUI, ui_tx};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/artist_page.ui")]
@@ -41,34 +40,34 @@ impl ArtistPage {
     }
     #[template_callback]
     pub fn play_sequential(&self) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         let _ = player_tx.send(PlayerRequest::LoadQueue(
             self.artist.borrow().as_ref().unwrap().to_queue(),
             None,
             0,
         ));
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         let _ = ui_tx.send(UpdateUI::OpenSheet(false));
         let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[template_callback]
     pub fn play_shuffled(&self) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         let _ = player_tx.send(PlayerRequest::LoadQueue(
             self.artist.borrow().as_ref().unwrap().to_shuffled_queue(),
             None,
             0,
         ));
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         let _ = ui_tx.send(UpdateUI::OpenSheet(false));
         let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
     #[inline]
     pub fn add_to_queue(&self) {
-        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
-        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(
+        let _ = ui_tx().send(UpdateUI::RunAction("ui.library_nav_pop"));
+        let _ = player_tx().send(PlayerRequest::AppendQueue(
             self.artist.borrow().as_ref().unwrap().to_queue(),
         ));
     }

@@ -10,9 +10,9 @@ use std::time::{Duration, Instant};
 use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Albums, ToQueue, ToShuffledQueue};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::player::{PlayerRequest, player_tx};
 use crate::ui::{AlbumObject, AlbumOrdering, ItemTile, SortConfig};
-use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::ui::{UpdateUI, fallback_album_image, ui_tx};
 use crate::util::search;
 
 #[derive(Default, CompositeTemplate)]
@@ -71,7 +71,7 @@ impl AlbumsPage {
             );
         }
 
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         player_tx
             .send(PlayerRequest::LoadQueue(
                 match self.shuffle.get() {
@@ -83,7 +83,7 @@ impl AlbumsPage {
             ))
             .expect(EXP_RX);
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
@@ -284,9 +284,7 @@ impl ObjectImpl for AlbumsPage {
                 .downcast_ref::<AlbumObject>()
                 .unwrap()
                 .shared_album();
-            (UI_TX.get().expect(EXP_INIT))
-                .send(UpdateUI::AlbumPage(album))
-                .expect(EXP_RX);
+            ui_tx().send(UpdateUI::AlbumPage(album)).expect(EXP_RX);
         });
 
         let factory = gtk::SignalListItemFactory::new();

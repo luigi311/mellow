@@ -11,10 +11,10 @@ use lofty::file::TaggedFile;
 use lofty::prelude::*;
 use lofty::probe::Probe;
 
+use crate::cache_dir;
 use crate::excuses::EXP_INIT;
 use crate::library::SharedAlbum;
-use crate::util::{deserialize, serialize, serialize_list};
-use crate::{CACHE_DIR, util::unescaped_split};
+use crate::util::{deserialize, serialize, serialize_list, unescaped_split};
 
 pub struct Song {
     album: Mutex<Option<SharedAlbum>>,
@@ -292,18 +292,10 @@ impl SongInfoLoader<'_> {
         hasher.finish().to_string()
     }
     /// Returns this song's thumbnail file path
-    ///
-    /// # Panics
-    /// Panics if `CACHE_DIR` is uninitialized
     #[inline]
     #[must_use]
     pub fn thumbnail_file_path(&self) -> String {
-        [
-            CACHE_DIR.get().expect(EXP_INIT),
-            "thumbnails/",
-            &self.uri_hash(),
-        ]
-        .concat()
+        [cache_dir(), "thumbnails/", &self.uri_hash()].concat()
     }
     /// Returns the full song file path
     ///

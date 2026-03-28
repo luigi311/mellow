@@ -46,6 +46,7 @@ pub const UI_TIMEOUT: Duration = Duration::from_millis(1000 / 60);
 ///
 /// # Panics
 /// The function panics if user directories are not valid UTF-8
+#[inline]
 pub fn init_globals() {
     let _ = CACHE_DIR.set([user_cache_dir().to_str().unwrap(), "/mellow/"].concat());
     let _ = CONFIG_DIR.set([user_config_dir().to_str().unwrap(), "/mellow/"].concat());
@@ -53,4 +54,38 @@ pub fn init_globals() {
         || [home_dir().to_str().unwrap(), "/Music/"].concat(),
         |dir| dir.to_str().unwrap().to_owned(),
     ));
+}
+
+#[inline]
+#[must_use]
+pub fn music_dir() -> &'static String {
+    // SAFETY: `init_globals` is called in `main`, before the application starts
+    unsafe { MUSIC_DIR.get().unwrap_unchecked() }
+}
+#[inline]
+#[must_use]
+pub fn cache_dir() -> &'static String {
+    // SAFETY: `init_globals` is called in `main`, before the application starts
+    unsafe { CACHE_DIR.get().unwrap_unchecked() }
+}
+#[inline]
+#[must_use]
+pub fn config_dir() -> &'static String {
+    // SAFETY: `init_globals` is called in `main`, before the application starts
+    unsafe { CONFIG_DIR.get().unwrap_unchecked() }
+}
+#[inline]
+#[must_use]
+pub fn songs_file() -> String {
+    [config_dir(), "songs"].concat()
+}
+#[inline]
+#[must_use]
+pub fn queue_file() -> String {
+    [config_dir(), "queue"].concat()
+}
+#[inline]
+#[must_use]
+pub fn shuffled_queue_file() -> String {
+    [config_dir(), "shuffled_queue"].concat()
 }

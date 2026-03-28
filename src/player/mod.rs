@@ -5,7 +5,7 @@ use std::sync::{OnceLock, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_RX, INIT_ERR};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, init_ui_tx};
 
 pub mod queue_item;
 pub mod song_queue;
@@ -15,7 +15,17 @@ pub use song_queue::SongQueue;
 
 // TODO: MPRIS support for Gnome Shell media controls
 
-pub static PLAYER_TX: OnceLock<mpsc::Sender<PlayerRequest>> = OnceLock::new();
+static PLAYER_TX: OnceLock<mpsc::Sender<PlayerRequest>> = OnceLock::new();
+/// Returns the channel sender for sending requests to the player
+/// through `PlayerRequest`
+///
+/// # Panics
+/// The function panics if `PLAYER_TX` is uninitialized
+#[inline]
+pub fn player_tx() -> &'static mpsc::Sender<PlayerRequest> {
+    PLAYER_TX.get().unwrap( /* expected to be initialized */ )
+}
+
 pub enum PlayerRequest {
     /// Refresh local player state
     Update,
@@ -171,9 +181,7 @@ impl Player {
         PLAYER_TX
             .set(player_tx.clone())
             .expect("Only one instance of Player is allowed");
-        UI_TX
-            .set(ui_tx.clone())
-            .expect("Cannot initialize UI_TX multiple times");
+        init_ui_tx(ui_tx.clone());
 
         (
             Player {

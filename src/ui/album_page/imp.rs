@@ -4,11 +4,11 @@ use gtk::{CompositeTemplate, glib};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::EXP_RX;
 use crate::library::{SharedAlbum, ToQueue};
-use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::player::{PlayerRequest, QueueItem, player_tx};
 use crate::ui::Rating;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/album_page.ui")]
@@ -55,7 +55,7 @@ impl AlbumPage {
     }
     #[inline]
     pub fn play_now(queue: Vec<QueueItem>, shuffle: bool) {
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         let _ = player_tx.send(PlayerRequest::LoadQueue(
             queue,
             match shuffle {
@@ -65,7 +65,7 @@ impl AlbumPage {
             0,
         ));
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         let _ = ui_tx.send(UpdateUI::OpenSheet(false));
         let _ = ui_tx.send(UpdateUI::FocusPlaying);
     }
@@ -75,12 +75,12 @@ impl AlbumPage {
     }
     #[inline]
     pub fn add_to_queue(queue: Vec<QueueItem>) {
-        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::AppendQueue(queue));
+        let _ = player_tx().send(PlayerRequest::AppendQueue(queue));
     }
     #[inline]
     pub fn add_disc_to_queue(&self, disc_number: u32) {
         Self::add_to_queue(self.songs_from_disc(disc_number));
-        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::Notification(
+        let _ = ui_tx().send(UpdateUI::Notification(
             format!(
                 "Disc {disc_number} \"{}\" has been added to queue",
                 self.album_title.label()
@@ -102,11 +102,10 @@ impl AlbumPage {
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
-        (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::ArtistPage(
-                (self.album.borrow().as_ref().unwrap().lock().unwrap()).artist_cloned(),
-            ))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::ArtistPage(
+            (self.album.borrow().as_ref().unwrap().lock().unwrap()).artist_cloned(),
+        )))
+        .expect(EXP_RX);
     }
 }
 

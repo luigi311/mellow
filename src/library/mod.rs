@@ -21,13 +21,13 @@ pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
 use crate::UI_TIMEOUT;
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::library::album::NewSharedAlbum;
 use crate::library::artist::NewSharedArtist;
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 use crate::util::tasks::{BoxedTask, Runner};
-use crate::{CONFIG_DIR, util::visit_dirs};
+use crate::{songs_file, util::visit_dirs};
 
 type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
 
@@ -177,7 +177,26 @@ impl ToShuffledQueue for Artists {
     }
 }
 
-pub static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
+static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
+/// Returns the channel sender for sending requests to the library
+/// through `LibraryRequest`
+///
+/// # Panics
+/// The function panics if `LIBRARY_TX` is uninitialized
+#[inline]
+#[must_use]
+pub fn library_tx() -> &'static mpsc::Sender<LibraryRequest> {
+    LIBRARY_TX.get().unwrap( /* expected to be initialized */ )
+}
+/// Initializes the library channel sender accessed through `library_tx()`
+///
+/// # Panics
+/// The function panics if `LIBRARY_TX` has already been initialized
+#[inline]
+pub fn init_library_tx(library_tx: mpsc::Sender<LibraryRequest>) {
+    LIBRARY_TX.set(library_tx).expect(INIT_ERR);
+}
+
 pub enum LibraryRequest {
     Rebuild,
     CancelRebuild,
@@ -216,7 +235,7 @@ impl Library {
         ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     ) -> Library {
         let (tx, rx) = mpsc::channel();
-        LIBRARY_TX.set(tx).map_err(|_| INIT_ERR).unwrap();
+        init_library_tx(tx);
         let _ = ui_tx.send(UpdateUI::SetLibraryDirs(config.directories.clone().into()));
 
         Library {
@@ -346,8 +365,8 @@ impl Library {
         cancel: &Arc<AtomicBool>,
         num_workers: usize,
     ) -> Result<(), Box<dyn Error>> {
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let library_tx = library_tx();
+        let ui_tx = ui_tx();
         let num_tasks = num_workers - 2;
 
         Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
@@ -505,8 +524,8 @@ impl Library {
     ///   have been moved on disk
     ///
     /// # Panics
-    /// The function may panic if `LIBRARY_TX` is uninitialized,
-    /// or the channel is closed
+    /// The function may panic if the library channel is closed
+    /// or if a song's `Mutex` is in a poisoned state
     pub fn validate_songs(
         songs: &mut Songs,
         missing: &mut Songs,
@@ -697,7 +716,7 @@ impl Library {
         }
         drop(missing_rx);
 
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         let progress_step = 1.0 / check_moved.len() as f64;
         let mut progress = 0.0;
         let mut timer = Instant::now();
@@ -1014,10 +1033,7 @@ impl Library {
             .iter()
             .map(|song| song.serlialize() + "\n")
             .collect::<String>();
-        match fs::write(
-            [CONFIG_DIR.get().expect(EXP_INIT), "songs"].concat(),
-            serialized.trim(),
-        ) {
+        match fs::write(songs_file(), serialized.trim()) {
             Ok(()) => println!("Library song info has been successfully written to disk"),
             Err(e) => eprintln!("Problems writing the library state to disk: \n{e}"),
         }
@@ -1029,7 +1045,7 @@ impl Library {
     /// Reads from a file called `songs` in `self.config.dir`
     #[must_use]
     fn deserialize_songs(&self) -> Songs {
-        let Ok(data) = fs::read_to_string([&self.config.dir, "songs"].concat()) else {
+        let Ok(data) = fs::read_to_string(songs_file()) else {
             return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
         (data.split("\n\n").filter_map(SharedSong::deserialize)).collect()

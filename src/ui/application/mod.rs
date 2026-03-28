@@ -6,10 +6,10 @@ use tokio::sync::mpsc as tokio_mpsc;
 mod imp;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
-use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
+use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
 use crate::player::Player;
 use crate::ui::{UpdateUI, Window, actions};
-use crate::{MUSIC_DIR, about, util::unescaped_split};
+use crate::{about, music_dir, util::unescaped_split};
 
 glib::wrapper! {
     pub struct Application(ObjectSubclass<imp::Application>)
@@ -55,7 +55,7 @@ impl Application {
         let mut library = Library::init(
             LibraryConfig::new(match &*settings.string("directories") {
                 // The value ":" means "first launch"
-                ":" => vec![MUSIC_DIR.get().unwrap().clone()],
+                ":" => vec![music_dir().clone()],
                 dirs => unescaped_split(dirs, ','),
             }),
             player_tx,
@@ -104,9 +104,7 @@ impl Application {
             .iter()
             .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
             .collect();
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::QueueFromPaths(files))
-            .expect(EXP_RX);
+        (library_tx().send(LibraryRequest::QueueFromPaths(files))).expect(EXP_RX);
     }
 
     #[inline]

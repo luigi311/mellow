@@ -5,11 +5,11 @@ use gtk::{gdk, gio, glib, graphene};
 use std::rc::Rc;
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library};
-use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::library::{Library, library_tx};
+use crate::player::{PlayerRequest, QueueItem, player_tx};
 use crate::ui::queue_page::QueueScrollAction;
 use crate::ui::{ListRow, QueueItemObject, QueueSubpage};
-use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+use crate::ui::{UpdateUI, fallback_song_image, ui_tx};
 
 const NUM_ITEMS_AHEAD: usize = 45;
 const NUM_ITEMS_BEHIND: usize = 45;
@@ -68,21 +68,19 @@ struct ItemNotFoundError;
 impl QueuePage {
     #[template_callback]
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
-        (PLAYER_TX.get().expect(EXP_INIT))
+        player_tx()
             .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
-        (PLAYER_TX.get().expect(EXP_INIT))
+        player_tx()
             .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
             .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_open_library(&self) {
-        (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::FocusLibrary)
-            .expect(EXP_RX);
+        ui_tx().send(UpdateUI::FocusLibrary).expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_exit_selection(&self) {
@@ -107,21 +105,20 @@ impl QueuePage {
         if selected_items.is_empty() {
             return;
         }
-        let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::RemoveItems(
+        let _ = player_tx().send(PlayerRequest::RemoveItems(
             selected_items.iter().rev().map(|item| item.0).collect(),
         ));
         self.set_selection_mode(false);
 
-        (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::Notification(
-                format!("Removed {} items from the queue", selected_items.len()),
-                Some(Box::new(move || {
-                    let _ = (PLAYER_TX.get().expect(EXP_INIT)).send(PlayerRequest::InsertItems(
-                        selected_items.clone(), //
-                    ));
-                })),
-            ))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::Notification(
+            format!("Removed {} items from the queue", selected_items.len()),
+            Some(Box::new(move || {
+                let _ = player_tx().send(PlayerRequest::InsertItems(
+                    selected_items.clone(), //
+                ));
+            })),
+        )))
+        .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_pan_up(&self) {
@@ -255,7 +252,7 @@ impl QueuePage {
         if old_queue_length > 0 {
             // NOTE: If there are issues with queue artworks not appearing, try
             // disabling garbage collection to verify that it is working properly
-            Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), {
+            Library::run_task(library_tx(), {
                 let queue = queue.to_vec();
                 move || {
                     let len = queue.len() - 1;
@@ -530,15 +527,13 @@ impl QueuePage {
                 }
             }
 
-            let object_index = queue_item_object.index() as usize;
+            let index = queue_item_object.index() as usize;
             let selection_mode = Rc::clone(&selection_mode);
             queue_row.connect_activated(glib::clone!(
                 #[weak]
                 queue_item_object,
                 move |_| match selection_mode.get() {
-                    false => (UI_TX.get().expect(EXP_INIT))
-                        .send(UpdateUI::OpenQueueSubpage(object_index))
-                        .expect(EXP_RX),
+                    false => (ui_tx().send(UpdateUI::OpenQueueSubpage(index))).expect(EXP_RX),
                     true => queue_item_object.set_selected(!queue_item_object.selected()),
                 }
             ));
@@ -765,8 +760,7 @@ impl QueuePage {
                         _ => 0,
                     },
                 ));
-                (PLAYER_TX.get().expect(EXP_INIT))
-                    .send(PlayerRequest::Shift(from_index, (to - from) as isize))
+                (player_tx().send(PlayerRequest::Shift(from_index, (to - from) as isize)))
                     .expect(EXP_RX);
             }
         ));

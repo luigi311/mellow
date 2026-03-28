@@ -3,10 +3,9 @@ use glib::{Object, clone};
 use gtk::{Orientation, gdk, glib};
 use std::sync::{Arc, atomic::Ordering};
 
-use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, SharedAlbum};
-use crate::ui::ListRow;
-use crate::ui::{UI_TX, UpdateUI, fallback_album_image};
+use crate::excuses::EXP_RX;
+use crate::library::{Library, SharedAlbum, library_tx};
+use crate::ui::{ListRow, UpdateUI, fallback_album_image, ui_tx};
 use crate::util::{format_duration_minutes, format_duration_ms};
 
 mod imp;
@@ -31,7 +30,7 @@ impl AlbumPage {
     /// # Panics
     /// The function panics if any of the `album`'s `Mutex` or the `album.songs`'
     /// `RwLock`s are in a poisoned state. It may also panic at runtime upon
-    /// interaction if `UI_TX` is uninitialized, or the channel is closed.
+    /// interaction if the UI channel is closed.
     #[inline]
     #[must_use]
     pub fn new(album: &SharedAlbum, page_index: usize) -> AlbumPage {
@@ -86,7 +85,7 @@ impl AlbumPage {
             let song = Arc::clone(song);
             let album = Arc::clone(album);
             song_row.connect_activated(move |_| {
-                (UI_TX.get().expect(EXP_INIT))
+                ui_tx()
                     .send(UpdateUI::SongPage(Box::new((
                         i,
                         Arc::clone(&song),
@@ -148,7 +147,7 @@ impl AlbumPage {
 
             let song = Arc::clone(&songs[0]);
             let cancel = Arc::clone(&ui.cancel_artowrk_loading);
-            Library::run_task(LIBRARY_TX.get().expect(EXP_RX), move || {
+            Library::run_task(library_tx(), move || {
                 if cancel.load(Ordering::Relaxed) {
                     #[cfg(debug_assertions)]
                     println!("Arwork loading cancelled");
@@ -160,7 +159,7 @@ impl AlbumPage {
                     println!("Arwork assignment cancelled");
                     return;
                 }
-                let _ = (UI_TX.get().unwrap()).send(UpdateUI::AlbumPageLoaded(page_index, song));
+                let _ = ui_tx().send(UpdateUI::AlbumPageLoaded(page_index, song));
             });
 
             return album_page;
@@ -198,12 +197,9 @@ impl AlbumPage {
         imp::AlbumPage::play_now(self.imp().all_songs(), shuffle);
     }
     /// Adds all songs from the currently shown album to the player queue
-    ///
-    /// # Panics
-    /// Panics if `UI_TX` is uninitialized
     #[inline]
     pub fn add_to_queue(&self) {
-        let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
+        let _ = ui_tx().send(UpdateUI::RunAction("ui.library_nav_pop"));
         imp::AlbumPage::add_to_queue(self.imp().all_songs());
     }
 }

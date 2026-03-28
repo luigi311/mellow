@@ -2,8 +2,8 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::Orientation;
 use gtk::{gdk, glib};
 
-use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::excuses::EXP_RX;
+use crate::player::{PlayerRequest, player_tx};
 use crate::ui::fallback_song_image;
 use crate::util::format_duration_ms;
 
@@ -20,8 +20,8 @@ impl MainPlayer {
     /// Initializes the seek bar for the player UI
     ///
     /// # Panics
-    /// Panics at runtime upon interaction with the seek bar if
-    /// `PLAYER_RX` is uninitialized or if the channel is closed
+    /// Panics at runtime upon interaction with the seek
+    /// bar if the player channel is closed
     #[inline]
     pub fn init_seek(&self) {
         // Connect the seek bar `release` callback to resume playback after seeking
@@ -32,9 +32,7 @@ impl MainPlayer {
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
         release_seek_bar.connect_released(|_, _, _, _| {
-            (PLAYER_TX.get().expect(EXP_INIT))
-                .send(PlayerRequest::SeekDone)
-                .expect(EXP_RX);
+            player_tx().send(PlayerRequest::SeekDone).expect(EXP_RX);
         });
         (self.imp().seek_bar.parent().unwrap()).add_controller(release_seek_bar);
     }

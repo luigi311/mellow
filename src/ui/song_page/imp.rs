@@ -6,9 +6,9 @@ use std::sync::Arc;
 
 use crate::excuses::{ACTION_ERR, EXP_INIT, EXP_RX};
 use crate::library::{SharedSong, SharedSongExt, ToQueue};
-use crate::player::{PLAYER_TX, PlayerRequest, QueueItem};
+use crate::player::{PlayerRequest, QueueItem, player_tx};
 use crate::ui::Rating;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/io/github/userwithaname/Mellow/song_page.ui")]
@@ -33,34 +33,31 @@ impl SongPage {
     #[template_callback]
     pub fn handle_play_now(&self) {
         (self.obj().activate_action("ui.library_nav_pop", None)).expect(ACTION_ERR);
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::LoadQueue(
-                self.context.borrow().as_ref().expect(EXP_INIT).to_queue(),
-                None,
-                self.index.get(),
-            ))
-            .expect(EXP_RX);
+        let player_tx = player_tx();
+        (player_tx.send(PlayerRequest::LoadQueue(
+            self.context.borrow().as_ref().expect(EXP_INIT).to_queue(),
+            None,
+            self.index.get(),
+        )))
+        .expect(EXP_RX);
         (player_tx.send(PlayerRequest::TogglePlay(Some(true)))).expect(EXP_RX);
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_play_next(&self) {
         (self.obj().activate_action("ui.library_nav_pop", None)).expect(ACTION_ERR);
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::InsertRelative(Box::new((
-                1,
-                QueueItem::Song(Arc::clone(self.shared_song.borrow().as_ref().unwrap())),
-            ))))
-            .expect(EXP_RX);
+        (player_tx().send(PlayerRequest::InsertRelative(Box::new((
+            1,
+            QueueItem::Song(Arc::clone(self.shared_song.borrow().as_ref().unwrap())),
+        )))))
+        .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_add_to_queue(&self) {
         (self.obj().activate_action("ui.library_nav_pop", None)).expect(ACTION_ERR);
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         player_tx
             .send(PlayerRequest::Append(QueueItem::Song(Arc::clone(
                 self.shared_song.borrow().as_ref().unwrap(),
@@ -69,25 +66,23 @@ impl SongPage {
     }
     #[template_callback]
     pub fn handle_go_to_album(&self) {
-        (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::AlbumPage(
-                self.shared_song.borrow().as_ref().unwrap().get_album(),
-            ))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::AlbumPage(
+            self.shared_song.borrow().as_ref().unwrap().get_album(),
+        )))
+        .expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
-        (UI_TX.get().expect(EXP_INIT))
-            .send(UpdateUI::ArtistPage(
-                (self.shared_song.borrow().as_ref().unwrap())
-                    .album()
-                    .as_ref()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .artist_cloned(),
-            ))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::ArtistPage(
+            (self.shared_song.borrow().as_ref().unwrap())
+                .album()
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .artist_cloned(),
+        )))
+        .expect(EXP_RX);
     }
 }
 

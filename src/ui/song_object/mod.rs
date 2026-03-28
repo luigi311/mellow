@@ -4,9 +4,8 @@ use glib::Object;
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::excuses::EXP_INIT;
-use crate::library::{LIBRARY_TX, Library, SharedSong};
-use crate::ui::{SortConfig, UI_TX, UpdateUI};
+use crate::library::{Library, SharedSong, library_tx};
+use crate::ui::{SortConfig, UpdateUI, ui_tx};
 
 mod imp;
 
@@ -46,9 +45,6 @@ impl SongObject {
     }
 
     /// Loads the artwork thumbnail in a background thread
-    ///
-    /// # Panics
-    /// The function panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
@@ -59,21 +55,17 @@ impl SongObject {
         let song = Arc::clone(imp.shared_song());
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, atomic::Ordering::Relaxed);
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+        Library::run_task(library_tx(), move || {
             if !is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
             drop(song.info().load_thumbnail());
             song.info().unload_detailed(); // `load_thumbnail` may have loaded it
-            let ui_tx = UI_TX.get().expect(EXP_INIT);
-            let _ = ui_tx.send(UpdateUI::LibrarySongLoaded(index, song));
+            let _ = ui_tx().send(UpdateUI::LibrarySongLoaded(index, song));
         });
     }
 
     /// Unloads the artwork thumbnail in a background thread
-    ///
-    /// # Panics
-    /// Panics if `LIBRARY_TX` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
@@ -82,7 +74,7 @@ impl SongObject {
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(false, atomic::Ordering::Relaxed);
         // NOTE: Unloading in the background in case the `RwLock` is busy
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+        Library::run_task(library_tx(), move || {
             if is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }

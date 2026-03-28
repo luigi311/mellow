@@ -3,10 +3,9 @@ use gio::prelude::FileExt;
 use gtk::gio;
 use std::fs;
 
-use crate::CONFIG_DIR;
-use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryRequest};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::config_dir;
+use crate::library::{LibraryRequest, library_tx};
+use crate::ui::{UpdateUI, ui_tx};
 
 pub const FILE_SUPPORT: &[&str] = &[
     "flac", "m4a", "mp3", "aac", "ac3", "wav",
@@ -28,10 +27,11 @@ impl LibraryConfig {
     /// # Panics
     /// The function panics if the `CONFIG_DIR` global variable is uninitialized
     #[inline]
+    #[must_use]
     pub fn new(directories: Vec<String>) -> Self {
         let mut config = LibraryConfig {
             directories,
-            dir: CONFIG_DIR.get().expect(EXP_INIT).clone(),
+            dir: config_dir().clone(),
             uri_opt: 0,
         };
         config.update_trim_uri();
@@ -75,39 +75,32 @@ impl LibraryConfig {
     }
 
     /// Removes the configured directory at `index`
-    ///
-    /// # Panics
-    /// Panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     pub fn remove_library(&mut self, index: usize) {
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let library_tx = library_tx();
         let _ = library_tx.send(LibraryRequest::CancelRebuild);
 
         let removed_dir = self.directories.remove(index);
         println!("Removed a library\nLibraries: {:?}", self.directories);
 
         let _ = library_tx.send(LibraryRequest::RegisterUndoDirectory(removed_dir.clone()));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
-        let _ = ui_tx.send(UpdateUI::Notification(
+        let _ = library_tx.send(LibraryRequest::Rebuild);
+
+        let _ = ui_tx().send(UpdateUI::Notification(
             format!("Removed a library directory: {removed_dir}"),
             Some(Box::new(move || {
-                (LIBRARY_TX.get().expect(EXP_INIT))
-                    .send(LibraryRequest::UndoRemovedDirectory(removed_dir.clone()))
-                    .expect(EXP_RX);
+                let _ = library_tx.send(LibraryRequest::UndoRemovedDirectory(removed_dir.clone()));
             })),
         ));
-        let _ = ui_tx.send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
-
-        let _ = library_tx.send(LibraryRequest::Rebuild);
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
 
         self.update_trim_uri();
     }
 
     /// Requests a library rebuild and updates the directory list in the UI
     fn update_library(&self) {
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
-        let _ = ui_tx.send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
 
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let library_tx = library_tx();
         let _ = library_tx.send(LibraryRequest::CancelRebuild);
         let _ = library_tx.send(LibraryRequest::Rebuild);
     }
@@ -193,7 +186,6 @@ impl LibraryConfig {
     /// Panics if directory creation fails
     #[inline]
     pub fn create_config_dir() {
-        fs::create_dir_all(CONFIG_DIR.get().expect(EXP_INIT))
-            .expect("Could not create the config directory");
+        fs::create_dir_all(config_dir()).expect("Could not create the config directory");
     }
 }

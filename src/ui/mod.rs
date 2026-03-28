@@ -54,7 +54,24 @@ use crate::library::{Albums, Artists, Songs, ToQueue};
 use crate::library::{SharedAlbum, SharedArtist, SharedSong};
 use crate::player::QueueItem;
 
-pub static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
+static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
+/// Returns the channel sender for sending requests to the UI through `UpdateUI`
+///
+/// # Panics
+/// The function panics if `PLAYER_TX` is uninitialized
+#[inline]
+pub fn ui_tx() -> &'static tokio_mpsc::UnboundedSender<UpdateUI> {
+    UI_TX.get().unwrap( /* expected to be initialized */ )
+}
+/// Initializes the UI channel sender accessed through `ui_tx()`
+///
+/// # Panics
+/// The function panics if `UI_TX` has already been initialized
+#[inline]
+pub fn init_ui_tx(ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>) {
+    (UI_TX.set(ui_tx)).expect("Cannot initialize UI_TX multiple times");
+}
+
 pub enum UpdateUI {
     /// (playing: `bool`, interactive: `bool`)
     PlayerState(bool, bool),

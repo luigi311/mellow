@@ -3,10 +3,10 @@ use glib::Object;
 use gtk::glib;
 use std::sync::Arc;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
+use crate::excuses::EXP_RX;
 use crate::library::SharedArtist;
 use crate::ui::ListRow;
-use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+use crate::ui::{UpdateUI, fallback_song_image, ui_tx};
 
 mod imp;
 
@@ -30,7 +30,7 @@ impl ArtistPage {
     /// # Panics
     /// The function panics if any of the artist albums' `Mutex`es or songs'
     /// `RwLock`s are in a poisoned state. It may also panic at runtime upon
-    /// interaction if `UI_TX` is uninitialized, or the channel is closed.
+    /// interaction if the UI channel is closed.
     #[inline]
     #[must_use]
     pub fn new(artist: &SharedArtist) -> ArtistPage {
@@ -62,9 +62,7 @@ impl ArtistPage {
             drop(album_locked);
             let album = Arc::clone(album);
             album_row.connect_activated(move |_| {
-                (UI_TX.get().expect(EXP_INIT))
-                    .send(UpdateUI::AlbumPage(Arc::clone(&album)))
-                    .expect(EXP_RX);
+                (ui_tx().send(UpdateUI::AlbumPage(Arc::clone(&album)))).expect(EXP_RX);
             });
 
             ui.albums_list.append(&album_row);

@@ -10,9 +10,9 @@ use std::time::{Duration, Instant};
 use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Songs, ToQueue};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::player::{PlayerRequest, player_tx};
 use crate::ui::{ItemRow, SongObject, SongOrdering, SortConfig};
-use crate::ui::{UI_TX, UpdateUI, fallback_song_image};
+use crate::ui::{UpdateUI, fallback_song_image, ui_tx};
 use crate::util::search;
 
 #[derive(Default, CompositeTemplate)]
@@ -71,19 +71,18 @@ impl SongsPage {
             );
         }
 
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
-        player_tx
-            .send(PlayerRequest::LoadQueue(
-                songs.to_queue(),
-                match self.shuffle.get() {
-                    true => Some(vec![]),
-                    false => None,
-                },
-                0,
-            ))
-            .expect(EXP_RX);
+        let player_tx = player_tx();
+        (player_tx.send(PlayerRequest::LoadQueue(
+            songs.to_queue(),
+            match self.shuffle.get() {
+                true => Some(vec![]),
+                false => None,
+            },
+            0,
+        )))
+        .expect(EXP_RX);
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
@@ -270,9 +269,7 @@ impl ObjectImpl for SongsPage {
                 .downcast_ref::<SongObject>()
                 .unwrap()
                 .index();
-            (UI_TX.get().expect(EXP_INIT))
-                .send(UpdateUI::SongPageByIndex(index as usize))
-                .expect(EXP_RX);
+            (ui_tx().send(UpdateUI::SongPageByIndex(index as usize))).expect(EXP_RX);
         });
 
         let factory = gtk::SignalListItemFactory::new();

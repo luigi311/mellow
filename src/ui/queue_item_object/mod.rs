@@ -4,10 +4,9 @@ use glib::Object;
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::excuses::EXP_INIT;
-use crate::library::{LIBRARY_TX, Library};
+use crate::library::{Library, library_tx};
 use crate::player::QueueItem;
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 use crate::util::format_duration_ms;
 
 mod imp;
@@ -57,9 +56,6 @@ impl QueueItemObject {
     }
 
     /// Loads the artwork thumbnail in a background thread
-    ///
-    /// # Panics
-    /// The function panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     pub fn load_artwork(&self) {
         #[cfg(debug_assertions)]
         if self.artwork().is_some() {
@@ -73,7 +69,7 @@ impl QueueItemObject {
         let item = imp.queue_item().clone();
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, Ordering::Relaxed);
-        Library::run_task(LIBRARY_TX.get().expect(EXP_INIT), move || {
+        Library::run_task(library_tx(), move || {
             if !is_visible.load(Ordering::Relaxed) {
                 return;
             }
@@ -81,8 +77,7 @@ impl QueueItemObject {
                 return;
             };
             drop(song.info().load_thumbnail());
-            let ui_tx = UI_TX.get().expect(EXP_INIT);
-            let _ = ui_tx.send(UpdateUI::QueueSongLoaded(index, song));
+            let _ = ui_tx().send(UpdateUI::QueueSongLoaded(index, song));
         });
     }
 

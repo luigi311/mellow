@@ -5,8 +5,8 @@ use gtk::{CompositeTemplate, InterfaceColorScheme};
 use gtk::{gdk, glib};
 
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, LibraryRequest};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::library::{LibraryRequest, library_tx};
+use crate::player::{PlayerRequest, player_tx};
 use crate::ui::StartupQueueChoice;
 use crate::util::{approx_eq, lerp};
 
@@ -72,16 +72,12 @@ impl SettingsPage {
         if approx_eq(value, self.volume.value()) {
             return glib::Propagation::Stop;
         }
-        (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::SetVolume(value * value))
-            .expect(EXP_RX);
+        (player_tx().send(PlayerRequest::SetVolume(value * value))).expect(EXP_RX);
         glib::Propagation::Proceed
     }
     #[template_callback]
     pub fn handle_gapless_switch(&self) {
-        (PLAYER_TX.get().expect(EXP_INIT))
-            .send(PlayerRequest::SetGapless(self.gapless.is_active()))
-            .expect(EXP_RX);
+        (player_tx().send(PlayerRequest::SetGapless(self.gapless.is_active()))).expect(EXP_RX);
     }
 
     #[template_callback]
@@ -95,9 +91,7 @@ impl SettingsPage {
     #[template_callback]
     pub fn handle_refresh_library(&self) {
         self.refresh_library_button.set_sensitive(false);
-        (LIBRARY_TX.get().expect(EXP_INIT))
-            .send(LibraryRequest::Rebuild)
-            .expect(EXP_RX);
+        library_tx().send(LibraryRequest::Rebuild).expect(EXP_RX);
     }
 
     #[inline]
@@ -469,11 +463,8 @@ impl SettingsPage {
                 .tooltip_text("Remove") // TODO: Support translations
                 .css_classes(["flat", "circular"])
                 .build();
-            let library_tx = LIBRARY_TX.get().unwrap().clone();
             remove_button.connect_clicked(move |_| {
-                library_tx
-                    .send(LibraryRequest::RemoveLibrary(i))
-                    .expect(EXP_RX);
+                (library_tx().send(LibraryRequest::RemoveLibrary(i))).expect(EXP_RX);
             });
             directory_row.add_suffix(&remove_button);
             self.directory_list.append(&directory_row);

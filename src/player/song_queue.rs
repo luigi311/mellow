@@ -5,11 +5,12 @@ use std::fs;
 use std::sync::{Arc, mpsc};
 use tokio::sync::mpsc as tokio_mpsc;
 
-use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, LibraryRequest, SharedSongExt};
+use crate::excuses::EXP_RX;
+use crate::library::{Library, LibraryRequest, SharedSongExt, library_tx};
 use crate::player::{PlayerRequest, QueueItem};
 use crate::ui::{StartupQueueChoice, UpdateUI};
-use crate::{CONFIG_DIR, util::ReorderVecExt};
+use crate::util::ReorderVecExt;
+use crate::{queue_file, shuffled_queue_file};
 
 pub struct SongQueue {
     repeat: bool,
@@ -520,7 +521,7 @@ impl SongQueue {
     /// The function panics if `CONFIG_DIR` is unititialized
     #[inline]
     pub fn save_queue(&self, remember: bool, time: Option<u64>) {
-        let queue_file = Self::queue_file(CONFIG_DIR.get().expect(EXP_INIT));
+        let queue_file = queue_file();
         if !remember {
             let _ = fs::remove_file(&queue_file);
             return;
@@ -557,7 +558,7 @@ impl SongQueue {
     /// The function panics if `CONFIG_DIR` is unititialized
     #[inline]
     pub fn save_shuffled_queue(&self, remember: bool) {
-        let shuffled_file = Self::shuffled_queue_file(CONFIG_DIR.get().expect(EXP_INIT));
+        let shuffled_file = shuffled_queue_file();
         if !(self.shuffle && remember) {
             let _ = fs::remove_file(&shuffled_file);
             return;
@@ -581,8 +582,7 @@ impl SongQueue {
     /// Function may error if the player or UI channel receiver is closed
     ///
     /// # Panics
-    /// The function may panic if `LIBRARY_TX` is uninitialized, or if a
-    /// required channel is closed
+    /// The function may panic if a required channel is closed
     pub fn init_queue(
         config_dir: &str,
         library: &Library,
@@ -591,7 +591,7 @@ impl SongQueue {
         let player_tx = &library.player_tx;
 
         // Load the previous queue if file exists
-        if let Ok(queue) = fs::read_to_string(Self::queue_file(config_dir))
+        if let Ok(queue) = fs::read_to_string(queue_file())
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
             && let Some(time) = lines.next().map(str::parse)
@@ -602,7 +602,7 @@ impl SongQueue {
             && !queue.is_empty()
         {
             let shuffled = if shuffle {
-                fs::read_to_string(Self::shuffled_queue_file(config_dir)).map_or(None, |shuffled| {
+                fs::read_to_string(shuffled_queue_file()).map_or(None, |shuffled| {
                     match shuffled.len() > track {
                         true => Some(
                             shuffled
@@ -635,8 +635,7 @@ impl SongQueue {
             StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
             StartupQueueChoice::QueueFromSongs => library.play_all_songs(false)?,
             StartupQueueChoice::QueueFromAlbums => {
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
                     library.play_all_albums().unwrap();
                     let _ = library
                         .player_tx
@@ -644,8 +643,7 @@ impl SongQueue {
                 })))?;
             }
             StartupQueueChoice::QueueFromArtists => {
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnArtistsSet(Box::new(|library| {
                     library.play_all_artists().unwrap();
                     let _ = library
                         .player_tx
@@ -654,8 +652,7 @@ impl SongQueue {
             }
             StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs(true)?,
             StartupQueueChoice::QueueFromAlbumsShuffled => {
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
                     library.shuffle_all_albums().unwrap();
                     let _ = library
                         .player_tx
@@ -663,8 +660,7 @@ impl SongQueue {
                 })))?;
             }
             StartupQueueChoice::QueueFromArtistsShuffled => {
-                let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
-                library_tx.send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnArtistsSet(Box::new(|library| {
                     library.shuffle_all_artists().unwrap();
                     let _ = library
                         .player_tx
@@ -683,14 +679,5 @@ impl SongQueue {
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
 
         Ok(())
-    }
-
-    #[inline]
-    fn queue_file(config_dir: &str) -> String {
-        [config_dir, "queue"].concat()
-    }
-    #[inline]
-    fn shuffled_queue_file(config_dir: &str) -> String {
-        [config_dir, "shuffled_queue"].concat()
     }
 }

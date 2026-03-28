@@ -9,9 +9,9 @@ use std::time::{Duration, Instant};
 use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Artists, ToQueue, ToShuffledQueue};
-use crate::player::{PLAYER_TX, PlayerRequest};
+use crate::player::{PlayerRequest, player_tx};
 use crate::ui::{ArtistObject, ArtistOrdering, ItemTile, SortConfig};
-use crate::ui::{UI_TX, UpdateUI};
+use crate::ui::{UpdateUI, ui_tx};
 use crate::util::search;
 
 #[derive(Default, CompositeTemplate)]
@@ -70,7 +70,7 @@ impl ArtistsPage {
             ));
         }
 
-        let player_tx = PLAYER_TX.get().expect(EXP_INIT);
+        let player_tx = player_tx();
         player_tx
             .send(PlayerRequest::LoadQueue(
                 match self.shuffle.get() {
@@ -82,7 +82,7 @@ impl ArtistsPage {
             ))
             .expect(EXP_RX);
         let _ = player_tx.send(PlayerRequest::TogglePlay(Some(true)));
-        let ui_tx = UI_TX.get().expect(EXP_INIT);
+        let ui_tx = ui_tx();
         ui_tx.send(UpdateUI::OpenSheet(false)).expect(EXP_RX);
         ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
     }
@@ -283,9 +283,7 @@ impl ObjectImpl for ArtistsPage {
                     .unwrap()
                     .shared_artist(),
             );
-            (UI_TX.get().expect(EXP_INIT))
-                .send(UpdateUI::ArtistPage(artist))
-                .expect(EXP_RX);
+            ui_tx().send(UpdateUI::ArtistPage(artist)).expect(EXP_RX);
         });
 
         let factory = gtk::SignalListItemFactory::new();

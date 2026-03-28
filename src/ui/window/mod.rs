@@ -7,9 +7,9 @@ use std::rc::Rc;
 
 use crate::about;
 use crate::excuses::{EXP_INIT, EXP_RX};
-use crate::library::{LIBRARY_TX, Library, LibraryConfig, LibraryRequest};
-use crate::player::{PLAYER_TX, PlayerRequest};
-use crate::ui::{Application, UI_TX, UpdateUI, actions};
+use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
+use crate::player::{PlayerRequest, player_tx};
+use crate::ui::{Application, UpdateUI, actions, ui_tx};
 use crate::util::serialize_list;
 
 mod imp;
@@ -98,8 +98,7 @@ impl Window {
     /// Sets up functionality to accept external file drops
     ///
     /// # Panics
-    /// The function panics if `LIBRARY_TX` is uninitialized,
-    /// or if the file path is not valid UTF-8
+    /// The function panics if the file path is not valid UTF-8
     #[inline]
     fn setup_drag_and_drop(&self) {
         let drop_target =
@@ -111,9 +110,7 @@ impl Window {
                 .iter()
                 .map(|file| file.path().unwrap().to_str().unwrap().to_owned())
                 .collect();
-            (LIBRARY_TX.get().expect(EXP_INIT))
-                .send(LibraryRequest::QueueFromPaths(files))
-                .expect(EXP_RX);
+            (library_tx().send(LibraryRequest::QueueFromPaths(files))).expect(EXP_RX);
             true
         });
         self.add_controller(drop_target);
@@ -138,23 +135,21 @@ impl Window {
     /// The function errors if a `gio::Settings` value cannot be saved
     ///
     /// # Panics
-    /// The function panics if `UI_TX`, `LIBRARY_TX`, or `PLAYER_TX`
-    /// is uninitialized, or if the channels are closed
+    /// The function panics if either the library or player channel is closed
     pub fn save_and_uninit(&self) -> Result<(), glib::error::BoolError> {
-        let _ = UI_TX.get().expect(EXP_INIT).send(UpdateUI::Shutdown);
+        let _ = ui_tx().send(UpdateUI::Shutdown);
 
         let imp = self.imp();
         let settings_page = &imp.settings_page;
         let remember_queue = settings_page.remembers_queue();
         let remember_time = settings_page.remembers_time();
 
-        let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
+        let library_tx = library_tx();
         (library_tx.send(LibraryRequest::CancelRebuild)).expect(EXP_RX);
         Library::run_task(library_tx, move || {
             LibraryConfig::create_config_dir();
             library_tx.send(LibraryRequest::Shutdown).expect(EXP_RX);
-            (PLAYER_TX.get().expect(EXP_INIT))
-                .send(PlayerRequest::Shutdown(remember_queue, remember_time))
+            (player_tx().send(PlayerRequest::Shutdown(remember_queue, remember_time)))
                 .expect(EXP_RX);
         });
 

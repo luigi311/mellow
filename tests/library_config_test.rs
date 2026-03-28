@@ -4,8 +4,8 @@ mod tests {
     use std::sync::mpsc;
     use tokio::sync::mpsc as tokio_mpsc;
 
-    use mellow::library::{LIBRARY_TX, LibraryConfig, LibraryRequest};
-    use mellow::ui::{UI_TX, UpdateUI};
+    use mellow::library::{self, LibraryConfig, LibraryRequest};
+    use mellow::ui::{self, UpdateUI};
 
     struct ConfigTester {
         config: LibraryConfig,
@@ -175,9 +175,9 @@ mod tests {
     impl Default for ConfigTester {
         fn default() -> Self {
             let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
-            UI_TX.get_or_init(|| ui_tx.clone());
+            ui::init_ui_tx(ui_tx.clone());
             let (library_tx, library_rx) = mpsc::channel::<LibraryRequest>();
-            LIBRARY_TX.get_or_init(|| library_tx.clone());
+            library::init_library_tx(library_tx.clone());
             ConfigTester {
                 config: LibraryConfig::new(vec![]),
                 _ui_rx: ui_rx,
