@@ -2,10 +2,9 @@ use core::{error::Error, time::Duration};
 use gst::prelude::*;
 use gst::{ClockTime, SeekFlags, State};
 use std::sync::{OnceLock, mpsc};
-use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::excuses::{EXP_RX, INIT_ERR};
-use crate::ui::{UpdateUI, init_ui_tx};
+use crate::ui::{UpdateUI, ui_tx};
 
 pub mod queue_item;
 pub mod song_queue;
@@ -16,14 +15,22 @@ pub use song_queue::SongQueue;
 // TODO: MPRIS support for Gnome Shell media controls
 
 static PLAYER_TX: OnceLock<mpsc::Sender<PlayerRequest>> = OnceLock::new();
-/// Returns the channel sender for sending requests to the player
-/// through `PlayerRequest`
+/// Returns the channel sender for sending requests to the player using `PlayerRequest`
 ///
-/// # Panics
-/// The function panics if `PLAYER_TX` is uninitialized
+/// # Safety
+/// Causes undefined behavior if called before `init_channels`
 #[inline]
 pub fn player_tx() -> &'static mpsc::Sender<PlayerRequest> {
-    PLAYER_TX.get().unwrap( /* expected to be initialized */ )
+    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    unsafe { PLAYER_TX.get().unwrap_unchecked() }
+}
+/// Initializes the player channel sender accessed through `player_tx()`
+///
+/// # Panics
+/// The function panics if `PLAYER_TX` has already been initialized
+#[inline]
+pub fn init_player_tx(player_tx: mpsc::Sender<PlayerRequest>) {
+    PLAYER_TX.set(player_tx).expect(INIT_ERR);
 }
 
 pub enum PlayerRequest {
@@ -145,30 +152,20 @@ pub struct Player {
 
     backend: gst::Element,
     bus: gst::Bus,
-    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
-    player_tx: mpsc::Sender<PlayerRequest>,
     rx: mpsc::Receiver<PlayerRequest>,
 }
 
 // NOTE: Set `GST_DEBUG=3` to debug GStreamer
 // https://gstreamer.freedesktop.org/documentation/tutorials/basic/debugging-tools.html
 
-type PlayerInit = (
-    Player,
-    mpsc::Sender<PlayerRequest>,             // Player sender
-    tokio_mpsc::UnboundedSender<UpdateUI>,   // UI sender
-    tokio_mpsc::UnboundedReceiver<UpdateUI>, // UI receiver
-);
-
 impl Player {
-    /// Returns a tuple of `Player`/`player_tx`/`ui_tx`/`ui_rx`
-    /// and initializes `PLAYER_TX`/`UI_TX`
+    /// Constructs a new instance of `Player`
     ///
     /// # Panics
     /// The function panics if initialization fails;
     /// initializing multiple times is not allowed
     #[inline]
-    pub fn init() -> PlayerInit {
+    pub fn init(player_rx: mpsc::Receiver<PlayerRequest>) -> Player {
         gst::init().expect("Could not initialize GStreamer");
 
         let backend = gst::ElementFactory::make("playbin3")
@@ -176,34 +173,20 @@ impl Player {
             .expect("Failed to create GStreamer element playbin3");
         let bus = backend.bus().expect(INIT_ERR);
 
-        let (player_tx, rx) = mpsc::channel::<PlayerRequest>();
-        let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
-        PLAYER_TX
-            .set(player_tx.clone())
-            .expect("Only one instance of Player is allowed");
-        init_ui_tx(ui_tx.clone());
+        Player {
+            queue: SongQueue::new(),
 
-        (
-            Player {
-                queue: SongQueue::new(player_tx.clone(), ui_tx.clone()),
+            gapless: true,
 
-                gapless: true,
+            current_state: State::Null,
+            pending_state: None,
+            next_song_loaded: false,
+            seeking: false,
 
-                current_state: State::Null,
-                pending_state: None,
-                next_song_loaded: false,
-                seeking: false,
-
-                backend,
-                bus,
-                ui_tx: ui_tx.clone(),
-                player_tx: player_tx.clone(),
-                rx,
-            },
-            player_tx,
-            ui_tx,
-            ui_rx,
-        )
+            backend,
+            bus,
+            rx: player_rx,
+        }
     }
 
     /// Main controller loop which handles player requests
@@ -219,12 +202,10 @@ impl Player {
     /// - A required channel receiver is closed
     /// - A crash occurs in `GStreamer`
     pub fn controller(mut self) -> Result<(), Box<dyn Error>> {
-        let player_tx = self.player_tx.clone();
-
         // Required for gapless playback
         self.backend.connect("about-to-finish", false, move |_| {
             // Cannot fail because the receiver is owned by `self`
-            let _ = player_tx.send(PlayerRequest::SongEnd);
+            let _ = player_tx().send(PlayerRequest::SongEnd);
             None
         });
 
@@ -343,7 +324,7 @@ impl Player {
             QueueItem::Song(song) => song.info().file_uri(),
             QueueItem::Stopper(stopper) => {
                 if stopper.should_close_player() {
-                    let _ = self.ui_tx.send(UpdateUI::RunAction("app.quit"));
+                    let _ = ui_tx().send(UpdateUI::RunAction("app.quit"));
                 }
                 self.queue.remove_current();
                 self.queue.ui_update_queue();
@@ -584,7 +565,7 @@ impl Player {
         } else {
             // Skip the current song if the song has ended
             // or the playback time/duration cannot be determined
-            self.player_tx.send(PlayerRequest::SkipNext).expect(EXP_RX);
+            player_tx().send(PlayerRequest::SkipNext).expect(EXP_RX);
         }
 
         self.request_state(self.current_state);
@@ -597,7 +578,7 @@ impl Player {
         println!("---- Unloading gapless track ----");
         let Some(pos) = self.backend.query_position::<ClockTime>() else {
             eprintln!("Could not determine playback time, skipping...");
-            let _ = self.player_tx.send(PlayerRequest::SkipNext);
+            let _ = player_tx().send(PlayerRequest::SkipNext);
             return;
         };
 
@@ -613,7 +594,7 @@ impl Player {
         // Seek to the same time the player was at before, or skip the song
         if self.seek_to_time(pos).is_err() {
             self.queue.current().map(|song| song.info().played());
-            let _ = self.player_tx.send(PlayerRequest::SkipNext);
+            let _ = player_tx().send(PlayerRequest::SkipNext);
         }
     }
 
@@ -693,9 +674,7 @@ impl Player {
         let playing = state.0.is_ok() && matches!(state.1, State::Playing);
         #[cfg(debug_assertions)]
         println!("ui_set_state(playing: {playing}, interactive: {interactive})");
-        self.ui_tx
-            .send(UpdateUI::PlayerState(playing, interactive))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::PlayerState(playing, interactive))).expect(EXP_RX);
     }
 
     /// Sends the current song info to the UI receiver
@@ -703,19 +682,20 @@ impl Player {
     fn ui_update_song_info(&self) {
         #[cfg(debug_assertions)]
         println!("ui_update_song_info()");
-        self.ui_tx.send(UpdateUI::SongInfo).expect(EXP_RX);
+        ui_tx().send(UpdateUI::SongInfo).expect(EXP_RX);
     }
 
     /// Sends the current playback time to the UI receiver
     fn ui_set_time(&self) {
         let time = self.current_time().map(ClockTime::mseconds);
-        self.ui_tx.send(UpdateUI::PlayerTime(time)).expect(EXP_RX);
+        ui_tx().send(UpdateUI::PlayerTime(time)).expect(EXP_RX);
     }
 
     /// Requests the UI to open the music library
     fn ui_open_playing(&self) {
-        self.ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
-        self.ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+        ui_tx.send(UpdateUI::OpenSheet(true)).expect(EXP_RX);
     }
 
     /// Handles `GStreamer` events and empties the message queue
@@ -735,7 +715,7 @@ impl Player {
                     if self.queue.has_next() {
                         println!("Moving to next track due to end of stream");
                         self.request_state(State::Playing);
-                        self.player_tx.send(PlayerRequest::LoadNext).expect(EXP_RX);
+                        player_tx().send(PlayerRequest::LoadNext).expect(EXP_RX);
                     } else {
                         println!("Stopping player due to end of queue");
                         self.queue.current().as_song().info().played();
@@ -778,7 +758,7 @@ impl Player {
     /// Skips the current track and resets player state
     /// Should only be used for error handling
     fn force_skip_track(&mut self, new_state: State) {
-        self.ui_tx
+        ui_tx()
             .send(UpdateUI::Notification(
                 "Skipping song because a playback issue was encountered".to_owned(),
                 None,
@@ -790,7 +770,7 @@ impl Player {
         // self.queue.remove_current();
         self.move_next(false);
         self.request_state(new_state);
-        self.player_tx.send(PlayerRequest::Update).expect(EXP_RX);
+        player_tx().send(PlayerRequest::Update).expect(EXP_RX);
     }
 
     /// Uninitializes the player and writes the queue to disk

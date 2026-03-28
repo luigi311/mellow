@@ -6,6 +6,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 mod imp;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::init_channels;
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
 use crate::player::{Player, SongQueue};
 use crate::ui::{UpdateUI, Window, actions};
@@ -41,8 +42,10 @@ impl Application {
 
     #[inline]
     fn init(&self) {
-        let (player, player_tx, ui_tx, ui_rx) = Player::init();
+        let (ui_rx, player_rx, library_rx) = init_channels();
         let imp = self.imp();
+
+        let player = Player::init(player_rx);
         imp.player_handle.set(Some(
             thread::Builder::new()
                 .name("player".to_owned())
@@ -52,14 +55,14 @@ impl Application {
 
         let settings = gio::Settings::new(about::app_id());
         let startup_queue = settings.enum_("startup-queue");
+
         let mut library = Library::init(
             LibraryConfig::new(match &*settings.string("directories") {
                 // The value ":" means "first launch"
                 ":" => vec![music_dir().clone()],
                 dirs => unescaped_split(dirs, ','),
             }),
-            player_tx,
-            ui_tx,
+            library_rx,
         );
         imp.library_handle.set(Some(
             thread::Builder::new()

@@ -111,6 +111,7 @@ impl<'s> Song {
     #[must_use]
     pub fn serlialize(&self) -> String {
         let info = self.info();
+        // IDEA: Would using the path directly be faster to (de/)serialize?
         let uri = info.file_uri();
         let user_info = info.user().clone();
         (info.inspect_basic().as_ref()).map_or_else(
@@ -143,35 +144,6 @@ impl<'s> Song {
                 }
             },
         )
-    }
-
-    /// Returns an `Option<String>` containing serialized song info,
-    /// which can be used with the `deserialize()` method.
-    /// If the song info is not loaded, the function returns `None`.
-    #[inline]
-    #[must_use]
-    pub fn try_serlialize(&self) -> Option<String> {
-        let info = self.info();
-        let uri = info.file_uri();
-        let user_info = info.user().clone();
-        (info.inspect_basic().as_ref()).map(|info| {
-            serialize! {
-                uri => "uri",
-                user_info.added => "added",
-                user_info.modified => "modified",
-                info.title => "title",
-                info.album => "album",
-                info.artist => "artist",
-                info.album_artist => "album_artist",
-                info.track => "track",
-                info.disc => "disc",
-                info.year => "year",
-                info.duration_ms => "duration",
-                user_info.play_count => "play_count",
-                user_info.rating => "rating",
-                serialize_list(&user_info.tags) => "tags",
-            }
-        })
     }
 
     /// Constructs a new `Song` instance using the serialized song info `data`

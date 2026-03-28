@@ -8,7 +8,6 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::time::{Duration, Instant};
 use std::{fs, thread};
-use tokio::sync::mpsc as tokio_mpsc;
 
 pub mod album;
 pub mod artist;
@@ -24,7 +23,7 @@ use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::library::album::NewSharedAlbum;
 use crate::library::artist::NewSharedArtist;
-use crate::player::{PlayerRequest, QueueItem};
+use crate::player::{PlayerRequest, QueueItem, player_tx};
 use crate::ui::{UpdateUI, ui_tx};
 use crate::util::tasks::{BoxedTask, Runner};
 use crate::{songs_file, util::visit_dirs};
@@ -47,8 +46,6 @@ pub struct Library {
 
     tasks: Runner,
     pub config: LibraryConfig,
-    pub player_tx: mpsc::Sender<PlayerRequest>,
-    pub ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
     rx: mpsc::Receiver<LibraryRequest>,
 }
 
@@ -178,15 +175,15 @@ impl ToShuffledQueue for Artists {
 }
 
 static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
-/// Returns the channel sender for sending requests to the library
-/// through `LibraryRequest`
+/// Returns the channel sender for sending requests to the library using `LibraryRequest`
 ///
-/// # Panics
-/// The function panics if `LIBRARY_TX` is uninitialized
+/// # Safety
+/// Causes undefined behavior if called before `init_channels`
 #[inline]
 #[must_use]
 pub fn library_tx() -> &'static mpsc::Sender<LibraryRequest> {
-    LIBRARY_TX.get().unwrap( /* expected to be initialized */ )
+    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    unsafe { LIBRARY_TX.get().unwrap_unchecked() }
 }
 /// Initializes the library channel sender accessed through `library_tx()`
 ///
@@ -222,21 +219,11 @@ pub enum LibraryRequest {
 }
 
 impl Library {
-    /// Returns a new `Library` instance and initializes `LIBRARY_TX`
-    ///
-    /// # Panics
-    /// The function panics if `LIBRARY_TX` has already been set
-    /// prior to calling this function
+    /// Constructs a new instance of `Library`
     #[inline]
     #[must_use]
-    pub fn init(
-        config: LibraryConfig,
-        player_tx: mpsc::Sender<PlayerRequest>,
-        ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
-    ) -> Library {
-        let (tx, rx) = mpsc::channel();
-        init_library_tx(tx);
-        let _ = ui_tx.send(UpdateUI::SetLibraryDirs(config.directories.clone().into()));
+    pub fn init(config: LibraryConfig, library_rx: mpsc::Receiver<LibraryRequest>) -> Library {
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(config.directories.clone().into()));
 
         Library {
             songs: Vec::new(),
@@ -259,9 +246,7 @@ impl Library {
             // IDEA: Maybe there could be a power-saver option?
             // tasks: Runner::new(4),
             config,
-            player_tx,
-            ui_tx,
-            rx,
+            rx: library_rx,
         }
     }
 
@@ -383,6 +368,8 @@ impl Library {
                 if cancel.load(atomic::Ordering::Relaxed) {
                     return;
                 }
+
+                println!("Starting {num_tasks} background tasks to load the song info");
 
                 let mut target_worker = 0;
                 let vec_cap = songs.len() / num_tasks;
@@ -785,7 +772,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_songs(&mut self, songs: Songs) {
-        self.ui_tx
+        ui_tx()
             .send(UpdateUI::SetLibrarySongs(songs.clone()))
             .expect(EXP_RX);
         self.songs = songs;
@@ -795,7 +782,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_albums(&mut self, albums: Albums) {
-        self.ui_tx
+        ui_tx()
             .send(UpdateUI::SetLibraryAlbums(albums.clone()))
             .expect(EXP_RX);
         self.albums = albums;
@@ -808,7 +795,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_artists(&mut self, artists: Artists) {
-        self.ui_tx
+        ui_tx()
             .send(UpdateUI::SetLibraryArtists(artists.clone()))
             .expect(EXP_RX);
         self.artists = artists;
@@ -851,7 +838,8 @@ impl Library {
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_songs(&self, shuffle: bool) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(
             self.songs.to_queue(),
             match shuffle {
                 true => Some(vec![]),
@@ -859,9 +847,10 @@ impl Library {
             },
             0,
         ))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -870,11 +859,12 @@ impl Library {
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_albums(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.albums.to_queue(), None, 0))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(self.albums.to_queue(), None, 0))?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -883,14 +873,16 @@ impl Library {
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
     pub fn shuffle_all_albums(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(
             self.albums.to_shuffled_queue(),
             None,
             0,
         ))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        let ui_tx = ui_tx();
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -899,11 +891,12 @@ impl Library {
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
     pub fn play_all_artists(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(self.artists.to_queue(), None, 0))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(self.artists.to_queue(), None, 0))?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -912,14 +905,16 @@ impl Library {
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
     pub fn shuffle_all_artists(&self) -> Result<(), Box<dyn Error>> {
-        self.player_tx.send(PlayerRequest::LoadQueue(
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(
             self.artists.to_shuffled_queue(),
             None,
             0,
         ))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         Ok(())
     }
 
@@ -933,11 +928,12 @@ impl Library {
         if queue.is_empty() {
             return Ok(());
         }
-        self.player_tx
-            .send(PlayerRequest::LoadQueue(queue, None, 0))?;
-        self.player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
-        self.ui_tx.send(UpdateUI::OpenSheet(false))?;
-        self.ui_tx.send(UpdateUI::FocusPlaying)?;
+        let player_tx = player_tx();
+        player_tx.send(PlayerRequest::LoadQueue(queue, None, 0))?;
+        player_tx.send(PlayerRequest::TogglePlay(Some(true)))?;
+        let ui_tx = ui_tx();
+        ui_tx.send(UpdateUI::OpenSheet(false))?;
+        ui_tx.send(UpdateUI::FocusPlaying)?;
         self.queue_initialized = true;
         Ok(())
     }

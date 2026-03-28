@@ -55,13 +55,14 @@ use crate::library::{SharedAlbum, SharedArtist, SharedSong};
 use crate::player::QueueItem;
 
 static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
-/// Returns the channel sender for sending requests to the UI through `UpdateUI`
+/// Returns the channel sender for sending requests to the UI using `UpdateUI`
 ///
-/// # Panics
-/// The function panics if `PLAYER_TX` is uninitialized
+/// # Safety
+/// Causes undefined behavior if called before `init_channels`
 #[inline]
 pub fn ui_tx() -> &'static tokio_mpsc::UnboundedSender<UpdateUI> {
-    UI_TX.get().unwrap( /* expected to be initialized */ )
+    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    unsafe { UI_TX.get().unwrap_unchecked() }
 }
 /// Initializes the UI channel sender accessed through `ui_tx()`
 ///

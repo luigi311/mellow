@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod tests {
     use gtk::{gio, prelude::FileExt};
+    use mellow::init_channels;
     use std::sync::mpsc;
     use tokio::sync::mpsc as tokio_mpsc;
 
-    use mellow::library::{self, LibraryConfig, LibraryRequest};
-    use mellow::ui::{self, UpdateUI};
+    use mellow::library::{LibraryConfig, LibraryRequest};
+    use mellow::ui::UpdateUI;
 
     struct ConfigTester {
         config: LibraryConfig,
@@ -174,10 +175,7 @@ mod tests {
 
     impl Default for ConfigTester {
         fn default() -> Self {
-            let (ui_tx, ui_rx) = tokio_mpsc::unbounded_channel::<UpdateUI>();
-            ui::init_ui_tx(ui_tx.clone());
-            let (library_tx, library_rx) = mpsc::channel::<LibraryRequest>();
-            library::init_library_tx(library_tx.clone());
+            let (ui_rx, _, library_rx) = init_channels();
             ConfigTester {
                 config: LibraryConfig::new(vec![]),
                 _ui_rx: ui_rx,

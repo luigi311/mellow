@@ -68,15 +68,11 @@ struct ItemNotFoundError;
 impl QueuePage {
     #[template_callback]
     pub fn handle_set_repeat(&self, toggle_button: &gtk::ToggleButton) {
-        player_tx()
-            .send(PlayerRequest::SetRepeat(toggle_button.is_active()))
-            .expect(EXP_RX);
+        (player_tx().send(PlayerRequest::SetRepeat(toggle_button.is_active()))).expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_set_shuffle(&self, toggle_button: &gtk::ToggleButton) {
-        player_tx()
-            .send(PlayerRequest::SetShuffle(toggle_button.is_active()))
-            .expect(EXP_RX);
+        (player_tx().send(PlayerRequest::SetShuffle(toggle_button.is_active()))).expect(EXP_RX);
     }
     #[template_callback]
     pub fn handle_open_library(&self) {
