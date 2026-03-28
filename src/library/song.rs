@@ -19,6 +19,7 @@ use crate::util::{deserialize, serialize, serialize_list, unescaped_split};
 pub struct Song {
     album: Mutex<Option<SharedAlbum>>,
     file: gio::File,
+    uri: String,
     info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
     detailed_info: RwLock<Option<DetailedSongInfo>>,
@@ -80,9 +81,11 @@ impl<'s> Song {
     #[inline]
     #[must_use]
     fn from_file(file: gio::File) -> Song {
+        let uri = file.uri().to_string();
         Song {
             album: Mutex::new(None),
             file,
+            uri,
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: RwLock::new(None),
@@ -93,9 +96,12 @@ impl<'s> Song {
     #[inline]
     #[must_use]
     fn from_path(file: &str) -> Song {
+        let file = gio::File::for_path(file);
+        let uri = file.uri().to_string();
         Song {
             album: Mutex::new(None),
-            file: gio::File::for_path(file),
+            file,
+            uri,
             info: RwLock::new(None),
             user_info: Mutex::new(UserSongInfo::default()),
             detailed_info: RwLock::new(None),
@@ -111,7 +117,6 @@ impl<'s> Song {
     #[must_use]
     pub fn serlialize(&self) -> String {
         let info = self.info();
-        // IDEA: Would using the path directly be faster to (de/)serialize?
         let uri = info.file_uri();
         let user_info = info.user().clone();
         (info.inspect_basic().as_ref()).map_or_else(
@@ -185,6 +190,7 @@ impl<'s> Song {
         Ok(Song {
             album: Mutex::new(None),
             file: gio::File::for_uri(uri),
+            uri: uri.to_owned(),
             info: RwLock::new(match user_info.modified {
                 0 => None,
                 _ => Some(info),
@@ -200,9 +206,10 @@ impl<'s> Song {
     /// memory until the respective `unload` or `take` method is called.
     #[inline]
     #[must_use]
-    pub const fn info(&'s self) -> SongInfoLoader<'s> {
+    pub fn info(&'s self) -> SongInfoLoader<'s> {
         SongInfoLoader {
             file: &self.file,
+            uri: &self.uri,
             info: &self.info,
             user_info: &self.user_info,
             detailed_info: &self.detailed_info,
@@ -216,6 +223,7 @@ pub struct TryLockError;
 
 pub struct SongInfoLoader<'i> {
     file: &'i gio::File,
+    uri: &'i str,
     info: &'i RwLock<Option<SongInfo>>,
     user_info: &'i Mutex<UserSongInfo>,
     detailed_info: &'i RwLock<Option<DetailedSongInfo>>,
@@ -253,7 +261,7 @@ impl SongInfoLoader<'_> {
     #[inline]
     #[must_use]
     pub fn file_uri(&self) -> String {
-        self.file.uri().to_string()
+        self.uri.to_owned()
     }
     /// Returns the hash of the `file_uri`, used for thumbnail files
     #[inline]
