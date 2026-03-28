@@ -7,7 +7,7 @@ mod imp;
 
 use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
-use crate::player::Player;
+use crate::player::{Player, SongQueue};
 use crate::ui::{UpdateUI, Window, actions};
 use crate::{about, music_dir, util::unescaped_split};
 
@@ -66,7 +66,7 @@ impl Application {
                 .name("library".to_owned())
                 .spawn(move || {
                     library.discover_files();
-                    library.init_queue(startup_queue).unwrap();
+                    SongQueue::init_queue(&library, startup_queue.into()).unwrap();
                     library.request_handler().unwrap();
                 })
                 .expect(INIT_ERR),

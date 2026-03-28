@@ -10,7 +10,7 @@ use crate::library::{Library, LibraryRequest, SharedSongExt, library_tx};
 use crate::player::{PlayerRequest, QueueItem};
 use crate::ui::{StartupQueueChoice, UpdateUI};
 use crate::util::ReorderVecExt;
-use crate::{queue_file, shuffled_queue_file};
+use crate::{config_dir, queue_file, shuffled_queue_file};
 
 pub struct SongQueue {
     repeat: bool,
@@ -583,8 +583,8 @@ impl SongQueue {
     ///
     /// # Panics
     /// The function may panic if a required channel is closed
+    #[inline]
     pub fn init_queue(
-        config_dir: &str,
         library: &Library,
         queue_startup_choice: StartupQueueChoice,
     ) -> Result<(), Box<dyn Error>> {
@@ -632,7 +632,14 @@ impl SongQueue {
                 // self.ui_tx.send(UpdateUI::FocusLibrary)?;
                 library.ui_tx.send(UpdateUI::OpenSheet(true))?;
             }
-            StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
+            StartupQueueChoice::RestoreQueue => {
+                if fs::exists([config_dir(), "songs"].concat()).is_ok_and(|exists| exists) {
+                    library.ui_tx.send(UpdateUI::OpenSheet(true))?;
+                } else {
+                    // Load all songs into queue on first launch
+                    library.play_all_songs(false)?;
+                }
+            }
             StartupQueueChoice::QueueFromSongs => library.play_all_songs(false)?,
             StartupQueueChoice::QueueFromAlbums => {
                 library_tx().send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
@@ -667,14 +674,7 @@ impl SongQueue {
                         .send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;
             }
-            StartupQueueChoice::RestoreQueue => {
-                if fs::exists([config_dir, "songs"].concat()).is_ok_and(|exists| exists) {
-                    library.ui_tx.send(UpdateUI::OpenSheet(true))?;
-                } else {
-                    // Load all songs into queue on first launch
-                    library.play_all_songs(false)?;
-                }
-            }
+            StartupQueueChoice::EmptyQueue => library.ui_tx.send(UpdateUI::OpenSheet(true))?,
         }
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
 
