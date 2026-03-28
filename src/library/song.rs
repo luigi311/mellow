@@ -18,8 +18,8 @@ use crate::util::{deserialize, serialize, serialize_list, unescaped_split};
 
 pub struct Song {
     album: Mutex<Option<SharedAlbum>>,
-    file: gio::File,
-    uri: String,
+    pub file: gio::File,
+    pub uri: String,
     info: RwLock<Option<SongInfo>>,
     user_info: Mutex<UserSongInfo>,
     detailed_info: RwLock<Option<DetailedSongInfo>>,
@@ -252,6 +252,7 @@ impl SongInfoLoader<'_> {
     }
 
     /// Returns a reference to the `gio::File`
+    #[inline]
     #[must_use]
     pub const fn file(&self) -> &gio::File {
         self.file

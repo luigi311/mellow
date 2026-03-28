@@ -69,7 +69,7 @@ pub trait SortedSongs {
 impl SortedSongs for Songs {
     #[inline]
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize> {
-        self.binary_search_by(|song| song.info().file_uri()[trim_start..].cmp(&uri[trim_start..]))
+        self.binary_search_by(|song| song.uri[trim_start..].cmp(&uri[trim_start..]))
     }
 }
 impl ToQueue for Songs {
@@ -528,37 +528,34 @@ impl Library {
         ));
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs {
-            let info = song.info();
             let missing_libraries = config.directories.iter().filter_map(|dir| {
                 match fs::exists(dir).unwrap_or(false) {
                     false => Some(gio::File::for_path(dir).uri()),
                     true => None,
                 }
             });
-            match songs.find_song(&info.file_uri(), config.uri_opt()) {
+            match songs.find_song(&song.uri, config.uri_opt()) {
                 // Valid song entry
                 Err(index)
-                    if (info.file().path())
+                    if (song.file.path())
                         .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
                 {
                     for dir in &config.directories {
                         // Filter songs outside of `config.directories`
-                        if !info.file_path().starts_with(dir) {
+                        if !song.file.path().unwrap().to_str().unwrap().starts_with(dir) {
                             continue;
                         }
-                        drop(info);
                         songs.insert(index, song);
                         continue 'iter;
                     }
                     // IDEA: To disable libraries, move `songs` into `disabled_songs`
-                    drop(info);
 
                     // The file may have been copied to an active library
                     possibly_moved.push(song);
                 }
                 // Missing file
                 Err(_) => {
-                    let uri = &info.file_uri();
+                    let uri = &song.uri;
                     match missing.find_song(uri, config.uri_opt()) {
                         // New missing song entry
                         Err(index) => {
@@ -572,18 +569,15 @@ impl Library {
                                     //     "Remembering {} because its library is missing",
                                     //     info.filename()
                                     // );
-                                    drop(info);
                                     missing.insert(index, song);
                                     continue 'iter;
                                 }
                             }
-                            drop(info);
                             possibly_moved.push(song);
                         }
                         // Duplicate missing song entry
                         Ok(index) => {
-                            info.user().merge_with(&missing[index].info().user());
-                            drop(info);
+                            song.info().user().merge_with(&missing[index].info().user());
                             drop(song);
                         }
                     }
@@ -591,10 +585,10 @@ impl Library {
                 // Duplicate entry
                 Ok(index) => {
                     #[cfg(debug_assertions)]
-                    println!("Resolving duplicate entry: {}", info.file_uri());
+                    println!("Resolving duplicate entry: {}", song.uri);
                     // SAFETY: `index` is `Ok`, therefore within bounds
-                    (unsafe { songs.get_unchecked(index) }.info().user()).merge_with(&info.user());
-                    drop(info);
+                    (unsafe { songs.get_unchecked(index) }.info().user())
+                        .merge_with(&song.info().user());
                     drop(song);
                 }
             }
@@ -684,13 +678,12 @@ impl Library {
             let missing_rx = Arc::clone(&missing_rx);
             Library::run_task(LIBRARY_TX.get().unwrap(), move || {
                 while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
-                    let old_info = missing.info();
-
                     // Optimization: start with an initial guess and expand outwards
-                    let guess = match songs.find_song(&old_info.file_uri(), *uri_opt) {
+                    let guess = match songs.find_song(&missing.uri, *uri_opt) {
                         Err(index) | Ok(index) => index,
                     };
 
+                    let old_info = missing.info();
                     let (mut left, mut right) = (songs[..guess].iter(), songs[guess..].iter());
                     while match (left.next_back(), right.next()) {
                         (_, Some(song)) if merge_if_matching(&mut song.info(), &old_info) => false,
@@ -819,7 +812,7 @@ impl Library {
             unreachable!( /* `dir_uri` is a directory, not a song file */ )
         };
         for song in self.songs.iter().skip(start_index) {
-            if !song.info().file_uri().starts_with(dir_uri) {
+            if !song.uri.starts_with(dir_uri) {
                 return;
             }
             self.undo_songs.push(Arc::clone(song));
@@ -995,11 +988,19 @@ impl Library {
 
             let song = QueueItem::Song(self.song_from_library_or_new(file));
             match songs.binary_search_by(|existing: &QueueItem| {
-                // SAFETY: Only the `Song` variant is ever inserted into `songs`,
-                // which is defined in the scope of this function
-                unsafe { existing.as_song_unchecked().info().file_path() }
-                    // SAFETY: `song` is constructed using the `Song` variant
-                    .cmp(&unsafe { song.as_song_unchecked().info().file_path() })
+                // SAFETY: All accessed fields are contained within this function
+                unsafe {
+                    // SAFETY: Only the `Song` variant is ever inserted into `songs`
+                    (existing.as_song_unchecked().file.path().unwrap())
+                        .to_str()
+                        .unwrap()
+                        // SAFETY: `song` is constructed using the `Song` variant
+                        .cmp(
+                            (song.as_song_unchecked().file.path().unwrap())
+                                .to_str()
+                                .unwrap(),
+                        )
+                }
             }) {
                 Err(index) | Ok(index) => songs.insert(index, song),
             }
@@ -1048,8 +1049,7 @@ impl Library {
         ));
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
-            let Err(index) = songs.find_song(&missing.info().file_uri(), self.config.uri_opt())
-            else {
+            let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) else {
                 continue;
             };
             songs.insert(index, missing);
