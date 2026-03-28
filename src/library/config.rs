@@ -17,7 +17,6 @@ pub const FILE_SUPPORT: &[&str] = &[
 #[derive(Clone)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
-    pub dir: String,
     uri_opt: usize,
 }
 
@@ -31,7 +30,6 @@ impl LibraryConfig {
     pub fn new(directories: Vec<String>) -> Self {
         let mut config = LibraryConfig {
             directories,
-            dir: config_dir().clone(),
             uri_opt: 0,
         };
         config.update_trim_uri();

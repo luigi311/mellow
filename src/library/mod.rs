@@ -20,13 +20,13 @@ pub use artist::{Artist, SharedArtist, SortedArtistAlbums};
 pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
-use crate::UI_TIMEOUT;
 use crate::excuses::{EXP_RX, INIT_ERR};
 use crate::library::album::NewSharedAlbum;
 use crate::library::artist::NewSharedArtist;
 use crate::player::{PlayerRequest, QueueItem, SongQueue};
 use crate::ui::{UpdateUI, ui_tx};
 use crate::util::tasks::{BoxedTask, Runner};
+use crate::{UI_TIMEOUT, config_dir};
 use crate::{songs_file, util::visit_dirs};
 
 type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
@@ -853,7 +853,7 @@ impl Library {
     #[inline]
     pub fn init_queue(&self, queue_startup_choice: i32) -> Result<(), Box<dyn Error>> {
         match self.queue_initialized {
-            false => SongQueue::init_queue(&self.config.dir, self, queue_startup_choice.into()),
+            false => SongQueue::init_queue(config_dir(), self, queue_startup_choice.into()),
             true => Ok(()),
         }
     }
