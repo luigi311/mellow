@@ -165,6 +165,7 @@ impl Player {
     /// The function panics if initialization fails;
     /// initializing multiple times is not allowed
     #[inline]
+    #[must_use]
     pub fn init(player_rx: mpsc::Receiver<PlayerRequest>) -> Player {
         gst::init().expect("Could not initialize GStreamer");
 
@@ -174,7 +175,7 @@ impl Player {
         let bus = backend.bus().expect(INIT_ERR);
 
         Player {
-            queue: SongQueue::new(),
+            queue: SongQueue::init(),
 
             gapless: true,
 

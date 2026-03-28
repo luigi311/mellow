@@ -24,9 +24,10 @@ pub struct SongQueue {
 }
 
 impl SongQueue {
+    /// Constructs a new instance of `SongQueue`
     #[inline]
     #[must_use]
-    pub const fn new() -> Self {
+    pub const fn init() -> Self {
         Self {
             repeat: false,
             shuffle: false,
