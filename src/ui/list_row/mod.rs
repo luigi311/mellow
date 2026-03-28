@@ -52,7 +52,7 @@ impl ListRow {
     #[inline]
     pub fn copy_from(&self, other: &Self) {
         self.set_title(&other.title());
-        self.set_subtitle(&other.subtitle().unwrap());
+        self.set_subtitle(&other.subtitle().unwrap_or_default());
 
         let row = self.imp();
         let other = other.imp();

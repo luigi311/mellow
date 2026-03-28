@@ -58,6 +58,9 @@ impl AlbumObject {
     }
 
     /// Unloads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// Panics if `LIBRARY_TX` is uninitialized
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);

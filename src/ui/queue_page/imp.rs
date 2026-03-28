@@ -683,6 +683,8 @@ impl QueuePage {
                     return;
                 }
 
+                // IDEA: Offset `start_y` so it points to the center of the dragged row
+
                 if let Some(to_row_index) = (queue_page.list_box)
                     .row_at_y((start_y + offset_y) as i32)
                     .map(|row| row.index())

@@ -14,8 +14,8 @@ UI issues:
 
 Song queue:
 
-- TODO: Add an indicator at the top and bottom of the list to show when there
-  are more items in that direction
+- [x] Add an indicator at the top and bottom of the list to show when there
+      are more items in that direction
   - IDEA: The indicators could be buttons which offset the visible list by one
     in that direction (and a button to reset and jump back to the playing song)
 - [x] Reorder using drag-&-drop

@@ -247,7 +247,7 @@ impl ArtistsPage {
     }
 
     #[inline]
-    pub fn uninit(&self) {
+    pub const fn uninit(&self) {
         // for artist in self.artists.take() {
         //     artist.imp().is_visible.store(false, Ordering::Relaxed);
         // }

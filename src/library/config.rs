@@ -75,6 +75,9 @@ impl LibraryConfig {
     }
 
     /// Removes the configured directory at `index`
+    ///
+    /// # Panics
+    /// Panics if either `LIBRARY_TX` or `UI_TX` is uninitialized
     pub fn remove_library(&mut self, index: usize) {
         let library_tx = LIBRARY_TX.get().expect(EXP_INIT);
         let _ = library_tx.send(LibraryRequest::CancelRebuild);

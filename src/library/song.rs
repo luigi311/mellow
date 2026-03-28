@@ -292,6 +292,9 @@ impl SongInfoLoader<'_> {
         hasher.finish().to_string()
     }
     /// Returns this song's thumbnail file path
+    ///
+    /// # Panics
+    /// Panics if `CACHE_DIR` is uninitialized
     #[inline]
     #[must_use]
     pub fn thumbnail_file_path(&self) -> String {
@@ -330,9 +333,13 @@ impl SongInfoLoader<'_> {
         (self.filename().rsplit_once('.')).map_or(String::new(), |name| name.0.to_owned())
     }
     /// Returns the song file modification time
+    ///
+    /// # Panics
+    /// Panics if the modification time could not be determined
     #[inline]
     #[must_use]
     pub fn file_modification_time(&self) -> i64 {
+        // TODO: Maybe return a result?
         self.file()
             .query_info(
                 gio::FILE_ATTRIBUTE_TIME_MODIFIED,
@@ -547,7 +554,7 @@ impl SongInfoLoader<'_> {
         if self.tagged.is_none() {
             self.tagged = Some(
                 Probe::open(self.file.path().unwrap())
-                    .map(|p| p.read())
+                    .map(Probe::read)
                     // Try again next time if file is inaccessible
                     .inspect_err(|_| self.set_modification_time(0))??,
             );

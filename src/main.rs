@@ -1,6 +1,7 @@
 use gtk::{gio, glib};
 use mellow::about;
 
+#[must_use] // To make Clippy happy
 pub fn main() -> glib::ExitCode {
     glib::set_application_name(about::app_name());
     glib::set_program_name(Some(about::app_name().to_lowercase()));

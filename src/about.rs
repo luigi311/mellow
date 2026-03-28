@@ -11,6 +11,7 @@ const LICENSE_TYPE: License = License::Gpl30;
 const DEVELOPERS: &[&str] = &["Iva Kotar"];
 const DESIGNERS: &[&str] = &["Iva Kotar"];
 
+/// Creates and opens a new 'About' window
 pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
     let about = adw::AboutDialog::builder()
         .application_icon(app_id())
@@ -25,18 +26,42 @@ pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
     about.present(Some(parent));
 }
 
+/// Returns the application ID, which is assigned from
+/// the `APP_ID` environment variable during compilation
+///
+/// # Panics
+/// Panics if the `APP_ID` environment variable
+/// was not set before building
 #[must_use]
 pub const fn app_id() -> &'static str {
     APP_ID.expect("APP_ID env var not set at compile time")
 }
+/// Returns the application name, which is assigned from
+/// the `APP_NAME` environment variable during compilation
+///
+/// # Panics
+/// Panics if the `APP_NAME` environment variable
+/// was not set before building
 #[must_use]
 pub const fn app_name() -> &'static str {
     APP_NAME.expect("APP_NAME env var not set at compile time")
 }
+/// Returns the application version, which is assigned from
+/// the `APP_VERSION` environment variable during compilation
+///
+/// # Panics
+/// Panics if the `APP_VERSION` environment variable
+/// was not set before building
 #[must_use]
 pub const fn app_version() -> &'static str {
     APP_VERSION.expect("APP_VERSION env var not set at compile time")
 }
+/// Returns the resources file path, which is assigned from
+/// the `RESOURCES_FILE` environment variable during compilation
+///
+/// # Panics
+/// Panics if the `RESOURCES_FILE` environment variable
+/// was not set before building
 #[must_use]
 pub const fn resources_file() -> &'static str {
     RESOURCES_FILE.expect("RESOURCES_FILE env var not set at compile time")

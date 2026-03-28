@@ -174,6 +174,7 @@ impl AlbumPage {
         album_page
     }
 
+    /// Assigns the album artwork to be shown on the page
     #[inline]
     pub fn assign_artwork(&self, artwork: Option<&gdk::Texture>) {
         if artwork.is_some() {
@@ -191,10 +192,15 @@ impl AlbumPage {
         self.imp().set_shuffle(shuffle);
     }
 
+    /// Starts a new queue with all songs from the currently shown album
     #[inline]
     pub fn play_now(&self, shuffle: bool) {
         imp::AlbumPage::play_now(self.imp().all_songs(), shuffle);
     }
+    /// Adds all songs from the currently shown album to the player queue
+    ///
+    /// # Panics
+    /// Panics if `UI_TX` is uninitialized
     #[inline]
     pub fn add_to_queue(&self) {
         let _ = (UI_TX.get().expect(EXP_INIT)).send(UpdateUI::RunAction("ui.library_nav_pop"));
