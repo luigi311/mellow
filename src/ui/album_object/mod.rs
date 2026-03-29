@@ -4,7 +4,7 @@ use glib::{Object, object::ObjectExt};
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::library::{Library, SharedAlbum, SharedSong, SharedSongExt, library_tx};
+use crate::library::{Library, SharedAlbum, library_tx};
 use crate::ui::{SortConfig, UpdateUI, ui_tx};
 
 mod imp;
@@ -20,14 +20,20 @@ glib::wrapper! {
 impl AlbumObject {
     #[inline]
     #[must_use]
-    pub fn new(index: u32, album: &str, artist: &str, year: u32, first_song: SharedSong) -> Self {
+    pub fn new(
+        index: u32,
+        album: &str,
+        artist: &str,
+        year: u32,
+        shared_album: SharedAlbum,
+    ) -> Self {
         let album_object: AlbumObject = Object::builder()
             .property("index", index)
             .property("album", album)
             .property("artist", artist)
             .property("year", year)
             .build();
-        let _ = album_object.imp().first_song.set(first_song);
+        let _ = album_object.imp().shared_album.set(shared_album);
         album_object
     }
 
@@ -39,13 +45,14 @@ impl AlbumObject {
         }
         let index = self.index() as usize;
         let imp = self.imp();
-        let song = Arc::clone(imp.first_song());
+        let album = Arc::clone(self.shared_album());
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(true, atomic::Ordering::Relaxed);
         Library::run_task(library_tx(), move || {
             if !is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
+            let song = Arc::clone(album.lock().unwrap().first_song());
             drop(song.info().load_thumbnail());
             song.info().unload_detailed(); // `load_thumbnail` may have loaded it
             let _ = ui_tx().send(UpdateUI::LibraryAlbumLoaded(index, song));
@@ -57,7 +64,7 @@ impl AlbumObject {
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);
         let imp = self.imp();
-        let song = Arc::clone(imp.first_song());
+        let album = Arc::clone(self.shared_album());
         let is_visible = Arc::clone(&imp.is_visible);
         is_visible.store(false, atomic::Ordering::Relaxed);
         // NOTE: Unloading in the background in case the `RwLock` is busy
@@ -65,19 +72,15 @@ impl AlbumObject {
             if is_visible.load(atomic::Ordering::Relaxed) {
                 return;
             }
-            song.info().unload_thumbnail();
+            album.lock().unwrap().first_song().info().unload_thumbnail();
         });
     }
 
     /// Returns the `SharedAlbum` associated with this object
     #[inline]
     #[must_use]
-    pub fn shared_album(&self) -> SharedAlbum {
-        self.imp().first_song().get_album().unwrap(
-            // Unwrapping here is okay, because `album_object` is only ever
-            // used in the context of the library, meaning the song should
-            // always have an album associated with it.
-        )
+    pub fn shared_album(&self) -> &SharedAlbum {
+        self.imp().shared_album()
     }
 
     /// Returns the ordering of `self` compared to `other`,

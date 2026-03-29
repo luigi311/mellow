@@ -5,7 +5,7 @@ use glib::Properties;
 use gtk::{gdk, glib};
 use std::sync::Arc;
 
-use crate::library::SharedSong;
+use crate::library::SharedAlbum;
 use crate::ui::AlbumData;
 
 #[derive(Properties, Default)]
@@ -23,16 +23,16 @@ pub struct AlbumObject {
     #[property(name = "added", get, set, type = u64, member = added)]
     pub data: RefCell<AlbumData>,
 
-    pub first_song: OnceCell<SharedSong>,
+    pub shared_album: OnceCell<SharedAlbum>,
     pub is_visible: Arc<AtomicBool>,
 }
 
 impl AlbumObject {
     #[inline]
     #[must_use]
-    pub(super) fn first_song(&self) -> &SharedSong {
+    pub(super) fn shared_album(&self) -> &SharedAlbum {
         // SAFETY: Must be constructed using `AlbumObject::new()`
-        unsafe { self.first_song.get().unwrap_unchecked() }
+        unsafe { self.shared_album.get().unwrap_unchecked() }
     }
 }
 

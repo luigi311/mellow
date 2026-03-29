@@ -64,11 +64,11 @@ impl AlbumsPage {
         let mut albums = Vec::with_capacity(n_items as usize);
 
         for i in 0..n_items {
-            albums.push(
+            albums.push(Arc::clone(
                 (model.item(i).unwrap().downcast_ref::<AlbumObject>())
                     .unwrap()
                     .shared_album(),
-            );
+            ));
         }
 
         let player_tx = player_tx();
@@ -122,13 +122,14 @@ impl AlbumsPage {
             // when `MutexGuard`s are explicitly dropped before the `await` point
             // Issue link: <https://github.com/rust-lang/rust-clippy/issues/6446>
             {
+                let shared_album = Arc::clone(album);
                 let album_locked = album.lock().unwrap();
                 album_objects.push(AlbumObject::new(
                     index as u32,
                     album_locked.title(),
                     album_locked.artist().lock().unwrap().name(),
                     album_locked.year() as u32,
-                    Arc::clone(&album_locked.songs()[0]),
+                    shared_album,
                 ));
             }
 
@@ -197,8 +198,7 @@ impl AlbumsPage {
                 album.set_rating(album_locked.sort_rating(3.0));
                 album.set_played(album_locked.average_play_count());
 
-                // SAFETY: An album with no songs cannot be constructed
-                let song = unsafe { album_locked.songs().get_unchecked(0) };
+                let song = album_locked.first_song();
                 let info = song.info();
                 let info = info.user();
 
@@ -280,10 +280,12 @@ impl ObjectImpl for AlbumsPage {
         self.init_search();
 
         self.albums_grid.connect_activate(|grid, index| {
-            let album = (grid.model().unwrap().item(index).unwrap())
-                .downcast_ref::<AlbumObject>()
-                .unwrap()
-                .shared_album();
+            let album = Arc::clone(
+                (grid.model().unwrap().item(index).unwrap())
+                    .downcast_ref::<AlbumObject>()
+                    .unwrap()
+                    .shared_album(),
+            );
             ui_tx().send(UpdateUI::AlbumPage(album)).expect(EXP_RX);
         });
 

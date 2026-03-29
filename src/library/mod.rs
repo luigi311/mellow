@@ -103,7 +103,7 @@ impl ToQueue for Albums {
     fn to_queue(&self) -> Vec<QueueItem> {
         let mut queue = Vec::<QueueItem>::with_capacity(self.len() * 8);
         for album in self {
-            for song in &album.lock().unwrap().songs {
+            for song in album.lock().unwrap().songs() {
                 queue.push(QueueItem::Song(Arc::clone(song)));
             }
         }
@@ -119,7 +119,7 @@ impl ToShuffledQueue for Albums {
             shuffled.swap(i, rand_index);
         }
         for index in shuffled {
-            for song in &self[index].lock().unwrap().songs {
+            for song in self[index].lock().unwrap().songs() {
                 queue.push(QueueItem::Song(Arc::clone(song)));
             }
         }
@@ -147,7 +147,7 @@ impl ToQueue for Artists {
         let mut queue = Vec::<QueueItem>::with_capacity(self.len() * 16);
         for artist in self {
             for album in &artist.lock().unwrap().albums {
-                for song in &album.lock().unwrap().songs {
+                for song in album.lock().unwrap().songs() {
                     queue.push(QueueItem::Song(Arc::clone(song)));
                 }
             }
@@ -165,7 +165,7 @@ impl ToShuffledQueue for Artists {
         }
         for index in shuffled {
             for album in &self[index].lock().unwrap().albums {
-                for song in &album.lock().unwrap().songs {
+                for song in album.lock().unwrap().songs() {
                     queue.push(QueueItem::Song(Arc::clone(song)));
                 }
             }
@@ -423,7 +423,9 @@ impl Library {
                     Ok(album_index) => {
                         // SAFETY: `album_index` is `Ok`, therefore within bounds
                         let album = unsafe { albums.get_unchecked(album_index) };
-                        let album_songs = &mut album.lock().unwrap().songs;
+                        let mut album_locked = album.lock().unwrap();
+                        // SAFETY: Songs will only be added, not removed
+                        let album_songs = unsafe { album_locked.songs_mut() };
 
                         // Add the song to the album songs
                         let song_index = album_songs.find_album_song(song_info);

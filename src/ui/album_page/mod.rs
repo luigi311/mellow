@@ -38,7 +38,6 @@ impl AlbumPage {
 
         let ui = album_page.imp();
         let album_locked = album.lock().unwrap();
-        let songs = album_locked.songs();
 
         album_page.set_title(&["Album: ", album_locked.title()].concat());
         ui.album.replace(Some(Arc::clone(album)));
@@ -138,14 +137,14 @@ impl AlbumPage {
             album_group.add(&song_row);
         }
 
-        let mut info = songs[0].info();
+        let first_song = Arc::clone(album_locked.first_song());
+        let mut info = first_song.info();
         let Some(ref detailed_info) = *info.inspect_detailed() else {
             match info.load_thumbnail().as_ref() {
                 None => ui.album_cover.set_paintable(Some(&fallback_album_image())),
                 thumbnail => ui.album_cover.set_paintable(thumbnail),
             }
 
-            let song = Arc::clone(&songs[0]);
             let cancel = Arc::clone(&ui.cancel_artowrk_loading);
             Library::run_task(library_tx(), move || {
                 if cancel.load(Ordering::Relaxed) {
@@ -153,13 +152,13 @@ impl AlbumPage {
                     println!("Arwork loading cancelled");
                     return;
                 }
-                drop(song.info().load_detailed());
+                drop(first_song.info().load_detailed());
                 if cancel.load(Ordering::Relaxed) {
                     #[cfg(debug_assertions)]
                     println!("Arwork assignment cancelled");
                     return;
                 }
-                let _ = ui_tx().send(UpdateUI::AlbumPageLoaded(page_index, song));
+                let _ = ui_tx().send(UpdateUI::AlbumPageLoaded(page_index, first_song));
             });
 
             return album_page;

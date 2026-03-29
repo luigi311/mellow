@@ -193,8 +193,7 @@ impl ArtistsPage {
                 let album_locked = unsafe { artist_locked.albums().last().unwrap_unchecked() }
                     .lock()
                     .unwrap();
-                // SAFETY: An album with no songs cannot be constructed
-                let song = unsafe { album_locked.songs().get_unchecked(0) };
+                let song = album_locked.first_song();
                 let info = song.info();
                 let info = info.user();
 

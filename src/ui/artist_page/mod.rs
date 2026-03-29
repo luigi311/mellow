@@ -55,7 +55,7 @@ impl ArtistPage {
                 _ => String::new(),
             });
 
-            let mut info = album_locked.songs()[0].info();
+            let mut info = album_locked.first_song().info();
             match info.load_thumbnail().as_ref() {
                 None => album_row.set_prefix_image(Some(&fallback_image)),
                 thumbnail => album_row.set_prefix_image(thumbnail),

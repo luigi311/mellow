@@ -131,14 +131,12 @@ impl NavigationPageImpl for AlbumPage {}
 
 impl Drop for AlbumPage {
     fn drop(&mut self) {
-        #[cfg(debug_assertions)]
-        println!("Unloading the album page artwork after closing");
         self.cancel_artowrk_loading.store(true, Ordering::Relaxed);
         let Some(album) = self.album.take() else {
             return;
         };
         if let Ok(album) = album.try_lock() {
-            album.songs()[0].info().try_unload_detailed();
+            album.first_song().info().try_unload_detailed();
         }
     }
 }

@@ -10,36 +10,58 @@ pub struct Album {
     pub(super) title: String,
     pub(super) year: u16,
     /// # Safety
-    /// `songs` must never be empty, or undefined behaviour could ensue
-    pub(super) songs: AlbumSongs,
+    /// Costruct using `NewSharedAlbum::new_album` to ensure
+    /// `songs` is never empty to prevent undefined behavior
+    songs: AlbumSongs, // Private to enforce safety requirement
     pub(super) artist: SharedArtist,
 }
 
 impl Album {
+    /// Returns the album's title
     #[inline]
     #[must_use]
     pub fn title(&self) -> &str {
         &self.title
     }
+    /// Returns the album's release year
     #[inline]
     #[must_use]
     pub const fn year(&self) -> u16 {
         self.year
     }
+    /// Returns a reference to the album songs
     #[inline]
     #[must_use]
     pub const fn songs(&self) -> &AlbumSongs {
         &self.songs
     }
+    /// Returns a mutable reference to the album songs
+    ///
+    /// # Safety
+    /// The songs list must never be empty to prevent undefined behavior
+    #[inline]
+    #[must_use]
+    pub const unsafe fn songs_mut(&mut self) -> &mut AlbumSongs {
+        &mut self.songs
+    }
+    /// Returns a reference to the album's artist
     #[inline]
     #[must_use]
     pub const fn artist(&self) -> &SharedArtist {
         &self.artist
     }
+    /// Returns a cloned `Arc` for the album's artist
     #[inline]
     #[must_use]
     pub fn artist_cloned(&self) -> SharedArtist {
         Arc::clone(&self.artist)
+    }
+    /// Returns a reference to the first song on the album
+    #[inline]
+    #[must_use]
+    pub fn first_song(&self) -> &SharedSong {
+        // SAFETY: An album with no songs cannot be constructed
+        unsafe { self.songs.get_unchecked(0) }
     }
 
     /// Loops through all album songs and returns the average rating,
