@@ -241,10 +241,10 @@ impl SongInfoLoader<'_> {
     #[must_use]
     pub fn matches(&self, other: &SongInfoLoader) -> bool {
         self.inspect_basic().as_ref().map_or_else(
-            || self.file_uri() == other.file_uri(),
+            || self.uri == other.uri,
             |own_info| {
                 other.inspect_basic().as_ref().map_or_else(
-                    || self.file_uri() == other.file_uri(),
+                    || self.uri == other.uri,
                     |other_info| own_info == other_info,
                 )
             },
@@ -261,22 +261,22 @@ impl SongInfoLoader<'_> {
     /// Retruns the song file URI, which can be used by `GStreamer`
     #[inline]
     #[must_use]
-    pub fn file_uri(&self) -> String {
-        self.uri.to_owned()
+    pub fn file_uri(&self) -> &str {
+        self.uri
     }
     /// Returns the hash of the `file_uri`, used for thumbnail files
     #[inline]
     #[must_use]
-    pub fn uri_hash(&self) -> String {
+    pub fn uri_hash(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
-        self.file_uri().hash(&mut hasher);
-        hasher.finish().to_string()
+        self.uri.hash(&mut hasher);
+        hasher.finish()
     }
     /// Returns this song's thumbnail file path
     #[inline]
     #[must_use]
     pub fn thumbnail_file_path(&self) -> String {
-        [cache_dir(), "thumbnails/", &self.uri_hash()].concat()
+        [cache_dir(), "thumbnails/", &self.uri_hash().to_string()].concat()
     }
     /// Returns the full song file path
     ///

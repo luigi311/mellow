@@ -322,7 +322,7 @@ impl Player {
         }
 
         let file_uri = match self.queue.current() {
-            QueueItem::Song(song) => song.info().file_uri(),
+            QueueItem::Song(song) => song.uri.clone(),
             QueueItem::Stopper(stopper) => {
                 if stopper.should_close_player() {
                     let _ = ui_tx().send(UpdateUI::RunAction("app.quit"));
@@ -734,8 +734,7 @@ impl Player {
                     let QueueItem::Song(song) = self.queue.current() else {
                         return;
                     };
-                    let info = song.info();
-                    if error.contains(&info.file_uri()) {
+                    if error.contains(&song.uri) {
                         // info.unload_basic(); // Causes song info to be re-read from the file
 
                         // NOTE: Seeking to (or close to) 0 sometimes causes a gstreamer error:
