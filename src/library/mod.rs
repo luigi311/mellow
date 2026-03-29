@@ -268,7 +268,7 @@ impl Library {
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
 
                 LibraryRequest::QueueFromPaths(paths) => {
-                    self.play_from_paths(paths.iter().map(|p| &**p).collect())?
+                    self.play_from_paths(paths.iter().map(|path| &**path).collect())?
                 }
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
@@ -544,7 +544,7 @@ impl Library {
                 {
                     for dir in &config.directories {
                         // Filter songs outside of `config.directories`
-                        if !song.file.path().unwrap().to_str().unwrap().starts_with(dir) {
+                        if !song.file.path().unwrap().starts_with(dir) {
                             continue;
                         }
                         songs.insert(index, song);
@@ -995,14 +995,8 @@ impl Library {
                 unsafe {
                     // SAFETY: Only the `Song` variant is ever inserted into `songs`
                     (existing.as_song_unchecked().file.path().unwrap())
-                        .to_str()
-                        .unwrap()
                         // SAFETY: `song` is constructed using the `Song` variant
-                        .cmp(
-                            (song.as_song_unchecked().file.path().unwrap())
-                                .to_str()
-                                .unwrap(),
-                        )
+                        .cmp(&song.as_song_unchecked().file.path().unwrap())
                 }
             }) {
                 Err(index) | Ok(index) => songs.insert(index, song),
