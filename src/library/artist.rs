@@ -8,20 +8,36 @@ use crate::player::QueueItem;
 pub struct Artist {
     pub(super) name: String,
     /// # Safety
-    /// `albums` must never be empty, otherwise undefined behaviour could ensue
-    pub(super) albums: ArtistAlbums,
+    /// Costruct using `NewSharedArtist::new_artist` to ensure
+    /// `albums` is never empty to prevent undefined behavior
+    albums: ArtistAlbums, // Private to enforce safety requirement
 }
 
 impl Artist {
+    /// Raturns the artist's name
     #[inline]
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
+    /// Returns a reference the artist's albums
     #[inline]
     #[must_use]
     pub const fn albums(&self) -> &ArtistAlbums {
         &self.albums
+    }
+    /// Returns a mutable reference the artist's albums
+    #[inline]
+    #[must_use]
+    pub const unsafe fn albums_mut(&mut self) -> &mut ArtistAlbums {
+        &mut self.albums
+    }
+    /// Returns the artist's newest album
+    #[inline]
+    #[must_use]
+    pub fn newest_album(&self) -> &SharedAlbum {
+        // SAFETY: An artist with no albums cannot be constructed
+        unsafe { self.albums.last().unwrap_unchecked() }
     }
 }
 

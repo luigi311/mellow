@@ -146,7 +146,7 @@ impl ToQueue for Artists {
     fn to_queue(&self) -> Vec<QueueItem> {
         let mut queue = Vec::<QueueItem>::with_capacity(self.len() * 16);
         for artist in self {
-            for album in &artist.lock().unwrap().albums {
+            for album in artist.lock().unwrap().albums() {
                 for song in album.lock().unwrap().songs() {
                     queue.push(QueueItem::Song(Arc::clone(song)));
                 }
@@ -164,7 +164,7 @@ impl ToShuffledQueue for Artists {
             shuffled.swap(i, rand_index);
         }
         for index in shuffled {
-            for album in &self[index].lock().unwrap().albums {
+            for album in self[index].lock().unwrap().albums() {
                 for song in album.lock().unwrap().songs() {
                     queue.push(QueueItem::Song(Arc::clone(song)));
                 }
@@ -441,7 +441,9 @@ impl Library {
                     Err(album_index) => {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
                         let artist = unsafe { artists.get_unchecked(artist_index) };
-                        let artist_albums = &mut artist.lock().unwrap().albums;
+                        let mut artist_locked = artist.lock().unwrap();
+                        // SAFETY: Albums will only be added, not removed
+                        let artist_albums = unsafe { artist_locked.albums_mut() };
                         let album = SharedAlbum::new_album(
                             song_info, //
                             Arc::clone(song),

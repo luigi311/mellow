@@ -189,10 +189,7 @@ impl ArtistsPage {
                 let artist = item.downcast_ref::<ArtistObject>().unwrap();
                 let shared_artist = artist.shared_artist();
                 let artist_locked = shared_artist.lock().unwrap();
-                // SAFETY: An artist with no albums cannot be constructed
-                let album_locked = unsafe { artist_locked.albums().last().unwrap_unchecked() }
-                    .lock()
-                    .unwrap();
+                let album_locked = artist_locked.newest_album().lock().unwrap();
                 let song = album_locked.first_song();
                 let info = song.info();
                 let info = info.user();
