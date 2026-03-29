@@ -286,6 +286,7 @@ impl ObjectImpl for ArtistsPage {
             ui_tx().send(UpdateUI::ArtistPage(artist)).expect(EXP_RX);
         });
 
+        // let fallback_image = fallback_artist_image();
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             let artist_tile = ItemTile::builder()
@@ -319,10 +320,12 @@ impl ObjectImpl for ArtistsPage {
                 &artist_object.artist(),
                 &format!("Albums: {}", artist_object.albums()),
             );
-            // artist_tile.set_artwork(&artist_object.artwork().unwrap_or_else(|| {
+            // if let Some(artwork) = artist_object.artwork() {
+            //     artist_tile.set_artwork(&artwork);
+            // } else {
             //     artist_object.load_artwork();
-            //     fallback_artist_image()
-            // }));
+            //     artist_tile.set_artwork(&fallback_image);
+            // }
 
             // artist_tile.add_binding(
             //     artist_object
