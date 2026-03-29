@@ -261,7 +261,7 @@ impl SongInfoLoader<'_> {
     /// Retruns the song file URI, which can be used by `GStreamer`
     #[inline]
     #[must_use]
-    pub fn file_uri(&self) -> &str {
+    pub const fn file_uri(&self) -> &str {
         self.uri
     }
     /// Returns the hash of the `file_uri`, used for thumbnail files
