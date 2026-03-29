@@ -544,7 +544,7 @@ impl Library {
                 {
                     for dir in &config.directories {
                         // Filter songs outside of `config.directories`
-                        if !song.file.path().unwrap().starts_with(dir) {
+                        if !song.file.path().unwrap().to_str().unwrap().starts_with(dir) {
                             continue;
                         }
                         songs.insert(index, song);
