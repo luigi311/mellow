@@ -428,12 +428,12 @@ impl Library {
                         let album_songs = unsafe { album_locked.songs_mut() };
 
                         // Add the song to the album songs
-                        let song_index = album_songs.find_album_song(song_info);
-                        match song_index {
+                        match album_songs.find_album_song(song_info) {
                             Err(song_index) | Ok(song_index) => {
                                 album_songs.insert(song_index, Arc::clone(song));
                             }
                         }
+                        drop(album_locked);
 
                         // Associate the song with its album
                         song.set_album(Arc::clone(album));
@@ -441,23 +441,23 @@ impl Library {
                     Err(album_index) => {
                         // SAFETY: `artist_index` is `Ok`, therefore within bounds
                         let artist = unsafe { artists.get_unchecked(artist_index) };
-                        let mut artist_locked = artist.lock().unwrap();
-                        // SAFETY: Albums will only be added, not removed
-                        let artist_albums = unsafe { artist_locked.albums_mut() };
                         let album = SharedAlbum::new_album(
                             song_info, //
                             Arc::clone(song),
                             Arc::clone(artist),
                         );
+                        let mut artist_locked = artist.lock().unwrap();
+                        // SAFETY: Albums will only be added, not removed
+                        let artist_albums = unsafe { artist_locked.albums_mut() };
 
-                        // Add the album to `albums` and the artist's albums
-                        albums.insert(album_index, Arc::clone(&album));
-                        let album_index = artist_albums.find_artist_album(song_info);
-                        match album_index {
+                        // Add the album to the artist's albums and `albums`
+                        match artist_albums.find_artist_album(song_info) {
                             Err(album_index) | Ok(album_index) => {
                                 artist_albums.insert(album_index, Arc::clone(&album));
                             }
                         }
+                        drop(artist_locked);
+                        albums.insert(album_index, Arc::clone(&album));
 
                         // Associate the song with its album
                         song.set_album(Arc::clone(&album));
