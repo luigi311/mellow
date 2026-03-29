@@ -12,7 +12,6 @@ use lofty::prelude::*;
 use lofty::probe::Probe;
 
 use crate::cache_dir;
-use crate::excuses::EXP_INIT;
 use crate::library::SharedAlbum;
 use crate::util::{deserialize, serialize, serialize_list, unescaped_split};
 
@@ -32,7 +31,7 @@ pub trait SharedSongExt {
     fn from_path(path: &str) -> SharedSong;
     fn deserialize(data: &str) -> Option<SharedSong>;
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>>;
-    fn get_album(&self) -> SharedAlbum;
+    fn get_album(&self) -> Option<SharedAlbum>;
     fn set_album(&self, album: SharedAlbum);
 }
 impl SharedSongExt for SharedSong {
@@ -60,14 +59,11 @@ impl SharedSongExt for SharedSong {
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>> {
         self.album.lock().unwrap()
     }
-    /// Returns a cloned reference to the currently assigned `SharedAlbum`
-    ///
-    /// # Panics
-    /// Panics if the `album` has not been initialized or if the `Mutex`
-    /// is poisoned
+    /// Returns a cloned reference to the assigned `Option<SharedAlbum>`.
+    /// The value can be `None` if the song is not part of the library.
     #[inline]
-    fn get_album(&self) -> SharedAlbum {
-        Arc::clone(self.album.lock().unwrap().as_ref().expect(EXP_INIT))
+    fn get_album(&self) -> Option<SharedAlbum> {
+        self.album.lock().unwrap().clone()
     }
     /// Sets `self.album` to the given `album`
     #[inline]

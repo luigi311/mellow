@@ -73,7 +73,11 @@ impl AlbumObject {
     #[inline]
     #[must_use]
     pub fn shared_album(&self) -> SharedAlbum {
-        self.imp().first_song().get_album()
+        self.imp().first_song().get_album().unwrap(
+            // Unwrapping here is okay, because `album_object` is only ever
+            // used in the context of the library, meaning the song should
+            // always have an album associated with it.
+        )
     }
 
     /// Returns the ordering of `self` compared to `other`,

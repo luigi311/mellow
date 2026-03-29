@@ -66,23 +66,20 @@ impl SongPage {
     }
     #[template_callback]
     pub fn handle_go_to_album(&self) {
-        (ui_tx().send(UpdateUI::AlbumPage(
-            self.shared_song.borrow().as_ref().unwrap().get_album(),
-        )))
-        .expect(EXP_RX);
+        // Do nothing if the song is not from the user's library
+        // (button should be greyed out anyway)
+        if let Some(album) = self.shared_song.borrow().as_ref().unwrap().get_album() {
+            ui_tx().send(UpdateUI::AlbumPage(album)).expect(EXP_RX);
+        }
     }
     #[template_callback]
     pub fn handle_go_to_artist(&self) {
-        (ui_tx().send(UpdateUI::ArtistPage(
-            (self.shared_song.borrow().as_ref().unwrap())
-                .album()
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .artist_cloned(),
-        )))
-        .expect(EXP_RX);
+        // Do nothing if the song is not from the user's library
+        // (button should be greyed out anyway)
+        if let Some(album) = self.shared_song.borrow().as_ref().unwrap().get_album() {
+            (ui_tx().send(UpdateUI::ArtistPage(album.lock().unwrap().artist_cloned())))
+                .expect(EXP_RX);
+        }
     }
 }
 
