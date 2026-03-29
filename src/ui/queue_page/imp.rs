@@ -145,7 +145,7 @@ impl QueuePage {
                 (model_index * ROW_HEIGHT) as f64
                     + (self.view_further_up.is_visible() as i32 * PAN_UP_BUTTON_HEIGHT
                         // NOTE: For some reason, `margin_top` only has
-                        // to be acconted for when building with Meson
+                        // to be accounted for when building with Meson
                         - self.list_box.margin_top()) as f64,
             );
 
