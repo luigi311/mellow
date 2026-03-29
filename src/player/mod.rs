@@ -321,8 +321,10 @@ impl Player {
             return;
         }
 
+        let pending_track = self.queue.pending_track;
+
         let file_uri = match self.queue.current() {
-            QueueItem::Song(song) => song.uri.clone(),
+            QueueItem::Song(song) => &song.uri,
             QueueItem::Stopper(stopper) => {
                 if stopper.should_close_player() {
                     let _ = ui_tx().send(UpdateUI::RunAction("app.quit"));
@@ -335,7 +337,7 @@ impl Player {
             }
         };
 
-        if self.queue.pending_track {
+        if pending_track {
             println!("\n{file_uri}");
             self.backend.set_property("uri", file_uri);
             self.queue.pending_track = false;
