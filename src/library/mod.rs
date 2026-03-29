@@ -1024,12 +1024,13 @@ impl Library {
     /// so they can be assigned directly to `self.songs`
     ///
     /// Reads from a file called `songs` in `self.config.dir`
+    #[inline]
     #[must_use]
     fn deserialize_songs() -> Songs {
-        let Ok(data) = fs::read_to_string(songs_file()) else {
-            return Vec::with_capacity(512); // Estimate to reduce reallocations
-        };
-        (data.split("\n\n").filter_map(SharedSong::deserialize)).collect()
+        match fs::read_to_string(songs_file()) {
+            Ok(data) => (data.split("\n\n").filter_map(SharedSong::deserialize)).collect(),
+            Err(_) => Vec::with_capacity(512), // Estimate to reduce reallocations
+        }
     }
 
     /// Consumes `self`, writes the configuration to disk and shuts down gracefully
