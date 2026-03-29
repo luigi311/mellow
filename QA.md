@@ -19,6 +19,9 @@ Song Queue:
 - [x] Starting a new queue works as expected
 - [x] Adding items works as expected
 - [x] Removing items works as expected
+- [ ] Removal undo works as expected
+  - FIX: Undo removal in shuffle mode inserts tracks to the end of the sequential queue
+    instead of the previous position
 - [ ] Reordering the queue works as expected
   - FIX: Dragging an item and dropping it after the song changes moves the wrong item if the
     dragged item was ahead of the playing song and a stopper was encountered while dragging
