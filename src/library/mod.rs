@@ -264,8 +264,6 @@ impl Library {
         loop {
             match self.rx.recv()? {
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
-                LibraryRequest::Rebuild => self.discover_files(),
-                LibraryRequest::CancelRebuild => self.cancel_library_build(),
 
                 LibraryRequest::QueueFromPaths(paths) => {
                     self.play_from_paths(paths.iter().map(|path| &**path).collect())?;
@@ -277,6 +275,8 @@ impl Library {
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
                 LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
                 LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
+                LibraryRequest::CancelRebuild => self.cancel_library_build(),
+                LibraryRequest::Rebuild => self.discover_files(),
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
@@ -767,9 +767,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_songs(&mut self, songs: Songs) {
-        ui_tx()
-            .send(UpdateUI::SetLibrarySongs(songs.clone()))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::SetLibrarySongs(songs.clone()))).expect(EXP_RX);
         self.songs = songs;
     }
     /// Replaces `self.albums` with `albums`
@@ -777,9 +775,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_albums(&mut self, albums: Albums) {
-        ui_tx()
-            .send(UpdateUI::SetLibraryAlbums(albums.clone()))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::SetLibraryAlbums(albums.clone()))).expect(EXP_RX);
         self.albums = albums;
         for f in mem::take(&mut self.on_albums_set) {
             f(self);
@@ -790,9 +786,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is closed
     fn set_artists(&mut self, artists: Artists) {
-        ui_tx()
-            .send(UpdateUI::SetLibraryArtists(artists.clone()))
-            .expect(EXP_RX);
+        (ui_tx().send(UpdateUI::SetLibraryArtists(artists.clone()))).expect(EXP_RX);
         self.artists = artists;
         for f in mem::take(&mut self.on_artists_set) {
             f(self);
@@ -807,9 +801,8 @@ impl Library {
     /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
     pub fn register_undo_directory(&mut self, dir: String) {
         let dir_uri = &*gio::File::for_path(dir).uri();
-        let Err(start_index) = self
-            .songs
-            .find_song(dir_uri, self.config.uri_opt().min(dir_uri.len()))
+        let Err(start_index) =
+            (self.songs).find_song(dir_uri, self.config.uri_opt().min(dir_uri.len()))
         else {
             unreachable!( /* `dir_uri` is a directory, not a song file */ )
         };
@@ -1046,10 +1039,9 @@ impl Library {
         ));
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
-            let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) else {
-                continue;
+            if let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) {
+                songs.insert(index, missing);
             };
-            songs.insert(index, missing);
         }
         Library::serialize_songs(&songs);
         self.tasks.shutdown();
@@ -1061,8 +1053,8 @@ impl Library {
 #[inline]
 #[must_use]
 pub fn file_supported(file: &str) -> bool {
-    let Some(extension) = file.rsplit_once('.').map(|s| s.1.to_lowercase()) else {
-        return false;
-    };
-    FILE_SUPPORT.iter().any(|&ext| extension == ext)
+    match file.rsplit_once('.').map(|s| s.1.to_lowercase()) {
+        Some(extension) => FILE_SUPPORT.iter().any(|&ext| extension == ext),
+        None => false,
+    }
 }
