@@ -424,10 +424,10 @@ impl Library {
                         // SAFETY: `album_index` is `Ok`, therefore within bounds
                         let album = unsafe { albums.get_unchecked(album_index) };
                         let mut album_locked = album.lock().unwrap();
-                        // SAFETY: Songs will only be added, not removed
-                        let album_songs = unsafe { album_locked.songs_mut() };
 
                         // Add the song to the album songs
+                        // SAFETY: Songs will only be added, not removed
+                        let album_songs = unsafe { album_locked.songs_mut() };
                         match album_songs.find_album_song(song_info) {
                             Err(index) | Ok(index) => album_songs.insert(index, Arc::clone(song)),
                         }
@@ -445,10 +445,10 @@ impl Library {
                             Arc::clone(artist),
                         );
                         let mut artist_locked = artist.lock().unwrap();
-                        // SAFETY: Albums will only be added, not removed
-                        let artist_albums = unsafe { artist_locked.albums_mut() };
 
                         // Add the album to the artist's albums and `albums`
+                        // SAFETY: Albums will only be added, not removed
+                        let artist_albums = unsafe { artist_locked.albums_mut() };
                         match artist_albums.find_artist_album(song_info) {
                             Err(ind) | Ok(ind) => artist_albums.insert(ind, Arc::clone(&album)),
                         }
