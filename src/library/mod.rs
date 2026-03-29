@@ -429,9 +429,7 @@ impl Library {
 
                         // Add the song to the album songs
                         match album_songs.find_album_song(song_info) {
-                            Err(song_index) | Ok(song_index) => {
-                                album_songs.insert(song_index, Arc::clone(song));
-                            }
+                            Err(index) | Ok(index) => album_songs.insert(index, Arc::clone(song)),
                         }
                         drop(album_locked);
 
@@ -452,9 +450,7 @@ impl Library {
 
                         // Add the album to the artist's albums and `albums`
                         match artist_albums.find_artist_album(song_info) {
-                            Err(album_index) | Ok(album_index) => {
-                                artist_albums.insert(album_index, Arc::clone(&album));
-                            }
+                            Err(ind) | Ok(ind) => artist_albums.insert(ind, Arc::clone(&album)),
                         }
                         drop(artist_locked);
                         albums.insert(album_index, Arc::clone(&album));
@@ -472,9 +468,7 @@ impl Library {
 
                     // Add to the library albums as well
                     match album_index {
-                        Err(album_index) | Ok(album_index) => {
-                            albums.insert(album_index, Arc::clone(&album));
-                        }
+                        Err(index) | Ok(index) => albums.insert(index, Arc::clone(&album)),
                     }
 
                     // Add the artist entry
