@@ -446,13 +446,15 @@ impl Library {
                         );
                         let mut artist_locked = artist.lock().unwrap();
 
-                        // Add the album to the artist's albums and `albums`
+                        // Add the album to the artist's albums
                         // SAFETY: Albums will only be added, not removed
                         let artist_albums = unsafe { artist_locked.albums_mut() };
                         match artist_albums.find_artist_album(song_info) {
                             Err(ind) | Ok(ind) => artist_albums.insert(ind, Arc::clone(&album)),
                         }
                         drop(artist_locked);
+
+                        // Add to the library albums as well
                         albums.insert(album_index, Arc::clone(&album));
 
                         // Associate the song with its album
