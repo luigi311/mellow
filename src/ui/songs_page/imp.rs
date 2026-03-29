@@ -272,6 +272,7 @@ impl ObjectImpl for SongsPage {
             (ui_tx().send(UpdateUI::SongPageByIndex(index as usize))).expect(EXP_RX);
         });
 
+        let fallback_image = fallback_song_image();
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             list_item
@@ -295,10 +296,12 @@ impl ObjectImpl for SongsPage {
                 .expect("Needs to be ItemRow");
 
             song_row.set_info(&song_object.song(), &song_object.artist());
-            song_row.set_artwork(&song_object.artwork().unwrap_or_else(|| {
+            if let Some(artwork) = song_object.artwork() {
+                song_row.set_artwork(&artwork);
+            } else {
                 song_object.load_artwork();
-                fallback_song_image()
-            }));
+                song_row.set_artwork(&fallback_image);
+            }
 
             song_row.add_binding(
                 song_object

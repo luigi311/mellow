@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::excuses::EXP_RX;
 use crate::library::SharedArtist;
 use crate::ui::ListRow;
-use crate::ui::{UpdateUI, fallback_song_image, ui_tx};
+use crate::ui::{UpdateUI, fallback_album_image, ui_tx};
 
 mod imp;
 
@@ -43,6 +43,8 @@ impl ArtistPage {
         ui.artist_name.set_label(artist.name());
 
         ui.albums_list.remove_all();
+
+        let fallback_image = fallback_album_image();
         for album in artist.albums() {
             let album_row = ListRow::new();
 
@@ -55,7 +57,7 @@ impl ArtistPage {
 
             let mut info = album_locked.songs()[0].info();
             match info.load_thumbnail().as_ref() {
-                None => album_row.set_prefix_image(Some(&fallback_song_image())),
+                None => album_row.set_prefix_image(Some(&fallback_image)),
                 thumbnail => album_row.set_prefix_image(thumbnail),
             }
 

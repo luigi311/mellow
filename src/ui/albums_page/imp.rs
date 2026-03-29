@@ -287,6 +287,7 @@ impl ObjectImpl for AlbumsPage {
             ui_tx().send(UpdateUI::AlbumPage(album)).expect(EXP_RX);
         });
 
+        let fallback_image = fallback_album_image();
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             list_item
@@ -310,11 +311,12 @@ impl ObjectImpl for AlbumsPage {
                 .expect("Needs to be ItemTile");
 
             album_tile.set_info(&album_object.album(), &album_object.artist());
-            // TODO: Set this on the object instead?
-            album_tile.set_artwork(&album_object.artwork().unwrap_or_else(|| {
+            if let Some(artwork) = album_object.artwork() {
+                album_tile.set_artwork(&artwork);
+            } else {
                 album_object.load_artwork();
-                fallback_album_image()
-            }));
+                album_tile.set_artwork(&fallback_image);
+            }
 
             album_tile.add_binding(
                 album_object

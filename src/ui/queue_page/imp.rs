@@ -466,6 +466,7 @@ impl QueuePage {
     fn setup_model(&self) {
         let model = gio::ListStore::new::<QueueItemObject>();
         let selection_mode = Rc::clone(&self.selection_mode);
+        let fallback_image = fallback_song_image();
         self.list_box.bind_model(Some(&model), move |object| {
             // TODO: Optimize: There is a slight delay whenever the queue is updated
             // It seems to be related to the rows trying to determine their heights,
@@ -498,15 +499,15 @@ impl QueuePage {
                             .build(),
                     ]);
 
-                    queue_row.set_suffix_label(&queue_item_object.suffix());
-
                     let artwork = queue_item_object.artwork();
                     if artwork.is_some() {
                         queue_row.set_prefix_image(artwork.as_ref());
                     } else {
                         queue_item_object.load_artwork();
-                        queue_row.set_prefix_image(Some(&fallback_song_image()));
+                        queue_row.set_prefix_image(Some(&fallback_image));
                     }
+
+                    queue_row.set_suffix_label(&queue_item_object.suffix());
                 }
                 QueueItem::Stopper(_) => {
                     queue_row.add_css_class("heading");
