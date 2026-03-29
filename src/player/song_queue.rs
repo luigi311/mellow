@@ -580,8 +580,7 @@ impl SongQueue {
             && let Some(time) = lines.next().map(str::parse)
             && let Some(Ok(shuffle)) = lines.next().map(str::parse)
             && let Some(Ok(repeat)) = lines.next().map(str::parse)
-            && let queue =
-                library.songs_from_paths(&lines.map(String::from).collect::<Vec<String>>())
+            && let queue = library.songs_from_paths(lines.collect::<Vec<&str>>())
             && !queue.is_empty()
         {
             let shuffled = if shuffle {

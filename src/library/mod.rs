@@ -267,7 +267,9 @@ impl Library {
                 LibraryRequest::Rebuild => self.discover_files(),
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
 
-                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(&paths)?,
+                LibraryRequest::QueueFromPaths(paths) => {
+                    self.play_from_paths(paths.iter().map(|p| &**p).collect())?
+                }
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
@@ -916,7 +918,7 @@ impl Library {
     ///
     /// # Errors
     /// The function errors if either the player or UI channel receiver is closed
-    pub fn play_from_paths(&mut self, paths: &[String]) -> Result<(), Box<dyn Error>> {
+    pub fn play_from_paths(&mut self, paths: Vec<&str>) -> Result<(), Box<dyn Error>> {
         let queue = self.songs_from_paths(paths);
         if queue.is_empty() {
             return Ok(());
@@ -932,8 +934,9 @@ impl Library {
     }
 
     /// Takes a list of file or directory paths and returns a queue
+    #[inline]
     #[must_use]
-    pub fn songs_from_paths(&self, paths: &[String]) -> Vec<QueueItem> {
+    pub fn songs_from_paths(&self, paths: Vec<&str>) -> Vec<QueueItem> {
         let mut queue = Vec::with_capacity(paths.len());
         for file in paths {
             if file_supported(file) {
