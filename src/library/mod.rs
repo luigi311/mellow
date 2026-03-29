@@ -268,7 +268,7 @@ impl Library {
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
 
                 LibraryRequest::QueueFromPaths(paths) => {
-                    self.play_from_paths(paths.iter().map(|path| &**path).collect())?
+                    self.play_from_paths(paths.iter().map(|path| &**path).collect())?;
                 }
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
@@ -302,8 +302,8 @@ impl Library {
     /// The function panics if `create_connections()` fails
     pub fn discover_files(&mut self) {
         let mut songs = match self.songs.is_empty() {
+            true => Library::deserialize_songs(),
             false => mem::take(&mut self.songs),
-            true => self.deserialize_songs(),
         };
 
         for library_path in &self.config.directories {
@@ -1011,8 +1011,7 @@ impl Library {
     /// Writes to a file called `songs` in `self.config.dir`
     #[inline]
     fn serialize_songs(songs: &Songs) {
-        let serialized = songs
-            .iter()
+        let serialized = (songs.iter())
             .map(|song| song.serlialize() + "\n")
             .collect::<String>();
         match fs::write(songs_file(), serialized.trim()) {
@@ -1026,7 +1025,7 @@ impl Library {
     ///
     /// Reads from a file called `songs` in `self.config.dir`
     #[must_use]
-    fn deserialize_songs(&self) -> Songs {
+    fn deserialize_songs() -> Songs {
         let Ok(data) = fs::read_to_string(songs_file()) else {
             return Vec::with_capacity(512); // Estimate to reduce reallocations
         };
