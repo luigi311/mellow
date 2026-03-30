@@ -42,78 +42,73 @@
               <object class="AdwPreferencesGroup">
 
                 <child>
-                  <object class="AdwPreferencesRow">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="halign">center</property>
+
+                    Album artwork
+                    <child>
+                      <object class="GtkPicture" id="album_cover">
+                        <property name="margin_start">16</property>
+                        <property name="margin_end">16</property>
+                        <property name="margin_top">16</property>
+                        <property name="content_fit">contain</property>
+                        <property name="halign">center</property>
+                        <property name="width_request">256</property>
+                        <property name="height_request">256</property>
+                        <style>
+                          <class name="card"/>
+                        </style>
+                      </object>
+                    </child>
+
+                    Album info
                     <child>
                       <object class="GtkBox">
+                        <property name="margin_top">12</property>
+                        <property name="spacing">6</property>
                         <property name="orientation">vertical</property>
-                        <property name="halign">center</property>
-
-                        Album artwork
                         <child>
-                          <object class="GtkPicture" id="album_cover">
-                            <property name="margin_start">16</property>
-                            <property name="margin_end">16</property>
-                            <property name="margin_top">16</property>
-                            <property name="content_fit">contain</property>
-                            <property name="halign">center</property>
-                            <property name="width_request">256</property>
-                            <property name="height_request">256</property>
+                          <object class="GtkLabel" id="details">
+                            <property name="wrap">true</property>
+                            <property name="wrap-mode">word</property>
+                            <property name="justify">center</property>
                             <style>
-                              <class name="card"/>
+                              <class name="caption-heading"/>
+                              <class name="dimmed"/>
                             </style>
                           </object>
                         </child>
-
-                        Album info
                         <child>
-                          <object class="GtkBox">
-                            <property name="margin_top">10</property>
-                            <property name="margin_bottom">16</property>
-                            <property name="spacing">6</property>
-                            <property name="orientation">vertical</property>
-                            <child>
-                              <object class="GtkLabel" id="details">
-                                <property name="wrap">true</property>
-                                <property name="wrap-mode">word</property>
-                                <property name="justify">center</property>
-                                <style>
-                                  <class name="caption-heading"/>
-                                  <class name="dimmed"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="artist_name">
-                                <property name="wrap">true</property>
-                                <property name="wrap-mode">word</property>
-                                <property name="justify">center</property>
-                                <style>
-                                  <class name="caption-heading"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="album_title">
-                                <property name="wrap">true</property>
-                                <property name="wrap-mode">word</property>
-                                <property name="justify">center</property>
-                                <style>
-                                  <class name="heading"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="year">
-                                <property name="margin_bottom">8</property>
-                                <style>
-                                  <class name="caption-heading"/>
-                                </style>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="MellowRating" id="rating"/>
-                            </child>
+                          <object class="GtkLabel" id="artist_name">
+                            <property name="wrap">true</property>
+                            <property name="wrap-mode">word</property>
+                            <property name="justify">center</property>
+                            <style>
+                              <class name="caption-heading"/>
+                            </style>
                           </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="album_title">
+                            <property name="wrap">true</property>
+                            <property name="wrap-mode">word</property>
+                            <property name="justify">center</property>
+                            <style>
+                              <class name="heading"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="year">
+                            <property name="margin_bottom">8</property>
+                            <style>
+                              <class name="caption-heading"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="MellowRating" id="rating"/>
                         </child>
                       </object>
                     </child>

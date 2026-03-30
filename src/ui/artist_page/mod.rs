@@ -39,13 +39,17 @@ impl ArtistPage {
 
         ui.artist.replace(Some(Arc::clone(artist)));
         let artist = artist.lock().unwrap();
+        let albums = artist.albums();
         artist_page.set_title(&["Artist: ", artist.name()].concat());
         ui.artist_name.set_label(artist.name());
+        ui.album_count.set_label(
+            &format!("{} Albums", albums.len()), //TODO: Translations & grammar
+        );
 
         ui.albums_list.remove_all();
 
         let fallback_image = fallback_album_image();
-        for album in artist.albums() {
+        for album in albums {
             let album_row = ListRow::new();
 
             let album_locked = album.lock().unwrap();

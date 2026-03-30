@@ -16,6 +16,8 @@ pub struct ArtistPage {
     #[template_child]
     pub artist_name: TemplateChild<gtk::Label>,
     #[template_child]
+    pub album_count: TemplateChild<gtk::Label>,
+    #[template_child]
     pub albums_list: TemplateChild<gtk::ListBox>,
 
     shuffle: Cell<bool>,

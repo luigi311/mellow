@@ -15,49 +15,44 @@
               <object class="AdwPreferencesGroup">
 
                 <child>
-                  <object class="AdwPreferencesRow">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="margin_top">8</property>
+                    <property name="spacing">6</property>
+                    <property name="halign">center</property>
                     <child>
-                      <object class="GtkBox">
-                        <property name="orientation">vertical</property>
-                        <property name="margin_top">6</property>
-                        <property name="margin_bottom">12</property>
-                        <property name="spacing">6</property>
-                        <property name="halign">center</property>
-                        <child>
-                          <object class="GtkLabel" id="song_title">
-                            <property name="justify">center</property>
-                            <property name="wrap">true</property>
-                            <property name="wrap-mode">word</property>
-                            <style>
-                              <class name="heading"/>
-                            </style>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="album_title">
-                            <property name="justify">center</property>
-                            <property name="wrap">true</property>
-                            <property name="wrap-mode">word</property>
-                            <style>
-                              <class name="caption-heading"/>
-                            </style>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="artist_name">
-                            <property name="margin_bottom">6</property>
-                            <property name="justify">center</property>
-                            <property name="wrap">true</property>
-                            <property name="wrap-mode">word</property>
-                            <style>
-                              <class name="caption-heading"/>
-                            </style>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="MellowRating" id="rating"/>
-                        </child>
+                      <object class="GtkLabel" id="song_title">
+                        <property name="justify">center</property>
+                        <property name="wrap">true</property>
+                        <property name="wrap-mode">word</property>
+                        <style>
+                          <class name="heading"/>
+                        </style>
                       </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="album_title">
+                        <property name="justify">center</property>
+                        <property name="wrap">true</property>
+                        <property name="wrap-mode">word</property>
+                        <style>
+                          <class name="caption-heading"/>
+                        </style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="artist_name">
+                        <property name="margin_bottom">8</property>
+                        <property name="justify">center</property>
+                        <property name="wrap">true</property>
+                        <property name="wrap-mode">word</property>
+                        <style>
+                          <class name="caption-heading"/>
+                        </style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="MellowRating" id="rating"/>
                     </child>
                   </object>
                 </child>
