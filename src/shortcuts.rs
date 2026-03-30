@@ -39,10 +39,16 @@ pub fn show_shortcuts_dialog(parent: &impl IsA<gtk::Widget>) {
     shortcuts.add(player_section);
 
     let overlay_section = adw::ShortcutsSection::new(Some("Overlay"));
-    overlay_section.add(adw::ShortcutsItem::new("Open Playing", "<Ctrl><Shift>P"));
-    overlay_section.add(adw::ShortcutsItem::new("Open Settings", "<Ctrl>comma"));
     overlay_section.add(adw::ShortcutsItem::new("Open/Close Overlay", "<Ctrl>L"));
-    overlay_section.add(adw::ShortcutsItem::new("Open Library", "<Ctrl><Shift>L"));
+    overlay_section.add(adw::ShortcutsItem::new(
+        "Show Library Tab",
+        "<Ctrl><Shift>L",
+    ));
+    overlay_section.add(adw::ShortcutsItem::new(
+        "Show Playing Tab",
+        "<Ctrl><Shift>P",
+    ));
+    overlay_section.add(adw::ShortcutsItem::new("Show Settings Tab", "<Ctrl>comma"));
     shortcuts.add(overlay_section);
 
     let application_section = adw::ShortcutsSection::new(Some("Application"));
