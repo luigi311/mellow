@@ -22,15 +22,19 @@ Song Queue:
 - [ ] Removal undo works as expected
   - FIX: Undo removal in shuffle mode inserts tracks to the end of the sequential queue
     instead of the previous position
+  - FIX: Toggling shuffle before pressing undo inserts at the wrong position
+  - FIX: Encountering a stopper after removing an item ahead of the playing song results in undo
+    re-inserting the item at the wrong position (stopper is removed, so the index is off by one)
 - [ ] Reordering the queue works as expected
   - FIX: Dragging an item and dropping it after the song changes moves the wrong item if the
     dragged item was ahead of the playing song and a stopper was encountered while dragging
   - TODO: Improvement: Scroll when dragging close to the view borders
+    - IDEA: Also pan if dragging onto the pan button, once panning is implemented
 - [x] Selection mode works as expected
   - [x] Removing multiple items at once works as expected
 - [x] Stoppers work and behave as expected
   - TODO: Improvement: Stoppers should not shift when toggling shuffle mode
-- [x] Scrolling works without issues
+- [x] The landing page is shown for empty queues and works without issues
 
 Music Library:
 
@@ -40,6 +44,7 @@ Music Library:
 - [x] Library building works in the background and doesn't affect functionality
 - [ ] Searching is quick and works as expected
   - FIX: Items sometimes don't show up until scrolling after searching
+  - FIX: Cannot select text because it drags the header bar (except with `no-meson`)
   - TODO: The escape key should empty the search query when focused
 - [x] Sort modes work as expected
 - [ ] Filtering works as expected
@@ -57,10 +62,9 @@ User Experience:
 - [x] Lengthy tasks display a progress bar without blocking the interface
 - [x] All settings load properly (test with non-default values)
 - [ ] Does not leak memory
-  - Investigate: Possible issue with thumbnails/artworks not being fully unloaded;
-    By repeatedly toggling the shuffle mode on the queue page, memory usage increases
-    each time, but never exceeds the size of the thumbnails folder (sometimes decreases
-    as well)
+  - FIX: Possible issue with thumbnails/artworks not being fully unloaded; by repeatedly
+    toggling the shuffle mode on the queue page, memory usage increases each time, but
+    never exceeds the size of the thumbnails folder (sometimes decreases as well)
 - [x] No other issues found while testing
 
 Design Consistency:

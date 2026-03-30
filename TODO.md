@@ -20,6 +20,7 @@ Song queue:
     in that direction (and a button to reset and jump back to the playing song)
 - [x] Reorder using drag-&-drop
   - TODO: Improvement: Scroll when reaching top/bottom edges
+    - IDEA: Also pan if dragging onto the pan button, once panning is implemented
 - [-] Multi-selection mode
   - [x] Item selection (checkbox in place of the cover image)
   - [x] Removing multiple items at once
@@ -129,7 +130,7 @@ Ideas for improvements:
   - The library song page and queue subpage could display more information
     about the song, such as track number, disc, year, duration, play count,
     format/sample rate, filename, etc.
-  - An 'Open With' or 'Show on Disk' button
+  - An 'Open With' or 'Show on Disk' button (maybe a 'File Details' subpage?)
 - Library:
   - The library could get rid of the home page, and instead switch the pages
     using a dropdown menu in the headerbar instead (in place of the back button)
