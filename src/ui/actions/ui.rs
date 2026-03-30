@@ -25,6 +25,55 @@ pub fn close_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> 
         .build()
 }
 #[inline]
+pub fn toggle_sheet(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("toggle_sheet")
+        .activate(clone!(
+            #[weak(rename_to=ui)]
+            window.imp(),
+            move |_, _, _| ui.toggle_sheet()
+        ))
+        .build()
+}
+#[inline]
+pub fn open_library(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("open_library")
+        .activate(clone!(
+            #[weak(rename_to=ui)]
+            window.imp(),
+            move |_, _, _| {
+                ui.focus_library();
+                ui.open_sheet(true);
+            }
+        ))
+        .build()
+}
+#[inline]
+pub fn open_playing(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("open_playing")
+        .activate(clone!(
+            #[weak(rename_to=ui)]
+            window.imp(),
+            move |_, _, _| {
+                ui.focus_playing();
+                ui.open_sheet(true);
+            }
+        ))
+        .build()
+}
+#[inline]
+pub fn open_settings(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
+    gio::ActionEntry::builder("open_settings")
+        .activate(clone!(
+            #[weak(rename_to=ui)]
+            window.imp(),
+            move |_, _, _| {
+                ui.focus_settings();
+                ui.open_sheet(true);
+            }
+        ))
+        .build()
+}
+#[inline]
 pub fn playing_nav_push(window: &Window) -> gio::ActionEntry<gio::SimpleActionGroup> {
     gio::ActionEntry::builder("playing_nav_push")
         .parameter_type(Some(&String::static_variant_type()))

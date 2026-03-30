@@ -290,17 +290,20 @@ impl Window {
         self.settings_page.set_directories(dirs);
     }
 
-    fn focus_library(&self) {
+    pub fn focus_library(&self) {
         self.view_stack.set_visible_child_name("library");
     }
-    fn focus_playing(&self) {
+    pub fn focus_playing(&self) {
         self.view_stack.set_visible_child_name("playing");
     }
-    fn focus_settings(&self) {
+    pub fn focus_settings(&self) {
         self.view_stack.set_visible_child_name("settings");
     }
     pub fn open_sheet(&self, open: bool) {
         self.sheet.set_open(open);
+    }
+    pub fn toggle_sheet(&self) {
+        self.sheet.set_open(!self.sheet.is_open());
     }
 
     // FIX: Slight stutter when the library songs/albums/artists are assigned

@@ -65,6 +65,10 @@ impl Window {
         ui_actions.add_action_entries([
             actions::ui::open_sheet(self),
             actions::ui::close_sheet(self),
+            actions::ui::toggle_sheet(self),
+            actions::ui::open_library(self),
+            actions::ui::open_playing(self),
+            actions::ui::open_settings(self),
             actions::ui::playing_nav_push(self),
             actions::ui::playing_nav_pop(self),
             actions::ui::library_nav_pop(self),
@@ -91,9 +95,14 @@ impl Window {
         ]);
         self.insert_action_group("menu", Some(&menu_actions));
 
-        self.add_action_entries([gio::ActionEntry::builder("show_about_dialog")
-            .activate(move |window: &Window, _, _| about::show_about_dialog(window))
-            .build()]);
+        self.add_action_entries([
+            gio::ActionEntry::builder("show_about_dialog")
+                .activate(move |window: &Window, _, _| about::show_about_dialog(window))
+                .build(),
+            gio::ActionEntry::builder("show_shortcuts_dialog")
+                .activate(move |window: &Window, _, _| about::show_shortcuts_dialog(window))
+                .build(),
+        ]);
     }
 
     /// Sets up functionality to accept external file drops

@@ -25,6 +25,30 @@ pub fn show_about_dialog(parent: &impl IsA<gtk::Widget>) {
         .build();
     about.present(Some(parent));
 }
+/// Creates and opens a new 'Shortcuts' window
+pub fn show_shortcuts_dialog(parent: &impl IsA<gtk::Widget>) {
+    let shortcuts = adw::ShortcutsDialog::new();
+
+    let player_section = adw::ShortcutsSection::new(Some("Player"));
+    player_section.add(adw::ShortcutsItem::new("Play/Pause", "<Ctrl>P"));
+    player_section.add(adw::ShortcutsItem::new("Open Files", "<Ctrl>O"));
+    shortcuts.add(player_section);
+
+    let overlay_section = adw::ShortcutsSection::new(Some("Overlay"));
+    overlay_section.add(adw::ShortcutsItem::new("Open Playing", "<Ctrl><Shift>P"));
+    overlay_section.add(adw::ShortcutsItem::new("Open Settings", "<Ctrl>comma"));
+    overlay_section.add(adw::ShortcutsItem::new("Open/Close Overlay", "<Ctrl>L"));
+    overlay_section.add(adw::ShortcutsItem::new("Open Library", "<Ctrl><Shift>L"));
+    shortcuts.add(overlay_section);
+
+    let application_section = adw::ShortcutsSection::new(Some("Application"));
+    application_section.add(adw::ShortcutsItem::new("Show Shortcuts", "<Ctrl>question"));
+    application_section.add(adw::ShortcutsItem::new("Close Window", "<Ctrl>W"));
+    application_section.add(adw::ShortcutsItem::new("Quit", "<Ctrl>Q"));
+    shortcuts.add(application_section);
+
+    shortcuts.present(Some(parent));
+}
 
 /// Returns the application ID, which is assigned from
 /// the `APP_ID` environment variable during compilation

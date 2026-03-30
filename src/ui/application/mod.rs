@@ -31,11 +31,22 @@ impl Application {
         app.connect_activate(Self::present_window);
         app.connect_shutdown(Self::shutdown);
 
-        app.set_accels_for_action("app.quit", &["<Ctrl>Q"]);
-        app.set_accels_for_action("window.close", &["<Ctrl>W"]);
+        // Player Shortcuts
+        app.set_accels_for_action("player.play_pause", &["<Ctrl>P"]);
         app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
         // TODO: Ignore shortcut when the overlay is open
         // app.set_accels_for_action("player.play_pause", &["space"]);
+
+        // Overlay Shortcuts
+        app.set_accels_for_action("ui.toggle_sheet", &["<Ctrl>L"]);
+        app.set_accels_for_action("ui.open_library", &["<Ctrl><Shift>L"]);
+        app.set_accels_for_action("ui.open_playing", &["<Ctrl><Shift>P", "<Ctrl>period"]);
+        app.set_accels_for_action("ui.open_settings", &["<Ctrl><Shift>S", "<Ctrl>comma"]);
+
+        // Application Shortcuts
+        app.set_accels_for_action("win.show_shortcuts_dialog", &["<Ctrl>question"]);
+        app.set_accels_for_action("window.close", &["<Ctrl>W"]);
+        app.set_accels_for_action("app.quit", &["<Ctrl>Q"]);
 
         app.run()
     }
