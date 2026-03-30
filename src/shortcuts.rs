@@ -1,4 +1,4 @@
-use adw::prelude::*;
+use adw::{ShortcutsItem, ShortcutsSection, prelude::*};
 use glib::object::IsA;
 use gtk::glib;
 
@@ -33,28 +33,22 @@ impl Shortcuts for Application {
 pub fn show_shortcuts_dialog(parent: &impl IsA<gtk::Widget>) {
     let shortcuts = adw::ShortcutsDialog::new();
 
-    let player_section = adw::ShortcutsSection::new(Some("Player"));
-    player_section.add(adw::ShortcutsItem::new("Play/Pause", "<Ctrl>P"));
-    player_section.add(adw::ShortcutsItem::new("Open Files", "<Ctrl>O"));
+    let player_section = ShortcutsSection::new(Some("Player"));
+    player_section.add(ShortcutsItem::new("Play/Pause", "<Ctrl>P"));
+    player_section.add(ShortcutsItem::new("Open Files", "<Ctrl>O"));
     shortcuts.add(player_section);
 
-    let overlay_section = adw::ShortcutsSection::new(Some("Overlay"));
-    overlay_section.add(adw::ShortcutsItem::new("Open/Close Overlay", "<Ctrl>L"));
-    overlay_section.add(adw::ShortcutsItem::new(
-        "Show Library Tab",
-        "<Ctrl><Shift>L",
-    ));
-    overlay_section.add(adw::ShortcutsItem::new(
-        "Show Playing Tab",
-        "<Ctrl><Shift>P",
-    ));
-    overlay_section.add(adw::ShortcutsItem::new("Show Settings Tab", "<Ctrl>comma"));
+    let overlay_section = ShortcutsSection::new(Some("Overlay"));
+    overlay_section.add(ShortcutsItem::new("Open/Close Overlay", "<Ctrl>L"));
+    overlay_section.add(ShortcutsItem::new("Show Library Tab", "<Ctrl><Shift>L"));
+    overlay_section.add(ShortcutsItem::new("Show Playing Tab", "<Ctrl><Shift>P"));
+    overlay_section.add(ShortcutsItem::new("Show Settings Tab", "<Ctrl>comma"));
     shortcuts.add(overlay_section);
 
     let application_section = adw::ShortcutsSection::new(Some("Application"));
-    application_section.add(adw::ShortcutsItem::new("Show Shortcuts", "<Ctrl>question"));
-    application_section.add(adw::ShortcutsItem::new("Close Window", "<Ctrl>W"));
-    application_section.add(adw::ShortcutsItem::new("Quit", "<Ctrl>Q"));
+    application_section.add(ShortcutsItem::new("Show Shortcuts", "<Ctrl>question"));
+    application_section.add(ShortcutsItem::new("Close Window", "<Ctrl>W"));
+    application_section.add(ShortcutsItem::new("Quit", "<Ctrl>Q"));
     shortcuts.add(application_section);
 
     shortcuts.present(Some(parent));
