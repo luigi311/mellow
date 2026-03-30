@@ -51,7 +51,6 @@
                       <object class="GtkPicture" id="album_cover">
                         <property name="margin_start">16</property>
                         <property name="margin_end">16</property>
-                        <property name="margin_top">16</property>
                         <property name="content_fit">contain</property>
                         <property name="halign">center</property>
                         <property name="width_request">256</property>
