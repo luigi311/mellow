@@ -9,6 +9,7 @@ use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
 use crate::init_channels;
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
 use crate::player::{Player, SongQueue};
+use crate::shortcuts::Shortcuts;
 use crate::ui::{UpdateUI, Window, actions};
 use crate::{about, music_dir, util::unescaped_split};
 
@@ -30,23 +31,7 @@ impl Application {
         app.connect_open(Self::open_files);
         app.connect_activate(Self::present_window);
         app.connect_shutdown(Self::shutdown);
-
-        // Player Shortcuts
-        app.set_accels_for_action("player.play_pause", &["<Ctrl>P"]);
-        app.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
-        // TODO: Ignore shortcut when the overlay is open
-        // app.set_accels_for_action("player.play_pause", &["space"]);
-
-        // Overlay Shortcuts
-        app.set_accels_for_action("ui.toggle_sheet", &["<Ctrl>L"]);
-        app.set_accels_for_action("ui.open_library", &["<Ctrl><Shift>L"]);
-        app.set_accels_for_action("ui.open_playing", &["<Ctrl><Shift>P", "<Ctrl>period"]);
-        app.set_accels_for_action("ui.open_settings", &["<Ctrl><Shift>S", "<Ctrl>comma"]);
-
-        // Application Shortcuts
-        app.set_accels_for_action("win.show_shortcuts_dialog", &["<Ctrl>question"]);
-        app.set_accels_for_action("window.close", &["<Ctrl>W"]);
-        app.set_accels_for_action("app.quit", &["<Ctrl>Q"]);
+        app.setup_shortcuts();
 
         app.run()
     }

@@ -36,6 +36,7 @@ pub mod about;
 pub mod excuses;
 pub mod library;
 pub mod player;
+pub mod shortcuts;
 pub mod ui;
 pub mod util;
 

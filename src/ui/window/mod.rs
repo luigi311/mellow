@@ -5,10 +5,11 @@ use glib::{GString, Object};
 use gtk::{Orientation, gdk, gio, glib};
 use std::rc::Rc;
 
-use crate::about;
+use crate::about::show_about_dialog;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
 use crate::player::{PlayerRequest, player_tx};
+use crate::shortcuts::show_shortcuts_dialog;
 use crate::ui::{Application, UpdateUI, actions, ui_tx};
 use crate::util::serialize_list;
 
@@ -97,10 +98,10 @@ impl Window {
 
         self.add_action_entries([
             gio::ActionEntry::builder("show_about_dialog")
-                .activate(move |window: &Window, _, _| about::show_about_dialog(window))
+                .activate(move |window: &Window, _, _| show_about_dialog(window))
                 .build(),
             gio::ActionEntry::builder("show_shortcuts_dialog")
-                .activate(move |window: &Window, _, _| about::show_shortcuts_dialog(window))
+                .activate(move |window: &Window, _, _| show_shortcuts_dialog(window))
                 .build(),
         ]);
     }
