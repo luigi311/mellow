@@ -1048,16 +1048,14 @@ impl Library {
     /// The function panics if it encounters a poisoned `Mutex`
     pub fn shutdown(mut self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
-        let mut songs = mem::take(&mut self.songs);
-        self.missing_songs
-            .extend(mem::take(&mut *self.check_moved.lock().unwrap()));
-        for missing in mem::take(&mut self.missing_songs) {
+        (self.missing_songs).extend(mem::take(&mut *self.check_moved.lock().unwrap()));
+        for missing in self.missing_songs {
             // Re-insert missing songs so their info is kept
-            if let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) {
-                songs.insert(index, missing);
+            if let Err(index) = self.songs.find_song(&missing.uri, self.config.uri_opt()) {
+                self.songs.insert(index, missing);
             }
         }
-        Library::serialize_songs(&songs);
+        Library::serialize_songs(&self.songs);
         self.tasks.shutdown();
     }
 }
