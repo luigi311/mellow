@@ -678,9 +678,14 @@ impl Library {
             Library::run_task(LIBRARY_TX.get().unwrap(), move || {
                 while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
                     // Optimization: start with an initial guess and expand outwards
-                    let guess = match songs.find_song(&missing.uri, *uri_opt) {
+                    let mut guess = match songs.find_song(&missing.uri, *uri_opt) {
                         Err(index) | Ok(index) => index,
                     };
+                    if guess == 0 || guess == songs.len() {
+                        // IDEA: Using the old index might be more accurate,
+                        // but it would need to be stored somewhere
+                        guess = random_range(0..songs.len() / 2) + songs.len() / 4;
+                    }
 
                     let old_info = missing.info();
                     let (mut left, mut right) = (songs[..guess].iter(), songs[guess..].iter());
