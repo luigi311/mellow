@@ -35,14 +35,12 @@ impl Album {
     pub const fn songs(&self) -> &AlbumSongs {
         &self.songs
     }
-    /// Returns a mutable reference to the album songs
-    ///
-    /// # Safety
-    /// The songs list must never be empty to prevent undefined behavior
+    /// Adds a song to the list of album songs
     #[inline]
-    #[must_use]
-    pub const unsafe fn songs_mut(&mut self) -> &mut AlbumSongs {
-        &mut self.songs
+    pub fn add_song(&mut self, song: SharedSong, sort_info: &SongInfo) {
+        match self.songs.find_album_song(sort_info) {
+            Err(index) | Ok(index) => self.songs.insert(index, song),
+        }
     }
     /// Returns a reference to the album's artist
     #[inline]

@@ -26,11 +26,12 @@ impl Artist {
     pub const fn albums(&self) -> &ArtistAlbums {
         &self.albums
     }
-    /// Returns a mutable reference the artist's albums
+    /// Adds an album to the list of artist's albums
     #[inline]
-    #[must_use]
-    pub const unsafe fn albums_mut(&mut self) -> &mut ArtistAlbums {
-        &mut self.albums
+    pub fn add_album(&mut self, album: SharedAlbum, sort_info: &SongInfo) {
+        match self.albums.find_artist_album(sort_info) {
+            Err(index) | Ok(index) => self.albums.insert(index, album),
+        }
     }
     /// Returns the artist's newest album
     #[inline]

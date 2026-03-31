@@ -1,6 +1,5 @@
-use core::cmp::Ordering;
 use core::sync::atomic::{self, AtomicBool};
-use core::{error::Error, mem};
+use core::{cmp::Ordering, error::Error, mem};
 use gio::prelude::FileExt;
 use gtk::gio;
 use rand::random_range;
@@ -411,9 +410,9 @@ impl Library {
 
         for song in &songs {
             let mut info = song.info();
-            let song_info = info.load_basic();
+            let song_info_lock = info.load_basic();
             // SAFETY: `load_basic` ensures the value is `Some`
-            let song_info = unsafe { song_info.as_ref().unwrap_unchecked() };
+            let song_info = unsafe { song_info_lock.as_ref().unwrap_unchecked() };
 
             let album_index = albums.find_album(song_info);
             let artist_index = artists.find_artist(song_info);
@@ -426,12 +425,10 @@ impl Library {
                         let mut album_locked = album.lock().unwrap();
 
                         // Add the song to the album songs
-                        // SAFETY: Songs will only be added, not removed
-                        let album_songs = unsafe { album_locked.songs_mut() };
-                        match album_songs.find_album_song(song_info) {
-                            Err(index) | Ok(index) => album_songs.insert(index, Arc::clone(song)),
-                        }
+                        album_locked.add_song(Arc::clone(song), song_info);
+                        drop(song_info_lock);
                         drop(album_locked);
+                        drop(info);
 
                         // Associate the song with its album
                         song.set_album(Arc::clone(album));
@@ -444,21 +441,19 @@ impl Library {
                             Arc::clone(song),
                             Arc::clone(artist),
                         );
-                        let mut artist_locked = artist.lock().unwrap();
 
                         // Add the album to the artist's albums
-                        // SAFETY: Albums will only be added, not removed
-                        let artist_albums = unsafe { artist_locked.albums_mut() };
-                        match artist_albums.find_artist_album(song_info) {
-                            Err(ind) | Ok(ind) => artist_albums.insert(ind, Arc::clone(&album)),
-                        }
+                        let mut artist_locked = artist.lock().unwrap();
+                        artist_locked.add_album(Arc::clone(&album), song_info);
+                        drop(song_info_lock);
                         drop(artist_locked);
+                        drop(info);
 
                         // Add to the library albums as well
                         albums.insert(album_index, Arc::clone(&album));
 
                         // Associate the song with its album
-                        song.set_album(Arc::clone(&album));
+                        song.set_album(album);
                     }
                 },
                 Err(artist_index) => {
@@ -467,6 +462,8 @@ impl Library {
                         song_info, //
                         Arc::clone(song),
                     );
+                    drop(song_info_lock);
+                    drop(info);
 
                     // Add to the library albums as well
                     match album_index {
