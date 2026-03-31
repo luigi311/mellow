@@ -28,6 +28,7 @@ impl QueueSubpage {
         let queue_item = QueueItem::from_song(&song);
         let album = song.album().as_ref().map(Arc::clone);
         let is_from_library = album.is_some();
+        song_page.rating.set_sensitive(is_from_library);
         song_page.go_to_album_button.set_sensitive(is_from_library);
         song_page.go_to_artist_button.set_sensitive(is_from_library);
         song_page.queue_item.replace(queue_item);
