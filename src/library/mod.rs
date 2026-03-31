@@ -322,10 +322,10 @@ impl Library {
         self.songs.clone_from(&songs);
 
         self.tasks.run({
-            let config = self.config.clone();
-            let cancel = Arc::clone(&self.cancel_pending);
             let missing = mem::take(&mut self.missing_songs);
             let check = Arc::clone(&self.check_moved);
+            let config = self.config.clone();
+            let cancel = Arc::clone(&self.cancel_pending);
             let n_workers = self.tasks.num_workers();
             move || {
                 Library::create_connections(songs, missing, &check, &config, &cancel, n_workers)
@@ -353,45 +353,39 @@ impl Library {
     ) -> Result<(), Box<dyn Error>> {
         let library_tx = library_tx();
         let ui_tx = ui_tx();
-        let num_tasks = num_workers - 2;
 
         Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
-
-        library_tx.send(LibraryRequest::SetMissingSongs(missing))?;
         Library::merge_moved_entries(&songs, check_moved, config, cancel);
 
         Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
+                let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
+
                 // Wait before starting background tasks in case they aren't needed
-                thread::sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(60));
                 if cancel.load(atomic::Ordering::Relaxed) {
                     return;
                 }
 
-                println!("Starting {num_tasks} background tasks to load the song info");
-
-                let mut target_worker = 0;
+                let num_tasks = num_workers - 2;
                 let vec_cap = songs.len() / num_tasks;
-                let mut worker_songs = Vec::with_capacity(num_tasks);
-                (0..num_tasks).for_each(|_| worker_songs.push(Vec::with_capacity(vec_cap)));
-                for song in songs {
-                    worker_songs[target_worker].push(song);
-
-                    target_worker += 1;
-                    if target_worker == num_tasks {
-                        target_worker = 0;
-                    }
+                let mut worker_songs = (0..num_tasks)
+                    .map(|_| Vec::<SharedSong>::with_capacity(vec_cap))
+                    .collect::<Vec<Vec<SharedSong>>>();
+                for (target_worker, song) in songs.into_iter().enumerate() {
+                    worker_songs[dbg!(target_worker)].push(song);
                 }
 
+                println!("Starting {num_tasks} background tasks to load the song info");
                 for songs in worker_songs {
                     let cancel = Arc::clone(&cancel);
                     Library::run_task(library_tx, move || {
                         for song in songs {
                             if cancel.load(atomic::Ordering::Relaxed) {
                                 #[cfg(debug_assertions)]
-                                println!("Song info task {target_worker} was cancelled");
+                                println!("Song info task was cancelled");
                                 return;
                             }
                             drop(song.info().try_load_basic());
