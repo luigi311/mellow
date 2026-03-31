@@ -660,10 +660,11 @@ impl Library {
             return;
         }
 
-        let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<Arc<Song>>>(0);
+        let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<(usize, Arc<Song>)>>(0);
         let missing_rx = Arc::new(Mutex::new(missing_rx));
         let uri_opt = Arc::new(config.uri_opt());
         let songs = Arc::new(songs.clone());
+        let moved_count = check_moved.len() as f64;
         let cancelled = Arc::new(Mutex::new(Vec::new()));
 
         let num_tasks = 3; // Increasing this number also increases the cancellation time
@@ -676,15 +677,13 @@ impl Library {
             Library::run_task(LIBRARY_TX.get().unwrap(), move || {
                 let mut timer = Instant::now();
                 let cancellation_interval = Duration::from_millis(100);
-                while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
+                while let Some((i, missing)) = missing_rx.lock().unwrap().recv().unwrap() {
                     // Optimization: start with an initial guess and expand outwards
                     let mut guess = match songs.find_song(&missing.uri, *uri_opt) {
                         Err(index) | Ok(index) => index,
                     };
-                    if guess == 0 || guess == songs.len() {
-                        // IDEA: Using the old index might be more accurate,
-                        // but it would need to be stored somewhere
-                        guess = random_range(0..songs.len() / 2) + songs.len() / 4;
+                    if guess == 0 || guess >= songs.len() {
+                        guess = (1.max(i) as f64 / moved_count * songs.len() as f64) as usize;
                     }
 
                     let old_info = missing.info();
@@ -714,7 +713,10 @@ impl Library {
         let mut timer = Instant::now();
 
         // Show the progress bar and block until done
-        while missing_tx.send(check_moved.pop()).is_ok() {
+        while missing_tx
+            .send(check_moved.pop().map(|song| (check_moved.len(), song)))
+            .is_ok()
+        {
             progress += progress_step;
             if timer.elapsed() > UI_TIMEOUT {
                 timer = Instant::now();
