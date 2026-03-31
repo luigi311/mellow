@@ -370,12 +370,13 @@ impl Library {
                 }
 
                 let num_tasks = num_workers - 2;
-                let vec_cap = songs.len() / num_tasks;
                 let mut worker_songs = (0..num_tasks)
-                    .map(|_| Vec::<SharedSong>::with_capacity(vec_cap))
+                    .map(|_| Vec::<SharedSong>::with_capacity(songs.len() / num_tasks))
                     .collect::<Vec<Vec<SharedSong>>>();
-                for (target_worker, song) in songs.into_iter().enumerate() {
-                    worker_songs[dbg!(target_worker)].push(song);
+                let mut target_worker = 0;
+                for song in songs.into_iter() {
+                    worker_songs[target_worker].push(song);
+                    target_worker += 1;
                 }
 
                 println!("Starting {num_tasks} background tasks to load the song info");
