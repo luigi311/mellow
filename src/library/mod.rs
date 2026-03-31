@@ -377,6 +377,9 @@ impl Library {
                 for song in songs.into_iter() {
                     worker_songs[target_worker].push(song);
                     target_worker += 1;
+                    if target_worker == num_workers {
+                        target_worker = 0;
+                    }
                 }
 
                 println!("Starting {num_tasks} background tasks to load the song info");
