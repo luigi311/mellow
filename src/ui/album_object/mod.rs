@@ -38,6 +38,9 @@ impl AlbumObject {
     }
 
     /// Loads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if the album `Mutex` is poisoned
     #[inline]
     pub fn load_artwork(&self) {
         if self.artwork().is_some() {
@@ -60,6 +63,9 @@ impl AlbumObject {
     }
 
     /// Unloads the artwork thumbnail in a background thread
+    ///
+    /// # Panics
+    /// The function panics if the album `Mutex` is poisoned
     #[inline]
     pub fn unload_artwork(&self) {
         self.set_property("artwork", Option::<gdk::Texture>::None);

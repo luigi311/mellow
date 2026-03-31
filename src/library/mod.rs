@@ -360,7 +360,7 @@ impl Library {
         if let Ok(check_moved) = check_moved.lock()
             && !check_moved.is_empty()
         {
-            Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks)
+            Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks);
         }
 
         Library::run_task(library_tx, {
@@ -1055,7 +1055,7 @@ impl Library {
             // Re-insert missing songs so their info is kept
             if let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) {
                 songs.insert(index, missing);
-            };
+            }
         }
         Library::serialize_songs(&songs);
         self.tasks.shutdown();
