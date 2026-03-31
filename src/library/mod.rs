@@ -1,7 +1,7 @@
 use core::sync::atomic::{self, AtomicBool};
 use core::{cmp::Ordering, error::Error, mem};
 use gio::prelude::FileExt;
-use gtk::gio;
+use gtk::{gio, glib};
 use rand::random_range;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock, mpsc};
@@ -523,13 +523,13 @@ impl Library {
         old_songs.extend(mem::take(&mut *unchecked.lock().unwrap()));
         old_songs.extend(mem::take(missing));
         let mut possibly_moved = Vec::new();
+        let missing_libraries = (config.directories.iter())
+            .filter_map(|dir| match fs::exists(dir).unwrap_or(false) {
+                false => Some(gio::File::for_path(dir).uri()),
+                true => None,
+            })
+            .collect::<Vec<glib::GString>>();
         'iter: for song in old_songs {
-            let missing_libraries = config.directories.iter().filter_map(|dir| {
-                match fs::exists(dir).unwrap_or(false) {
-                    false => Some(gio::File::for_path(dir).uri()),
-                    true => None,
-                }
-            });
             match songs.find_song(&song.uri, config.uri_opt()) {
                 // Valid song entry
                 Err(index)
@@ -555,7 +555,7 @@ impl Library {
                     match missing.find_song(uri, config.uri_opt()) {
                         // New missing song entry
                         Err(index) => {
-                            for dir in missing_libraries {
+                            for dir in &missing_libraries {
                                 // Only remember missing files if they are within
                                 // a library directory which is currently missing
                                 // (otherwise, they were either moved or removed)
