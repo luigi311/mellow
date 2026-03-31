@@ -520,11 +520,8 @@ impl Library {
         cancel: &Arc<AtomicBool>,
     ) {
         let mut old_songs = mem::replace(songs, Vec::with_capacity(songs.len()));
-        old_songs.append(missing);
-        old_songs.append(mem::replace(
-            &mut &mut *unchecked.lock().unwrap(),
-            &mut Vec::new(),
-        ));
+        old_songs.extend(mem::take(&mut *unchecked.lock().unwrap()));
+        old_songs.extend(mem::take(missing));
         let mut possibly_moved = Vec::new();
         'iter: for song in old_songs {
             let missing_libraries = config.directories.iter().filter_map(|dir| {
@@ -1035,10 +1032,7 @@ impl Library {
     pub fn shutdown(mut self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         let mut songs = mem::take(&mut self.songs);
-        self.missing_songs.append(mem::replace(
-            &mut &mut *self.check_moved.lock().unwrap(),
-            &mut Vec::new(),
-        ));
+        (self.missing_songs).extend(mem::take(&mut *self.check_moved.lock().unwrap()));
         for missing in mem::take(&mut self.missing_songs) {
             // Re-insert missing songs so their info is kept
             if let Err(index) = songs.find_song(&missing.uri, self.config.uri_opt()) {
