@@ -666,13 +666,18 @@ impl Library {
         let missing_rx = Arc::new(Mutex::new(missing_rx));
         let uri_opt = Arc::new(config.uri_opt());
         let songs = Arc::new(songs.clone());
+        let cancelled = Arc::new(Mutex::new(Vec::new()));
 
         let num_tasks = 3; // Increasing this number also increases the cancellation time
         for _ in 0..num_tasks {
             let songs = Arc::clone(&songs);
             let uri_opt = Arc::clone(&uri_opt);
             let missing_rx = Arc::clone(&missing_rx);
+            let cancelled = Arc::clone(&cancelled);
+            let cancel = Arc::clone(cancel);
             Library::run_task(LIBRARY_TX.get().unwrap(), move || {
+                let mut timer = Instant::now();
+                let cancellation_interval = Duration::from_millis(100);
                 while let Some(missing) = missing_rx.lock().unwrap().recv().unwrap() {
                     // Optimization: start with an initial guess and expand outwards
                     let mut guess = match songs.find_song(&missing.uri, *uri_opt) {
@@ -691,7 +696,15 @@ impl Library {
                         (Some(song), _) if merge_if_matching(&mut song.info(), &old_info) => false,
                         (None, None) => false,
                         _ => true, // Loop until either the song is found or all songs were checked
-                    } { /* All logic is done in the match expression */ }
+                    } {
+                        if timer.elapsed() > cancellation_interval {
+                            timer = Instant::now();
+                            if cancel.load(atomic::Ordering::Relaxed) {
+                                cancelled.lock().unwrap().push(missing);
+                                return;
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -708,10 +721,11 @@ impl Library {
             if timer.elapsed() > UI_TIMEOUT {
                 timer = Instant::now();
                 if cancel.load(atomic::Ordering::Relaxed) {
-                    drop(check_moved);
                     while missing_tx.send(None).is_ok() {
                         // Sending `None` until all workers stop
                     }
+                    check_moved.extend(mem::take(&mut *cancelled.lock().unwrap()));
+                    drop(check_moved);
                     let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
