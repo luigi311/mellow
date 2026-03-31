@@ -530,9 +530,9 @@ impl Library {
         .concat();
         let mut possibly_moved = Vec::new();
         let missing_libraries = (config.directories.iter())
-            .filter_map(|dir| match fs::exists(dir).unwrap_or(false) {
-                true => None,
-                false => Some(gio::File::for_path(dir).uri()),
+            .filter_map(|dir| match fs::exists(dir) {
+                Ok(true) => None,
+                _ => Some(gio::File::for_path(dir).uri()),
             })
             .collect::<Vec<glib::GString>>();
         'iter: for song in old_songs {
