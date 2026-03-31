@@ -355,12 +355,12 @@ impl Library {
         let library_tx = library_tx();
         let ui_tx = ui_tx();
 
-        Library::validate_songs(&mut songs, &mut missing, &check_moved, &config, cancel);
+        Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
 
         if let Ok(check_moved) = check_moved.lock()
             && !check_moved.is_empty()
         {
-            Library::merge_moved_entries(&songs, check_moved, &config, cancel, num_tasks)
+            Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks)
         }
 
         Library::run_task(library_tx, {
