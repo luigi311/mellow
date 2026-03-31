@@ -4,7 +4,7 @@ use gio::prelude::FileExt;
 use gtk::{gio, glib};
 use rand::random_range;
 use std::path::Path;
-use std::sync::{Arc, Mutex, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, mpsc};
 use std::time::{Duration, Instant};
 use std::{fs, thread};
 
@@ -351,11 +351,17 @@ impl Library {
         cancel: &Arc<AtomicBool>,
         num_workers: usize,
     ) -> Result<(), Box<dyn Error>> {
+        let num_tasks = num_workers - 2;
         let library_tx = library_tx();
         let ui_tx = ui_tx();
 
-        Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
-        Library::merge_moved_entries(&songs, check_moved, config, cancel);
+        Library::validate_songs(&mut songs, &mut missing, &check_moved, &config, cancel);
+
+        if let Ok(check_moved) = check_moved.lock()
+            && !check_moved.is_empty()
+        {
+            Library::merge_moved_entries(&songs, check_moved, &config, cancel, num_tasks)
+        }
 
         Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
@@ -369,7 +375,6 @@ impl Library {
                     return;
                 }
 
-                let num_tasks = num_workers - 2;
                 let mut worker_songs = (0..num_tasks)
                     .map(|_| Vec::<SharedSong>::with_capacity(songs.len() / num_tasks))
                     .collect::<Vec<Vec<SharedSong>>>();
@@ -634,9 +639,10 @@ impl Library {
     /// or closed, or if the `check_moved` mutex is in a poisoned state
     pub fn merge_moved_entries(
         songs: &Songs,
-        check_moved: &Arc<Mutex<Songs>>,
+        mut check_moved: MutexGuard<'_, Songs>,
         config: &LibraryConfig,
         cancel: &Arc<AtomicBool>,
+        num_tasks: usize,
     ) {
         #[inline]
         #[must_use]
@@ -658,11 +664,6 @@ impl Library {
             false
         }
 
-        let mut check_moved = check_moved.lock().unwrap();
-        if check_moved.is_empty() {
-            return;
-        }
-
         let (missing_tx, missing_rx) = mpsc::sync_channel::<Option<(usize, Arc<Song>)>>(0);
         let missing_rx = Arc::new(Mutex::new(missing_rx));
         let uri_opt = Arc::new(config.uri_opt());
@@ -670,7 +671,6 @@ impl Library {
         let moved_count = check_moved.len() as f64;
         let cancelled = Arc::new(Mutex::new(Vec::new()));
 
-        let num_tasks = 3; // Increasing this number also increases the cancellation time
         for _ in 0..num_tasks {
             let songs = Arc::clone(&songs);
             let uri_opt = Arc::clone(&uri_opt);
