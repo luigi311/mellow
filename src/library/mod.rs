@@ -305,12 +305,13 @@ impl Library {
 
         for library_path in &self.config.directories {
             let _ = visit_dirs(Path::new(&library_path), &mut |f| {
-                let file = gio::File::for_path(f.path().to_str().unwrap());
-                if !file_supported(&file.parse_name()) {
+                let file = &*f.path();
+                if !file.extension().is_some_and(extension_supported) {
                     return;
                 }
 
-                // Add song to library if it is not already there
+                // Add the song to the library if it is new
+                let file = gio::File::for_path(file);
                 if let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) {
                     songs.insert(index, SharedSong::from_file(file));
                 }
@@ -1065,8 +1066,15 @@ impl Library {
 #[inline]
 #[must_use]
 pub fn file_supported(file: &str) -> bool {
-    match file.rsplit_once('.').map(|s| s.1.to_lowercase()) {
-        Some(extension) => FILE_SUPPORT.iter().any(|&ext| extension == ext),
+    match file.rsplit_once('.') {
+        Some((_, extension)) => extension_supported(&extension.to_lowercase()),
         None => false,
     }
+}
+
+/// Returns `true` if the specified extension is supported, or `false` if it is not
+#[inline]
+#[must_use]
+pub fn extension_supported<S: PartialEq<str> + ?Sized>(extension: &S) -> bool {
+    FILE_SUPPORT.iter().any(|&ext| extension == ext)
 }
