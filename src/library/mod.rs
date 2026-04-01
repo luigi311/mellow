@@ -200,7 +200,6 @@ pub enum LibraryRequest {
     QueueFromPaths(Box<[String]>),
 
     AddLibrary(Box<str>),
-    EditLibrary(Box<(usize, String)>),
     RemoveLibrary(usize),
 
     RegisterUndoDirectory(String),
@@ -278,7 +277,6 @@ impl Library {
                 LibraryRequest::Rebuild => self.discover_files(),
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
-                LibraryRequest::EditLibrary(args) => self.config.edit_library(args.0, args.1),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
 
                 LibraryRequest::RegisterUndoDirectory(dir) => self.register_undo_directory(dir),

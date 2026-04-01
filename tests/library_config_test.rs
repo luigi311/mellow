@@ -29,7 +29,7 @@ mod tests {
         config_tester.test_sort_alphabetically();
         config_tester.test_reject_duplicates();
         config_tester.test_reject_empty();
-        config_tester.test_all_chars_common();
+        config_tester.test_subdirectory();
         config_tester.test_uri_opt_remainder_special_chars();
         config_tester.test_uri_opt_remainder_common_special_chars();
     }
@@ -42,6 +42,11 @@ mod tests {
         fn test_add_library(&mut self) {
             self.config.add_library("/test".to_string());
             assert_eq!(self.config.directories, ["/test"], "`test_add_library()`");
+            assert_eq!(
+                self.config.directory_uris,
+                ["file:///test"],
+                "`test_add_library()`"
+            );
         }
 
         fn test_uri_opt_remainder_single_dir(&mut self) {
@@ -59,7 +64,12 @@ mod tests {
             ]);
             assert_eq!(
                 self.config.directories,
-                ["/some/directory", "/some/other/directory",],
+                ["/some/directory", "/some/other/directory"],
+                "`test_set_libraries()`"
+            );
+            assert_eq!(
+                self.config.directory_uris,
+                ["file:///some/directory", "file:///some/other/directory"],
                 "`test_set_libraries()`"
             );
         }
@@ -93,6 +103,11 @@ mod tests {
             assert_eq!(
                 self.config.directories,
                 ["/some/directory", "/some/other/directory"],
+                "`test_remove_library()`"
+            );
+            assert_eq!(
+                self.config.directory_uris,
+                ["file:///some/directory", "file:///some/other/directory"],
                 "`test_remove_library()`"
             );
         }
@@ -135,7 +150,7 @@ mod tests {
             );
         }
 
-        fn test_all_chars_common(&mut self) {
+        fn test_subdirectory(&mut self) {
             self.config.set_libraries(&[
                 "/some/directory/test".to_string(),
                 "/some/directory".to_string(),
@@ -146,7 +161,7 @@ mod tests {
                     ("file:///some/directory".to_string(), "".to_string()),
                     ("file:///some/directory".to_string(), "/test".to_string())
                 ],
-                "`test_all_chars_common()`",
+                "`test_subdirectory()`",
             );
         }
 

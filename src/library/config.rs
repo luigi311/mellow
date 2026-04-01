@@ -65,19 +65,6 @@ impl LibraryConfig {
         self.update_trim_uri();
     }
 
-    /// Replaces configured directory at `index` with `dir`
-    pub fn edit_library(&mut self, index: usize, dir: String) {
-        if self.directories.contains(&dir) {
-            return self.remove_library(index);
-        }
-        self.directories[index] = dir;
-        self.directories.sort();
-        self.update_uris();
-        println!("Edited a library\nLibraries: {:?}", self.directories);
-        self.update_library();
-        self.update_trim_uri();
-    }
-
     /// Removes the configured directory at `index`
     pub fn remove_library(&mut self, index: usize) {
         let library_tx = library_tx();
