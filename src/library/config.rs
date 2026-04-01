@@ -134,16 +134,18 @@ impl LibraryConfig {
 
         let mut dirs: Vec<Chars> = self.directory_uris.iter().map(|dir| dir.chars()).collect();
         'counter: loop {
-            let chars: Vec<Option<char>> = dirs.iter_mut().map(|c| c.next()).collect();
-            for i in 1..chars.len() {
-                // SAFETY: Range ensures `i` is less than `chars.len()`
-                let cur = unsafe { chars.get_unchecked(i) };
-                // SAFETY: Range ensures `i` is at least 1
-                let last = unsafe { chars.get_unchecked(i - 1) };
-
-                if cur != last || cur.is_none() {
+            let mut chars = dirs.iter_mut().map(|c| c.next());
+            let Some(mut adj) = chars.next().unwrap_or(None) else {
+                break 'counter;
+            };
+            for cur in chars {
+                let Some(cur) = cur else {
+                    break 'counter;
+                };
+                if cur != adj {
                     break 'counter;
                 }
+                adj = cur;
             }
             self.uri_opt += 1;
         }

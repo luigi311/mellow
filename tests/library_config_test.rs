@@ -29,6 +29,7 @@ mod tests {
         config_tester.test_sort_alphabetically();
         config_tester.test_reject_duplicates();
         config_tester.test_reject_empty();
+        config_tester.test_all_chars_common();
         config_tester.test_uri_opt_remainder_special_chars();
         config_tester.test_uri_opt_remainder_common_special_chars();
     }
@@ -134,6 +135,21 @@ mod tests {
             );
         }
 
+        fn test_all_chars_common(&mut self) {
+            self.config.set_libraries(&[
+                "/some/directory/test".to_string(),
+                "/some/directory".to_string(),
+            ]);
+            assert_eq!(
+                self.uri_opt_split(),
+                [
+                    ("file:///some/directory".to_string(), "".to_string()),
+                    ("file:///some/directory".to_string(), "/test".to_string())
+                ],
+                "`test_all_chars_common()`",
+            );
+        }
+
         fn test_uri_opt_remainder_special_chars(&mut self) {
             self.config
                 .set_libraries(&["/test/🤷/".to_string(), "/test/🦀/".to_string()]);
@@ -157,9 +173,7 @@ mod tests {
         }
 
         fn uri_opt_split(&self) -> Vec<(String, String)> {
-            self.config
-                .directories
-                .iter()
+            (self.config.directories.iter())
                 .map(|dir| {
                     let uri = &gio::File::for_path(dir).uri();
                     let split = uri.split_at(self.config.uri_opt());
