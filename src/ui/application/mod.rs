@@ -5,7 +5,7 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 mod imp;
 
-use crate::excuses::{EXP_INIT, EXP_RX, INIT_ERR};
+use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::init_channels;
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
 use crate::player::{Player, SongQueue};
@@ -29,9 +29,6 @@ impl Application {
 
         app.connect_startup(Self::init);
         app.connect_open(Self::open_files);
-        app.connect_activate(Self::present_window);
-        app.connect_shutdown(Self::shutdown);
-        app.setup_shortcuts();
 
         app.run()
     }
@@ -39,40 +36,46 @@ impl Application {
     #[inline]
     fn init(&self) {
         let (ui_rx, player_rx, library_rx) = init_channels();
+
         let imp = self.imp();
 
-        let player = Player::init(player_rx);
         imp.player_handle.set(Some(
             thread::Builder::new()
                 .name("player".to_owned())
-                .spawn(move || player.controller().unwrap())
-                .expect(INIT_ERR),
+                .spawn(move || Player::init(player_rx).controller().unwrap())
+                .unwrap(),
         ));
 
         let settings = gio::Settings::new(about::app_id());
         let startup_queue = settings.enum_("startup-queue");
+        let directories = settings.string("directories");
 
-        let mut library = Library::init(
-            LibraryConfig::new(match &*settings.string("directories") {
-                // The value ":" means "first launch"
-                ":" => vec![music_dir().clone()],
-                dirs => unescaped_split(dirs, ','),
-            }),
-            library_rx,
-        );
         imp.library_handle.set(Some(
             thread::Builder::new()
                 .name("library".to_owned())
                 .spawn(move || {
+                    let mut library = Library::init(
+                        LibraryConfig::new(match &*directories {
+                            // The value ":" means "first launch"
+                            ":" => vec![music_dir().clone()],
+                            dirs => unescaped_split(dirs, ','),
+                        }),
+                        library_rx,
+                    );
                     library.discover_files();
                     SongQueue::init_queue(&library, startup_queue.into()).unwrap();
                     library.request_handler().unwrap();
                 })
-                .expect(INIT_ERR),
+                .unwrap(),
         ));
 
         self.create_window(settings, ui_rx);
+
         self.setup_actions();
+        self.setup_shortcuts();
+
+        self.connect_activate(Self::present_window);
+        self.connect_shutdown(Self::shutdown);
     }
 
     #[inline]
@@ -88,13 +91,18 @@ impl Application {
         ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
     ) {
         let window = Window::new(self, settings);
-        window.set_title(Some(about::app_name()));
+
+        glib::spawn_future_local({
+            let window = window.clone();
+            async move { window.imp().event_handler(ui_rx).await }
+        });
+
         window.set_icon_name(Some(about::app_id()));
+        window.set_title(Some(about::app_name()));
         window.present();
+        println!("Window presented");
 
-        let _ = self.imp().window.set(window.clone());
-
-        glib::spawn_future_local(async move { window.imp().event_handler(ui_rx).await });
+        let _ = self.imp().window.set(window);
     }
 
     #[inline]

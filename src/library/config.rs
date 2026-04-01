@@ -124,6 +124,7 @@ impl LibraryConfig {
     ///
     /// Note: If spaces or special characters are common between directories,
     /// the assigned value may be shorter than necessary
+    #[inline]
     pub fn update_trim_uri(&mut self) {
         match self.directories.len() {
             1 => return self.uri_opt = self.directory_uris[0].len(),
@@ -145,36 +146,6 @@ impl LibraryConfig {
                 }
             }
             self.uri_opt += 1;
-        }
-    }
-
-    /// Updates the `uri_opt` property, used to optimize song index lookups
-    ///
-    /// For example, for `["file:///home/Music", "file:///home/Other"]`,
-    /// the common part is `"file:///home/"`, so `uri_opt` becomes 13
-    ///
-    /// This is an older version of the function; it might be worth
-    /// benchmarking to see which implementation is faster
-    pub fn update_trim_uri_old(&mut self) {
-        if self.directories.is_empty() {
-            return;
-        }
-        self.uri_opt = usize::MAX;
-        let mut last_dir = self.directories[0].chars();
-        for dir in &self.directories {
-            let mut new_chars = dir.chars().take(self.uri_opt);
-            let mut old_chars = last_dir.clone().take(self.uri_opt);
-            last_dir = dir.chars();
-            let mut len = 0;
-            while let (Some(new), Some(old)) = (new_chars.next(), old_chars.next()) {
-                if old != new {
-                    break;
-                }
-                len += new.len_utf8();
-            }
-            self.uri_opt = self
-                .uri_opt
-                .min(gio::File::for_path(&dir[0..len]).uri().len());
         }
     }
 
