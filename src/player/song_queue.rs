@@ -576,8 +576,6 @@ impl SongQueue {
         library: &Library,
         queue_startup_choice: StartupQueueChoice,
     ) -> Result<(), Box<dyn Error>> {
-        let player_tx = player_tx();
-
         // Load the previous queue if file exists
         if let Ok(queue) = fs::read_to_string(queue_file())
             && let mut lines = queue.lines()
@@ -602,6 +600,7 @@ impl SongQueue {
             } else {
                 None
             };
+            let player_tx = player_tx();
             player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track))?;
             if let Ok(time) = time {
                 let _ = player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)));
@@ -612,6 +611,19 @@ impl SongQueue {
             return Ok(());
         }
 
+        // If the queue was not loaded from file, load by preference instead
+        Self::init_by_startup_choice(library, queue_startup_choice)
+    }
+
+    /// Loads the queue based on `queue_startup_choice`
+    ///
+    /// # Panic
+    /// The function panics if either the player or UI channel receiver is closed
+    fn init_by_startup_choice(
+        library: &Library,
+        queue_startup_choice: StartupQueueChoice,
+    ) -> Result<(), Box<dyn Error>> {
+        let player_tx = player_tx();
         match queue_startup_choice {
             _ if library.songs.is_empty() => {
                 // Maybe open the settings page and focus on the directory options?
