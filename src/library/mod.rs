@@ -68,7 +68,14 @@ pub trait SortedSongs {
 impl SortedSongs for Songs {
     #[inline]
     fn find_song(&self, uri: &str, trim_start: usize) -> Result<usize, usize> {
-        self.binary_search_by(|song| song.uri[trim_start..].cmp(&uri[trim_start..]))
+        let trimmed_uri = &uri[trim_start..];
+        self.binary_search_by(|song| {
+            assert!(song.uri.len() >= trim_start);
+            // SAFETY: Assert above ensures `trim_start` is within bounds,
+            // `song.uri` cannot contain large UTF-8 characters because it
+            // is a URI, assigned from `gio::File::uri`
+            unsafe { song.uri.get_unchecked(trim_start..) }.cmp(trimmed_uri)
+        })
     }
 }
 impl ToQueue for Songs {
@@ -967,13 +974,11 @@ impl Library {
     fn song_from_library_or_new(&self, file: &str) -> SharedSong {
         let file = gio::File::for_path(file);
         let file_uri = file.uri();
-        for dir in &self.config.directory_uris {
-            if file_uri[7..self.config.uri_opt()].ends_with(&dir[7..self.config.uri_opt()]) {
-                if let Ok(index) = self.songs.find_song(&file_uri, self.config.uri_opt()) {
-                    // SAFETY: `index` is `Ok`, therefore within bounds
-                    return Arc::clone(unsafe { self.songs.get_unchecked(index) });
-                }
-                break;
+        // SAFETY: `file.uri()` converts special characters to regular ones
+        if unsafe { self.config.uri_within_library(&file_uri) } {
+            if let Ok(index) = self.songs.find_song(&file_uri, self.config.uri_opt()) {
+                // SAFETY: `index` is `Ok`, therefore within bounds
+                return Arc::clone(unsafe { self.songs.get_unchecked(index) });
             }
         }
         SharedSong::from_file(file)

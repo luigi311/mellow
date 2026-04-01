@@ -138,6 +138,30 @@ impl LibraryConfig {
         }
     }
 
+    /// Returns `true` if the given `file_uri` is within any of the
+    /// configured library directories, or `false` if it is not
+    ///
+    /// # Safety
+    /// - Must not contain characters with UTF-8 size larger than 1
+    ///
+    /// # Panics
+    /// Panics if `file_uri` is out of bounds of `self.uri_opt`
+    #[inline]
+    pub unsafe fn uri_within_library(&self, file_uri: &str) -> bool {
+        assert!(file_uri.len() >= self.uri_opt - 1);
+        // SAFETY: Assertion above ensures `self.uri_opt` is within bounds.
+        // Caller must ensure `file_uri` does not contain large UTF-8 characters.
+        let trimmed_file_uri = unsafe { file_uri.get_unchecked(..self.uri_opt) };
+        for dir in &self.directory_uris {
+            // SAFETY: `self.uri_opt` is always within bounds of all `self.directory_uris`,
+            // `update_uris` uses `gio::File::uri`, which satisfies the safety requirement.
+            if trimmed_file_uri.ends_with(unsafe { dir.get_unchecked(..self.uri_opt) }) {
+                return true;
+            }
+        }
+        false
+    }
+
     /// Returns the length of characters all configured directories' URIs
     /// have in common (the length until the first differing character)
     ///
