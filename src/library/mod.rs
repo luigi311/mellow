@@ -382,7 +382,7 @@ impl Library {
                 for song in songs.into_iter() {
                     worker_songs[target_worker].push(song);
                     target_worker += 1;
-                    if target_worker == num_workers {
+                    if target_worker == num_tasks {
                         target_worker = 0;
                     }
                 }
@@ -531,9 +531,9 @@ impl Library {
         let mut possibly_moved = Vec::new();
         let mut libraries = Vec::with_capacity(config.directories.len());
         let mut missing_libraries = Vec::new();
-        for dir in &config.directory_uris {
+        for (index, dir) in config.directory_uris.iter().enumerate() {
             let opt_dir = &dir[config.uri_opt()..];
-            match fs::exists(dir) {
+            match fs::exists(&config.directories[index]) {
                 Ok(true) => libraries.push(opt_dir),
                 _ => missing_libraries.push(opt_dir),
             }
