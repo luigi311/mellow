@@ -39,7 +39,6 @@ impl Window {
 
         let _ = imp.settings.set(settings);
 
-        println!("Window created");
         window
     }
 

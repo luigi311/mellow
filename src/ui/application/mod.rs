@@ -62,8 +62,17 @@ impl Application {
                         }),
                         library_rx,
                     );
+                    #[cfg(feature = "startup-logs")]
+                    println!("Library initialized");
+
                     library.discover_files();
+                    #[cfg(feature = "startup-logs")]
+                    println!("Files were checked");
+
                     SongQueue::init_queue(&library, startup_queue.into()).unwrap();
+                    #[cfg(feature = "startup-logs")]
+                    println!("Queue was sent to the player");
+
                     library.request_handler().unwrap();
                 })
                 .unwrap(),
@@ -91,6 +100,8 @@ impl Application {
         ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>,
     ) {
         let window = Window::new(self, settings);
+        #[cfg(feature = "startup-logs")]
+        println!("Window created");
 
         glib::spawn_future_local({
             let window = window.clone();
@@ -100,6 +111,7 @@ impl Application {
         window.set_icon_name(Some(about::app_id()));
         window.set_title(Some(about::app_name()));
         window.present();
+        #[cfg(feature = "startup-logs")]
         println!("Window presented");
 
         let _ = self.imp().window.set(window);

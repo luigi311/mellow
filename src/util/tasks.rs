@@ -77,6 +77,9 @@ WARNING: At most one response should be consumed by the caller, otherwise some o
         let unblock_rx = Arc::new(Mutex::new(unblock_rx));
         let num_tasks = self.threads.len();
 
+        #[cfg(debug_assertions)]
+        println!("Awaiting background tasks");
+
         // Occupy all but one of the workers with a blocking operation
         for _ in 1..num_tasks {
             let unblock_rx = Arc::clone(&unblock_rx);
