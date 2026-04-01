@@ -1,6 +1,6 @@
 use core::str::Chars;
 use gio::prelude::FileExt;
-use gtk::gio;
+use gtk::{gio, glib};
 use std::fs;
 
 use crate::config_dir;
@@ -17,6 +17,7 @@ pub const FILE_SUPPORT: &[&str] = &[
 #[derive(Clone)]
 pub struct LibraryConfig {
     pub directories: Vec<String>,
+    pub directory_uris: Vec<glib::GString>,
     uri_opt: usize,
 }
 
@@ -30,8 +31,10 @@ impl LibraryConfig {
     pub fn new(directories: Vec<String>) -> Self {
         let mut config = LibraryConfig {
             directories,
+            directory_uris: Vec::new(),
             uri_opt: 0,
         };
+        config.update_uris();
         config.update_trim_uri();
         config
     }
@@ -40,6 +43,7 @@ impl LibraryConfig {
     pub fn set_libraries(&mut self, dirs: &[String]) {
         self.directories = dirs.into();
         self.directories.sort();
+        self.update_uris();
         println!(
             "Library directories updated\nLibraries: {:?}",
             self.directories
@@ -55,6 +59,7 @@ impl LibraryConfig {
         }
         self.directories.push(dir);
         self.directories.sort();
+        self.update_uris();
         println!("Added a new library\nLibraries: {:?}", self.directories);
         self.update_library();
         self.update_trim_uri();
@@ -67,6 +72,7 @@ impl LibraryConfig {
         }
         self.directories[index] = dir;
         self.directories.sort();
+        self.update_uris();
         println!("Edited a library\nLibraries: {:?}", self.directories);
         self.update_library();
         self.update_trim_uri();
@@ -78,6 +84,7 @@ impl LibraryConfig {
         let _ = library_tx.send(LibraryRequest::CancelRebuild);
 
         let removed_dir = self.directories.remove(index);
+        self.directory_uris.remove(index);
         println!("Removed a library\nLibraries: {:?}", self.directories);
 
         let _ = library_tx.send(LibraryRequest::RegisterUndoDirectory(removed_dir.clone()));
@@ -103,6 +110,13 @@ impl LibraryConfig {
         let _ = library_tx.send(LibraryRequest::Rebuild);
     }
 
+    #[inline]
+    fn update_uris(&mut self) {
+        self.directory_uris = (self.directories.iter())
+            .map(|dir| gio::File::for_path(dir).uri())
+            .collect();
+    }
+
     /// Updates the `uri_opt` property, used to optimize song index lookups
     ///
     /// For example, for `["file:///home/Music", "file:///home/Other"]`,
@@ -112,12 +126,12 @@ impl LibraryConfig {
     /// the assigned value may be shorter than necessary
     pub fn update_trim_uri(&mut self) {
         match self.directories.len() {
+            1 => return self.uri_opt = self.directory_uris[0].len(),
             0 => return self.uri_opt = 0,
-            1 => return self.uri_opt = self.directories[0].len() + "file://".len(),
             _ => self.uri_opt = 0,
         }
 
-        let mut dirs: Vec<Chars> = self.directories.iter().map(|dir| dir.chars()).collect();
+        let mut dirs: Vec<Chars> = self.directory_uris.iter().map(|dir| dir.chars()).collect();
         'counter: loop {
             let chars: Vec<Option<char>> = dirs.iter_mut().map(|c| c.next()).collect();
             for i in 1..chars.len() {
@@ -130,11 +144,8 @@ impl LibraryConfig {
                     break 'counter;
                 }
             }
-            // SAFETY: `get_unchecked(0)`: `chars` cannot be empty due to early return
-            // SAFETY: `unwrap_unchecked()`: outer loop exits if any char is `None`
-            self.uri_opt += unsafe { chars.get_unchecked(0).unwrap_unchecked().len_utf8() };
+            self.uri_opt += 1;
         }
-        self.uri_opt += "file://".len();
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups

@@ -139,7 +139,7 @@ mod tests {
                 .set_libraries(&["/test/🤷/".to_string(), "/test/🦀/".to_string()]);
             for (first_half, _) in self.uri_opt_split() {
                 assert_eq!(
-                    first_half, "file:///test/",
+                    first_half, "file:///test/%F0%9F%A",
                     "`uri_opt_remainder_special_chars()`"
                 );
             }
@@ -148,16 +148,12 @@ mod tests {
         fn test_uri_opt_remainder_common_special_chars(&mut self) {
             self.config
                 .set_libraries(&["/test/🤷/🦀".to_string(), "/test/🤷/🤷".to_string()]);
-            assert!(self.config.uri_opt() <= "file:///test/%F0%9F%A4%B7/".len());
-            // NOTE: The below test is currently failing, but as long as the
-            // `uri_opt` value is less than the common part length, it shouln't
-            // cause any issues other than be slightly suboptimal
-            // for (first_half, _) in self.uri_opt_split() {
-            //     assert_eq!(
-            //         first_half, "file:///test/%F0%9F%A4%B7/",
-            //         "`uri_opt_remainder_special_chars()`"
-            //     );
-            // }
+            for (first_half, _) in self.uri_opt_split() {
+                assert_eq!(
+                    first_half, "file:///test/%F0%9F%A4%B7/%F0%9F%A",
+                    "`uri_opt_remainder_special_chars()`"
+                );
+            }
         }
 
         fn uri_opt_split(&self) -> Vec<(String, String)> {
