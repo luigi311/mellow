@@ -35,6 +35,11 @@ Song queue:
 
 - FIX: Moved songs are not playable in the restored queue,
   even when the library is able to locate them
+  - IDEA: Create a lookup table containing the idexes for artists and their albums
+    when the library is built. Then, use binary search to locate the artist, see if
+    it has the album, and iterate forwards until the song is found or the end of the
+    album is reached. If the song was found, replace it. (Same could also be done for
+    the moved file search, but it would have to happen at the end of the rebuild.)
 
 Music library:
 
@@ -136,3 +141,13 @@ Ideas for improvements:
     using a dropdown menu in the headerbar instead (in place of the back button)
   - The 'Go To Album/Artist' buttons could pop instead of pushing when the previous
     page is the same as the one that is about to open
+- Files:
+  - The library `songs` file could use a custom extension, which could make it possible to load the
+    ratings/play counts from a different `songs` file and combine it with the current configuration.
+    It is already possible to do so by appending the contents of a `songs` file from another system
+    to the end of the local one and let the library resolve the conflicts during rebuild; this would
+    make it possible to do so by simply opening the file.
+  - The `queue` file could use a custom extension, so it can be loaded by opening the file
+    (the `shuffled_queue` file would also require a `queue` file next to it)
+  - All files could use the same extension and infer their contents based on the filename
+    (`songs.…`, `queue.…`, or `shuffled_queue.…`), but this could limit their usability
