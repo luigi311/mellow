@@ -369,7 +369,8 @@ impl Player {
     /// except when the `queue` is empty
     #[inline]
     fn load_queue(&mut self, queue: Vec<QueueItem>, shuffled: Option<Vec<usize>>, index: usize) {
-        if queue.is_empty() {
+        // Check if the queue is empty and hint a bounds check to the compiler
+        if index >= queue.len() {
             let _ = self.backend.set_state(State::Null);
             self.queue.load_new(queue, shuffled);
             self.queue.ui_update_queue();
@@ -378,19 +379,22 @@ impl Player {
             return;
         }
 
+        // Display the current song info in the UI as soon as possible
+        let queue_item = QueueItem::clone(&queue[index]);
+        (ui_tx().send(UpdateUI::SongInfo(
+            QueueItem::clone(&queue_item),
+            queue.get(index + 1).is_some_and(|item| item.is_stopper()),
+        )))
+        .expect(EXP_RX);
+
         self.queue.load_new(queue, shuffled);
         self.skip_to(index);
-        self.queue.ui_update_queue();
-        self.ui_update_song_info();
 
-        // Updating manually before using this thread to load the thumbnail
-        self.update();
-
-        // Ensure the thumbnail is available to display as soon as possible, so
-        // something can be shown before the full-resolution artwork is loaded
-        if let QueueItem::Song(song) = self.queue.nth(index) {
+        // Ensure the current thumbnail is loaded before updating the UI queue
+        if let QueueItem::Song(song) = queue_item {
             drop(song.info().load_thumbnail());
         }
+        self.queue.ui_update_queue();
     }
 
     /// Starts or pauses playback depending on state
@@ -685,7 +689,12 @@ impl Player {
     fn ui_update_song_info(&self) {
         #[cfg(debug_assertions)]
         println!("ui_update_song_info()");
-        ui_tx().send(UpdateUI::SongInfo).expect(EXP_RX);
+        let item = match self.queue.is_empty() {
+            false => QueueItem::clone(self.queue.current()),
+            true => QueueItem::new_stopper(false),
+        };
+        let pause_after = self.queue.next().is_some_and(|item| item.is_stopper());
+        (ui_tx().send(UpdateUI::SongInfo(item, pause_after))).expect(EXP_RX);
     }
 
     /// Sends the current playback time to the UI receiver

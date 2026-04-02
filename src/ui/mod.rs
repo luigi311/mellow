@@ -78,8 +78,9 @@ pub enum UpdateUI {
     PlayerState(bool, bool),
     /// Current song time in milliseconds
     PlayerTime(Option<u64>),
-    /// Prompts the UI to refresh the song information
-    SongInfo,
+    /// Updates the song info displayed in the UI to the given item (use `Stopper` to reset)
+    /// (item: `QueueItem`, pause after: `bool`)
+    SongInfo(QueueItem, bool),
     /// Replaces the UI song queue with a new one, with the playing index as the second argument
     SetQueue(Box<[QueueItem]>, usize),
     /// Updates the playing song index and redraws the queue

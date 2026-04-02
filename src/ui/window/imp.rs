@@ -105,7 +105,9 @@ impl Window {
         let mut song_duration_ms = 0;
         loop {
             match ui_rx.recv().await.unwrap() {
-                UpdateUI::SongInfo => self.update_song_info(&mut song_duration_ms),
+                UpdateUI::SongInfo(queue_item, pause_after) => {
+                    self.update_song_info(&queue_item, pause_after, &mut song_duration_ms);
+                }
                 UpdateUI::PlayerTime(time_ms) => {
                     self.main_player.set_time(time_ms, song_duration_ms as f64);
                 }
@@ -160,31 +162,26 @@ impl Window {
         }
     }
 
-    fn update_song_info(&self, song_duration_ms: &mut u64) {
+    fn update_song_info(
+        &self,
+        queue_item: &QueueItem,
+        pause_after: bool,
+        song_duration_ms: &mut u64,
+    ) {
         #[cfg(debug_assertions)]
         println!("update_song_info()");
-        let queue = self.song_queue.borrow();
-        if queue.is_empty() {
-            self.settings_page.reset_background_color();
-            self.main_player.reset_info();
-            return;
-        }
 
-        let index = self.song_queue_index.get();
-        let stop_after = index + 1 < queue.len() && queue[index + 1].is_stopper();
-        self.queue_subpage.set_stop_after(stop_after);
-
-        let song = &queue[index];
-        if song.is_stopper() {
-            return;
-        }
-
-        let song = match song {
+        self.queue_subpage.set_stop_after(pause_after);
+        let song = match &queue_item {
             QueueItem::Song(song) => song,
-            QueueItem::Stopper(_) => unreachable!("Stoppers cannot be played"),
+            QueueItem::Stopper(_) => {
+                self.settings_page.reset_background_color();
+                self.main_player.reset_info();
+                return;
+            }
         };
-        let mut info = song.info();
 
+        let mut info = song.info();
         let song_info_temp = info.load_basic();
         // SAFETY: `load_basic` ensures the value is `Some`
         let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
@@ -207,9 +204,10 @@ impl Window {
             }
             _ => {
                 let song = Arc::clone(song);
+                let queue_item = QueueItem::clone(queue_item);
                 Library::run_task(library_tx(), move || {
                     drop(song.info().load_detailed());
-                    let _ = ui_tx().send(UpdateUI::SongInfo);
+                    let _ = ui_tx().send(UpdateUI::SongInfo(queue_item, pause_after));
                 });
                 (None, false)
             }

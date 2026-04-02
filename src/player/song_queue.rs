@@ -69,9 +69,9 @@ impl SongQueue {
     /// Returns a mutable reference to the current song
     #[inline]
     #[must_use]
-    pub fn current(&mut self) -> &mut QueueItem {
+    pub fn current(&self) -> &QueueItem {
         let index = self.current_index();
-        &mut self.songs[index]
+        &self.songs[index]
     }
 
     /// Returns a reference to the next item in the queue
