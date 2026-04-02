@@ -390,6 +390,9 @@ impl Player {
         self.queue.load_new(queue, shuffled);
         self.skip_to(index);
 
+        // Updating manually before using this thread to load the thumbnail
+        self.update();
+
         // Ensure the current thumbnail is loaded before updating the UI queue
         if let QueueItem::Song(song) = queue_item {
             drop(song.info().load_thumbnail());
