@@ -39,25 +39,20 @@
         <child type="top">
           <object class="AdwHeaderBar">
 
+            <child type="start">
+              <object class="AdwSplitButton" id="sort_button">
+                <signal name="clicked" handler="handle_reverse_sort" swapped="true"/>
+                <property name="menu-model">sort_menu</property>
+                <property name="icon-name">view-sort-descending-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Ordering</property>
+              </object>
+            </child>
+
             <child type="title">
               <object class="AdwClamp">
                 <child>
-                  <object class="GtkBox">
-                    <property name="spacing">8</property>
-                    <child>
-                      <object class="GtkSearchEntry" id="search_entry">
-                        <property name="hexpand">true</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="AdwSplitButton" id="sort_button">
-                        <property name="visible">true</property>
-                        <signal name="clicked" handler="handle_reverse_sort" swapped="true"/>
-                        <property name="menu-model">sort_menu</property>
-                        <property name="icon-name">view-sort-descending-symbolic</property>
-                        <property name="tooltip-text" translatable="yes">Ordering</property>
-                      </object>
-                    </child>
+                  <object class="GtkSearchEntry" id="search_entry">
+                    <property name="hexpand">true</property>
                   </object>
                 </child>
               </object>
