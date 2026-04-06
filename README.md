@@ -74,10 +74,15 @@ When the overlay is closed, it is time to enjoy the music.
 ## Build dependencies
 
 ### [GStreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html):
+
+```bash
+dnf install gstreamer1-devel
+
+```
+
+Recommended codecs (required to play music):
 ```bash
 dnf install \
-  gstreamer1-devel \
-  gstreamer1-doc \
   gstreamer1-plugins-bad-free \
   gstreamer1-plugins-bad-free-devel \
   gstreamer1-plugins-bad-free-extras \

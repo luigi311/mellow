@@ -66,7 +66,9 @@ User Experience:
   - FIX: Possible issue with thumbnails/artworks not being fully unloaded; by repeatedly
     toggling the shuffle mode on the queue page, memory usage increases each time, but
     never exceeds the size of the thumbnails folder (sometimes decreases as well)
-- [x] No other issues found while testing
+- [ ] No other issues found while testing
+  - FIX: Starting a queue without the necessary codecs installed results in a flood of error
+    notifications as it attempts to play each song but fails (possibly in a loop)
 
 Design Consistency:
 
