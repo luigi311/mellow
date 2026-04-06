@@ -80,16 +80,14 @@ dnf install gstreamer1-devel
 
 ```
 
-Recommended codecs (required to play music):
+Recommended plugins (required to play music):
 ```bash
 dnf install \
   gstreamer1-plugins-bad-free \
-  gstreamer1-plugins-bad-free-devel \
   gstreamer1-plugins-bad-free-extras \
-  gstreamer1-plugins-base-devel \
-  gstreamer1-plugins-base-tools \
   gstreamer1-plugins-good \
-  gstreamer1-plugins-good-extras
+  gstreamer1-plugins-good-extras \
+  gstreamer1-plugin-libav
 ```
 
 ### [GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html)/[Libadwaita](https://gtk-rs.org/gtk4-rs/stable/latest/book/libadwaita.html):
