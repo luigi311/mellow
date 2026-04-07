@@ -558,6 +558,20 @@ impl QueuePage {
         let drag_offset_x = Rc::new(Cell::new(0.0));
         let drag_offset_y = Rc::new(Cell::new(0.0));
 
+        type DragState = Rc<Cell<bool>>;
+        trait SetDragState {
+            fn set_drag_state(&self, dragging: bool);
+        }
+        impl SetDragState for DragState {
+            fn set_drag_state(&self, dragging: bool) {
+                self.set(dragging);
+                ui_tx()
+                    .send(UpdateUI::CanCloseSheet(!dragging))
+                    .expect(EXP_RX);
+            }
+        }
+        let dragging: DragState = Rc::new(Cell::new(false));
+
         drag.connect_drag_begin(glib::clone!(
             #[weak(rename_to=queue_page)]
             self,
@@ -579,10 +593,14 @@ impl QueuePage {
             drag_container,
             #[weak]
             dragged_item_index,
+            #[weak]
+            dragging,
             move |_, start_x, start_y| if !selection_mode.get() {
                 if !Self::should_drag(start_x) {
                     return;
                 }
+
+                dragging.set_drag_state(true);
 
                 // FIX: The cursor does not update until the mouse button is released
                 list_box.set_cursor_from_name(Some("grabbing"));
@@ -662,18 +680,20 @@ impl QueuePage {
             #[weak]
             drag_row,
             #[strong]
+            dragging,
+            #[strong]
             drag_offset_x,
             #[strong]
             drag_offset_y,
-            move |gesture_drag, _| if !queue_page.selection_mode.get() {
+            move |gesture_drag, _| if dragging.get() {
+                // TODO: Cancel drag when pressing escape or right mouse button
+                // (using `dragging.set_drag_state(false)`)
+
                 let (Some((start_x, start_y)), Some((_, offset_y))) =
                     (gesture_drag.start_point(), gesture_drag.offset())
                 else {
                     return;
                 };
-                if !Self::should_drag(start_x) {
-                    return;
-                }
 
                 // IDEA: Offset `start_y` so it points to the center of the dragged row
 
@@ -715,21 +735,25 @@ impl QueuePage {
             drag_container,
             #[strong]
             dragged_item_index,
+            #[strong]
+            dragging,
             // FIX: Dropping the item after the song has changed moves the wrong item
             // if dragging items ahead of the playing song, and a stopper is encountered
             // (the stopper gets removed, so the index ends up being wrong)
-            move |gesture_drag, _| if !queue_page.selection_mode.get() {
+            // IDEA: Remember which `QueueItem` was being dragged in `drag_begin`; and if
+            // the dragged item index changed (such as when processing a stopper), search
+            // backwards (until the playing index?) to find it
+            move |gesture_drag, _| if dragging.get() {
                 queue_page.for_each_row(|row, _| row.remove_css_class("highlight-top"));
                 drag_container.set_visible(false);
+                dragging.set_drag_state(false);
                 drag_row.to_default();
 
                 let list_box = &queue_page.list_box;
                 list_box.set_cursor(None);
 
                 let start_y = match gesture_drag.start_point() {
-                    Some((start_x, start_y)) if Self::should_drag(start_x) => {
-                        start_y + queue_page.list_box.margin_top() as f64
-                    }
+                    Some((_, start_y)) => start_y + queue_page.list_box.margin_top() as f64,
                     _ => return,
                 };
                 let end_y = match gesture_drag.offset() {

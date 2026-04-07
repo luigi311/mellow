@@ -138,6 +138,8 @@ pub enum UpdateUI {
     FocusSettings,
     /// Opens or closes the bottom sheet overlay
     OpenSheet(bool),
+    /// Sets whether the sheet can be closed or not
+    CanCloseSheet(bool),
 
     /// Runs a `gio` action
     RunAction(&'static str),

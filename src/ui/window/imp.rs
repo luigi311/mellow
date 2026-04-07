@@ -144,6 +144,7 @@ impl Window {
                 UpdateUI::FocusPlaying => self.focus_playing(),
                 UpdateUI::FocusSettings => self.focus_settings(),
                 UpdateUI::OpenSheet(open) => self.open_sheet(open),
+                UpdateUI::CanCloseSheet(can_close) => self.set_can_close_sheet(can_close),
 
                 UpdateUI::RunAction(action) => {
                     WidgetExt::activate_action(&self.main_player.get(), action, None)
@@ -297,6 +298,9 @@ impl Window {
     }
     pub fn open_sheet(&self, open: bool) {
         self.sheet.set_open(open);
+    }
+    pub fn set_can_close_sheet(&self, open: bool) {
+        self.sheet.set_can_close(open);
     }
     pub fn toggle_sheet(&self) {
         self.sheet.set_open(!self.sheet.is_open());
