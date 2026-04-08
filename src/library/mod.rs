@@ -975,11 +975,11 @@ impl Library {
         let file = gio::File::for_path(file);
         let file_uri = file.uri();
         // SAFETY: `file.uri()` converts special characters to regular ones
-        if unsafe { self.config.uri_within_library(&file_uri) } {
-            if let Ok(index) = self.songs.find_song(&file_uri, self.config.uri_opt()) {
-                // SAFETY: `index` is `Ok`, therefore within bounds
-                return Arc::clone(unsafe { self.songs.get_unchecked(index) });
-            }
+        if unsafe { self.config.uri_within_library(&file_uri) }
+            && let Ok(index) = self.songs.find_song(&file_uri, self.config.uri_opt())
+        {
+            // SAFETY: `index` is `Ok`, therefore within bounds
+            return Arc::clone(unsafe { self.songs.get_unchecked(index) });
         }
         SharedSong::from_file(file)
     }
@@ -1006,13 +1006,10 @@ impl Library {
 
             let song = QueueItem::Song(self.song_from_library_or_new(file));
             match songs.binary_search_by(|existing: &QueueItem| {
-                // SAFETY: All accessed fields are contained within this function
-                unsafe {
-                    // SAFETY: Only the `Song` variant is ever inserted into `songs`
-                    (existing.as_song_unchecked().file.path().unwrap())
-                        // SAFETY: `song` is constructed using the `Song` variant
-                        .cmp(&song.as_song_unchecked().file.path().unwrap())
-                }
+                // SAFETY: Only the `Song` variant is ever inserted into `songs`
+                unsafe { existing.as_song_unchecked().file.path().unwrap() }
+                    // SAFETY: `song` is constructed using the `Song` variant
+                    .cmp(&unsafe { song.as_song_unchecked().file.path().unwrap() })
             }) {
                 Err(index) | Ok(index) => songs.insert(index, song),
             }

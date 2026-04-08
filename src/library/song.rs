@@ -236,15 +236,14 @@ impl SongInfoLoader<'_> {
     #[inline]
     #[must_use]
     pub fn matches(&self, other: &SongInfoLoader) -> bool {
-        self.inspect_basic().as_ref().map_or_else(
-            || self.uri == other.uri,
-            |own_info| {
-                other.inspect_basic().as_ref().map_or_else(
-                    || self.uri == other.uri,
-                    |other_info| own_info == other_info,
-                )
-            },
-        )
+        // NOTE: Could use `match` with `if let` guard for `other` once available in stable Rust
+        if let (Some(own_info), Some(other_info)) =
+            (&*self.inspect_basic(), &*other.inspect_basic())
+        {
+            own_info == other_info
+        } else {
+            self.uri == other.uri
+        }
     }
 
     /// Returns a reference to the `gio::File`

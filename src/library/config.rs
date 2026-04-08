@@ -147,6 +147,7 @@ impl LibraryConfig {
     /// # Panics
     /// Panics if `file_uri` is out of bounds of `self.uri_opt`
     #[inline]
+    #[must_use]
     pub unsafe fn uri_within_library(&self, file_uri: &str) -> bool {
         assert!(file_uri.len() >= self.uri_opt - 1);
         // SAFETY: Assertion above ensures `self.uri_opt` is within bounds.
