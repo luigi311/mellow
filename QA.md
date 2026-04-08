@@ -21,13 +21,11 @@ Song Queue:
 - [x] Removing items works as expected
 - [ ] Removal undo works as expected
   - FIX: Undo removal in shuffle mode inserts tracks to the end of the sequential queue
-    instead of the previous position
+    instead of the previous position (observable when disabling shuffle mode)
   - FIX: Toggling shuffle before pressing undo inserts at the wrong position
   - FIX: Encountering a stopper after removing an item ahead of the playing song results in undo
     re-inserting the item at the wrong position (stopper is removed, so the index is off by one)
-- [ ] Reordering the queue works as expected
-  - FIX: Dragging an item and dropping it after the song changes moves the wrong item if the
-    dragged item was ahead of the playing song and a stopper was encountered while dragging
+- [x] Reordering the queue works as expected
   - TODO: Improvement: Scroll when dragging close to the view borders
     - IDEA: Also pan if dragging onto the pan button, once panning is implemented
 - [x] Selection mode works as expected

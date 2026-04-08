@@ -139,6 +139,16 @@ impl QueueItem {
     }
 }
 
+impl PartialEq for QueueItem {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (QueueItem::Song(this), QueueItem::Song(other)) => Arc::ptr_eq(this, other),
+            (QueueItem::Stopper(_), QueueItem::Stopper(_)) => true,
+            _ => false,
+        }
+    }
+}
+
 impl Default for QueueItem {
     /// Returns a new `Stopper` which does not close the player
     #[inline]
