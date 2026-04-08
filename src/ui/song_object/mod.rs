@@ -28,7 +28,7 @@ impl SongObject {
             let info = unsafe { info_temp.as_ref().unwrap_unchecked() };
             (
                 info.title.clone(),
-                info.artist.clone(),
+                info.album.clone(),
                 info.artist.clone(),
                 info.year as u32,
             )
