@@ -956,6 +956,7 @@ impl Library {
         let mut queue = Vec::with_capacity(paths.len());
         for file in paths {
             if file_supported(file) {
+                let file = gio::File::for_path(file);
                 queue.push(QueueItem::Song(self.song_from_library_or_new(file)));
             } else if file == "Pause" {
                 queue.push(QueueItem::new_stopper(false));
@@ -971,8 +972,7 @@ impl Library {
     /// returns it, otherwise it returns a new `SharedSong`
     #[inline]
     #[must_use]
-    fn song_from_library_or_new(&self, file: &str) -> SharedSong {
-        let file = gio::File::for_path(file);
+    fn song_from_library_or_new(&self, file: gio::File) -> SharedSong {
         let file_uri = file.uri();
         // SAFETY: `file.uri()` converts special characters to regular ones
         if unsafe { self.config.uri_within_library(&file_uri) }
@@ -998,20 +998,19 @@ impl Library {
         }
         let mut songs = Vec::with_capacity(16);
         let _ = visit_dirs(path, &mut |file| {
-            let file = file.path();
-            let file = file.to_str().unwrap();
-            if !file_supported(file) {
+            let file_path = file.path();
+            if !file_path.extension().is_some_and(extension_supported) {
                 return;
             }
 
-            let song = QueueItem::Song(self.song_from_library_or_new(file));
+            let file = gio::File::for_path(&file_path);
+            let song = self.song_from_library_or_new(file);
+            // TODO: Should this use URIs instead of paths?
             match songs.binary_search_by(|existing: &QueueItem| {
                 // SAFETY: Only the `Song` variant is ever inserted into `songs`
-                unsafe { existing.as_song_unchecked().file.path().unwrap() }
-                    // SAFETY: `song` is constructed using the `Song` variant
-                    .cmp(&unsafe { song.as_song_unchecked().file.path().unwrap() })
+                unsafe { existing.as_song_unchecked().file.path().unwrap() }.cmp(&file_path)
             }) {
-                Err(index) | Ok(index) => songs.insert(index, song),
+                Err(index) | Ok(index) => songs.insert(index, QueueItem::Song(song)),
             }
         });
         queue.extend(songs);
