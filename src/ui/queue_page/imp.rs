@@ -788,7 +788,7 @@ impl QueuePage {
                         .and_downcast::<QueueItemObject>()
                     && *target_item.queue_item() != expected_item
                 {
-                    from = from - 1;
+                    from -= 1;
                     index_updated = true;
                 }
                 if index_updated {
