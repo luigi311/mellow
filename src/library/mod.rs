@@ -1005,7 +1005,6 @@ impl Library {
 
             let file = gio::File::for_path(&file_path);
             let song = self.song_from_library_or_new(file);
-            // TODO: Should this use URIs instead of paths?
             match songs.binary_search_by(|existing: &QueueItem| {
                 // SAFETY: Only the `Song` variant is ever inserted into `songs`
                 unsafe { existing.as_song_unchecked().file.path().unwrap() }.cmp(&file_path)
