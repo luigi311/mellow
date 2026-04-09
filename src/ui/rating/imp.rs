@@ -41,8 +41,9 @@ impl Rating {
         motion.connect_motion(glib::clone!(
             #[weak(rename_to=rating)]
             self,
-            move |_, pos_x, _| if let Ok(new_rating) = rating.pixels_to_rating(pos_x) {
-                rating.preview_rating(rating.rating.get(), new_rating);
+            move |_, pos_x, _| match rating.pixels_to_rating(pos_x) {
+                Ok(new_rating) => rating.preview_rating(rating.rating.get(), new_rating),
+                Err(_) => rating.show_rating(rating.rating.get()),
             }
         ));
         motion.connect_leave(glib::clone!(
