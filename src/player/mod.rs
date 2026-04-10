@@ -26,8 +26,8 @@ pub fn player_tx() -> &'static mpsc::Sender<PlayerRequest> {
 }
 /// Initializes the player channel sender accessed through `player_tx()`
 ///
-/// # Panics
-/// The function panics if `PLAYER_TX` has already been initialized
+/// # Errors
+/// The function returns an error if `PLAYER_TX` has already been initialized
 #[inline]
 pub fn init_player_tx(
     player_tx: mpsc::Sender<PlayerRequest>,

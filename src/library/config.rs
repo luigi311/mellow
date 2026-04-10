@@ -39,14 +39,14 @@ impl LibraryConfig {
     /// Returns the list of library directories
     #[inline]
     #[must_use]
-    pub fn directories(&self) -> &Vec<String> {
+    pub const fn directories(&self) -> &Vec<String> {
         &self.directories
     }
 
     /// Returns the list of library directory URIs
     #[inline]
     #[must_use]
-    pub fn directory_uris(&self) -> &Vec<glib::GString> {
+    pub const fn directory_uris(&self) -> &Vec<glib::GString> {
         &self.directory_uris
     }
 

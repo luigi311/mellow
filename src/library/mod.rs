@@ -193,8 +193,8 @@ pub fn library_tx() -> &'static mpsc::Sender<LibraryRequest> {
 }
 /// Initializes the library channel sender accessed through `library_tx()`
 ///
-/// # Panics
-/// The function panics if `LIBRARY_TX` has already been initialized
+/// # Errors
+/// The function returns an error if `LIBRARY_TX` has already been initialized
 #[inline]
 pub fn init_library_tx(
     library_tx: mpsc::Sender<LibraryRequest>,
