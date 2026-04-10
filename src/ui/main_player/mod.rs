@@ -32,6 +32,7 @@ impl MainPlayer {
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
         release_seek_bar.connect_released(|_, _, _, _| {
+            // FIX: Not called in Fedora 44 (playback does not resume after seeking)
             player_tx().send(PlayerRequest::SeekDone).expect(EXP_RX);
         });
         (self.imp().seek_bar.parent().unwrap()).add_controller(release_seek_bar);
