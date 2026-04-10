@@ -57,15 +57,15 @@ pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
 /// # Errors
 /// The function errors if a file or directory cannot be read
 #[inline]
-pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
+pub fn visit_dirs<F: FnMut(&DirEntry)>(dir: &Path, f: &mut F) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
-                visit_dirs(&path, cb)?;
+                visit_dirs(&path, f)?;
             } else {
-                cb(&entry);
+                f(&entry);
             }
         }
     }
