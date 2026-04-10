@@ -61,18 +61,10 @@ impl Runner {
         }
     }
 
-    /// Causes any tasks started after this function call to run only
-    /// after all tasls before it have finished
-    ///
-    /// The caller may use the returned channel to be notified when
-    /// there are no more running tasks
-    ///
-    /// WARNING: At most one response should be consumed by the caller,
-    /// otherwise some of the workers will be permanently stuck waiting
+    /// Any tasks requested after this function call will wait
+    /// in a queue until all current ones have finished running
     #[inline]
-    #[must_use = "The caller may use this channel to receive a response when tasks are ready to resume, or it can be safely ignored.
-WARNING: At most one response should be consumed by the caller, otherwise some of the workers will be permanently stuck waiting"]
-    pub fn await_all_tasks(&self) -> Arc<Mutex<mpsc::Receiver<()>>> {
+    pub fn await_all_tasks(&self) {
         let (unblock_tx, unblock_rx) = mpsc::channel();
         let unblock_rx = Arc::new(Mutex::new(unblock_rx));
         let num_tasks = self.threads.len();
@@ -91,13 +83,10 @@ WARNING: At most one response should be consumed by the caller, otherwise some o
         // started prior to this function have finished processing
         self.run(move || {
             // Notify the other workers to stop waiting
-            // (and one extra for the function caller)
-            for _ in 0..num_tasks {
+            for _ in 1..num_tasks {
                 let _ = unblock_tx.send(());
             }
         });
-
-        unblock_rx
     }
 
     /// Consumes `self` and cleanly shuts down the worker threads
