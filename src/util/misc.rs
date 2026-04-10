@@ -56,6 +56,7 @@ pub fn unescaped_split(input: &str, character: char) -> Vec<String> {
 ///
 /// # Errors
 /// The function errors if a file or directory cannot be read
+#[inline]
 pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
