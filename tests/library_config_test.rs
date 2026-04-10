@@ -204,7 +204,7 @@ mod tests {
 
     impl Default for ConfigTester {
         fn default() -> Self {
-            let (ui_rx, _, library_rx) = init_channels();
+            let (ui_rx, _, library_rx) = init_channels().unwrap();
             ConfigTester {
                 config: LibraryConfig::new(vec![]),
                 _ui_rx: ui_rx,

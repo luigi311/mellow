@@ -66,11 +66,13 @@ pub fn ui_tx() -> &'static tokio_mpsc::UnboundedSender<UpdateUI> {
 }
 /// Initializes the UI channel sender accessed through `ui_tx()`
 ///
-/// # Panics
-/// The function panics if `UI_TX` has already been initialized
+/// # Errors
+/// The function returns an error if `UI_TX` has already been initialized
 #[inline]
-pub fn init_ui_tx(ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>) {
-    (UI_TX.set(ui_tx)).expect("Cannot initialize UI_TX multiple times");
+pub fn init_ui_tx(
+    ui_tx: tokio_mpsc::UnboundedSender<UpdateUI>,
+) -> Result<(), tokio_mpsc::UnboundedSender<UpdateUI>> {
+    UI_TX.set(ui_tx)
 }
 
 pub enum UpdateUI {

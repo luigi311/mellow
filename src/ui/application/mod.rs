@@ -1,5 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{gio, glib};
+use std::cell::RefCell;
+use std::sync::mpsc;
 use std::thread;
 use tokio::sync::mpsc as tokio_mpsc;
 
@@ -8,7 +10,7 @@ mod imp;
 use crate::excuses::{EXP_INIT, EXP_RX};
 use crate::init_channels;
 use crate::library::{Library, LibraryConfig, LibraryRequest, library_tx};
-use crate::player::{Player, SongQueue};
+use crate::player::{Player, PlayerRequest, SongQueue};
 use crate::shortcuts::Shortcuts;
 use crate::ui::{UpdateUI, Window, actions};
 use crate::{about, music_dir, util::unescaped_split};
@@ -20,6 +22,7 @@ glib::wrapper! {
 }
 
 impl Application {
+    /// Initializes the player/library threads and the UI, then runs the application
     #[inline]
     pub fn run() -> glib::ExitCode {
         let app: Self = glib::Object::builder()
@@ -27,16 +30,42 @@ impl Application {
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .build();
 
-        app.connect_startup(Self::init);
+        if let Ok((ui_rx, player_rx, library_rx)) = init_channels() {
+            // Starting the components in parallel with GTK initialization
+            // results in faster launch times. Because `connect_startup` expects
+            // a reusable `Fn` closure, `settings` and `ui_rx` are moved using
+            // `RefCell<Option>` instead.
+            let settings = app.init_components(player_rx, library_rx);
+            let args = RefCell::new(Some((settings, ui_rx)));
+            app.connect_startup(move |app| {
+                #[allow(clippy::missing_panics_doc)]
+                let (settings, ui_rx) = args.take().unwrap( /* closure should only run once */ );
+                Self::init(app, settings, ui_rx);
+            });
+        }
+
         app.connect_open(Self::open_files);
 
         app.run()
     }
 
     #[inline]
-    fn init(&self) {
-        let (ui_rx, player_rx, library_rx) = init_channels();
+    fn init(&self, settings: gio::Settings, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
+        self.create_window(settings, ui_rx);
 
+        self.setup_actions();
+        self.setup_shortcuts();
+
+        self.connect_activate(Self::present_window);
+        self.connect_shutdown(Self::shutdown);
+    }
+
+    #[inline]
+    fn init_components(
+        &self,
+        player_rx: mpsc::Receiver<PlayerRequest>,
+        library_rx: mpsc::Receiver<LibraryRequest>,
+    ) -> gio::Settings {
         let imp = self.imp();
 
         imp.player_handle.set(Some(
@@ -78,13 +107,7 @@ impl Application {
                 .unwrap(),
         ));
 
-        self.create_window(settings, ui_rx);
-
-        self.setup_actions();
-        self.setup_shortcuts();
-
-        self.connect_activate(Self::present_window);
-        self.connect_shutdown(Self::shutdown);
+        settings
     }
 
     #[inline]

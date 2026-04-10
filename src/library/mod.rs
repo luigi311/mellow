@@ -19,7 +19,7 @@ pub use config::{FILE_SUPPORT, LibraryConfig};
 pub use song::{SharedSong, SharedSongExt, Song, SongInfo, SongInfoLoader};
 
 use crate::UI_TIMEOUT;
-use crate::excuses::{EXP_RX, INIT_ERR};
+use crate::excuses::EXP_RX;
 use crate::library::album::NewSharedAlbum;
 use crate::library::artist::NewSharedArtist;
 use crate::player::{PlayerRequest, QueueItem, player_tx};
@@ -196,8 +196,10 @@ pub fn library_tx() -> &'static mpsc::Sender<LibraryRequest> {
 /// # Panics
 /// The function panics if `LIBRARY_TX` has already been initialized
 #[inline]
-pub fn init_library_tx(library_tx: mpsc::Sender<LibraryRequest>) {
-    LIBRARY_TX.set(library_tx).expect(INIT_ERR);
+pub fn init_library_tx(
+    library_tx: mpsc::Sender<LibraryRequest>,
+) -> Result<(), mpsc::Sender<LibraryRequest>> {
+    LIBRARY_TX.set(library_tx)
 }
 
 pub enum LibraryRequest {

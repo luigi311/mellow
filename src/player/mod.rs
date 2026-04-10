@@ -29,8 +29,10 @@ pub fn player_tx() -> &'static mpsc::Sender<PlayerRequest> {
 /// # Panics
 /// The function panics if `PLAYER_TX` has already been initialized
 #[inline]
-pub fn init_player_tx(player_tx: mpsc::Sender<PlayerRequest>) {
-    PLAYER_TX.set(player_tx).expect(INIT_ERR);
+pub fn init_player_tx(
+    player_tx: mpsc::Sender<PlayerRequest>,
+) -> Result<(), mpsc::Sender<PlayerRequest>> {
+    PLAYER_TX.set(player_tx)
 }
 
 pub enum PlayerRequest {
