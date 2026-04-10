@@ -143,14 +143,13 @@ impl LibraryConfig {
     ///
     /// # Safety
     /// - Must not contain characters with UTF-8 size larger than 1
-    ///
-    /// # Panics
-    /// Panics if `file_uri` is out of bounds of `self.uri_opt`
     #[inline]
     #[must_use]
     pub unsafe fn uri_within_library(&self, file_uri: &str) -> bool {
-        assert!(file_uri.len() >= self.uri_opt - 1);
-        // SAFETY: Assertion above ensures `self.uri_opt` is within bounds.
+        if file_uri.len() < self.uri_opt() {
+            return false;
+        }
+        // SAFETY: The function returns early if `self.uri_opt` is out of bounds of `file_uri`.
         // Caller must ensure `file_uri` does not contain large UTF-8 characters.
         let trimmed_file_uri = unsafe { file_uri.get_unchecked(..self.uri_opt) };
         for dir in &self.directory_uris {
