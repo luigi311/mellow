@@ -403,8 +403,8 @@ impl Player {
     /// Starts or pauses playback depending on state
     fn play_or_pause(&mut self) {
         // WORKAROUND: Set `self.seeking = false` because the seek bar release callback
-        // doesn't work on some systems. This ensures that the seek state is reset
-        // after pressing the pause button, so the player can function properly again.
+        // doesn't work on some systems. This makes the player function properly again
+        // after pressing the pause button to resume the playback.
         // Remove when the seek bar works properly on all systems.
         self.seeking = false;
 
