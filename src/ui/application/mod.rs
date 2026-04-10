@@ -70,13 +70,6 @@ impl Application {
     ) -> gio::Settings {
         let imp = self.imp();
 
-        imp.player_handle.set(Some(
-            thread::Builder::new()
-                .name("player".to_owned())
-                .spawn(move || Player::init(player_rx).controller().unwrap())
-                .unwrap(),
-        ));
-
         let settings = gio::Settings::new(about::app_id());
         let startup_queue = settings.enum_("startup-queue");
         let directories = settings.string("directories");
@@ -106,6 +99,13 @@ impl Application {
 
                     library.request_handler().unwrap();
                 })
+                .unwrap(),
+        ));
+
+        imp.player_handle.set(Some(
+            thread::Builder::new()
+                .name("player".to_owned())
+                .spawn(move || Player::init(player_rx).controller().unwrap())
                 .unwrap(),
         ));
 
