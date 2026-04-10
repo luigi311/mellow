@@ -16,8 +16,8 @@ pub const FILE_SUPPORT: &[&str] = &[
 
 #[derive(Clone)]
 pub struct LibraryConfig {
-    pub directories: Vec<String>,
-    pub directory_uris: Vec<glib::GString>,
+    directories: Vec<String>,
+    directory_uris: Vec<glib::GString>,
     uri_opt: usize,
 }
 
@@ -35,8 +35,21 @@ impl LibraryConfig {
             uri_opt: 0,
         };
         config.update_uris();
-        config.update_trim_uri();
         config
+    }
+
+    /// Returns the list of library directories
+    #[inline]
+    #[must_use]
+    pub fn directories(&self) -> &Vec<String> {
+        &self.directories
+    }
+
+    /// Returns the list of library directory URIs
+    #[inline]
+    #[must_use]
+    pub fn directory_uris(&self) -> &Vec<glib::GString> {
+        &self.directory_uris
     }
 
     /// Replaces the configured directories with `dirs`
@@ -49,7 +62,6 @@ impl LibraryConfig {
             self.directories
         );
         self.update_library();
-        self.update_trim_uri();
     }
 
     /// Adds `dir` to the configured directories
@@ -62,7 +74,6 @@ impl LibraryConfig {
         self.update_uris();
         println!("Added a new library\nLibraries: {:?}", self.directories);
         self.update_library();
-        self.update_trim_uri();
     }
 
     /// Removes the configured directory at `index`
@@ -72,6 +83,8 @@ impl LibraryConfig {
 
         let removed_dir = self.directories.remove(index);
         self.directory_uris.remove(index);
+        self.update_trim_uri();
+
         println!("Removed a library\nLibraries: {:?}", self.directories);
 
         let _ = library_tx.send(LibraryRequest::RegisterUndoDirectory(removed_dir.clone()));
@@ -84,8 +97,6 @@ impl LibraryConfig {
             })),
         ));
         let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
-
-        self.update_trim_uri();
     }
 
     /// Requests a library rebuild and updates the directory list in the UI
@@ -97,11 +108,13 @@ impl LibraryConfig {
         let _ = library_tx.send(LibraryRequest::Rebuild);
     }
 
+    /// Updates `self.directory_uris` using `self.directories`
     #[inline]
     fn update_uris(&mut self) {
         self.directory_uris = (self.directories.iter())
             .map(|dir| gio::File::for_path(dir).uri())
             .collect();
+        self.update_trim_uri();
     }
 
     /// Updates the `uri_opt` property, used to optimize song index lookups

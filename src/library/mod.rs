@@ -228,7 +228,9 @@ impl Library {
     #[inline]
     #[must_use]
     pub fn init(config: LibraryConfig, library_rx: mpsc::Receiver<LibraryRequest>) -> Library {
-        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(config.directories.clone().into()));
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(
+            config.directories().clone().into(),
+        ));
 
         Library {
             songs: Vec::new(),
@@ -310,7 +312,7 @@ impl Library {
             false => mem::take(&mut self.songs),
         };
 
-        for library_path in &self.config.directories {
+        for library_path in self.config.directories() {
             let _ = visit_dirs(Path::new(&library_path), &mut |f| {
                 let file = &*f.path();
                 if !file.extension().is_some_and(extension_supported) {
@@ -535,11 +537,11 @@ impl Library {
         ]
         .concat();
         let mut possibly_moved = Vec::new();
-        let mut libraries = Vec::with_capacity(config.directories.len());
+        let mut libraries = Vec::with_capacity(config.directories().len());
         let mut missing_libraries = Vec::new();
-        for (index, dir) in config.directory_uris.iter().enumerate() {
+        for (index, dir) in config.directory_uris().iter().enumerate() {
             let opt_dir = &dir[config.uri_opt()..];
-            match fs::exists(&config.directories[index]) {
+            match fs::exists(&config.directories()[index]) {
                 Ok(true) => libraries.push(opt_dir),
                 _ => missing_libraries.push(opt_dir),
             }

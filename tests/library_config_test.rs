@@ -36,15 +36,19 @@ mod tests {
 
     impl ConfigTester {
         fn test_empty_by_default(&self) {
-            assert!(&self.config.directories.is_empty());
+            assert!(&self.config.directories().is_empty());
         }
 
         fn test_add_library(&mut self) {
             self.config.add_library("/test".to_string());
-            assert_eq!(self.config.directories, ["/test"], "`test_add_library()`");
             assert_eq!(
-                self.config.directory_uris,
-                ["file:///test"],
+                self.config.directories(),
+                &["/test"],
+                "`test_add_library()`"
+            );
+            assert_eq!(
+                self.config.directory_uris(),
+                &["file:///test"],
                 "`test_add_library()`"
             );
         }
@@ -63,13 +67,13 @@ mod tests {
                 "/some/other/directory".to_string(),
             ]);
             assert_eq!(
-                self.config.directories,
-                ["/some/directory", "/some/other/directory"],
+                self.config.directories(),
+                &["/some/directory", "/some/other/directory"],
                 "`test_set_libraries()`"
             );
             assert_eq!(
-                self.config.directory_uris,
-                ["file:///some/directory", "file:///some/other/directory"],
+                self.config.directory_uris(),
+                &["file:///some/directory", "file:///some/other/directory"],
                 "`test_set_libraries()`"
             );
         }
@@ -101,13 +105,13 @@ mod tests {
         fn test_remove_library(&mut self) {
             self.config.remove_library(2);
             assert_eq!(
-                self.config.directories,
-                ["/some/directory", "/some/other/directory"],
+                self.config.directories(),
+                &["/some/directory", "/some/other/directory"],
                 "`test_remove_library()`"
             );
             assert_eq!(
-                self.config.directory_uris,
-                ["file:///some/directory", "file:///some/other/directory"],
+                self.config.directory_uris(),
+                &["file:///some/directory", "file:///some/other/directory"],
                 "`test_remove_library()`"
             );
         }
@@ -126,8 +130,8 @@ mod tests {
         fn test_sort_alphabetically(&mut self) {
             self.config.add_library("/audio".to_string());
             assert_eq!(
-                self.config.directories,
-                ["/audio", "/some/directory", "/some/other/directory",],
+                self.config.directories(),
+                &["/audio", "/some/directory", "/some/other/directory",],
                 "`test_sort_alphabetically()`"
             );
         }
@@ -135,8 +139,8 @@ mod tests {
         fn test_reject_duplicates(&mut self) {
             self.config.add_library("/some/directory".to_string());
             assert_eq!(
-                self.config.directories,
-                ["/audio", "/some/directory", "/some/other/directory",],
+                self.config.directories(),
+                &["/audio", "/some/directory", "/some/other/directory",],
                 "`test_reject_duplicates()`"
             );
         }
@@ -144,8 +148,8 @@ mod tests {
         fn test_reject_empty(&mut self) {
             self.config.add_library("".to_string());
             assert_eq!(
-                self.config.directories,
-                ["/audio", "/some/directory", "/some/other/directory",],
+                self.config.directories(),
+                &["/audio", "/some/directory", "/some/other/directory",],
                 "`test_reject_empty()`"
             );
         }
@@ -188,7 +192,7 @@ mod tests {
         }
 
         fn uri_opt_split(&self) -> Vec<(String, String)> {
-            (self.config.directories.iter())
+            (self.config.directories().iter())
                 .map(|dir| {
                     let uri = &gio::File::for_path(dir).uri();
                     let split = uri.split_at(self.config.uri_opt());
