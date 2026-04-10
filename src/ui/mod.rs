@@ -97,7 +97,7 @@ pub enum UpdateUI {
     Repeat(bool),
 
     /// Updates the directory list on the settings page
-    SetLibraryDirs(Box<[String]>),
+    SetLibraryDirs(Vec<String>),
     /// Updates the library songs
     SetLibrarySongs(Songs),
     /// Updates the library albums

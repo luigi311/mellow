@@ -23,9 +23,6 @@ pub struct LibraryConfig {
 
 impl LibraryConfig {
     /// Creates a new instance of `LibraryConfig` and assigns the provided `directories`
-    ///
-    /// # Panics
-    /// The function panics if the `CONFIG_DIR` global variable is uninitialized
     #[inline]
     #[must_use]
     pub fn new(directories: Vec<String>) -> Self {
@@ -35,6 +32,7 @@ impl LibraryConfig {
             uri_opt: 0,
         };
         config.update_uris();
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(config.directories.clone()));
         config
     }
 
@@ -96,12 +94,12 @@ impl LibraryConfig {
                 let _ = library_tx.send(LibraryRequest::UndoRemovedDirectory(removed_dir.clone()));
             })),
         ));
-        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone()));
     }
 
     /// Requests a library rebuild and updates the directory list in the UI
     fn update_library(&self) {
-        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone().into()));
+        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone()));
 
         let library_tx = library_tx();
         let _ = library_tx.send(LibraryRequest::CancelRebuild);

@@ -228,10 +228,6 @@ impl Library {
     #[inline]
     #[must_use]
     pub fn init(config: LibraryConfig, library_rx: mpsc::Receiver<LibraryRequest>) -> Library {
-        let _ = ui_tx().send(UpdateUI::SetLibraryDirs(
-            config.directories().clone().into(),
-        ));
-
         Library {
             songs: Vec::new(),
             albums: Vec::new(),

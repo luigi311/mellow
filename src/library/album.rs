@@ -20,7 +20,7 @@ impl Album {
     /// Returns the album's title
     #[inline]
     #[must_use]
-    pub fn title(&self) -> &str {
+    pub const fn title(&self) -> &String {
         &self.title
     }
     /// Returns the album's release year
