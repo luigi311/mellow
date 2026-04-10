@@ -40,7 +40,7 @@ impl Application {
             app.connect_startup(move |app| {
                 #[allow(clippy::missing_panics_doc)]
                 let (settings, ui_rx) = args.take().unwrap( /* closure should only run once */ );
-                Self::init(app, settings, ui_rx);
+                Self::init_window(app, settings, ui_rx);
             });
         }
 
@@ -49,17 +49,19 @@ impl Application {
         app.run()
     }
 
+    /// Initializes the application window
     #[inline]
-    fn init(&self, settings: gio::Settings, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
+    fn init_window(&self, settings: gio::Settings, ui_rx: tokio_mpsc::UnboundedReceiver<UpdateUI>) {
         self.create_window(settings, ui_rx);
 
         self.setup_actions();
         self.setup_shortcuts();
 
-        self.connect_activate(Self::present_window);
+        self.connect_activate(Self::show_window);
         self.connect_shutdown(Self::shutdown);
     }
 
+    /// Starts the player and library threads and returns the application settings
     #[inline]
     fn init_components(
         &self,
@@ -110,12 +112,14 @@ impl Application {
         settings
     }
 
+    /// Returns the window associated with the `Application`
     #[inline]
     #[must_use]
     fn window(&self) -> &Window {
         self.imp().window.get().expect(EXP_INIT)
     }
 
+    /// Creates a new `Window` and presents it
     #[inline]
     fn create_window(
         &self,
@@ -140,6 +144,7 @@ impl Application {
         let _ = self.imp().window.set(window);
     }
 
+    /// Handles opening files from disk
     #[inline]
     fn open_files(&self, files: &[gio::File], _: &str) {
         let files = files
@@ -149,16 +154,20 @@ impl Application {
         (library_tx().send(LibraryRequest::QueueFromPaths(files))).expect(EXP_RX);
     }
 
+    /// Shows the window if it is hidden
     #[inline]
-    fn present_window(&self) {
+    fn show_window(&self) {
         self.window().set_visible(true);
     }
 
+    /// Registers the application actions
     #[inline]
     fn setup_actions(&self) {
         self.add_action_entries([actions::app::quit(self, self.window())]);
     }
 
+    /// Cleanly shuts down the application by saving the settings and state,
+    /// and blocks until all other components stop running as well
     fn shutdown(&self) {
         let imp = self.imp();
         imp.window.get().unwrap().save_and_uninit().unwrap();
