@@ -385,7 +385,7 @@ impl Player {
         let queue_item = QueueItem::clone(&queue[index]);
         (ui_tx().send(UpdateUI::SongInfo(
             QueueItem::clone(&queue_item),
-            queue.get(index + 1).is_some_and(|item| item.is_stopper()),
+            queue.get(index + 1).is_some_and(QueueItem::is_stopper),
         )))
         .expect(EXP_RX);
 
@@ -704,7 +704,7 @@ impl Player {
             false => QueueItem::clone(self.queue.current()),
             true => QueueItem::new_stopper(false),
         };
-        let pause_after = self.queue.next().is_some_and(|item| item.is_stopper());
+        let pause_after = self.queue.next().is_some_and(QueueItem::is_stopper);
         (ui_tx().send(UpdateUI::SongInfo(item, pause_after))).expect(EXP_RX);
     }
 

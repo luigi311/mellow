@@ -113,7 +113,7 @@ impl QueueItem {
     {
         match self {
             QueueItem::Song(song) => Some(f(song)),
-            _ => None,
+            QueueItem::Stopper(_) => None,
         }
     }
 

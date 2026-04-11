@@ -545,10 +545,10 @@ impl SongInfoLoader<'_> {
             ),
             album: tag.album().unwrap_or_default().to_string(),
             artist: tag.artist().unwrap_or_default().to_string(),
-            album_artist: tag.get_string(ItemKey::AlbumArtist).map_or_else(
-                || tag.artist().unwrap_or_default().to_string(),
-                |album_artist| album_artist.to_owned(),
-            ),
+            album_artist: match tag.get_string(ItemKey::AlbumArtist) {
+                Some(album_artist) => album_artist.to_owned(),
+                None => tag.artist().unwrap_or_default().to_string(),
+            },
             track: tag.track().unwrap_or_default(),
             disc: tag.disk().unwrap_or(1),
             year: tag.date().unwrap_or_default().year,
@@ -757,7 +757,7 @@ impl SongInfoLoader<'_> {
         }
         *self.thumbnail.write().unwrap() = match self.read_thumbnail_from_disk() {
             Ok(thumbnail) => thumbnail,
-            _ => self.create_thumbnail(),
+            Err(_) => self.create_thumbnail(),
         };
 
         self.thumbnail.read().unwrap()

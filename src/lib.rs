@@ -1,10 +1,15 @@
-#![deny(clippy::missing_safety_doc, clippy::undocumented_unsafe_blocks)]
+#![deny(
+    clippy::missing_safety_doc,
+    clippy::undocumented_unsafe_blocks,
+    unused_unsafe
+)]
 #![warn(
     clippy::clear_with_drain,
     clippy::deref_by_slicing,
     clippy::doc_markdown,
     clippy::fallible_impl_from,
     clippy::missing_const_for_fn,
+    clippy::match_wildcard_for_single_variants,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::mixed_read_write_in_expression,
@@ -13,12 +18,21 @@
     clippy::needless_for_each,
     clippy::needless_pass_by_ref_mut,
     clippy::needless_pass_by_value,
+    clippy::ptr_cast_constness,
+    clippy::range_minus_one,
+    clippy::range_plus_one,
+    clippy::redundant_allocation,
+    clippy::redundant_as_str,
+    clippy::redundant_clone,
+    clippy::redundant_closure,
+    clippy::redundant_closure_call,
+    clippy::redundant_closure_for_method_calls,
+    clippy::redundant_pub_crate,
     clippy::semicolon_if_nothing_returned,
     clippy::single_option_map,
     // clippy::std_instead_of_core,
     clippy::str_to_string,
     clippy::unnecessary_semicolon,
-    unused_unsafe
 )]
 #![allow(clippy::match_bool)]
 

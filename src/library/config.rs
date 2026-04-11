@@ -132,8 +132,9 @@ impl LibraryConfig {
 
         let mut dirs: Vec<Chars> = self.directory_uris.iter().map(|dir| dir.chars()).collect();
         'counter: loop {
-            let mut chars = dirs.iter_mut().map(|c| c.next());
-            let Some(mut adj) = chars.next().unwrap_or(None) else {
+            // Characters at the same position of each directory
+            let mut chars = dirs.iter_mut().map(Iterator::next);
+            let Some(Some(mut adj)) = chars.next() else {
                 break 'counter;
             };
             for cur in chars {
