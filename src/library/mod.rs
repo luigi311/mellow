@@ -376,9 +376,6 @@ impl Library {
 
                 let mut needs_rebuild = false;
                 for song in &songs {
-                    if cancel.load(atomic::Ordering::Relaxed) {
-                        return;
-                    }
                     let mut info = song.info();
                     let modification_time = info.file_modification_time();
                     if modification_time == info.known_modification_time()
@@ -412,6 +409,7 @@ impl Library {
 
         // Load song info in the background
         Library::run_task(library_tx, {
+            // IDEA: Could the two tasks be merged?
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
