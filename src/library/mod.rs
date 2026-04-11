@@ -383,12 +383,7 @@ impl Library {
                     {
                         continue;
                     }
-                    let mut basic = info.inspect_basic_mut();
-                    if basic.is_some() {
-                        *basic = None;
-                        needs_rebuild = true;
-                    }
-                    drop(basic);
+                    needs_rebuild |= info.inspect_basic_mut().take().is_some();
                     info.invalidate_thumbnail();
                 }
                 // If files were modified, queue another rebuild so the new info gets loaded
@@ -423,7 +418,7 @@ impl Library {
                     .map(|_| Vec::<SharedSong>::with_capacity(songs.len() / num_tasks))
                     .collect::<Vec<Vec<SharedSong>>>();
                 let mut target_worker = 0;
-                for song in songs.into_iter() {
+                for song in songs {
                     worker_songs[target_worker].push(song);
                     target_worker += 1;
                     if target_worker == num_tasks {
