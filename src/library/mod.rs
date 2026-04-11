@@ -349,7 +349,8 @@ impl Library {
     /// # Panics
     /// The function panics if `songs`, `missing`, or `check_moved` contains a
     /// poisoned mutex
-    pub fn create_connections(
+    #[inline]
+    fn create_connections(
         mut songs: Songs,
         mut missing: Songs,
         check_moved: &Arc<Mutex<Songs>>,
@@ -373,8 +374,6 @@ impl Library {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
-                let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
-
                 // Wait before starting background tasks in case they aren't needed
                 thread::sleep(Duration::from_millis(60));
                 if cancel.load(atomic::Ordering::Relaxed) {
@@ -498,9 +497,11 @@ impl Library {
             }
         }
 
+        #[cfg(feature = "startup-logs")]
+        println!("Library connections have finished building");
+
         library_tx.send(LibraryRequest::SetArtists(artists))?;
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
-        library_tx.send(LibraryRequest::SetSongs(songs))?;
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
@@ -517,11 +518,13 @@ impl Library {
     /// - Moves missing files from `songs` into `missing_songs`
     /// - Removes and returns a list of `songs` whose files may
     ///   have been moved on disk
+    /// - Updates the library `songs` and `missing_songs`
     ///
     /// # Panics
     /// The function may panic if the library channel is closed
     /// or if a song's `Mutex` is in a poisoned state
-    pub fn validate_songs(
+    #[inline]
+    fn validate_songs(
         songs: &mut Songs,
         missing: &mut Songs,
         unchecked: &Arc<Mutex<Songs>>,
@@ -603,13 +606,19 @@ impl Library {
             }
         }
 
+        #[cfg(feature = "startup-logs")]
+        println!("Song validation complete");
+
         // Check for file modifications in the background
-        let check_songs = songs.clone();
-        let library_tx = LIBRARY_TX.get().expect(EXP_RX);
+        let songs = songs.clone();
+        let missing = mem::take(missing);
+        let library_tx = library_tx();
         let cancel = Arc::clone(cancel);
         Library::run_task(library_tx, move || {
+            let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
+
             let mut needs_rebuild = false;
-            for song in check_songs {
+            for song in &songs {
                 if cancel.load(atomic::Ordering::Relaxed) {
                     return;
                 }
@@ -633,6 +642,8 @@ impl Library {
                 })));
                 println!("Modifications detected, library will rebuild shortly");
             }
+
+            let _ = library_tx.send(LibraryRequest::SetSongs(songs));
         });
 
         mem::swap(&mut *unchecked.lock().unwrap(), &mut possibly_moved);
@@ -644,7 +655,7 @@ impl Library {
     /// # Panics
     /// The function panics if the UI channel receiver is unititialized
     /// or closed, or if the `check_moved` mutex is in a poisoned state
-    pub fn merge_moved_entries(
+    fn merge_moved_entries(
         songs: &Songs,
         mut check_moved: MutexGuard<'_, Songs>,
         config: &LibraryConfig,
@@ -736,7 +747,6 @@ impl Library {
                     }
                     check_moved.extend(mem::take(&mut *cancelled.lock().unwrap()));
                     drop(check_moved);
-                    let _ = ui_tx.send(UpdateUI::Progress(None));
                     break;
                 }
                 let _ = ui_tx.send(UpdateUI::Progress(Some(progress)));
