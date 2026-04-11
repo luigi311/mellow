@@ -147,12 +147,9 @@ impl AlbumsPage {
         let query = Rc::clone(&self.search_query);
         let filter = gtk::CustomFilter::new(move |object| {
             let album_object = object.downcast_ref::<AlbumObject>().unwrap();
-            let lowercase_query = &query.borrow().to_lowercase();
-            let score = search::query_score(lowercase_query, &album_object.album().to_lowercase())
-                .max(
-                    search::query_score(lowercase_query, &album_object.artist().to_lowercase())
-                        / 4.0,
-                );
+            let query = &query.borrow().to_lowercase();
+            let score = search::query_score(query, &album_object.album().to_lowercase())
+                .max(search::query_score(query, &album_object.artist().to_lowercase()) / 4.0);
             album_object.set_rank(score);
             score > 0.01
         });
