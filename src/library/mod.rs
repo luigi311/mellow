@@ -367,15 +367,21 @@ impl Library {
         #[cfg(feature = "startup-logs")]
         println!("Library songs validation complete");
 
-        // Check file modification times in the background
+        let file_times = Arc::new(Mutex::new(()));
         Library::run_task(library_tx, {
-            let songs = songs.clone();
             let cancel = Arc::clone(cancel);
+            let songs = songs.clone();
+            let busy = Arc::clone(&file_times);
             move || {
                 let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
 
+                // Check file modification times in the background
+                let file_times_guard = busy.lock().unwrap();
                 let mut needs_rebuild = false;
                 for song in &songs {
+                    if cancel.load(atomic::Ordering::Relaxed) {
+                        return;
+                    }
                     let mut info = song.info();
                     let modification_time = info.file_modification_time();
                     if modification_time == info.known_modification_time()
@@ -387,12 +393,14 @@ impl Library {
                     info.invalidate_thumbnail();
                 }
                 // If files were modified, queue another rebuild so the new info gets loaded
-                if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
-                    let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(move |_| {
-                        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-                    })));
+                if needs_rebuild && !cancel.swap(true, atomic::Ordering::Relaxed) {
+                    let _ = library_tx.send(LibraryRequest::CancelRebuild);
+                    library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
                     println!("Modifications detected, library will rebuild shortly");
+                    return;
                 }
+
+                drop(file_times_guard);
             }
         });
 
@@ -402,9 +410,7 @@ impl Library {
             Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks);
         }
 
-        // Load song info in the background
         Library::run_task(library_tx, {
-            // IDEA: Could the two tasks be merged?
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
             move || {
@@ -414,6 +420,7 @@ impl Library {
                     return;
                 }
 
+                // Prepare the songs to distribute between background tasks
                 let mut worker_songs = (0..num_tasks)
                     .map(|_| Vec::<SharedSong>::with_capacity(songs.len() / num_tasks))
                     .collect::<Vec<Vec<SharedSong>>>();
@@ -539,6 +546,9 @@ impl Library {
         library_tx.send(LibraryRequest::SetSongs(songs))?;
 
         ui_tx.send(UpdateUI::Progress(None))?;
+
+        // Wait for the file modification times to be fully checked
+        drop(file_times.lock().unwrap());
 
         // Cancel background tasks if the main function finished first
         if !cancel.load(atomic::Ordering::Relaxed) {
