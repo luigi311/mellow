@@ -362,7 +362,47 @@ impl Library {
         let library_tx = library_tx();
         let ui_tx = ui_tx();
 
-        Library::validate_songs(&mut songs, &mut missing, check_moved, config, cancel);
+        Library::validate_songs(&mut songs, &mut missing, check_moved, config);
+
+        #[cfg(feature = "startup-logs")]
+        println!("Library songs validation complete");
+
+        // Check file modification times in the background
+        Library::run_task(library_tx, {
+            let songs = songs.clone();
+            let cancel = Arc::clone(cancel);
+            move || {
+                let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
+
+                let mut needs_rebuild = false;
+                for song in &songs {
+                    if cancel.load(atomic::Ordering::Relaxed) {
+                        return;
+                    }
+                    let mut info = song.info();
+                    let modification_time = info.file_modification_time();
+                    if modification_time == info.known_modification_time()
+                        || modification_time == -1
+                    {
+                        continue;
+                    }
+                    let mut basic = info.inspect_basic_mut();
+                    if basic.is_some() {
+                        *basic = None;
+                        needs_rebuild = true;
+                    }
+                    drop(basic);
+                    info.invalidate_thumbnail();
+                }
+                // If files were modified, queue another rebuild so the new info gets loaded
+                if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
+                    let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(move |_| {
+                        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                    })));
+                    println!("Modifications detected, library will rebuild shortly");
+                }
+            }
+        });
 
         if let Ok(check_moved) = check_moved.lock()
             && !check_moved.is_empty()
@@ -370,6 +410,7 @@ impl Library {
             Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks);
         }
 
+        // Load song info in the background
         Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
             let songs = songs.clone();
@@ -502,6 +543,7 @@ impl Library {
 
         library_tx.send(LibraryRequest::SetArtists(artists))?;
         library_tx.send(LibraryRequest::SetAlbums(albums))?;
+        library_tx.send(LibraryRequest::SetSongs(songs))?;
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
@@ -529,7 +571,6 @@ impl Library {
         missing: &mut Songs,
         unchecked: &Arc<Mutex<Songs>>,
         config: &LibraryConfig,
-        cancel: &Arc<AtomicBool>,
     ) {
         let old_songs = [
             mem::replace(songs, Vec::with_capacity(songs.len())),
@@ -605,46 +646,6 @@ impl Library {
                 }
             }
         }
-
-        #[cfg(feature = "startup-logs")]
-        println!("Song validation complete");
-
-        // Check for file modifications in the background
-        let songs = songs.clone();
-        let missing = mem::take(missing);
-        let library_tx = library_tx();
-        let cancel = Arc::clone(cancel);
-        Library::run_task(library_tx, move || {
-            let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
-
-            let mut needs_rebuild = false;
-            for song in &songs {
-                if cancel.load(atomic::Ordering::Relaxed) {
-                    return;
-                }
-                let mut info = song.info();
-                let modification_time = info.file_modification_time();
-                if modification_time == -1 || modification_time == info.known_modification_time() {
-                    continue;
-                }
-                let mut basic = info.inspect_basic_mut();
-                if basic.is_some() {
-                    *basic = None;
-                    needs_rebuild = true;
-                }
-                drop(basic);
-                info.invalidate_thumbnail();
-            }
-            // If files were modified, queue another rebuild so the new info gets loaded
-            if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
-                let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(move |_| {
-                    library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
-                })));
-                println!("Modifications detected, library will rebuild shortly");
-            }
-
-            let _ = library_tx.send(LibraryRequest::SetSongs(songs));
-        });
 
         mem::swap(&mut *unchecked.lock().unwrap(), &mut possibly_moved);
     }
