@@ -61,7 +61,8 @@ impl Application {
         self.connect_shutdown(Self::shutdown);
     }
 
-    /// Starts the player and library threads and returns the application settings
+    /// Starts the player and library threads, calls `gtk::init`,
+    /// registers resources, and returns the application settings
     #[inline]
     fn init_components(
         &self,
@@ -108,6 +109,19 @@ impl Application {
                 .spawn(move || Player::init(player_rx).controller().unwrap())
                 .unwrap(),
         ));
+
+        let _ = gtk::init();
+
+        #[cfg(feature = "no-meson")]
+        gio::resources_register_include!("mellow.gresource").expect("Failed to register resources");
+
+        #[cfg(not(feature = "no-meson"))]
+        gio::resources_register(
+            &gio::Resource::load(about::resources_file()).expect("Could not load resources file"),
+        );
+
+        glib::set_application_name(about::app_name());
+        glib::set_program_name(Some(about::app_name().to_lowercase()));
 
         settings
     }
