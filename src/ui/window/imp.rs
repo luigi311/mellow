@@ -184,8 +184,7 @@ impl Window {
 
         let mut info = song.info();
         let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` ensures the value is `Some`
-        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+        let song_info = song_info_temp.as_ref().unwrap();
         let (title, album, artist) = (
             song_info.title.clone(),
             song_info.album.clone(),
@@ -371,7 +370,7 @@ impl Window {
         }
 
         // Ensure the queue item hasn't changed before the message was handled
-        // SAFETY: Just checked if it is within bounds
+        // SAFETY: Function returns early if `index` is out of bounds
         let QueueItem::Song(cmp_song) = (unsafe { song_queue.get_unchecked(index) }) else {
             return;
         };

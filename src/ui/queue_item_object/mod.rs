@@ -33,8 +33,7 @@ impl QueueItemObject {
                 let mut info = song.info();
 
                 let song_info_temp = info.load_basic();
-                // SAFETY: `load_basic` ensures the value is `Some`
-                let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+                let song_info = song_info_temp.as_ref().unwrap();
                 queue_object.set_title(song_info.title.clone());
                 queue_object.set_subtitle(song_info.artist.clone());
                 queue_object.set_suffix(format_duration_ms(song_info.duration_ms));

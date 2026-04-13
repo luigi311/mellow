@@ -36,8 +36,7 @@ impl QueueSubpage {
 
         let mut info = song.info();
         let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` ensures the value is `Some`
-        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+        let song_info = song_info_temp.as_ref().unwrap();
         song_page.song_title.set_label(&song_info.title);
         song_page.album_title.set_label(&song_info.album);
         song_page.artist_name.set_label(&song_info.artist);

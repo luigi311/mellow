@@ -379,17 +379,6 @@ impl SongInfoLoader<'_> {
         self.user_info.lock().unwrap().rating = rating;
     }
 
-    /// Loads basic song info if needed, then returns and unloads it
-    ///
-    /// # Panics
-    /// The function panics if the basic info `RwLock` is poisoned
-    #[inline]
-    #[must_use]
-    pub fn take_basic(&mut self) -> SongInfo {
-        drop(self.load_basic());
-        // SAFETY: `load_basic()` ensures the value is `Some`
-        unsafe { self.info.write().unwrap().take().unwrap_unchecked() }
-    }
     /// Returns the basic song info if loaded, but does not load it
     ///
     /// Note: This function may block the current thread if the song
@@ -418,9 +407,7 @@ impl SongInfoLoader<'_> {
     pub fn inspect_basic_mut(&mut self) -> RwLockWriteGuard<'_, Option<SongInfo>> {
         #[cfg(debug_assertions)]
         if self.detailed_info.try_write().is_err() {
-            eprintln!(
-                "Note: Blocking on write lock for `inspect_basic` (would `try_inspect_basic` make sense here?)"
-            );
+            eprintln!("Note: Blocking on write lock for `inspect_basic_mut`");
         }
         self.info.write().unwrap()
     }
@@ -452,6 +439,7 @@ impl SongInfoLoader<'_> {
         }
         drop(info);
         self.assign_basic();
+        // FIX: Ensure a concurrent unload cannot happen before obtaining the read lock
         self.info.read().unwrap()
     }
     /// Returns the basic song info if it is currently accessible without
@@ -475,6 +463,7 @@ impl SongInfoLoader<'_> {
         }
         drop(info);
         self.assign_basic();
+        // FIX: Ensure a concurrent unload cannot happen before obtaining the read lock
         Ok(self.info.read().unwrap())
     }
     /// Loads the basic song info and assigns it if it is not already loaded
@@ -557,17 +546,6 @@ impl SongInfoLoader<'_> {
         })
     }
 
-    /// Loads detailed song info if needed, then returns and unloads it
-    ///
-    /// # Panics
-    /// The function panics if the detailed info `RwLock` is poisoned
-    #[inline]
-    #[must_use]
-    pub fn take_detailed(&mut self) -> DetailedSongInfo {
-        drop(self.load_detailed());
-        // SAFETY: `load_detailed()` ensures the value is `Some`
-        unsafe { (self.detailed_info.write().unwrap().take()).unwrap_unchecked() }
-    }
     /// Returns the detailed song info if loaded, but does not load it
     ///
     /// Note: This function may block the current thread if the song
@@ -610,6 +588,7 @@ impl SongInfoLoader<'_> {
         }
         drop(detailed_info);
         self.assign_detailed();
+        // FIX: Ensure a concurrent unload cannot happen before obtaining the read lock
         self.detailed_info.read().unwrap()
     }
     /// Returns the detailed song info if it is currently accessible without
@@ -632,6 +611,7 @@ impl SongInfoLoader<'_> {
             return Ok(detailed_info);
         }
         self.assign_detailed();
+        // FIX: Ensure a concurrent unload cannot happen before obtaining the read lock
         Ok(self.detailed_info.read().unwrap())
     }
     /// Loads the detailed song info and assigns it if it is not already loaded
@@ -842,10 +822,7 @@ impl SongInfoLoader<'_> {
         fs::create_dir_all(thumbnail_file_path.rsplit_once('/').unwrap().0).unwrap();
 
         let detailed = self.load_detailed();
-        // SAFETY: `load_detailed` ensures the value is `Some`
-        let artwork = unsafe { detailed.as_ref().unwrap_unchecked() }
-            .artwork
-            .clone();
+        let artwork = detailed.as_ref().unwrap().artwork.clone();
         drop(detailed);
 
         let thumbnail = 'thumbnail: {

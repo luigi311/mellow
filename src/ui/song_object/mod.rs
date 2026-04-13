@@ -24,8 +24,7 @@ impl SongObject {
         let (title, album, artist, year) = {
             let mut info = song.info();
             let info_temp = info.load_basic();
-            // SAFETY: `load_basic` ensures the value is `Some`
-            let info = unsafe { info_temp.as_ref().unwrap_unchecked() };
+            let info = info_temp.as_ref().unwrap();
             (
                 info.title.clone(),
                 info.album.clone(),

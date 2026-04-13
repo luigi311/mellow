@@ -66,8 +66,7 @@ impl AlbumPage {
 
             let mut info = song.info();
             let info = info.load_basic();
-            // SAFETY: `load_basic` ensures the value is `Some`
-            let info = unsafe { info.as_ref().unwrap_unchecked() };
+            let info = info.as_ref().unwrap();
             song_row.add_prefix(
                 &gtk::Label::builder()
                     .width_chars(2)

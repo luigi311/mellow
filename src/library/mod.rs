@@ -462,8 +462,7 @@ impl Library {
         for song in &songs {
             let mut info = song.info();
             let song_info_lock = info.load_basic();
-            // SAFETY: `load_basic` ensures the value is `Some`
-            let song_info = unsafe { song_info_lock.as_ref().unwrap_unchecked() };
+            let song_info = song_info_lock.as_ref().unwrap();
 
             let album_index = albums.find_album(song_info);
             let artist_index = artists.find_artist(song_info);

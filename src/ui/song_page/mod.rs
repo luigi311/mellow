@@ -37,8 +37,7 @@ impl SongPage {
         let mut info = song.info();
 
         let song_info_temp = info.load_basic();
-        // SAFETY: `load_basic` ensures the value is `Some`
-        let song_info = unsafe { song_info_temp.as_ref().unwrap_unchecked() };
+        let song_info = song_info_temp.as_ref().unwrap();
         song_page.set_title(&["Song: ", &song_info.title].concat());
         ui.song_title.set_label(&song_info.title);
         ui.album_title.set_label(&song_info.album);
