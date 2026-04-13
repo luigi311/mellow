@@ -72,6 +72,9 @@ impl SharedSongExt for SharedSong {
     }
 }
 
+#[derive(Debug)]
+struct MissingUriError;
+
 impl<'s> Song {
     /// Constructs a new `Song` from a `gio::File`
     #[inline]
@@ -83,7 +86,7 @@ impl<'s> Song {
             file,
             uri,
             info: RwLock::new(None),
-            user_info: Mutex::new(UserSongInfo::default()),
+            user_info: Mutex::new(UserSongInfo::new()),
             detailed_info: RwLock::new(None),
             thumbnail: RwLock::new(None),
         }
@@ -99,7 +102,7 @@ impl<'s> Song {
             file,
             uri,
             info: RwLock::new(None),
-            user_info: Mutex::new(UserSongInfo::default()),
+            user_info: Mutex::new(UserSongInfo::new()),
             detailed_info: RwLock::new(None),
             thumbnail: RwLock::new(None),
         }
@@ -155,7 +158,7 @@ impl<'s> Song {
     /// # Errors
     /// - If the `uri` field is missing from the `data`
     #[inline]
-    fn deserialize(data: &str) -> Result<Song, String> {
+    fn deserialize(data: &str) -> Result<Song, MissingUriError> {
         let mut uri = "";
         let mut info = SongInfo::default();
         let mut user_info = UserSongInfo::default();
@@ -180,7 +183,7 @@ impl<'s> Song {
         }
 
         if uri.is_empty() {
-            return Err("Could not initialize `uri`".to_owned());
+            return Err(MissingUriError);
         }
 
         Ok(Song {
@@ -882,10 +885,15 @@ pub struct SongInfo {
 }
 #[derive(Clone, Debug)]
 pub struct UserSongInfo {
+    /// Time (in Unix format) when this file was first discovered by the library
     pub added: u64,
+    /// Last known modification time (Unix format). The value -1 is reserved for new files.
     pub modified: i64,
+    /// How many times this song was played
     pub play_count: usize,
+    /// User-assigned song rating
     pub rating: u8,
+    /// User-assigned tags for this song
     pub tags: Vec<String>,
 }
 /// Fields which do not need to be held in memory at all times
@@ -920,13 +928,17 @@ impl Default for SongInfo {
 }
 
 impl Default for UserSongInfo {
+    /// Returns a default instance `UserSongInfo`
+    ///
+    /// This is intended to be used as a placeholder when deserializing
+    /// songs. If the file is new to the library, use `new` instead.
     #[inline]
     fn default() -> Self {
         Self {
             added: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_or_else(|_| 0, |time| time.as_secs()),
-            modified: -1,
+            modified: 0,
             play_count: 0,
             rating: 0,
             tags: Vec::new(),
@@ -934,6 +946,18 @@ impl Default for UserSongInfo {
     }
 }
 impl UserSongInfo {
+    /// Returns a new instance of `UserSongInfo`
+    ///
+    /// This is intended to be used when constructing new song entries.
+    /// For other usecases, `default` should be used instead.
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            modified: -1,
+            ..Self::default()
+        }
+    }
+
     /// Copies info from `other` and merges into `self`:
     /// - Ratings are averaged, or whichever one is non-zero is used
     /// - Play counts are set to the highest number of the two
