@@ -466,10 +466,11 @@ impl SongInfoLoader<'_> {
         // FIX: Ensure a concurrent unload cannot happen before obtaining the read lock
         Ok(self.info.read().unwrap())
     }
-    /// Loads the basic song info and assigns it if it is not already loaded
+    /// Loads the basic song info and assigns it
     ///
     /// # Panics
     /// The function panics if the detailed info `RwLock` is poisoned
+    #[inline]
     fn assign_basic(&mut self) {
         #[cfg(debug_assertions)]
         if self.detailed_info.try_write().is_err() {
@@ -478,7 +479,12 @@ impl SongInfoLoader<'_> {
         let mut info_writer = self.info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
         if info_writer.is_some() {
+            println!(
+                "⚠️ Basic song info already loaded (decide whether to include this check it in release builds) ({})",
+                line!()
+            );
             return;
         }
         *info_writer = Some(self.basic_or_default());
@@ -623,8 +629,8 @@ impl SongInfoLoader<'_> {
         let mut info_writer = self.detailed_info.write().unwrap();
         // Check if the info was already loaded by another
         // writer while waiting to acquire the write lock
+        #[cfg(debug_assertions)]
         if info_writer.is_some() {
-            #[cfg(debug_assertions)]
             println!(
                 "⚠️ Detailed song info already loaded (decide whether to include this check it in release builds) ({})",
                 line!()
