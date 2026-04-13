@@ -393,12 +393,16 @@ impl Library {
                     info.invalidate_thumbnail();
                 }
                 // If files were modified, queue another rebuild so the new info gets loaded
-                if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
+                if needs_rebuild && !cancel.swap(true, atomic::Ordering::Relaxed) {
+                    let _ = library_tx.send(LibraryRequest::CancelRebuild);
                     let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|_| {
+                        ui_tx.send(UpdateUI::Progress(Some(0.0))).expect(EXP_RX);
+                        println!("Rebuilding because files were modified");
+                        // FIX: Progress bar stays empty for a bit during the rebuild
                         library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
                     })));
+                    drop(file_times_guard);
                     println!("Modifications detected, library will rebuild shortly");
-                    // FIX: Progress bar is empty most of the time during the rebuild
                     return;
                 }
 
@@ -411,6 +415,9 @@ impl Library {
         {
             Library::merge_moved_entries(&songs, check_moved, config, cancel, num_tasks);
         }
+
+        #[cfg(feature = "startup-logs")]
+        println!("Merged moved file entries");
 
         Library::run_task(library_tx, {
             let cancel = Arc::clone(cancel);
