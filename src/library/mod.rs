@@ -312,15 +312,16 @@ impl Library {
 
         for library_path in self.config.directories() {
             let _ = visit_dirs(Path::new(&library_path), &mut |f| {
-                let file = &*f.path();
+                let file = f.path();
                 if !file.extension().is_some_and(extension_supported) {
                     return;
                 }
 
                 // Add the song to the library if it is new
                 let file = gio::File::for_path(file);
-                if let Err(index) = songs.find_song(&file.uri(), self.config.uri_opt()) {
-                    songs.insert(index, SharedSong::from_file(file));
+                let uri = file.uri().to_string();
+                if let Err(index) = songs.find_song(&uri, self.config.uri_opt()) {
+                    songs.insert(index, SharedSong::from_file(file, uri));
                 }
             })
             .inspect_err(|e| eprintln!("Error reading '{library_path}': {e}"));
@@ -978,8 +979,9 @@ impl Library {
         let mut queue = Vec::with_capacity(paths.len());
         for file in paths {
             if file_supported(file) {
-                let file = gio::File::for_path(file);
-                queue.push(QueueItem::Song(self.song_from_library_or_new(file)));
+                queue.push(QueueItem::Song(
+                    self.song_from_library_or_new(gio::File::for_path(file)),
+                ));
             } else if file == "Pause" {
                 queue.push(QueueItem::new_stopper(false));
             } else if file == "Close Player" {
@@ -995,15 +997,15 @@ impl Library {
     #[inline]
     #[must_use]
     fn song_from_library_or_new(&self, file: gio::File) -> SharedSong {
-        let file_uri = file.uri();
+        let file_uri = &*file.uri();
         // SAFETY: `file.uri()` converts special characters to regular ones
-        if unsafe { self.config.uri_within_library(&file_uri) }
-            && let Ok(index) = self.songs.find_song(&file_uri, self.config.uri_opt())
+        if unsafe { self.config.uri_within_library(file_uri) }
+            && let Ok(index) = self.songs.find_song(file_uri, self.config.uri_opt())
         {
             // SAFETY: `index` is `Ok`, therefore within bounds
             return Arc::clone(unsafe { self.songs.get_unchecked(index) });
         }
-        SharedSong::from_file(file)
+        SharedSong::from_file(file, file_uri.to_owned())
     }
     /// Extends `queue` with songs found on disk within `dir`. If files are
     /// part of the music library, their existing instances will be used.

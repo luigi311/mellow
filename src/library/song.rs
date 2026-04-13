@@ -27,7 +27,7 @@ pub struct Song {
 
 pub type SharedSong = Arc<Song>;
 pub trait SharedSongExt {
-    fn from_file(file: gio::File) -> SharedSong;
+    fn from_file(file: gio::File, uri: String) -> SharedSong;
     fn from_path(path: &str) -> SharedSong;
     fn deserialize(data: &str) -> Option<SharedSong>;
     fn album(&self) -> MutexGuard<'_, Option<SharedAlbum>>;
@@ -37,8 +37,8 @@ pub trait SharedSongExt {
 impl SharedSongExt for SharedSong {
     /// Constructs a new `SharedSong` from a `gio::File`
     #[inline]
-    fn from_file(file: gio::File) -> SharedSong {
-        Arc::new(Song::from_file(file))
+    fn from_file(file: gio::File, uri: String) -> SharedSong {
+        Arc::new(Song::from_file(file, uri))
     }
     /// Constructs a new `SharedSong` from a file path
     #[inline]
@@ -79,8 +79,7 @@ impl<'s> Song {
     /// Constructs a new `Song` from a `gio::File`
     #[inline]
     #[must_use]
-    fn from_file(file: gio::File) -> Song {
-        let uri = file.uri().to_string();
+    fn from_file(file: gio::File, uri: String) -> Song {
         Song {
             album: Mutex::new(None),
             file,
