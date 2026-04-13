@@ -393,10 +393,12 @@ impl Library {
                     info.invalidate_thumbnail();
                 }
                 // If files were modified, queue another rebuild so the new info gets loaded
-                if needs_rebuild && !cancel.swap(true, atomic::Ordering::Relaxed) {
-                    let _ = library_tx.send(LibraryRequest::CancelRebuild);
-                    library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                if needs_rebuild && !cancel.load(atomic::Ordering::Relaxed) {
+                    let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|_| {
+                        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                    })));
                     println!("Modifications detected, library will rebuild shortly");
+                    // FIX: Progress bar is empty most of the time during the rebuild
                     return;
                 }
 
