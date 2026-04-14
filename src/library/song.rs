@@ -924,16 +924,14 @@ impl Default for SongInfo {
 }
 
 impl Default for UserSongInfo {
-    /// Returns a default instance `UserSongInfo`
+    /// Returns a default instance of `UserSongInfo`
     ///
     /// This is intended to be used as a placeholder when deserializing
     /// songs. If the file is new to the library, use `new` instead.
     #[inline]
     fn default() -> Self {
         Self {
-            added: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map_or_else(|_| 0, |time| time.as_secs()),
+            added: 0,
             modified: 0,
             play_count: 0,
             rating: 0,
@@ -949,6 +947,9 @@ impl UserSongInfo {
     #[inline]
     pub fn new() -> Self {
         Self {
+            added: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or_else(|_| 0, |time| time.as_secs()),
             modified: -1,
             ..Self::default()
         }
