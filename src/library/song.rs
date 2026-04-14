@@ -520,11 +520,12 @@ impl SongInfoLoader<'_> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::read(Probe::open(self.file.path().unwrap())?)?);
         }
-        let tagged = self.tagged.as_ref().unwrap();
+        // SAFETY: Assigned as `Some` on the previous line
+        let tagged = unsafe { self.tagged.as_ref().unwrap_unchecked() };
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
-            .ok_or("No tags found")?;
+            .ok_or_else(|| "No tags found")?;
         let properties = tagged.properties();
 
         Ok(SongInfo {
@@ -686,7 +687,8 @@ impl SongInfoLoader<'_> {
         if self.tagged.is_none() {
             self.tagged = Some(Probe::open(self.file.path().unwrap())?.read()?);
         }
-        Ok(self.tagged.as_ref().unwrap())
+        // SAFETY: Assigned as `Some` on the previous line
+        Ok(unsafe { self.tagged.as_ref().unwrap_unchecked() })
     }
 
     #[inline]
@@ -695,7 +697,7 @@ impl SongInfoLoader<'_> {
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
-            .ok_or("No tags found")?;
+            .ok_or_else(|| "No tags found")?;
         Ok(DetailedSongInfo {
             lyrics: tag
                 .get_string(ItemKey::Lyrics)
