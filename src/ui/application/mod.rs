@@ -69,18 +69,18 @@ impl Application {
         player_rx: mpsc::Receiver<PlayerRequest>,
         library_rx: mpsc::Receiver<LibraryRequest>,
     ) -> gio::Settings {
-        let imp = self.imp();
-
         let settings = gio::Settings::new(about::app_id());
         let startup_queue = settings.enum_("startup-queue");
         let directories = settings.string("directories");
+
+        let imp = self.imp();
 
         imp.library_handle.set(Some(
             thread::Builder::new()
                 .name("library".to_owned())
                 .spawn(move || {
                     let mut library = Library::init(
-                        LibraryConfig::new(match &*directories {
+                        LibraryConfig::new(match directories.as_str() {
                             // The value ":" means "first launch"
                             ":" => vec![music_dir().clone()],
                             dirs => unescaped_split(dirs, ','),
