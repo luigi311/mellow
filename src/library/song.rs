@@ -516,15 +516,10 @@ impl SongInfoLoader<'_> {
     }
     #[inline]
     fn load_basic_from_file(&mut self) -> Result<SongInfo, Box<dyn Error>> {
-        if self.tagged.is_none() {
-            self.tagged = Some(
-                Probe::open(self.file.path().unwrap())
-                    .map(Probe::read)
-                    // Try again next time if file is inaccessible
-                    .inspect_err(|_| self.set_modification_time(0))??,
-            );
-        }
         self.update_modification_time();
+        if self.tagged.is_none() {
+            self.tagged = Some(Probe::read(Probe::open(self.file.path().unwrap())?)?);
+        }
         let tagged = self.tagged.as_ref().unwrap();
         let tag = tagged
             .primary_tag()
