@@ -626,9 +626,7 @@ impl Library {
                             // Only remember missing files if they are within
                             // a library directory which is currently missing
                             // (otherwise, they were either moved or removed)
-                            if (missing_libraries.iter())
-                                .any(|dir| opt_uri.starts_with(&dir[config.uri_opt()..]))
-                            {
+                            if (missing_libraries.iter()).any(|dir| opt_uri.starts_with(dir)) {
                                 // #[cfg(debug_assertions)]
                                 // println!(
                                 //     "Remembering {} because its library is missing",
