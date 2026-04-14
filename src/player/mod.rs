@@ -21,7 +21,7 @@ static PLAYER_TX: OnceLock<mpsc::Sender<PlayerRequest>> = OnceLock::new();
 /// Causes undefined behavior if called before `init_channels`
 #[inline]
 pub fn player_tx() -> &'static mpsc::Sender<PlayerRequest> {
-    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    // SAFETY: `init_channels` runs in `Application::run`, before starting any threads
     unsafe { PLAYER_TX.get().unwrap_unchecked() }
 }
 /// Initializes the player channel sender accessed through `player_tx()`

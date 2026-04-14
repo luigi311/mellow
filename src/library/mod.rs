@@ -188,7 +188,7 @@ static LIBRARY_TX: OnceLock<mpsc::Sender<LibraryRequest>> = OnceLock::new();
 #[inline]
 #[must_use]
 pub fn library_tx() -> &'static mpsc::Sender<LibraryRequest> {
-    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    // SAFETY: `init_channels` runs in `Application::run`, before starting any threads
     unsafe { LIBRARY_TX.get().unwrap_unchecked() }
 }
 /// Initializes the library channel sender accessed through `library_tx()`

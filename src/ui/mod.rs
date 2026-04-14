@@ -61,7 +61,7 @@ static UI_TX: OnceLock<tokio_mpsc::UnboundedSender<UpdateUI>> = OnceLock::new();
 /// Causes undefined behavior if called before `init_channels`
 #[inline]
 pub fn ui_tx() -> &'static tokio_mpsc::UnboundedSender<UpdateUI> {
-    // SAFETY: `init_channels` runs in `Application::init`, before starting any threads
+    // SAFETY: `init_channels` runs in `Application::run`, before starting any threads
     unsafe { UI_TX.get().unwrap_unchecked() }
 }
 /// Initializes the UI channel sender accessed through `ui_tx()`
