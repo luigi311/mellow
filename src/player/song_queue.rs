@@ -14,8 +14,8 @@ use crate::{config_dir, queue_file, shuffled_queue_file};
 pub struct SongQueue {
     songs: Vec<QueueItem>,
     shuffled: Vec<usize>,
-    index: usize,
 
+    index: usize,
     repeat: bool,
     shuffle: bool,
     pub pending_track: bool,
@@ -31,8 +31,8 @@ impl SongQueue {
         Self {
             songs: vec![],
             shuffled: vec![],
-            index: 0,
 
+            index: 0,
             repeat: false,
             shuffle: false,
             pending_track: true,
