@@ -251,7 +251,9 @@ impl QueuePage {
             Library::run_task(library_tx(), {
                 let queue = queue.to_vec();
                 move || {
-                    let len = queue.len() - 1;
+                    let Some(len) = queue.len().checked_sub(1) else {
+                        return;
+                    };
                     let short_start = playing.saturating_sub(2);
                     let short_end = (playing + 2).min(queue.len());
                     for (index, song) in queue.into_iter().enumerate() {

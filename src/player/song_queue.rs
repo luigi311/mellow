@@ -338,11 +338,17 @@ impl SongQueue {
             if index < self.index {
                 self.index -= 1;
             } else if index == self.len() {
-                self.index = match self.repeat {
-                    true => 0,
-                    false => self.index - 1,
+                if index == 0 {
+                    // Clear the currently displayed song info in the UI if the queue is now empty
+                    let _ = ui_tx().send(UpdateUI::SongInfo(QueueItem::new_stopper(false), true));
+                } else {
+                    self.index = match self.repeat {
+                        true => 0,
+                        false => self.index - 1,
+                    }
                 }
             }
+            // Closing the subpage because the index now points to a different item
             self.ui_close_queue_subpage();
         }
         previous
