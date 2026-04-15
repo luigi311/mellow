@@ -12,15 +12,15 @@ use crate::util::ReorderVecExt;
 use crate::{config_dir, queue_file, shuffled_queue_file};
 
 pub struct SongQueue {
-    repeat: bool,
-    shuffle: bool,
-
-    pub pending_track: bool,
-
-    index: usize,
-    last_ui_index: usize,
     songs: Vec<QueueItem>,
     shuffled: Vec<usize>,
+    index: usize,
+
+    repeat: bool,
+    shuffle: bool,
+    pub pending_track: bool,
+
+    last_ui_index: usize,
 }
 
 impl SongQueue {
@@ -29,15 +29,15 @@ impl SongQueue {
     #[must_use]
     pub const fn init() -> Self {
         Self {
-            repeat: false,
-            shuffle: false,
-
-            pending_track: true,
-
-            index: 0,
-            last_ui_index: 0,
             songs: vec![],
             shuffled: vec![],
+            index: 0,
+
+            repeat: false,
+            shuffle: false,
+            pending_track: true,
+
+            last_ui_index: 0,
         }
     }
 
