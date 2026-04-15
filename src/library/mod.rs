@@ -347,7 +347,7 @@ impl Library {
                 Ok(()) => (library_tx().send(LibraryRequest::BuildDone(true))).expect(EXP_RX),
                 Err(e) => {
                     eprintln!("`Library::create_connections`: {e}");
-                    (library_tx().send(LibraryRequest::BuildDone(false))).expect(EXP_RX)
+                    (library_tx().send(LibraryRequest::BuildDone(false))).expect(EXP_RX);
                 }
             }
         });

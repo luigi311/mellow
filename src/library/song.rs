@@ -525,7 +525,7 @@ impl SongInfoLoader<'_> {
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
-            .ok_or_else(|| "No tags found")?;
+            .ok_or("No tags found")?;
         let properties = tagged.properties();
 
         Ok(SongInfo {
@@ -697,7 +697,7 @@ impl SongInfoLoader<'_> {
         let tag = tagged
             .primary_tag()
             .or_else(|| tagged.first_tag())
-            .ok_or_else(|| "No tags found")?;
+            .ok_or("No tags found")?;
         Ok(DetailedSongInfo {
             lyrics: tag
                 .get_string(ItemKey::Lyrics)
@@ -945,6 +945,7 @@ impl UserSongInfo {
     /// This is intended to be used when constructing new song entries.
     /// For other usecases, `default` should be used instead.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             added: (SystemTime::now().duration_since(UNIX_EPOCH))
