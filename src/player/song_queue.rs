@@ -228,6 +228,7 @@ impl SongQueue {
         if self.repeat && (to == 0 || to == self.len() - 1) {
             'disambiguate: {
                 let QueueItem::Song(from_item) = self.nth(from) else {
+                    to = self.len() - 1; // Stoppers should be at the end when ambiguous
                     break 'disambiguate;
                 };
                 let (QueueItem::Song(first_item), QueueItem::Song(last_item)) =
