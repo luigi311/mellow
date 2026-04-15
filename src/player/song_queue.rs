@@ -334,11 +334,15 @@ impl SongQueue {
             // so only the regular queue must be updated here
             self.songs.remove(index)
         };
-        if index < self.index {
-            self.index -= 1;
-            // self.ui_update_queue_index();
-        }
         if index <= self.index {
+            if index < self.index {
+                self.index -= 1;
+            } else if index == self.len() {
+                self.index = match self.repeat {
+                    true => 0,
+                    false => self.index - 1,
+                }
+            }
             self.ui_close_queue_subpage();
         }
         previous
