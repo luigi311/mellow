@@ -650,26 +650,26 @@ impl SongQueue {
             }
             StartupQueueChoice::QueueFromSongs => library.play_all_songs(false)?,
             StartupQueueChoice::QueueFromAlbums => {
-                library_tx().send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnBuildSucceeded(Box::new(|library| {
                     library.play_all_albums().unwrap();
                     let _ = player_tx.send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;
             }
             StartupQueueChoice::QueueFromArtists => {
-                library_tx().send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnBuildSucceeded(Box::new(|library| {
                     library.play_all_artists().unwrap();
                     let _ = player_tx.send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;
             }
             StartupQueueChoice::QueueFromSongsShuffled => library.play_all_songs(true)?,
             StartupQueueChoice::QueueFromAlbumsShuffled => {
-                library_tx().send(LibraryRequest::OnAlbumsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnBuildSucceeded(Box::new(|library| {
                     library.shuffle_all_albums().unwrap();
                     let _ = player_tx.send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;
             }
             StartupQueueChoice::QueueFromArtistsShuffled => {
-                library_tx().send(LibraryRequest::OnArtistsSet(Box::new(|library| {
+                library_tx().send(LibraryRequest::OnBuildSucceeded(Box::new(|library| {
                     library.shuffle_all_artists().unwrap();
                     let _ = player_tx.send(PlayerRequest::TogglePlay(Some(false)));
                 })))?;

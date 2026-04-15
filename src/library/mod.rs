@@ -40,8 +40,8 @@ pub struct Library {
     queue_initialized: bool,
     cancel_pending: Arc<AtomicBool>,
 
-    on_albums_set: Vec<LibraryTask>,
-    on_artists_set: Vec<LibraryTask>,
+    on_build_succeeded: Vec<LibraryTask>,
+    on_build_stopped: Vec<LibraryTask>,
 
     tasks: Runner,
     pub config: LibraryConfig,
@@ -220,9 +220,14 @@ pub enum LibraryRequest {
     SetMissingSongs(Songs),
 
     RunTask(BoxedTask),
-    OnAlbumsSet(LibraryTask),
-    OnArtistsSet(LibraryTask),
+    /// Runs a task once the library build successfully completes in full
+    OnBuildSucceeded(LibraryTask),
+    /// Runs a task once the library build stops, regardless if it succeeded or failed
+    OnBuildStopped(LibraryTask),
     Shutdown,
+
+    /// Should not be used externally
+    BuildDone(bool),
 }
 
 impl Library {
@@ -241,8 +246,8 @@ impl Library {
             queue_initialized: false,
             cancel_pending: Arc::new(AtomicBool::new(false)),
 
-            on_albums_set: Vec::new(),
-            on_artists_set: Vec::new(),
+            on_build_succeeded: Vec::new(),
+            on_build_stopped: Vec::new(),
 
             tasks: Runner::new(
                 thread::available_parallelism()
@@ -270,18 +275,20 @@ impl Library {
             match self.rx.recv()? {
                 LibraryRequest::RunTask(task) => self.tasks.run(task),
 
-                LibraryRequest::QueueFromPaths(paths) => {
-                    self.play_from_paths(paths.iter().map(|path| &**path).collect())?;
-                }
+                LibraryRequest::QueueFromPaths(paths) => self.play_from_paths(
+                    paths.iter().map(|path| &**path).collect(), //
+                )?,
 
                 LibraryRequest::SetSongs(songs) => self.set_songs(songs),
                 LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
                 LibraryRequest::SetArtists(artists) => self.set_artists(artists),
                 LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
-                LibraryRequest::OnAlbumsSet(f) => self.on_albums_set.push(f),
-                LibraryRequest::OnArtistsSet(f) => self.on_artists_set.push(f),
+
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
                 LibraryRequest::Rebuild => self.discover_files(),
+                LibraryRequest::BuildDone(success) => self.build_done(success),
+                LibraryRequest::OnBuildSucceeded(f) => self.on_build_succeeded.push(f),
+                LibraryRequest::OnBuildStopped(f) => self.on_build_stopped.push(f),
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
@@ -303,7 +310,7 @@ impl Library {
     /// songs are added.
     ///
     /// # Panics
-    /// The function panics if `create_connections()` fails
+    /// The function panics if the library channel is closed
     pub fn discover_files(&mut self) {
         let mut songs = match self.songs.is_empty() {
             true => Library::deserialize_songs(),
@@ -334,9 +341,14 @@ impl Library {
             let config = self.config.clone();
             let cancel = Arc::clone(&self.cancel_pending);
             let n_workers = self.tasks.num_workers();
-            move || {
-                Library::create_connections(songs, missing, &check, &config, &cancel, n_workers)
-                    .expect(EXP_RX);
+            move || match Library::create_connections(
+                songs, missing, &check, &config, &cancel, n_workers,
+            ) {
+                Ok(()) => (library_tx().send(LibraryRequest::BuildDone(true))).expect(EXP_RX),
+                Err(e) => {
+                    eprintln!("`Library::create_connections`: {e}");
+                    (library_tx().send(LibraryRequest::BuildDone(false))).expect(EXP_RX)
+                }
             }
         });
     }
@@ -345,7 +357,8 @@ impl Library {
     /// validates `songs` using `validate_songs()` and `merge_moved_entries()`
     ///
     /// # Errors
-    /// The function errors if either the library or UI channel receiver is closed
+    /// Returns an error if the build was cancelled, or if the library or UI
+    /// channel receiver is closed
     ///
     /// # Panics
     /// The function panics if `songs`, `missing`, or `check_moved` contains a
@@ -396,7 +409,7 @@ impl Library {
                 // If files were modified, queue another rebuild so the new info gets loaded
                 if needs_rebuild && !cancel.swap(true, atomic::Ordering::Relaxed) {
                     let _ = library_tx.send(LibraryRequest::CancelRebuild);
-                    let _ = library_tx.send(LibraryRequest::OnAlbumsSet(Box::new(|_| {
+                    let _ = library_tx.send(LibraryRequest::OnBuildStopped(Box::new(|_| {
                         ui_tx.send(UpdateUI::Progress(Some(0.0))).expect(EXP_RX);
                         println!("Rebuilding because files were modified");
                         // FIX: Progress bar stays empty for a bit during the rebuild
@@ -559,12 +572,11 @@ impl Library {
         // Wait for the file modification times to be fully checked
         drop(file_times.lock().unwrap());
 
-        // Cancel background tasks if the main function finished first
-        if !cancel.load(atomic::Ordering::Relaxed) {
-            let _ = library_tx.send(LibraryRequest::CancelRebuild);
+        match cancel.load(atomic::Ordering::Relaxed) {
+            true => Err("Cancelled")?,
+            // Cancel background tasks if the main function finished first
+            false => Ok(library_tx.send(LibraryRequest::CancelRebuild)?),
         }
-
-        Ok(())
     }
 
     /// Ensures validity of the provided `songs`:
@@ -821,9 +833,6 @@ impl Library {
     fn set_albums(&mut self, albums: Albums) {
         (ui_tx().send(UpdateUI::SetLibraryAlbums(albums.clone()))).expect(EXP_RX);
         self.albums = albums;
-        for f in mem::take(&mut self.on_albums_set) {
-            f(self);
-        }
     }
     /// Replaces `self.artists` with `artists`
     ///
@@ -832,13 +841,24 @@ impl Library {
     fn set_artists(&mut self, artists: Artists) {
         (ui_tx().send(UpdateUI::SetLibraryArtists(artists.clone()))).expect(EXP_RX);
         self.artists = artists;
-        for f in mem::take(&mut self.on_artists_set) {
-            f(self);
-        }
     }
     /// Replaces `self.missing_songs` with `missing_songs`
     fn set_missing_songs(&mut self, missing_songs: Songs) {
         self.missing_songs = missing_songs;
+    }
+
+    /// Runs tasks from `self.on_bulid_done` if `success` is `true`,
+    /// and always runs tasks from `self.on_build_stopped`. The task
+    /// lists are emptied when processed, so they can only run once.
+    fn build_done(&mut self, success: bool) {
+        if success {
+            for f in mem::take(&mut self.on_build_succeeded) {
+                f(self);
+            }
+        }
+        for f in mem::take(&mut self.on_build_stopped) {
+            f(self);
+        }
     }
 
     /// Adds all songs from directory `dir` to `self.undo_songs`, so their
