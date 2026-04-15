@@ -489,15 +489,13 @@ impl Player {
     /// Skips to previous track or restarts the current one if above the time threshold
     fn skip_prev_or_repeat(&mut self) -> Result<(), Box<dyn Error>> {
         const REPEAT_THRESHOLD: ClockTime = ClockTime::from_seconds(8);
-        match self.current_time() {
-            Some(time)
-                if !self.next_song_loaded
-                    && (time > REPEAT_THRESHOLD
-                        || (self.queue.is_first() && !self.queue.get_repeat())) =>
-            {
-                self.repeat_song()?;
-            }
-            _ => self.skip_prev(),
+        if let Some(time) = self.current_time()
+            && !self.next_song_loaded
+            && (time > REPEAT_THRESHOLD || (self.queue.is_first() && !self.queue.get_repeat()))
+        {
+            self.repeat_song()?;
+        } else {
+            self.skip_prev()
         }
         Ok(())
     }
@@ -564,13 +562,11 @@ impl Player {
     /// Call to resume the player state when done seeking
     fn seek_done(&mut self) {
         self.seeking = false;
-        let (pos, dur) = (
+
+        if let (Some(pos), Some(dur)) = (
             self.backend.query_position::<ClockTime>(),
             (self.backend.query_duration::<ClockTime>()).map(ClockTime::mseconds),
-        );
-
-        if let (Some(pos), Some(dur)) = (pos, dur)
-            && dur.saturating_sub(pos.mseconds()) != 0
+        ) && dur.saturating_sub(pos.mseconds()) != 0
         {
             // Reset state to re-enable missed `GStreamer` callbacks
             let _ = self.backend.set_state(State::Null);
