@@ -27,8 +27,6 @@ use crate::ui::{UpdateUI, ui_tx};
 use crate::util::tasks::{BoxedTask, Runner};
 use crate::{songs_file, util::visit_dirs};
 
-type LibraryTask = Box<dyn FnOnce(&mut Library) + Send + 'static>;
-
 pub struct Library {
     songs: Songs,
     albums: Albums,
@@ -202,6 +200,8 @@ pub fn init_library_tx(
     LIBRARY_TX.set(library_tx)
 }
 
+type LibraryTask = Box<dyn FnOnce(&mut Library) + Send + 'static>;
+
 pub enum LibraryRequest {
     /// Rebuilds the library
     ///
@@ -270,6 +270,8 @@ impl Library {
 
     /// Returns `true` if there are no songs in the library
     /// (otherwise returns `false`)
+    #[inline]
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.songs.is_empty()
     }

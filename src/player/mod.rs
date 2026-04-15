@@ -495,7 +495,7 @@ impl Player {
         {
             self.repeat_song()?;
         } else {
-            self.skip_prev()
+            self.skip_prev();
         }
         Ok(())
     }
