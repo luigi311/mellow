@@ -48,21 +48,55 @@ impl SongPage {
     #[template_callback]
     pub fn handle_play_next(&self) {
         (self.obj().activate_action("ui.library_nav_pop", None)).expect(ACTION_ERR);
+        let song = self.shared_song.borrow();
+        let song = song.as_ref().unwrap();
         (player_tx().send(PlayerRequest::InsertRelative(Box::new((
             1,
-            QueueItem::Song(Arc::clone(self.shared_song.borrow().as_ref().unwrap())),
+            QueueItem::Song(Arc::clone(song)),
         )))))
         .expect(EXP_RX);
+        let _ = ui_tx().send(UpdateUI::Notification(
+            format!(
+                "Song \"{}\" will play next in the queue",
+                song.info().inspect_basic().as_ref().unwrap().title
+            ),
+            Some(Box::new((
+                "View",
+                Box::new(move || {
+                    let ui_tx = ui_tx();
+                    ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+                    // NOTE: This will not close the lyrics page, if open
+                    let _ = ui_tx.send(UpdateUI::CloseQueueSubpage);
+                    // IDEA: Also scroll to the added song
+                }),
+            ))),
+        ));
     }
     #[template_callback]
     pub fn handle_add_to_queue(&self) {
         (self.obj().activate_action("ui.library_nav_pop", None)).expect(ACTION_ERR);
         let player_tx = player_tx();
+        let song = self.shared_song.borrow();
+        let song = song.as_ref().unwrap();
         player_tx
-            .send(PlayerRequest::Append(QueueItem::Song(Arc::clone(
-                self.shared_song.borrow().as_ref().unwrap(),
-            ))))
+            .send(PlayerRequest::Append(QueueItem::Song(Arc::clone(song))))
             .expect(EXP_RX);
+        let _ = ui_tx().send(UpdateUI::Notification(
+            format!(
+                "Song \"{}\" has been added to queue",
+                song.info().inspect_basic().as_ref().unwrap().title
+            ),
+            Some(Box::new((
+                "View",
+                Box::new(move || {
+                    let ui_tx = ui_tx();
+                    ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+                    // NOTE: This will not close the lyrics page, if open
+                    let _ = ui_tx.send(UpdateUI::CloseQueueSubpage);
+                    // IDEA: Also scroll to the added song
+                }),
+            ))),
+        ));
     }
     #[template_callback]
     pub fn handle_go_to_album(&self) {

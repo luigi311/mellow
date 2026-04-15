@@ -108,11 +108,14 @@ impl QueuePage {
 
         (ui_tx().send(UpdateUI::Notification(
             format!("Removed {} items from the queue", selected_items.len()),
-            Some(Box::new(move || {
-                let _ = player_tx().send(PlayerRequest::InsertItems(
-                    selected_items.clone(), //
-                ));
-            })),
+            Some(Box::new((
+                "Undo",
+                Box::new(move || {
+                    let _ = player_tx().send(PlayerRequest::InsertItems(
+                        selected_items.clone(), //
+                    ));
+                }),
+            ))),
         )))
         .expect(EXP_RX);
     }

@@ -151,8 +151,8 @@ impl Window {
                         .expect(ACTION_ERR);
                 }
 
-                UpdateUI::Notification(message, undo) => {
-                    self.show_toast_notification(&message, undo);
+                UpdateUI::Notification(message, action) => {
+                    self.show_toast_notification(&message, action);
                 }
 
                 UpdateUI::Shutdown => loop {
@@ -440,22 +440,20 @@ impl Window {
     fn show_toast_notification(
         &self,
         message: &str,
-        undo_action: Option<Box<dyn Fn() + Send + 'static>>,
+        action: Option<Box<(&'static str, Box<dyn Fn() + Send + 'static>)>>,
     ) {
         // TODO: Group same notifications
         let toast = adw::Toast::builder()
             .use_markup(false)
             .title(message)
             .build();
-        if let Some(undo_action) = undo_action {
+        if let Some(action) = action {
             // Dismiss previous notifications in case other undo buttons are currently
             // shown, because undoing in the wrong order can result in incorrect behavior
             self.toast_overlay.dismiss_all();
 
-            toast.set_button_label(Some("Undo"));
-            toast.connect_button_clicked(move |_| {
-                undo_action();
-            });
+            toast.set_button_label(Some(action.0));
+            toast.connect_button_clicked(move |_| action.1());
         }
         self.toast_overlay.add_toast(toast);
     }

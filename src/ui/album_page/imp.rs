@@ -85,7 +85,16 @@ impl AlbumPage {
                 "Disc {disc_number} \"{}\" has been added to queue",
                 self.album_title.label()
             ),
-            None,
+            Some(Box::new((
+                "View",
+                Box::new(move || {
+                    let ui_tx = ui_tx();
+                    ui_tx.send(UpdateUI::FocusPlaying).expect(EXP_RX);
+                    // NOTE: This will not close the lyrics page, if open
+                    let _ = ui_tx.send(UpdateUI::CloseQueueSubpage);
+                    // IDEA: Also scroll to the first added song
+                }),
+            ))),
         ));
     }
     #[inline]

@@ -90,9 +90,14 @@ impl LibraryConfig {
 
         let _ = ui_tx().send(UpdateUI::Notification(
             format!("Removed a library directory: {removed_dir}"),
-            Some(Box::new(move || {
-                let _ = library_tx.send(LibraryRequest::UndoRemovedDirectory(removed_dir.clone()));
-            })),
+            Some(Box::new((
+                "Undo",
+                Box::new(move || {
+                    let _ = library_tx.send(LibraryRequest::UndoRemovedDirectory(
+                        removed_dir.clone(), //
+                    ));
+                }),
+            ))),
         ));
         let _ = ui_tx().send(UpdateUI::SetLibraryDirs(self.directories.clone()));
     }
