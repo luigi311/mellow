@@ -947,8 +947,7 @@ impl UserSongInfo {
     #[inline]
     pub fn new() -> Self {
         Self {
-            added: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
+            added: (SystemTime::now().duration_since(UNIX_EPOCH))
                 .map_or_else(|_| 0, |time| time.as_secs()),
             modified: -1,
             ..Self::default()

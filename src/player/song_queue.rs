@@ -9,7 +9,7 @@ use crate::library::{Library, LibraryRequest, SharedSongExt, library_tx};
 use crate::player::{PlayerRequest, QueueItem, player_tx};
 use crate::ui::{StartupQueueChoice, UpdateUI, ui_tx};
 use crate::util::ReorderVecExt;
-use crate::{config_dir, queue_file, shuffled_queue_file};
+use crate::{queue_file, shuffled_queue_file, songs_file};
 
 pub struct SongQueue {
     songs: Vec<QueueItem>,
@@ -306,7 +306,6 @@ impl SongQueue {
     /// UI queue must be manually updated
     pub fn append(&mut self, items: &[QueueItem]) {
         self.songs.extend_from_slice(items);
-        // self.songs = [self.songs.as_slice(), items].concat();
         self.ui_update_queue();
     }
 
@@ -586,7 +585,7 @@ impl SongQueue {
         library: &Library,
         queue_startup_choice: StartupQueueChoice,
     ) -> Result<(), Box<dyn Error>> {
-        // Load the previous queue if file exists
+        // Load the previous queue if the queue file exists
         if let Ok(queue) = fs::read_to_string(queue_file())
             && let mut lines = queue.lines()
             && let Some(Ok(track)) = lines.next().map(str::parse)
@@ -641,7 +640,7 @@ impl SongQueue {
                 ui_tx().send(UpdateUI::OpenSheet(true))?;
             }
             StartupQueueChoice::RestoreQueue => {
-                if fs::exists([config_dir(), "songs"].concat()).is_ok_and(|exists| exists) {
+                if fs::exists(songs_file()).is_ok_and(|exists| exists) {
                     ui_tx().send(UpdateUI::OpenSheet(true))?;
                 } else {
                     // Load all songs into queue on first launch
