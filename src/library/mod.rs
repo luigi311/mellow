@@ -27,15 +27,15 @@ use crate::ui::{UpdateUI, ui_tx};
 use crate::util::tasks::{BoxedTask, Runner};
 use crate::{songs_file, util::visit_dirs};
 
-type LibraryTask = Box<dyn FnOnce(&Library) + Send + 'static>;
+type LibraryTask = Box<dyn FnOnce(&mut Library) + Send + 'static>;
 
 pub struct Library {
-    pub songs: Songs,
-    pub albums: Albums,
-    pub artists: Artists,
-    pub missing_songs: Songs,
-    pub check_moved: Arc<Mutex<Songs>>,
-    pub undo_songs: Songs,
+    songs: Songs,
+    albums: Albums,
+    artists: Artists,
+    missing_songs: Songs,
+    check_moved: Arc<Mutex<Songs>>,
+    undo_songs: Songs,
 
     queue_initialized: bool,
     cancel_pending: Arc<AtomicBool>,
@@ -203,31 +203,39 @@ pub fn init_library_tx(
 }
 
 pub enum LibraryRequest {
+    /// Rebuilds the library
+    ///
+    /// # Note:
+    /// In most cases, `CancelRebuild` should be called first
     Rebuild,
+    /// Cancels the current library build and pauses the thread pool requests
+    /// until all current tasks finish running
     CancelRebuild,
 
+    /// Starts a player queue using the given file or directory paths
     QueueFromPaths(Box<[String]>),
 
+    /// Adds a new library directory to the configuration
     AddLibrary(Box<str>),
+    /// Removes the library directory at the given index from the configuration
     RemoveLibrary(usize),
 
+    /// Remembers the removed directory for undo
     RegisterUndoDirectory(String),
+    /// Re-adds the removed directory and restores its library data
     UndoRemovedDirectory(String),
 
-    SetSongs(Songs),
-    SetAlbums(Albums),
-    SetArtists(Artists),
-    SetMissingSongs(Songs),
-
+    /// Runs the given task on the thread pool, in the background
     RunTask(BoxedTask),
-    /// Runs a task once the library build successfully completes in full
+    /// Runs the given task on the library thread directly, with mutable access to the `Library`
+    RunLibraryTask(LibraryTask),
+    /// Runs the given task once the library build successfully completes in full
     OnBuildSucceeded(LibraryTask),
-    /// Runs a task once the library build stops, regardless if it succeeded or failed
+    /// Runs the given task once the library build is done, regardless if it succeeded or failed
     OnBuildStopped(LibraryTask),
-    Shutdown,
 
-    /// Should not be used externally
-    BuildDone(bool),
+    /// Cleanly shuts down the library and thread pool, and writes the configuration data to disk
+    Shutdown,
 }
 
 impl Library {
@@ -260,6 +268,12 @@ impl Library {
         }
     }
 
+    /// Returns `true` if there are no songs in the library
+    /// (otherwise returns `false`)
+    pub const fn is_empty(&self) -> bool {
+        self.songs.is_empty()
+    }
+
     /// Main loop for handling library requests
     ///
     /// # Errors
@@ -279,16 +293,11 @@ impl Library {
                     paths.iter().map(|path| &**path).collect(), //
                 )?,
 
-                LibraryRequest::SetSongs(songs) => self.set_songs(songs),
-                LibraryRequest::SetAlbums(albums) => self.set_albums(albums),
-                LibraryRequest::SetArtists(artists) => self.set_artists(artists),
-                LibraryRequest::SetMissingSongs(songs) => self.set_missing_songs(songs),
-
                 LibraryRequest::CancelRebuild => self.cancel_library_build(),
                 LibraryRequest::Rebuild => self.discover_files(),
-                LibraryRequest::BuildDone(success) => self.build_done(success),
                 LibraryRequest::OnBuildSucceeded(f) => self.on_build_succeeded.push(f),
                 LibraryRequest::OnBuildStopped(f) => self.on_build_stopped.push(f),
+                LibraryRequest::RunLibraryTask(f) => f(&mut self),
 
                 LibraryRequest::AddLibrary(dir) => self.config.add_library(dir.to_string()),
                 LibraryRequest::RemoveLibrary(index) => self.config.remove_library(index),
@@ -344,11 +353,8 @@ impl Library {
             move || match Library::create_connections(
                 songs, missing, &check, &config, &cancel, n_workers,
             ) {
-                Ok(()) => (library_tx().send(LibraryRequest::BuildDone(true))).expect(EXP_RX),
-                Err(e) => {
-                    eprintln!("`Library::create_connections`: {e}");
-                    (library_tx().send(LibraryRequest::BuildDone(false))).expect(EXP_RX);
-                }
+                Ok(()) => (),
+                Err(e) => eprintln!("`Library::create_connections`: {e}"),
             }
         });
     }
@@ -387,7 +393,9 @@ impl Library {
             let songs = songs.clone();
             let busy = Arc::clone(&file_times);
             move || {
-                let _ = library_tx.send(LibraryRequest::SetMissingSongs(missing));
+                let _ = library_tx.send(LibraryRequest::RunLibraryTask(Box::new(move |library| {
+                    library.set_missing_songs(missing);
+                })));
 
                 // Check file modification times in the background
                 let file_times_guard = busy.lock().unwrap();
@@ -409,11 +417,11 @@ impl Library {
                 // If files were modified, queue another rebuild so the new info gets loaded
                 if needs_rebuild && !cancel.swap(true, atomic::Ordering::Relaxed) {
                     let _ = library_tx.send(LibraryRequest::CancelRebuild);
-                    let _ = library_tx.send(LibraryRequest::OnBuildStopped(Box::new(|_| {
+                    let _ = library_tx.send(LibraryRequest::OnBuildStopped(Box::new(|library| {
                         ui_tx.send(UpdateUI::Progress(Some(0.0))).expect(EXP_RX);
                         println!("Rebuilding because files were modified");
                         // FIX: Progress bar stays empty for a bit during the rebuild
-                        library_tx.send(LibraryRequest::Rebuild).expect(EXP_RX);
+                        library.discover_files();
                     })));
                     drop(file_times_guard);
                     println!("Modifications detected, library will rebuild shortly");
@@ -563,9 +571,12 @@ impl Library {
         #[cfg(feature = "startup-logs")]
         println!("Library connections have finished building");
 
-        library_tx.send(LibraryRequest::SetArtists(artists))?;
-        library_tx.send(LibraryRequest::SetAlbums(albums))?;
-        library_tx.send(LibraryRequest::SetSongs(songs))?;
+        library_tx.send(LibraryRequest::RunLibraryTask(Box::new(move |library| {
+            library.set_artists(artists);
+            library.set_albums(albums);
+            library.set_songs(songs);
+            library.build_stopped();
+        })))?;
 
         ui_tx.send(UpdateUI::Progress(None))?;
 
@@ -573,9 +584,14 @@ impl Library {
         drop(file_times.lock().unwrap());
 
         match cancel.load(atomic::Ordering::Relaxed) {
+            false => Ok((library_tx.send(LibraryRequest::RunLibraryTask(Box::new(
+                move |library| {
+                    // Cancel any background tasks which might still be running
+                    library.cancel_library_build();
+                    library.build_succeeded();
+                },
+            ))))?),
             true => Err("Cancelled")?,
-            // Cancel background tasks if the main function finished first
-            false => Ok(library_tx.send(LibraryRequest::CancelRebuild)?),
         }
     }
 
@@ -822,6 +838,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_songs(&mut self, songs: Songs) {
         (ui_tx().send(UpdateUI::SetLibrarySongs(songs.clone()))).expect(EXP_RX);
         self.songs = songs;
@@ -830,6 +847,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_albums(&mut self, albums: Albums) {
         (ui_tx().send(UpdateUI::SetLibraryAlbums(albums.clone()))).expect(EXP_RX);
         self.albums = albums;
@@ -838,24 +856,33 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if the UI channel receiver is closed
+    #[inline]
     fn set_artists(&mut self, artists: Artists) {
         (ui_tx().send(UpdateUI::SetLibraryArtists(artists.clone()))).expect(EXP_RX);
         self.artists = artists;
     }
     /// Replaces `self.missing_songs` with `missing_songs`
+    #[inline]
     fn set_missing_songs(&mut self, missing_songs: Songs) {
         self.missing_songs = missing_songs;
     }
 
-    /// Runs tasks from `self.on_bulid_succeeded` if `success` is `true`,
-    /// and always runs tasks from `self.on_build_stopped`. The task lists
-    /// are emptied when processed, so they can only run once.
-    fn build_done(&mut self, success: bool) {
-        if success {
-            for f in mem::take(&mut self.on_build_succeeded) {
-                f(self);
-            }
+    /// Runs the tasks in `on_build_succeeded` and leaves it empty
+    ///
+    /// Call this function once the library build has succeeded
+    #[inline]
+    fn build_succeeded(&mut self) {
+        for f in mem::take(&mut self.on_build_succeeded) {
+            f(self);
         }
+    }
+
+    /// Runs the tasks in `on_build_stopped` and leaves it empty
+    ///
+    /// Call this function once the library build is done, regardless
+    /// of whether it succeeded or failed
+    #[inline]
+    fn build_stopped(&mut self) {
         for f in mem::take(&mut self.on_build_stopped) {
             f(self);
         }
@@ -863,7 +890,7 @@ impl Library {
 
     /// Adds all songs from directory `dir` to `self.undo_songs`, so their
     /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
-    pub fn register_undo_directory(&mut self, dir: String) {
+    fn register_undo_directory(&mut self, dir: String) {
         let dir_uri = &*gio::File::for_path(dir).uri();
         let Err(start_index) =
             (self.songs).find_song(dir_uri, self.config.uri_opt().min(dir_uri.len()))
@@ -879,7 +906,7 @@ impl Library {
     }
     /// Adds all songs from directory `dir` to `self.undo_songs`, so their
     /// info can be recovered using `LibraryRequest::UndoRemovedDirectory`
-    pub fn undo_removed_directory(&mut self, dir: String) {
+    fn undo_removed_directory(&mut self, dir: String) {
         self.cancel_library_build_blocking();
         self.missing_songs.extend(mem::take(&mut self.undo_songs));
         self.config.add_library(dir);
@@ -1089,7 +1116,7 @@ impl Library {
     ///
     /// # Panics
     /// The function panics if it encounters a poisoned `Mutex`
-    pub fn shutdown(mut self) {
+    fn shutdown(mut self) {
         self.cancel_pending.store(true, atomic::Ordering::Relaxed);
         (self.missing_songs).extend(mem::take(&mut *self.check_moved.lock().unwrap()));
         for missing in self.missing_songs {

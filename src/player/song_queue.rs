@@ -634,7 +634,7 @@ impl SongQueue {
     ) -> Result<(), Box<dyn Error>> {
         let player_tx = player_tx();
         match queue_startup_choice {
-            _ if library.songs.is_empty() => {
+            _ if library.is_empty() => {
                 // Maybe open the settings page and focus on the directory options?
                 // ui_tx().send(UpdateUI::FocusLibrary)?;
                 ui_tx().send(UpdateUI::OpenSheet(true))?;
