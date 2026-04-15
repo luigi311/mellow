@@ -847,9 +847,9 @@ impl Library {
         self.missing_songs = missing_songs;
     }
 
-    /// Runs tasks from `self.on_bulid_done` if `success` is `true`,
-    /// and always runs tasks from `self.on_build_stopped`. The task
-    /// lists are emptied when processed, so they can only run once.
+    /// Runs tasks from `self.on_bulid_succeeded` if `success` is `true`,
+    /// and always runs tasks from `self.on_build_stopped`. The task lists
+    /// are emptied when processed, so they can only run once.
     fn build_done(&mut self, success: bool) {
         if success {
             for f in mem::take(&mut self.on_build_succeeded) {
