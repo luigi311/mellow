@@ -321,11 +321,8 @@ impl SongInfoLoader<'_> {
             gio::FileQueryInfoFlags::empty(),
             gio::Cancellable::NONE,
         ) {
-            Ok(file_info) => match file_info.modification_date_time() {
-                Some(time) => time.to_unix(),
-                None => fallback(self),
-            },
-            Err(_) => fallback(self),
+            Ok(file_info) if let Some(time) = file_info.modification_date_time() => time.to_unix(),
+            Err(_) | Ok(_) => fallback(self),
         }
     }
     /// Updates the modification time to the current one from the file
