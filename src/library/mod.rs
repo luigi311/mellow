@@ -454,7 +454,7 @@ impl Library {
             let songs = songs.clone();
             move || {
                 // Wait before starting background tasks in case they aren't needed
-                thread::sleep(Duration::from_millis(60));
+                thread::sleep(Duration::from_millis(100));
                 if cancel.load(atomic::Ordering::Relaxed) {
                     return;
                 }
