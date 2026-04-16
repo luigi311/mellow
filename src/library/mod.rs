@@ -407,7 +407,13 @@ impl Library {
                         return;
                     }
                     let mut info = song.info();
-                    let modification_time = info.file_modification_time();
+                    let modification_time = info.file_modification_time(|info| {
+                        eprintln!(
+                            "WARNING: Could not determine modification time for '{:?}'; skipping...",
+                            info.file_path()
+                        );
+                        info.known_modification_time()
+                    });
                     if modification_time == info.known_modification_time()
                         || modification_time == -1
                     {

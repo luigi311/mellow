@@ -302,25 +302,6 @@ impl SongInfoLoader<'_> {
     fn fallback_title(&self) -> String {
         (self.filename().rsplit_once('.')).map_or(String::new(), |name| name.0.to_owned())
     }
-    /// Returns the song file modification time
-    ///
-    /// # Panics
-    /// Panics if the modification time could not be determined
-    #[inline]
-    #[must_use]
-    pub fn file_modification_time(&self) -> i64 {
-        // TODO: Maybe return a result?
-        self.file()
-            .query_info(
-                gio::FILE_ATTRIBUTE_TIME_MODIFIED,
-                gio::FileQueryInfoFlags::empty(),
-                gio::Cancellable::NONE,
-            )
-            .unwrap()
-            .modification_date_time()
-            .unwrap()
-            .to_unix()
-    }
     /// Last known modification time (Unix format); compare with
     /// `file_modification_time()` to detect modifications
     ///
@@ -330,12 +311,36 @@ impl SongInfoLoader<'_> {
     pub fn known_modification_time(&self) -> i64 {
         self.user_info.lock().unwrap().modified
     }
+    /// Returns the song file modification time, or runs the `fallback` closure
+    /// and returns its value if the time could not be determined from the file
+    #[inline]
+    #[must_use]
+    pub fn file_modification_time<F: FnOnce(&Self) -> i64>(&self, fallback: F) -> i64 {
+        match self.file().query_info(
+            gio::FILE_ATTRIBUTE_TIME_MODIFIED,
+            gio::FileQueryInfoFlags::empty(),
+            gio::Cancellable::NONE,
+        ) {
+            Ok(file_info) => match file_info.modification_date_time() {
+                Some(time) => time.to_unix(),
+                None => fallback(self),
+            },
+            Err(_) => fallback(self),
+        }
+    }
     /// Updates the modification time to the current one from the file
     ///
+    /// If the file modification time cannot be determined, the current
+    /// system time is used instead
+    ///
     /// # Panics
-    /// The function panics if the user info `Mutex` is poisoned
+    /// The function panics if the user info `Mutex` is poisoned. May
+    /// also painc if system time is earlier than `UNIX_EPOCH` and the
+    /// file modification time could not be determined.
     pub fn update_modification_time(&self) {
-        self.user_info.lock().unwrap().modified = self.file_modification_time();
+        self.user_info.lock().unwrap().modified = self.file_modification_time(|_| {
+            (SystemTime::now().duration_since(UNIX_EPOCH).unwrap()).as_secs() as i64
+        });
     }
     /// Sets the known modification time to the provided value
     ///
