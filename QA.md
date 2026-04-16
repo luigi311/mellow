@@ -22,7 +22,6 @@ Song Queue:
 - [x] Adding items works as expected
 - [x] Removing items works as expected
 - [ ] Removal undo works as expected
-  - FIX: Removal undo crashes if all songs were removed from the queue
   - FIX: Removal undo in shuffle mode inserts tracks to the end of the sequential queue
     instead of the previous position (observable when disabling shuffle mode)
   - FIX: Toggling shuffle before pressing undo inserts at the wrong position

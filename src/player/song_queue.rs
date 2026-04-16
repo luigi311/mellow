@@ -283,16 +283,16 @@ impl SongQueue {
             index += 1; // Keep stopper after the same song as before
         }
 
+        if self.index >= index && !self.is_empty() {
+            self.index += 1;
+            self.ui_close_queue_subpage();
+        }
+
         if self.shuffle {
             self.songs.push(item);
             self.shuffled.insert(index, self.len() - 1);
         } else {
             self.songs.insert(self.ordered_index(index), item);
-        }
-
-        if self.index >= index {
-            self.index += 1;
-            self.ui_close_queue_subpage();
         }
     }
 
