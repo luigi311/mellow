@@ -9,7 +9,9 @@ Playback:
 - [x] Shuffle/repeat/sequential modes work as expected
 - [x] Seeking works as expected
   - FIX: Releasing the seek bar does not exit seek mode in Fedora 44 (`MainPlayer::init_seek`)
-    (Player does not resume playback on its own)
+    (Player does not resume playback on its own) (Upstream issue?)
+  - FIX: Playback error with certain files on Fedora 44 when seeking to the beginning of the song:
+    `gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed` (Upstream issue?)
   - [x] Seeking to any point in the song (click or drag)
   - [x] Seeking to the end and releasing the seek bar
   - [x] Seeking to the end and back
@@ -57,7 +59,7 @@ User Experience:
   - [x] With existing library
   - [x] On fresh launch
 - [ ] All actions respond to user input without delay
-  - FIX: Slight delay when the queue is updated
+  - FIX: UI momentarily hangs whenever the queue is updated
 - [ ] All actions provide visual feedback
   - TODO: Visual feedback for dragging files onto the player
 - [x] Lengthy tasks display a progress bar without blocking the interface

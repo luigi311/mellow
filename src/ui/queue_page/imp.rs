@@ -473,10 +473,16 @@ impl QueuePage {
         let selection_mode = Rc::clone(&self.selection_mode);
         let fallback_image = fallback_song_image();
         self.list_box.bind_model(Some(&model), move |object| {
-            // TODO: Optimize: There is a slight delay whenever the queue is updated
+            // FIX: Optimize: The UI momentarily hangs whenever the queue is updated
+            //
+            // Commenting out `list_model.splice` in `update_song_queue` resolves this,
+            // which means it has to be related to the `bind_model` step in some way.
+            //
             // It seems to be related to the rows trying to determine their heights,
             // and I am assuming that giving the rows a fixed height would solve the
             // performance issues as well.
+            //
+            // This is especially noticable when skipping songs using keyboard shortcuts
 
             let queue_item_object = object.downcast_ref::<QueueItemObject>().unwrap();
             let queue_row = ListRow::default();
