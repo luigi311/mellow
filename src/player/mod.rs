@@ -381,10 +381,10 @@ impl Player {
         }
 
         // Display the current song info in the UI as soon as possible
-        let queue_item = match &shuffled {
-            None => QueueItem::clone(&queue[index]),
-            Some(shuffled) => QueueItem::clone(&queue[shuffled[index]]),
-        };
+        let queue_item = QueueItem::clone(match &shuffled {
+            None => &queue[index],
+            Some(shuffled) => &queue[shuffled[index]],
+        });
         (ui_tx().send(UpdateUI::SongInfo(
             QueueItem::clone(&queue_item),
             queue.get(index + 1).is_some_and(QueueItem::is_stopper),
