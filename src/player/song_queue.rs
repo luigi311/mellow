@@ -532,9 +532,7 @@ impl SongQueue {
             + "\n"
             + &self.repeat.to_string()
             + "\n"
-            + self
-                .songs
-                .iter()
+            + (self.songs.iter())
                 .map(|item| match item {
                     QueueItem::Song(song) => song.info().file_path() + "\n",
                     QueueItem::Stopper(stopper) => match stopper.should_close_player() {
@@ -561,9 +559,7 @@ impl SongQueue {
             let _ = fs::remove_file(&shuffled_file);
             return;
         }
-        let contents = self
-            .shuffled
-            .iter()
+        let contents = (self.shuffled.iter())
             .map(|i| i.to_string() + "\n")
             .collect::<String>();
         match fs::write(&shuffled_file, contents.trim()) {
@@ -589,14 +585,13 @@ impl SongQueue {
         // Load the previous queue if the queue file exists
         if let Ok(queue) = fs::read_to_string(queue_file())
             && let mut lines = queue.lines()
-            && let Some(Ok(track)) = lines.next().map(str::parse)
-            && let Some(time) = lines.next().map(str::parse)
-            && let Some(Ok(shuffle)) = lines.next().map(str::parse)
-            && let Some(Ok(repeat)) = lines.next().map(str::parse)
+            && let (Some(track), Some(time), Some(shuffle), Some(repeat)) =
+                (lines.next(), lines.next(), lines.next(), lines.next())
+            && let Ok(track) = track.parse()
             && let queue = library.songs_from_paths(lines)
             && !queue.is_empty()
         {
-            let shuffled = if shuffle {
+            let shuffled = if shuffle.parse().is_ok_and(|shuffle| shuffle) {
                 fs::read_to_string(shuffled_queue_file()).map_or(None, |shuffled| {
                     match shuffled.len() > track {
                         true => Some(
@@ -612,10 +607,10 @@ impl SongQueue {
             };
             let player_tx = player_tx();
             player_tx.send(PlayerRequest::LoadQueue(queue, shuffled, track))?;
-            if let Ok(time) = time {
+            if let Ok(time) = time.parse() {
                 let _ = player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)));
             }
-            if repeat {
+            if repeat.parse().is_ok_and(|repeat| repeat) {
                 let _ = player_tx.send(PlayerRequest::SetRepeat(true));
             }
             return Ok(());
