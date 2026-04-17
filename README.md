@@ -65,22 +65,47 @@ When the overlay is closed, it is time to enjoy the music.
 |  6  | D-Bus media integration (MPRIS)           | ❌ TODO |
 |  7  | Adaptive background/colors                | ✅ Done |
 
+# Installing Mellow
+
+The recommended way of installing Mellow is by downloading it from the
+[releases page](https://github.com/Userwithaname/mellow/releases), then
+installing it using the Flatpak file. It can be installed by opening it
+in Gnome Software (or similar), or using `flatpak` from the terminal:
+
+```bash
+# Note: Check if the path is correct before running
+flatpak install --user ~/Downloads/io.github.userwithaname.Mellow.flatpak
+```
+
 # Building from source
 
 > [!NOTE]
 > The below instructions are meant for Fedora;
-> they might be different on other systems
+> steps may be different for other systems
 
-## Build dependencies
+## Step 1: Installing dependencies
 
-### [GStreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html):
+### [Rust & Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
 
 ```bash
-dnf install gstreamer1-devel
-
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Recommended plugins (required to play music):
+### [GStreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html), [GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html), [Libadwaita](https://gtk-rs.org/gtk4-rs/stable/latest/book/libadwaita.html), and [Meson](https://mesonbuild.com/SimpleStart.html#installing-meson):
+
+```bash
+dnf install gstreamer1-devel gtk4-devel libadwaita-devel meson
+```
+
+> [!TIP]
+> Mellow may also be built using [Cargo](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
+> directly by adding `--feature no-meson`. Note that this will require manually
+> [installing the GSchema](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html),
+> setting up icons, and creating the application shortcut. Building with Meson
+> is recommended for a simpler build process.
+
+### Recommended plugins (not required for building):
+
 ```bash
 dnf install \
   gstreamer1-plugins-bad-free \
@@ -90,29 +115,7 @@ dnf install \
   gstreamer1-plugin-libav
 ```
 
-### [GTK](https://gtk-rs.org/gtk4-rs/stable/latest/book/project_setup.html)/[Libadwaita](https://gtk-rs.org/gtk4-rs/stable/latest/book/libadwaita.html):
-```bash
-dnf install gtk4-devel libadwaita-devel
-```
-
-### [Rust & Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-### [Meson](https://mesonbuild.com/SimpleStart.html#installing-meson):
-```bash
-dnf install meson
-```
-
-> [!TIP]
-> It is also possible to build Mellow using [Cargo](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
-> directly by adding `--feature no-meson`. Note that this will require manually
-> [installing the GSchema](https://gtk-rs.org/gtk4-rs/stable/latest/book/settings.html),
-> setting up icons, and creating the application shortcut, so Meson should be
-> preferred whenever possible.
-
-## Building and installing
+## Step 2: Building and installing
 
 ### [Build using Meson](https://gtk-rs.org/gtk4-rs/stable/latest/book/meson.html#building-and-running):
 
