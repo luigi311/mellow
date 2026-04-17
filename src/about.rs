@@ -6,7 +6,7 @@ const APP_NAME: Option<&str> = option_env!("APP_NAME");
 const APP_VERSION: Option<&str> = option_env!("APP_VERSION");
 const RESOURCES_FILE: Option<&str> = option_env!("RESOURCES_FILE");
 
-const COPYRIGHT: &str = "© 2025 Iva Kotar";
+const COPYRIGHT: &str = "© 2026 Iva Kotar";
 const LICENSE_TYPE: License = License::Gpl30;
 const DEVELOPERS: &[&str] = &["Iva Kotar"];
 const DESIGNERS: &[&str] = &["Iva Kotar"];
