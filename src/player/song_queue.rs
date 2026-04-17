@@ -592,16 +592,12 @@ impl SongQueue {
             && !queue.is_empty()
         {
             let shuffled = if shuffle.parse().is_ok_and(|shuffle| shuffle) {
-                fs::read_to_string(shuffled_queue_file()).map_or(None, |shuffled| {
-                    match shuffled.len() > track {
-                        true => Some(
-                            (shuffled.lines())
-                                .filter_map(|i| i.trim().parse().ok())
-                                .collect(),
-                        ),
-                        false => None,
-                    }
-                })
+                match fs::read_to_string(shuffled_queue_file()) {
+                    Ok(shuffled) if shuffled.len() > track => Some(
+                        (shuffled.lines().filter_map(|line| line.trim().parse().ok())).collect(),
+                    ),
+                    Ok(_) | Err(_) => None,
+                }
             } else {
                 None
             };
