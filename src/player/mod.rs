@@ -327,11 +327,10 @@ impl Player {
 
         let file_uri = match self.queue.current() {
             QueueItem::Song(song) => &song.uri,
-            QueueItem::Stopper(stopper) => {
-                if stopper.should_close_player() {
+            QueueItem::Stopper(_) => {
+                if (self.queue.remove_current().as_stopper()).should_close_player() {
                     let _ = ui_tx().send(UpdateUI::RunAction("app.quit"));
                 }
-                self.queue.remove_current();
                 self.queue.ui_update_queue();
                 let _ = self.backend.set_state(State::Null);
                 self.request_state(State::Paused);
