@@ -12,6 +12,8 @@ impl Shortcuts for Application {
     fn setup_shortcuts(&self) {
         // Player Shortcuts
         self.set_accels_for_action("player.play_pause", &["<Ctrl>P"]);
+        self.set_accels_for_action("player.skip_prev", &["<Ctrl>Left", "<Ctrl>Up"]);
+        self.set_accels_for_action("player.skip_next", &["<Ctrl>Right", "<Ctrl>Down"]);
         self.set_accels_for_action("win.queue_from_disk", &["<Ctrl>O"]);
         // TODO: Ignore shortcut when the overlay is open
         // self.set_accels_for_action("player.play_pause", &["space"]);
@@ -35,6 +37,8 @@ pub fn show_shortcuts_dialog(parent: &impl IsA<gtk::Widget>) {
 
     let player_section = ShortcutsSection::new(Some("Player"));
     player_section.add(ShortcutsItem::new("Play/Pause", "<Ctrl>P"));
+    player_section.add(ShortcutsItem::new("Previous Track", "<Ctrl>Left"));
+    player_section.add(ShortcutsItem::new("Next Track", "<Ctrl>Right"));
     player_section.add(ShortcutsItem::new("Open Files", "<Ctrl>O"));
     shortcuts.add(player_section);
 
