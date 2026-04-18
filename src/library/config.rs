@@ -139,7 +139,7 @@ impl LibraryConfig {
         'counter: loop {
             // Characters at the same position of each directory
             let mut chars = dirs.iter_mut().map(Iterator::next);
-            let Some(Some(mut adj)) = chars.next() else {
+            let Some(Some(adj)) = chars.next() else {
                 break 'counter;
             };
             for cur in chars {
@@ -149,7 +149,6 @@ impl LibraryConfig {
                 if cur != adj {
                     break 'counter;
                 }
-                adj = cur;
             }
             self.uri_opt += 1;
         }
