@@ -81,6 +81,19 @@ It can be installed by opening the Flatpak file in Gnome Software
 flatpak install --user ~/Downloads/io.github.userwithaname.Mellow.flatpak
 ```
 
+# Uninstalling
+
+If you've installed Mellow using the Flatpak release asset and wish to remove it,
+you can either do so through your distribution's software manager, or by using the
+`flatpak` command from the terminal:
+
+```bash
+flatpak uninstall io.github.userwithaname.Mellow
+```
+
+If you've installed Mellow by building it from source, it can be uninstalled by
+manually removing the files listed at the bottom of this document.
+
 # Building from source
 
 > [!NOTE]
