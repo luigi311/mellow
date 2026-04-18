@@ -67,10 +67,14 @@ When the overlay is closed, it is time to enjoy the music.
 
 # Installing Mellow
 
+> [!NOTE]
+> Only Linux builds are currently supported. If you would like to try Mellow on
+> a different operating system, it may be possible by building it from source.
+
 The recommended way to install Mellow is by downloading it from the
 [releases page](https://github.com/Userwithaname/mellow/releases).
-It can be installed by opening it in Gnome Software (or similar), or
-by using `flatpak` from the terminal:
+It can be installed by opening the Flatpak file in Gnome Software
+(or similar), or using the `flatpak` command from the terminal:
 
 ```bash
 # Note: Check if the path is correct before running
