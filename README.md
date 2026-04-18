@@ -14,6 +14,10 @@ Mellow is an experimental music player, which strives for maximal immersion with
 minimal distraction. Elements of the interface are purposefully abstracted away,
 letting music be the central point of focus.
 
+<p align="center">
+  <img width=512 src="https://private-user-images.githubusercontent.com/42674728/580314953-90f9a4f1-c55c-4fd6-8400-4576032d0895.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzY1NDc5NDYsIm5iZiI6MTc3NjU0NzY0NiwicGF0aCI6Ii80MjY3NDcyOC81ODAzMTQ5NTMtOTBmOWE0ZjEtYzU1Yy00ZmQ2LTg0MDAtNDU3NjAzMmQwODk1LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA0MTglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNDE4VDIxMjcyNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTVkNTAxMWY0Y2FjYzM4MjViM2MyMDg0OTRmMzZhNTg0YWJmODZhMGE4NTAyM2U1ZjliODUxMDM3YzU5OTg0YjUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.pXp0whETXlqfRodupf5jiyEhqpNiQY03C8rpkGnQgFw">
+</p>
+
 > [!CAUTION]
 > This software is in active development. Certain features may be missing, buggy, or
 > incomplete. See the [Roadmap](#roadmap), [QA.md](QA.md), and [TODO.md](TODO.md) for
