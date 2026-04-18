@@ -591,7 +591,7 @@ impl SongQueue {
             && let queue = library.songs_from_paths(lines)
             && !queue.is_empty()
         {
-            let shuffled = if shuffle.parse().is_ok_and(|shuffle| shuffle) {
+            let shuffled = if shuffle.parse().unwrap_or_default() {
                 match fs::read_to_string(shuffled_queue_file()) {
                     Ok(shuffled) if shuffled.len() > track => Some(
                         (shuffled.lines().filter_map(|line| line.trim().parse().ok())).collect(),
@@ -606,7 +606,7 @@ impl SongQueue {
             if let Ok(time) = time.parse() {
                 let _ = player_tx.send(PlayerRequest::SeekToTime(ClockTime::from_mseconds(time)));
             }
-            if repeat.parse().is_ok_and(|repeat| repeat) {
+            if repeat.parse().unwrap_or_default() {
                 let _ = player_tx.send(PlayerRequest::SetRepeat(true));
             }
             return Ok(());
@@ -632,7 +632,7 @@ impl SongQueue {
                 ui_tx().send(UpdateUI::OpenSheet(true))?;
             }
             StartupQueueChoice::RestoreQueue => {
-                if fs::exists(songs_file()).is_ok_and(|exists| exists) {
+                if fs::exists(songs_file()).unwrap_or_default() {
                     ui_tx().send(UpdateUI::OpenSheet(true))?;
                 } else {
                     // Load all songs into queue on first launch

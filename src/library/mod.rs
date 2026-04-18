@@ -642,7 +642,7 @@ impl Library {
                 // Valid song entry
                 Err(index)
                     if (song.file.path())
-                        .is_some_and(|path| fs::exists(path).is_ok_and(|exists| exists)) =>
+                        .is_some_and(|path| fs::exists(path).unwrap_or_default()) =>
                 {
                     // Filter songs outside of `config.directories`
                     if libraries.iter().any(|dir| opt_uri.starts_with(dir)) {
