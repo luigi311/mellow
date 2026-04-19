@@ -734,7 +734,7 @@ impl QueueSnapshot {
         match self.action {
             UndoAction::Removed(mut items) => {
                 if self.shuffle && !target.shuffle {
-                    items = items.iter().map(|item| self.shuffled[*item]).collect()
+                    items = items.iter().map(|item| self.shuffled[*item]).collect();
                 } else if !self.shuffle && target.shuffle {
                     // If shuffle has been enabled before the undo, nothing needs to be done
                     // because those items will not be in the shuffled queue until toggling
@@ -749,7 +749,7 @@ impl QueueSnapshot {
             }
             UndoAction::Inserted(mut items) => {
                 if self.shuffle && !target.shuffle {
-                    items = items.iter().map(|item| self.shuffled[*item]).collect()
+                    items = items.iter().map(|item| self.shuffled[*item]).collect();
                 } else if !self.shuffle && target.shuffle {
                     // If shuffle has been enabled before the undo, nothing needs to be done
                     // because those items will not be in the shuffled queue until toggling
@@ -762,7 +762,7 @@ impl QueueSnapshot {
                     }
                 }
             }
-        };
+        }
 
         target.songs = self.songs;
         target.shuffled = self.shuffled;

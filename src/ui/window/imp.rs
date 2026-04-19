@@ -14,7 +14,9 @@ use crate::library::{Albums, Artists, SharedAlbum, SharedArtist, SharedSong, Son
 use crate::library::{Library, LibraryRequest, library_tx};
 use crate::music_dir;
 use crate::player::QueueItem;
-use crate::ui::{AlbumPage, AlbumsPage, ArtistPage, ArtistsPage, SongPage, SongsPage};
+use crate::ui::{
+    AlbumPage, AlbumsPage, ArtistPage, ArtistsPage, SongPage, SongsPage, ToastButtonAction,
+};
 use crate::ui::{LibraryPage, LyricsPage, MainPlayer, SettingsPage, SubpageType};
 use crate::ui::{QueuePage, QueueSubpage};
 use crate::ui::{UpdateUI, ui_tx};
@@ -437,11 +439,7 @@ impl Window {
         self.library_subpages.borrow_mut().push(SubpageType::Artist);
     }
 
-    fn show_toast_notification(
-        &self,
-        message: &str,
-        action: Option<Box<(&'static str, Box<dyn Fn() + Send + 'static>)>>,
-    ) {
+    fn show_toast_notification(&self, message: &str, action: Option<ToastButtonAction>) {
         // TODO: Group same notifications
         let toast = adw::Toast::builder()
             .use_markup(false)

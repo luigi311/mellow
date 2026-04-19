@@ -75,6 +75,7 @@ pub fn init_ui_tx(
     UI_TX.set(ui_tx)
 }
 
+pub type ToastButtonAction = Box<(&'static str, Box<dyn Fn() + Send + 'static>)>;
 pub enum UpdateUI {
     /// (playing: `bool`, interactive: `bool`)
     PlayerState(bool, bool),
@@ -148,10 +149,7 @@ pub enum UpdateUI {
     /// Shows a progress bar with the specified progress value, or hides it
     Progress(Option<f64>),
     /// Displays the notification message (optionally takes a button name and action closure)
-    Notification(
-        String,
-        Option<Box<(&'static str, Box<dyn Fn() + Send + 'static>)>>,
-    ),
+    Notification(String, Option<ToastButtonAction>),
 
     /// Causes the channel to ignore any further requests (but does not close it)
     Shutdown,

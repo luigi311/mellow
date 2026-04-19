@@ -92,7 +92,7 @@ impl QueuePage {
                 let index = item.index() as usize;
                 selected_items.insert(
                     selected_items
-                        .binary_search_by(|item| index.cmp(&item))
+                        .binary_search_by(|item| index.cmp(item))
                         .unwrap_err( /* each index is unique */ ),
                     index,
                 );
