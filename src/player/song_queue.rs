@@ -454,10 +454,10 @@ impl SongQueue {
         self.repeat
     }
 
-    /// Remembers the current state of the queue before ,
-    /// replacing the previous value of `self.snapshot`
+    /// Replaces the previous value of `self.snapshot` using the current queue
+    /// and the provided `action`
     ///
-    /// The items specify the indexes at which items will be removed or inserted
+    /// Call this before performing the action to remember the queue state for undo
     ///
     /// Snapshots should be created before the action is performed
     #[inline]
@@ -707,14 +707,9 @@ struct QueueSnapshot {
 
     shuffle: bool,
 
-    /// Number of items before the playing index
-    /// This number should be positive for removals, and negative for insertions
-    // This won't work, because the user may have skipped songs before the undo,
-    // so the offset should adapt to that change. Maybe it would be better to
-    // store a Vec of indexes, and whether the items were added or removed.
-    // offset: isize,
     action: UndoAction,
 }
+/// Stores the indexes of removals or insertions
 pub enum UndoAction {
     Removed(Vec<usize>),
     Inserted(Vec<usize>),
