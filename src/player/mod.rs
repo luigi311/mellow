@@ -4,14 +4,13 @@ use gst::{ClockTime, SeekFlags, State};
 use std::sync::{OnceLock, mpsc};
 
 use crate::excuses::{EXP_RX, INIT_ERR};
-use crate::player::song_queue::UndoAction;
 use crate::ui::{UpdateUI, ui_tx};
 
 pub mod queue_item;
 pub mod song_queue;
 
 pub use queue_item::{QueueItem, SharedStopper};
-pub use song_queue::SongQueue;
+pub use song_queue::{SongQueue, UndoAction};
 
 // TODO: MPRIS support for Gnome Shell media controls
 
@@ -101,7 +100,7 @@ pub enum PlayerRequest {
     Shutdown(bool, bool),
 }
 
-// Required by certain variants
+// Manual `Debug` implementation is required by certain variants
 impl core::fmt::Debug for PlayerRequest {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
@@ -133,7 +132,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::InsertItems(items) => format!("InsertItems(…): {} items", items.len()),
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveItem(index) => format!("RemoveAt({index})"),
-                Self::RemoveItems(indices) => format!("RemoveItems{indices:?}"),
+                Self::RemoveItems(indexes) => format!("RemoveItems{indexes:?}"),
                 Self::Undo => String::from("Undo"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
@@ -152,7 +151,7 @@ pub struct Player {
 
     current_state: State,
     pending_state: Option<State>,
-    /// Note: When the next song is loaded, `self.queue.index()` returns the next track index
+    /// Note: `self.queue.index()` returns the next track index instead of current when `true`
     next_song_loaded: bool,
     seeking: bool,
 
@@ -228,6 +227,9 @@ impl Player {
                 continue;
             };
 
+            // Unit comparisons are used to avoid calling `continue`, so the branches fit on one line.
+            // To update the player, use `== ()` or `true`
+            // To skip updating the player, use `!= ()`, `false`, or `continue`
             #[allow(clippy::unit_cmp)]
             if match dbg!(player_request) {
                 PlayerRequest::LoadQueue(queue, shuffled, index) => {
@@ -631,6 +633,7 @@ impl Player {
         self.backend.set_property("volume", volume);
     }
 
+    /// Moves an item from `from` to `to`
     fn reorder(&mut self, from: usize, to: usize) {
         if self.next_song_loaded
             && (from == self.queue.index() - 1
@@ -643,6 +646,14 @@ impl Player {
         self.queue.reorder(from, to);
     }
 
+    /// Moves an item at position `from` to the position at `from + by`
+    ///
+    /// If repeat mode is enabled, the final index will wrap around the
+    /// queue if it is out of bounds.
+    ///
+    /// # Panics
+    /// The function panics if the final index is out of bounds and
+    /// repeat mode is disabled
     fn shift(&mut self, from: usize, by: isize) {
         let mut to = from as isize + by;
         let queue_len = self.queue.len() as isize;
