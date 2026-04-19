@@ -84,7 +84,7 @@ impl QueuePage {
     }
     #[template_callback]
     pub fn handle_remove_selected(&self) {
-        let mut selected_items = Vec::<(usize, QueueItem)>::new();
+        let mut selected_items = Vec::<usize>::new();
         let list_model = self.list_model.get().expect(EXP_INIT);
         for i in 0..list_model.n_items() {
             let item = (list_model.item(i).and_downcast::<QueueItemObject>()).unwrap();
@@ -92,32 +92,29 @@ impl QueuePage {
                 let index = item.index() as usize;
                 selected_items.insert(
                     selected_items
-                        .binary_search_by(|item| item.0.cmp(&index))
+                        .binary_search_by(|item| index.cmp(&item))
                         .unwrap_err( /* each index is unique */ ),
-                    (index, item.queue_item().clone()),
+                    index,
                 );
             }
         }
         if selected_items.is_empty() {
             return;
         }
-        let _ = player_tx().send(PlayerRequest::RemoveItems(
-            selected_items.iter().rev().map(|item| item.0).collect(),
-        ));
-        self.set_selection_mode(false);
 
         (ui_tx().send(UpdateUI::Notification(
             format!("Removed {} items from the queue", selected_items.len()),
             Some(Box::new((
                 "Undo",
                 Box::new(move || {
-                    let _ = player_tx().send(PlayerRequest::InsertItems(
-                        selected_items.clone(), //
-                    ));
+                    let _ = player_tx().send(PlayerRequest::Undo);
                 }),
             ))),
         )))
         .expect(EXP_RX);
+
+        let _ = player_tx().send(PlayerRequest::RemoveItems(selected_items));
+        self.set_selection_mode(false);
     }
     #[template_callback]
     pub fn handle_pan_up(&self) {

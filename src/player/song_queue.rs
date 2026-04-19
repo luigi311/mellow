@@ -19,6 +19,7 @@ pub struct SongQueue {
     repeat: bool,
     shuffle: bool,
     pub pending_track: bool,
+    snapshot: Option<QueueSnapshot>,
 
     last_ui_index: usize,
 }
@@ -38,6 +39,7 @@ impl SongQueue {
             pending_track: true,
 
             last_ui_index: 0,
+            snapshot: None,
         }
     }
 
@@ -452,6 +454,32 @@ impl SongQueue {
         self.repeat
     }
 
+    /// Remembers the current state of the queue before ,
+    /// replacing the previous value of `self.snapshot`
+    ///
+    /// The items specify the indexes at which items will be removed or inserted
+    ///
+    /// Snapshots should be created before the action is performed
+    #[inline]
+    pub fn create_snapshot_for_action(&mut self, action: UndoAction) {
+        self.snapshot = Some(QueueSnapshot::create(self, action));
+    }
+    /// Reverts the queue to a prior state in `self.snapshot`
+    ///
+    /// The snapshot is cleared once undo is performed,
+    /// so this should only be called once
+    ///
+    /// # Panics
+    /// The function panics if the queue snapshot is not available
+    #[inline]
+    pub fn pefrofm_undo(&mut self) {
+        self.snapshot
+            .take()
+            .expect("Cannot undo: queue snapshot is unavailable")
+            .perform_undo(self);
+        self.ui_update_queue();
+    }
+
     /// Updates the UI with the current queue shuffle mode setting
     ///
     /// # Panics
@@ -670,5 +698,76 @@ impl SongQueue {
         player_tx.send(PlayerRequest::TogglePlay(Some(false)))?;
 
         Ok(())
+    }
+}
+
+struct QueueSnapshot {
+    songs: Vec<QueueItem>,
+    shuffled: Vec<usize>,
+
+    shuffle: bool,
+
+    /// Number of items before the playing index
+    /// This number should be positive for removals, and negative for insertions
+    // This won't work, because the user may have skipped songs before the undo,
+    // so the offset should adapt to that change. Maybe it would be better to
+    // store a Vec of indexes, and whether the items were added or removed.
+    // offset: isize,
+    action: UndoAction,
+}
+pub enum UndoAction {
+    Removed(Vec<usize>),
+    Inserted(Vec<usize>),
+}
+impl QueueSnapshot {
+    #[inline]
+    #[must_use]
+    fn create(source: &SongQueue, action: UndoAction) -> QueueSnapshot {
+        QueueSnapshot {
+            songs: source.songs.clone(),
+            shuffled: source.shuffled.clone(),
+            shuffle: source.shuffle,
+            action,
+        }
+    }
+    /// Consumes `self` and reverts `target` to the same state
+    /// as it was at the time that this snapshot was created
+    #[inline]
+    fn perform_undo(self, target: &mut SongQueue) {
+        match self.action {
+            UndoAction::Removed(mut items) => {
+                if self.shuffle && !target.shuffle {
+                    items = items.iter().map(|item| self.shuffled[*item]).collect()
+                } else if !self.shuffle && target.shuffle {
+                    // If shuffle has been enabled before the undo, nothing needs to be done
+                    // because those items will not be in the shuffled queue until toggling
+                    // off and on again
+                    return;
+                }
+                for item in items {
+                    if item < target.index {
+                        target.index += 1;
+                    }
+                }
+            }
+            UndoAction::Inserted(mut items) => {
+                if self.shuffle && !target.shuffle {
+                    items = items.iter().map(|item| self.shuffled[*item]).collect()
+                } else if !self.shuffle && target.shuffle {
+                    // If shuffle has been enabled before the undo, nothing needs to be done
+                    // because those items will not be in the shuffled queue until toggling
+                    // off and on again
+                    return;
+                }
+                for item in items {
+                    if item < target.index {
+                        target.index -= 1;
+                    }
+                }
+            }
+        };
+
+        target.songs = self.songs;
+        target.shuffled = self.shuffled;
     }
 }

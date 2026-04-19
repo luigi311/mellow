@@ -4,6 +4,7 @@ use gst::{ClockTime, SeekFlags, State};
 use std::sync::{OnceLock, mpsc};
 
 use crate::excuses::{EXP_RX, INIT_ERR};
+use crate::player::song_queue::UndoAction;
 use crate::ui::{UpdateUI, ui_tx};
 
 pub mod queue_item;
@@ -83,6 +84,8 @@ pub enum PlayerRequest {
     /// Remove multiple items at the same time using the list of indices
     /// For proper behavior, indexes must be ordered from last to first
     RemoveItems(Vec<usize>),
+    /// Restores the queue to the previous snapshot
+    Undo,
 
     /// Set the playback volume using a 0 to 1 value
     SetVolume(f64),
@@ -131,6 +134,7 @@ impl core::fmt::Debug for PlayerRequest {
                 Self::InsertRelative(item) => format!("InsertRelative({}, …)", item.0),
                 Self::RemoveItem(index) => format!("RemoveAt({index})"),
                 Self::RemoveItems(indices) => format!("RemoveItems{indices:?}"),
+                Self::Undo => String::from("Undo"),
                 Self::SetVolume(volume) => format!("SetVolume({volume})"),
                 Self::SetShuffle(shuffle) => format!("SetShuffle({shuffle})"),
                 Self::SetRepeat(repeat) => format!("SetRepeat({repeat})"),
@@ -289,17 +293,24 @@ impl Player {
                     true
                 }
                 PlayerRequest::RemoveItem(index) => {
+                    self.queue.create_snapshot_for_action(
+                        UndoAction::Removed(vec![index]), //
+                    );
                     self.remove_item(index);
                     self.queue.ui_update_queue();
                     continue;
                 }
-                PlayerRequest::RemoveItems(indices) => {
-                    for index in indices {
+                PlayerRequest::RemoveItems(indexes) => {
+                    self.queue.create_snapshot_for_action(
+                        UndoAction::Removed(indexes.clone()), //
+                    );
+                    for index in indexes {
                         self.remove_item(index);
                     }
                     self.queue.ui_update_queue();
                     continue;
                 }
+                PlayerRequest::Undo => self.queue.pefrofm_undo() != (),
 
                 PlayerRequest::Update => true,
 

@@ -79,18 +79,12 @@ impl QueueSubpage {
             .send(PlayerRequest::RemoveItem(index))
             .expect(EXP_RX);
 
-        // It is okay to uninitialize `queue_item` because the subpage is already closed
-        let queue_item = self.queue_item.take();
         (ui_tx().send(UpdateUI::Notification(
             format!("Removed from the queue: \"{}\"", self.song_title.label()),
             Some(Box::new((
                 "Undo",
                 Box::new(move || {
-                    (player_tx().send(PlayerRequest::InsertAt(Box::new((
-                        index,
-                        queue_item.clone(),
-                    )))))
-                    .expect(EXP_RX);
+                    (player_tx().send(PlayerRequest::Undo)).expect(EXP_RX);
                 }),
             ))),
         )))
