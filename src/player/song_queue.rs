@@ -458,8 +458,6 @@ impl SongQueue {
     /// and the provided `action`
     ///
     /// Call this before performing the action to remember the queue state for undo
-    ///
-    /// Snapshots should be created before the action is performed
     #[inline]
     pub fn create_snapshot_for_action(&mut self, action: UndoAction) {
         self.snapshot = Some(QueueSnapshot::create(self, action));
@@ -470,14 +468,18 @@ impl SongQueue {
     /// so this should only be called once
     ///
     /// # Panics
-    /// The function panics if the queue snapshot is not available
+    /// The function panics in debug builds if the queue snapshot is not available
     #[inline]
     pub fn pefrofm_undo(&mut self) {
-        self.snapshot
-            .take()
-            .expect("Cannot undo: queue snapshot is unavailable")
-            .perform_undo(self);
-        self.ui_update_queue();
+        if let Some(snapshot) = self.snapshot.take() {
+            snapshot.perform_undo(self);
+            self.ui_update_queue();
+        } else {
+            eprintln!("Cannot undo: queue snapshot is unavailable");
+
+            #[cfg(debug_assertions)]
+            panic!("Cannot undo: `create_snapshot_for_action` must be called first")
+        }
     }
 
     /// Updates the UI with the current queue shuffle mode setting
