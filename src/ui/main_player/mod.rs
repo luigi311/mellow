@@ -31,8 +31,12 @@ impl MainPlayer {
         let release_seek_bar = gtk::GestureClick::builder()
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
+        // Connecting both `released` and `unpaired_release`,
+        // because either one or the other works depending on the system
         release_seek_bar.connect_released(|_, _, _, _| {
-            // FIX: Not called in Fedora 44 (playback does not resume after seeking)
+            player_tx().send(PlayerRequest::SeekDone).expect(EXP_RX);
+        });
+        release_seek_bar.connect_unpaired_release(|_, _, _, _, _| {
             player_tx().send(PlayerRequest::SeekDone).expect(EXP_RX);
         });
         (self.imp().seek_bar.parent().unwrap()).add_controller(release_seek_bar);

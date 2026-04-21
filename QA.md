@@ -5,11 +5,10 @@
 
 Playback:
 
-- [x] Pause/play/skip work as expected
+- [ ] Pause/play/skip work as expected
+  - FIX: Holding keyboard shortcut to skip songs can overwhelm GStreamer and crash
 - [x] Shuffle/repeat/sequential modes work as expected
 - [x] Seeking works as expected
-  - FIX: Releasing the seek bar does not exit seek mode in Fedora 44 (`MainPlayer::init_seek`)
-    (Player does not resume playback on its own) (Upstream issue?) (Flatpak builds are also affected)
   - FIX: Playback error with certain files on Fedora 44 when seeking to the beginning of the song:
     `gst_base_parse_finish_frame: assertion 'size > 0 || frame->out_buffer' failed` (Upstream issue?)
     (Flatpak builds are unaffected)
@@ -45,6 +44,7 @@ Music Library:
   - FIX: Items sometimes don't show up until scrolling after searching
   - FIX: Cannot select text because it drags the header bar (except with `no-meson`)
   - TODO: The escape key should empty the search query when focused
+  - TODO: Focus the search bar using `control+F`
 - [x] Sort modes work as expected
 - [ ] Filtering works as expected
   - TODO: **Implement filters**
