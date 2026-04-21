@@ -591,13 +591,13 @@ impl Library {
                 // Wait for the file modification times to be fully checked
                 drop(file_times.lock().unwrap());
 
+                library.build_stopped();
+
                 if !cancel.load(atomic::Ordering::Relaxed) {
                     // Cancel any background tasks which might still be running
                     library.cancel_library_build();
                     library.build_succeeded();
                 }
-
-                library.build_stopped();
             }
         })))?;
 
