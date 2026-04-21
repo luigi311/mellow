@@ -579,26 +579,30 @@ impl Library {
         #[cfg(feature = "startup-logs")]
         println!("Library connections have finished building");
 
-        library_tx.send(LibraryRequest::RunLibraryTask(Box::new(move |library| {
-            library.set_artists(artists);
-            library.set_albums(albums);
-            library.set_songs(songs);
-            library.build_stopped();
-        })))?;
+        library_tx.send(LibraryRequest::RunLibraryTask(Box::new({
+            let cancel = cancel.clone();
+            move |library| {
+                library.set_artists(artists);
+                library.set_albums(albums);
+                library.set_songs(songs);
 
-        ui_tx.send(UpdateUI::Progress(None))?;
+                ui_tx.send(UpdateUI::Progress(None)).expect(EXP_RX);
 
-        // Wait for the file modification times to be fully checked
-        drop(file_times.lock().unwrap());
+                // Wait for the file modification times to be fully checked
+                drop(file_times.lock().unwrap());
 
-        match cancel.load(atomic::Ordering::Relaxed) {
-            false => Ok((library_tx.send(LibraryRequest::RunLibraryTask(Box::new(
-                move |library| {
+                if !cancel.load(atomic::Ordering::Relaxed) {
                     // Cancel any background tasks which might still be running
                     library.cancel_library_build();
                     library.build_succeeded();
-                },
-            ))))?),
+                }
+
+                library.build_stopped();
+            }
+        })))?;
+
+        match cancel.load(atomic::Ordering::Relaxed) {
+            false => Ok(()),
             true => Err("Cancelled")?,
         }
     }
